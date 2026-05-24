@@ -18,8 +18,8 @@ datastore = "1.1.1"
 work = "2.10.0"
 
 # Compose
-compose-bom = "2025.01.00"
-compose-material3-adaptive = "1.0.0"
+compose-bom = "2026.05.01"
+compose-material3-adaptive = "1.2.0"
 
 # Hilt — 2.54+ required for Kotlin 2.1.0 metadata
 hilt = "2.54"
