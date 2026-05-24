@@ -1,0 +1,21 @@
+# S-15: Trigger historical SMS backfill from Settings.
+# Requires: SMS permission granted, some bank SMS in inbox.
+appId: com.athar.personal.debug
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd
+
+- tapOn: "⋯"
+- waitForAnimationToEnd
+
+- assertVisible: "إعادة فحص الرسائل"
+- tapOn: "ابدأ الفحص"
+- waitForAnimationToEnd
+
+# Wait up to 30s for the scan to finish.
+- waitForAnimationToEnd:
+    timeout: 30000
+- assertVisible:
+    text: "تم فحص"
+    timeout: 30000

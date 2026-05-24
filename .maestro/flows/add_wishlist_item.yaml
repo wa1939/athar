@@ -1,0 +1,27 @@
+# W-04: Add a wishlist item and see its status (NOW / WAIT / INFEASIBLE).
+appId: com.athar.personal.debug
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd
+
+- tapOn: "الخطة"
+- waitForAnimationToEnd
+- tapOn: "الرغبات"
+- waitForAnimationToEnd
+- assertVisible: "السعة الشهرية"
+
+- tapOn: "إضافة رغبة"
+- waitForAnimationToEnd
+
+- tapOn: "الاسم"
+- inputText: "آيفون"
+- tapOn: "السعر"
+- inputText: "5000"
+- tapOn: "ما وفّرته حتى الآن"
+- inputText: "1000"
+
+- tapOn: "حفظ"
+- waitForAnimationToEnd
+
+- assertVisible: "آيفون"

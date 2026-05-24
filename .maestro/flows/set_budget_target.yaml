@@ -1,0 +1,24 @@
+# M-10: Set monthly budget target on a category in Plan tab.
+appId: com.athar.personal.debug
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd
+
+# Navigate to Plan tab.
+- tapOn: "الخطة"
+- waitForAnimationToEnd
+- assertVisible: "الميزانية"
+
+# Tap the Groceries (بقالة) row to open target editor.
+- tapOn: "بقالة"
+- waitForAnimationToEnd
+- assertVisible: "هدف شهري"
+
+- tapOn: "المبلغ المستهدف"
+- inputText: "2500"
+- tapOn: "حفظ"
+- waitForAnimationToEnd
+
+# Variance pill should appear (over or under depending on actual; we just assert hint copy).
+- assertVisible: "هدف"

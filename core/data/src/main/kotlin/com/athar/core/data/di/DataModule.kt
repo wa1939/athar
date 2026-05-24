@@ -1,0 +1,131 @@
+package com.athar.core.data.di
+
+import android.content.Context
+import androidx.room.Room
+import com.athar.core.data.db.AtharDatabase
+import com.athar.core.data.db.crypto.DbKeyManager
+import com.athar.core.data.db.dao.AccountDao
+import com.athar.core.data.db.dao.ActivityLogDao
+import com.athar.core.data.db.dao.CategoryDao
+import com.athar.core.data.db.dao.CategoryRuleDao
+import com.athar.core.data.db.dao.InvestmentDao
+import com.athar.core.data.db.dao.SmsMessageDao
+import com.athar.core.data.db.dao.TransactionDao
+import com.athar.core.data.db.dao.WishlistDao
+import com.athar.core.data.backup.BackupService
+import com.athar.core.data.csv.CsvExporter
+import com.athar.core.data.csv.CsvImporter
+import com.athar.core.data.repo.ActivityLogRepositoryImpl
+import com.athar.core.data.repo.CategoryRepositoryImpl
+import com.athar.core.data.repo.CategoryRuleRepositoryImpl
+import com.athar.core.data.repo.InvestmentRepositoryImpl
+import com.athar.core.data.repo.SmsAuditRepositoryImpl
+import com.athar.core.data.prefs.UserPreferencesRepositoryImpl
+import com.athar.core.data.repo.TransactionRepositoryImpl
+import com.athar.core.data.repo.WishlistRepositoryImpl
+import com.athar.core.domain.repo.ActivityLogRepository
+import com.athar.core.domain.repo.BackupRepository
+import com.athar.core.domain.repo.CategoryRepository
+import com.athar.core.domain.repo.CategoryRuleRepository
+import com.athar.core.domain.repo.CsvExportTrigger
+import com.athar.core.domain.repo.CsvImportTrigger
+import com.athar.core.domain.repo.InvestmentRepository
+import com.athar.core.domain.repo.SmsAuditRepository
+import com.athar.core.domain.repo.TransactionRepository
+import com.athar.core.domain.repo.UserPreferencesRepository
+import com.athar.core.domain.repo.WishlistRepository
+import dagger.Binds
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import kotlinx.datetime.Clock
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
+import timber.log.Timber
+import java.io.File
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+internal object DatabaseModule {
+
+    @Provides
+    @Singleton
+    fun provideDatabase(
+        @ApplicationContext context: Context,
+        dbKeyManager: DbKeyManager,
+    ): AtharDatabase {
+        // `net.zetetic:sqlcipher-android` auto-loads its native libraries when SupportOpenHelperFactory
+        // first opens a connection — no explicit `SQLiteDatabase.loadLibs(context)` is needed (that API
+        // belongs to the older `android-database-sqlcipher` artifact).
+
+        // Pre-encryption dev installs ship a plain-SQLite file with the same name. SQLCipher
+        // cannot open it; rather than a confusing crash, delete it on first encrypted launch.
+        // This is acceptable for an alpha codebase; once we ship to real users we add a proper
+        // PRAGMA cipher_migrate path here. ADR-003 documents the trade-off.
+        val dbFile = File(context.getDatabasePath(AtharDatabase.NAME).path)
+        val keyFileMarker = File(context.filesDir, "db_key.bin")
+        if (dbFile.exists() && !keyFileMarker.exists()) {
+            Timber.w("Deleting pre-encryption DB at %s (alpha-phase migration)", dbFile.path)
+            context.deleteDatabase(AtharDatabase.NAME)
+        }
+
+        val key = dbKeyManager.getOrCreateDbKey()
+        val factory = SupportOpenHelperFactory(key)
+        return Room.databaseBuilder(context, AtharDatabase::class.java, AtharDatabase.NAME)
+            .openHelperFactory(factory)
+            .addMigrations(AtharDatabase.MIGRATION_1_2)
+            .fallbackToDestructiveMigrationOnDowngrade()
+            .build()
+    }
+
+    @Provides fun provideAccountDao(db: AtharDatabase): AccountDao = db.accountDao()
+    @Provides fun provideCategoryDao(db: AtharDatabase): CategoryDao = db.categoryDao()
+    @Provides fun provideTransactionDao(db: AtharDatabase): TransactionDao = db.transactionDao()
+    @Provides fun provideCategoryRuleDao(db: AtharDatabase): CategoryRuleDao = db.categoryRuleDao()
+    @Provides fun provideWishlistDao(db: AtharDatabase): WishlistDao = db.wishlistDao()
+    @Provides fun provideInvestmentDao(db: AtharDatabase): InvestmentDao = db.investmentDao()
+    @Provides fun provideSmsMessageDao(db: AtharDatabase): SmsMessageDao = db.smsMessageDao()
+    @Provides fun provideActivityLogDao(db: AtharDatabase): ActivityLogDao = db.activityLogDao()
+
+    @Provides @Singleton fun provideClock(): Clock = Clock.System
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+internal abstract class RepositoryModule {
+
+    @Binds @Singleton
+    abstract fun bindTransactionRepository(impl: TransactionRepositoryImpl): TransactionRepository
+
+    @Binds @Singleton
+    abstract fun bindCategoryRepository(impl: CategoryRepositoryImpl): CategoryRepository
+
+    @Binds @Singleton
+    abstract fun bindCategoryRuleRepository(impl: CategoryRuleRepositoryImpl): CategoryRuleRepository
+
+    @Binds @Singleton
+    abstract fun bindBackupRepository(impl: BackupService): BackupRepository
+
+    @Binds @Singleton
+    abstract fun bindWishlistRepository(impl: WishlistRepositoryImpl): WishlistRepository
+
+    @Binds @Singleton
+    abstract fun bindInvestmentRepository(impl: InvestmentRepositoryImpl): InvestmentRepository
+
+    @Binds @Singleton
+    abstract fun bindUserPreferencesRepository(impl: UserPreferencesRepositoryImpl): UserPreferencesRepository
+
+    @Binds @Singleton
+    abstract fun bindCsvImportTrigger(impl: CsvImporter): CsvImportTrigger
+
+    @Binds @Singleton
+    abstract fun bindSmsAuditRepository(impl: SmsAuditRepositoryImpl): SmsAuditRepository
+
+    @Binds @Singleton
+    abstract fun bindCsvExportTrigger(impl: CsvExporter): CsvExportTrigger
+
+    @Binds @Singleton
+    abstract fun bindActivityLogRepository(impl: ActivityLogRepositoryImpl): ActivityLogRepository
+}

@@ -1,0 +1,26 @@
+# M-18: Phase-1 acceptance — add a manual transaction, see it in the Today feed.
+# Pre: app launched and onboarding skipped (long-press to skip, or run after onboarding once).
+appId: com.athar.personal.debug
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd
+
+# Open the Add sheet via the FAB.
+- tapOn: "+"
+- waitForAnimationToEnd
+- assertVisible: "إضافة حركة"
+
+# Fill the form.
+- tapOn: "المبلغ"
+- inputText: "200"
+- tapOn: "التاجر"
+- inputText: "ستاربكس"
+
+# Pick the first category from the picker (Arabic seed includes Coffee).
+- tapOn: "قهوة"
+- tapOn: "حفظ"
+- waitForAnimationToEnd
+
+# Verify the transaction landed.
+- assertVisible: "ستاربكس"

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">أثر</string>
+    <string name="app_name_en" translatable="false">Athar</string>
+
+    <string name="tab_today_ar">اليوم</string>
+    <string name="tab_today_en" translatable="false">Today</string>
+    <string name="tab_trends_ar">النمط</string>
+    <string name="tab_trends_en" translatable="false">Trends</string>
+    <string name="tab_plan_ar">الخطة</string>
+    <string name="tab_plan_en" translatable="false">Plan</string>
+</resources>

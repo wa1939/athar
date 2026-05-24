@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Minimal Material-3 base theme. The visual identity (colors / typography / spacing)
+      is owned by core:design-system / AtharTheme composable. This XML only exists so the
+      Activity has a launch theme that doesn't flash an alien Holo/AppCompat surface.
+    -->
+    <style name="Theme.Athar" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/parchment</item>
+        <item name="android:statusBarColor">@color/parchment</item>
+        <item name="android:navigationBarColor">@color/parchment</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

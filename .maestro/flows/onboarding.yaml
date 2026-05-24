@@ -1,0 +1,20 @@
+# M-15: First-run onboarding flow.
+# Run on a fresh install (clearState: true).
+appId: com.athar.personal.debug
+---
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd
+
+- assertVisible: "أثر."
+- tapOn: "التالي"
+
+- assertVisible: "خصوصيتك"
+- tapOn: "التالي"
+
+- assertVisible: "قراءة رسائل البنك"
+- tapOn: "ابدأ"
+- waitForAnimationToEnd
+
+# After onboarding, Today screen is the landing.
+- assertVisible: "اليوم"

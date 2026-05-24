@@ -1,0 +1,20 @@
+# M-13: Encrypted local backup — export → SAF picker → passphrase prompt → file written.
+# Requires: a SAF-capable Files app (Documents UI).
+appId: com.athar.personal.debug
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd
+
+- tapOn: "⋯"
+- waitForAnimationToEnd
+
+- tapOn: "تصدير"
+- waitForAnimationToEnd
+# SAF picker opens; we just dismiss it for the flow assertion since picker UI varies.
+- back
+
+# (If the user picked a location and entered a passphrase, the success copy appears.)
+# This flow stops at the picker on purpose — picker interaction belongs to a deeper
+# integration test, not a Maestro smoke.
+- assertVisible: "النسخ الاحتياطي والاسترجاع"

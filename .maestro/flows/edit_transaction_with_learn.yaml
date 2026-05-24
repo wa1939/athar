@@ -1,0 +1,25 @@
+# M-18 + S-19: Edit a transaction's category and accept the "always categorize" learning prompt.
+# Pre: a transaction with merchant "ستاربكس" exists (run add_manual_transaction.yaml first).
+appId: com.athar.personal.debug
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd
+
+- tapOn: "ستاربكس"
+- waitForAnimationToEnd
+- assertVisible: "تعديل حركة"
+
+# Change category to a different one.
+- tapOn: "مطاعم"
+
+- tapOn: "حفظ"
+- waitForAnimationToEnd
+
+# The learn prompt should appear because the category changed.
+- assertVisible: "تعلّم من التصنيف؟"
+- tapOn: "دائمًا"
+- waitForAnimationToEnd
+
+# Transaction now under the new category — caption should reflect.
+- assertVisible: "ستاربكس"

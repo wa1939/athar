@@ -1,0 +1,55 @@
+{
+  "rules": [
+    { "pattern": "starbucks",   "categoryId": "cat-coffee",     "priority": 100 },
+    { "pattern": "ستاربكس",     "categoryId": "cat-coffee",     "priority": 100 },
+    { "pattern": "barn's",      "categoryId": "cat-coffee",     "priority": 100 },
+    { "pattern": "barns",       "categoryId": "cat-coffee",     "priority": 100 },
+    { "pattern": "dunkin",      "categoryId": "cat-coffee",     "priority": 100 },
+    { "pattern": "% arabica",   "categoryId": "cat-coffee",     "priority": 100 },
+    { "pattern": "costa",       "categoryId": "cat-coffee",     "priority": 100 },
+
+    { "pattern": "mcdonald",    "categoryId": "cat-restaurant", "priority": 100 },
+    { "pattern": "kfc",         "categoryId": "cat-restaurant", "priority": 100 },
+    { "pattern": "hardees",     "categoryId": "cat-restaurant", "priority": 100 },
+    { "pattern": "subway",      "categoryId": "cat-restaurant", "priority": 100 },
+    { "pattern": "domino",      "categoryId": "cat-restaurant", "priority": 100 },
+    { "pattern": "jollibee",    "categoryId": "cat-restaurant", "priority": 100 },
+    { "pattern": "keeta",       "categoryId": "cat-restaurant", "priority": 100 },
+    { "pattern": "hungerstation","categoryId": "cat-restaurant", "priority": 100 },
+    { "pattern": "talabat",     "categoryId": "cat-restaurant", "priority": 100 },
+    { "pattern": "jahez",       "categoryId": "cat-restaurant", "priority": 100 },
+
+    { "pattern": "panda",       "categoryId": "cat-groceries",  "priority": 100 },
+    { "pattern": "tamimi",      "categoryId": "cat-groceries",  "priority": 100 },
+    { "pattern": "carrefour",   "categoryId": "cat-groceries",  "priority": 100 },
+    { "pattern": "lulu",        "categoryId": "cat-groceries",  "priority": 100 },
+    { "pattern": "danube",      "categoryId": "cat-groceries",  "priority": 100 },
+    { "pattern": "othaim",      "categoryId": "cat-groceries",  "priority": 100 },
+    { "pattern": "nahdi",       "categoryId": "cat-medical",    "priority": 100 },
+    { "pattern": "dawaa",       "categoryId": "cat-medical",    "priority": 100 },
+
+    { "pattern": "jarir",       "categoryId": "cat-electronics","priority": 100 },
+    { "pattern": "extra",       "categoryId": "cat-electronics","priority": 90  },
+    { "pattern": "ikea",        "categoryId": "cat-home-maintenance","priority": 100 },
+    { "pattern": "amazon",      "categoryId": "cat-other-expense","priority": 50 },
+    { "pattern": "noon",        "categoryId": "cat-other-expense","priority": 50 },
+
+    { "pattern": "stc",         "categoryId": "cat-telecom",    "priority": 100 },
+    { "pattern": "mobily",      "categoryId": "cat-telecom",    "priority": 100 },
+    { "pattern": "zain",        "categoryId": "cat-telecom",    "priority": 100 },
+    { "pattern": "etisalat",    "categoryId": "cat-telecom",    "priority": 100 },
+
+    { "pattern": "uber",        "categoryId": "cat-public-transport","priority": 100 },
+    { "pattern": "careem",      "categoryId": "cat-public-transport","priority": 100 },
+    { "pattern": "jeeny",       "categoryId": "cat-public-transport","priority": 100 },
+
+    { "pattern": "saudia",      "categoryId": "cat-travel",     "priority": 100 },
+    { "pattern": "flynas",      "categoryId": "cat-travel",     "priority": 100 },
+    { "pattern": "flyadeal",    "categoryId": "cat-travel",     "priority": 100 },
+    { "pattern": "booking",     "categoryId": "cat-travel",     "priority": 100 },
+
+    { "pattern": "salary",      "categoryId": "cat-salary",     "priority": 100 },
+    { "pattern": "راتب",        "categoryId": "cat-salary",     "priority": 100 },
+    { "pattern": "elm",         "categoryId": "cat-salary",     "priority": 90  }
+  ]
+}

@@ -1,0 +1,107 @@
+package com.athar.feature.today
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.athar.core.common.money.Money
+import com.athar.core.common.time.Period
+import com.athar.core.domain.model.PatternType
+import com.athar.core.domain.model.Transaction
+import com.athar.core.domain.model.TxStatus
+import com.athar.core.domain.model.TxType
+import com.athar.core.domain.repo.CategoryRuleRepository
+import com.athar.core.domain.repo.TransactionRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import java.time.YearMonth
+import javax.inject.Inject
+
+@HiltViewModel
+class TodayViewModel @Inject constructor(
+    private val transactions: TransactionRepository,
+    private val rules: CategoryRuleRepository,
+    private val clock: Clock,
+) : ViewModel() {
+
+    private val month = MutableStateFlow(currentMonth())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val state: StateFlow<TodayState> =
+        month
+            .flatMapLatest { m ->
+                val period = Period.Month(m)
+                combine(
+                    transactions.observeByPeriod(period, status = TxStatus.CONFIRMED),
+                    transactions.observePending(),
+                ) { confirmed, pending ->
+                    deriveState(m, confirmed, pending)
+                }
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayState.empty(currentMonth()))
+
+    fun onEvent(event: TodayEvent) {
+        when (event) {
+            is TodayEvent.ConfirmPending -> viewModelScope.launch {
+                transactions.setStatus(event.id, TxStatus.CONFIRMED)
+            }
+            is TodayEvent.DismissPending -> viewModelScope.launch {
+                transactions.setStatus(event.id, TxStatus.DISMISSED)
+            }
+            is TodayEvent.OpenTransaction, TodayEvent.AddManual -> Unit // UI-owned
+        }
+    }
+
+    fun updateTransaction(tx: Transaction, learnRule: Boolean) {
+        viewModelScope.launch {
+            val now = clock.now()
+            val confirmed = tx.copy(status = TxStatus.CONFIRMED, updatedAt = now)
+            transactions.upsert(confirmed)
+            val categoryId = confirmed.categoryId
+            if (learnRule && categoryId != null && confirmed.merchantNormalized.isNotBlank()) {
+                rules.learnFromCorrection(
+                    merchantNormalized = confirmed.merchantNormalized,
+                    categoryId = categoryId,
+                    patternType = PatternType.SUBSTRING,
+                )
+            }
+        }
+    }
+
+    fun deleteTransaction(id: String) {
+        viewModelScope.launch { transactions.delete(id) }
+    }
+
+    private fun deriveState(
+        month: YearMonth,
+        confirmed: List<Transaction>,
+        pending: List<Transaction>,
+    ): TodayState {
+        val (income, expense) = confirmed.partition { it.type == TxType.INCOME }
+        val incomeSum = income.fold(Money.zero()) { acc, tx -> acc + tx.amount }
+        val expenseSum = expense.fold(Money.zero()) { acc, tx -> acc + tx.amount }
+        return TodayState(
+            month = month,
+            netFlow = incomeSum - expenseSum,
+            totalExpense = expenseSum,
+            totalIncome = incomeSum,
+            recent = confirmed.take(10).toImmutableList(),
+            pending = pending.toImmutableList(),
+            isLoading = false,
+        )
+    }
+
+    private fun currentMonth(): YearMonth {
+        val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        return YearMonth.of(now.year, now.monthNumber)
+    }
+}

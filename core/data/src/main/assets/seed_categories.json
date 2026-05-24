@@ -1,0 +1,35 @@
+{
+  "categories": [
+    { "id": "cat-rent", "name": "Rent", "nameAr": "إيجار", "kind": "EXPENSE", "sortOrder": 0 },
+    { "id": "cat-mortgage", "name": "Mortgage", "nameAr": "رهن عقاري", "kind": "EXPENSE", "sortOrder": 1 },
+    { "id": "cat-groceries", "name": "Groceries", "nameAr": "بقالة", "kind": "EXPENSE", "sortOrder": 2 },
+    { "id": "cat-restaurant", "name": "Restaurant", "nameAr": "مطاعم", "kind": "EXPENSE", "sortOrder": 3 },
+    { "id": "cat-coffee", "name": "Coffee", "nameAr": "قهوة", "kind": "EXPENSE", "sortOrder": 4 },
+    { "id": "cat-going-out", "name": "Going out", "nameAr": "خروج", "kind": "EXPENSE", "sortOrder": 5 },
+    { "id": "cat-entertainment", "name": "Entertainment", "nameAr": "ترفيه", "kind": "EXPENSE", "sortOrder": 6 },
+    { "id": "cat-travel", "name": "Travel", "nameAr": "سفر", "kind": "EXPENSE", "sortOrder": 7 },
+    { "id": "cat-gas", "name": "Gas", "nameAr": "وقود", "kind": "EXPENSE", "sortOrder": 8 },
+    { "id": "cat-public-transport", "name": "Public transport", "nameAr": "مواصلات", "kind": "EXPENSE", "sortOrder": 9 },
+    { "id": "cat-car-maintenance", "name": "Car maintenance", "nameAr": "صيانة سيارة", "kind": "EXPENSE", "sortOrder": 10 },
+    { "id": "cat-car-payment", "name": "Car payment", "nameAr": "قسط سيارة", "kind": "EXPENSE", "sortOrder": 11 },
+    { "id": "cat-utilities", "name": "Utilities", "nameAr": "فواتير", "kind": "EXPENSE", "sortOrder": 12 },
+    { "id": "cat-telecom", "name": "Telecom", "nameAr": "اتصالات", "kind": "EXPENSE", "sortOrder": 13 },
+    { "id": "cat-subscriptions", "name": "Subscriptions", "nameAr": "اشتراكات", "kind": "EXPENSE", "sortOrder": 14 },
+    { "id": "cat-home-maintenance", "name": "Home maintenance", "nameAr": "صيانة منزل", "kind": "EXPENSE", "sortOrder": 15 },
+    { "id": "cat-medical", "name": "Medical", "nameAr": "طبي", "kind": "EXPENSE", "sortOrder": 16 },
+    { "id": "cat-insurance", "name": "Insurance", "nameAr": "تأمين", "kind": "EXPENSE", "sortOrder": 17 },
+    { "id": "cat-education", "name": "Education", "nameAr": "تعليم", "kind": "EXPENSE", "sortOrder": 18 },
+    { "id": "cat-childcare", "name": "Childcare", "nameAr": "رعاية الأطفال", "kind": "EXPENSE", "sortOrder": 19 },
+    { "id": "cat-clothing", "name": "Clothing", "nameAr": "ملابس", "kind": "EXPENSE", "sortOrder": 20 },
+    { "id": "cat-electronics", "name": "Electronics", "nameAr": "إلكترونيات", "kind": "EXPENSE", "sortOrder": 21 },
+    { "id": "cat-gym", "name": "Gym", "nameAr": "نادي", "kind": "EXPENSE", "sortOrder": 22 },
+    { "id": "cat-gifts", "name": "Gifts", "nameAr": "هدايا", "kind": "EXPENSE", "sortOrder": 23 },
+    { "id": "cat-charity", "name": "Charity / Zakat", "nameAr": "صدقة وزكاة", "kind": "EXPENSE", "sortOrder": 24 },
+    { "id": "cat-wife-allowance", "name": "Wife allowance", "nameAr": "مصروف الزوجة", "kind": "EXPENSE", "sortOrder": 25 },
+    { "id": "cat-debt", "name": "Debt", "nameAr": "ديون", "kind": "EXPENSE", "sortOrder": 26 },
+    { "id": "cat-other-expense", "name": "Other", "nameAr": "متفرقات", "kind": "EXPENSE", "sortOrder": 27 },
+
+    { "id": "cat-salary", "name": "Salary", "nameAr": "راتب", "kind": "INCOME", "sortOrder": 100 },
+    { "id": "cat-side-income", "name": "Side income", "nameAr": "دخل جانبي", "kind": "INCOME", "sortOrder": 101 }
+  ]
+}

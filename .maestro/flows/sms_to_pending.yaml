@@ -1,0 +1,27 @@
+# S-22: Receive an Al Rajhi SMS → see it in the pending tray → swipe to confirm.
+# Requires: emulator with telephony, app installed with RECEIVE_SMS granted.
+# Helper: `adb emu sms send AlRajhiBank "Purchase SAR 200.00\nCard 1234\nAt STARBUCKS 1234"`
+appId: com.athar.personal.debug
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd
+
+# Send the test SMS via the emulator console.
+- runScript: |
+    output.adb = exec("adb emu sms send AlRajhiBank \"Purchase SAR 200.00\\nCard 1234\\nAt STARBUCKS 1234\"")
+
+# Pending tray should appear with the parsed transaction.
+- assertVisible:
+    text: "بانتظار التأكيد"
+    timeout: 10000
+- assertVisible: "STARBUCKS"
+
+# Swipe right (StartToEnd in RTL) on the pending row → confirm.
+- swipe:
+    from: "STARBUCKS"
+    direction: RIGHT
+
+- waitForAnimationToEnd
+# Confirmed transaction appears in the recent feed; pending tray empties.
+- assertVisible: "STARBUCKS"

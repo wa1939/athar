@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Play-Store-eligible: no SMS perms. Path B in Master Brief §5.4. -->
+    <!--
+      BIND_NOTIFICATION_LISTENER_SERVICE is a system-only signature permission; we never
+      declare it via <uses-permission> — only attach it to the service element below so
+      the system enforces the bind contract.
+    -->
+
+    <application>
+        <service
+            android:name="com.athar.ingestion.notificationlistener.BankNotificationListener"
+            android:exported="false"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>

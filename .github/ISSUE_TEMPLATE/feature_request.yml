@@ -1,0 +1,43 @@
+name: Feature request
+description: Something Athar should do that it doesn't.
+labels: [enhancement, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Athar's design is deliberately opinionated (see `Athar_Master_Brief.md`). The best feature requests describe a real use case the existing flow doesn't cover.
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: What use case does this serve?
+      description: Lead with the user goal, not the implementation idea.
+      placeholder: "When I get paid (salary deposit SMS) I want Athar to auto-create a recurring savings transfer to a specific category."
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Why doesn't the current flow cover it?
+      placeholder: "Today I have to manually create a TRANSFER transaction every payday. The pending tray doesn't differentiate one-off transfers from recurring ones."
+    validations:
+      required: true
+
+  - type: textarea
+    id: sketch
+    attributes:
+      label: How you'd see it working
+      description: One sketch (text or image). Or one screen + one interaction.
+      placeholder: "On the salary SMS pending row, a new 'recurring →' affordance. Tap it: pick a destination category + frequency. Athar creates the transfer the next time a matching deposit comes in."
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Is this part of the existing brief?
+      options:
+        - "Yes — it's in Athar_Backlog.md"
+        - "No — it would need a brief amendment first"
+        - "Not sure"
+    validations:
+      required: true

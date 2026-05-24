@@ -1,0 +1,20 @@
+# P-07: Toggle Hijri date display and confirm it appears in the Today caption.
+appId: com.athar.personal.debug
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd
+
+# Open Settings via the top-right "⋯" gear.
+- tapOn: "⋯"
+- waitForAnimationToEnd
+- assertVisible: "الإعدادات"
+
+- tapOn: "عرض التاريخ الهجري"
+- waitForAnimationToEnd
+- assertVisible: "مفعّل"
+
+# Back to Today.
+- back
+- waitForAnimationToEnd
+- assertVisible: "هـ"

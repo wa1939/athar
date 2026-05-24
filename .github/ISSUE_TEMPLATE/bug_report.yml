@@ -1,0 +1,79 @@
+name: Bug report
+description: Something's wrong — let's get it fixed.
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. A few precise sentences beat a long one — what you expected, what you got.
+
+  - type: input
+    id: version
+    attributes:
+      label: Athar version
+      description: From Settings → About, or the file name of the APK you installed (e.g. `app-personalFullSms-debug-0.1.0-beta.apk`).
+      placeholder: "0.1.0-beta"
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device + Android version
+      placeholder: "Pixel 7 · Android 14 (API 34)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: flavor
+    attributes:
+      label: Flavor
+      options:
+        - personalFullSms (sideload — has SMS perms)
+        - storeSafe (Play-Store eligible — no SMS perms)
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: One paragraph. Lead with the symptom, not the cause.
+      placeholder: "The pending tray showed 0 transactions even though I received an Al Rajhi SMS at 14:32."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should have happened?
+      placeholder: "A pending row with merchant STARBUCKS and amount 200 SAR should appear on the Today screen."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to reproduce
+      placeholder: |
+        1. Grant SMS permission from Settings.
+        2. Receive an Al Rajhi purchase SMS.
+        3. Open Today screen.
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (if any)
+      description: "If you can run `adb logcat | grep athar`, paste relevant lines. Redact any sensitive data."
+      render: shell
+
+  - type: checkboxes
+    id: scrubbed
+    attributes:
+      label: I confirm
+      options:
+        - label: I removed any sensitive data (account numbers, names, amounts that identify me) from logs and screenshots.
+          required: true

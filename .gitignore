@@ -1,0 +1,76 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+gradle-app.setting
+.gradletasknamecache
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+captures/
+out/
+
+# Build outputs
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+obj/
+release/
+
+# Keys & secrets — NEVER commit
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+*.env
+google-services.json
+
+# Generated / KSP / Compose
+.kotlin/
+generated/
+**/build/**
+
+# Reports
+**/reports/
+**/paparazzi/failures/
+
+# OS
+.DS_Store
+Thumbs.db
+__MACOSX/
+
+# User backups (never source-controlled)
+*.athar
+*.athar.bak
+
+# Logs
+*.log
+hs_err_pid*
+
+# Personal data & third-party copyrighted material the public repo shouldn't ship
+# These stay in the local working directory only.
+/Budget Tracking Tool - TMOAP v5.xlsx
+/qayd_android_budget_app_prd.md
+/دليل جماليات خط ثمانية.pdf
+/authar logo.png
+/authar logo no background.png
+/thmanyah typeface/
+
+# .claude scratch dir (private session state)
+.claude/
+
+# Memory/plan files from local agent tools
+memory/
+
+# GitHub Actions workflows — temporarily ignored on initial push because
+# the local gh OAuth token doesn't carry the `workflow` scope. Once you've run
+# `gh auth refresh -s workflow`, remove this block and commit the workflows.
+/.github/workflows/

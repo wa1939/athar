@@ -1,0 +1,111 @@
+package com.athar.core.data.backup
+
+import com.athar.core.data.db.entity.AccountEntity
+import com.athar.core.data.db.entity.CategoryEntity
+import com.athar.core.data.db.entity.CategoryRuleEntity
+import com.athar.core.data.db.entity.InvestmentContributionEntity
+import com.athar.core.data.db.entity.InvestmentPoolEntity
+import com.athar.core.data.db.entity.SmsMessageEntity
+import com.athar.core.data.db.entity.TransactionEntity
+import com.athar.core.data.db.entity.WishlistEntity
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.serialization.Serializable
+
+/**
+ * Wire format for an Athar backup. Mirrors entities but is decoupled from Room
+ * annotations so we can evolve the DB schema without breaking restores.
+ *
+ * Versioned: bump [version] when adding/removing fields. Older readers should
+ * tolerate unknown fields; newer readers handle older payloads via migrations
+ * in [BackupMigration].
+ */
+@Serializable
+internal data class BackupSnapshot(
+    val version: Int = CURRENT_VERSION,
+    val exportedAt: Instant,
+    val accounts: List<BackupAccount>,
+    val categories: List<BackupCategory>,
+    val transactions: List<BackupTransaction>,
+    val categoryRules: List<BackupCategoryRule>,
+    val wishlist: List<BackupWishlistItem>,
+    val investmentPools: List<BackupInvestmentPool>,
+    val investmentContributions: List<BackupInvestmentContribution>,
+    val smsAudit: List<BackupSmsMessage>,
+) {
+    companion object {
+        const val CURRENT_VERSION = 1
+    }
+}
+
+@Serializable
+internal data class BackupAccount(
+    val id: String, val name: String, val type: String, val currency: String,
+    val smsSenders: String, val active: Boolean, val createdAt: Instant,
+)
+
+@Serializable
+internal data class BackupCategory(
+    val id: String, val name: String, val nameAr: String, val kind: String,
+    val icon: String?, val monthlyTargetMinor: Long?, val currency: String,
+    val archived: Boolean, val sortOrder: Int,
+)
+
+@Serializable
+internal data class BackupTransaction(
+    val id: String, val accountId: String, val type: String, val amountMinor: Long,
+    val currency: String, val date: LocalDate, val occurredAt: Instant?,
+    val merchant: String, val merchantNormalized: String, val categoryId: String?,
+    val notes: String?, val source: String, val sourceRefId: String?,
+    val status: String, val confidence: Float?,
+    val createdAt: Instant, val updatedAt: Instant,
+)
+
+@Serializable
+internal data class BackupCategoryRule(
+    val id: String, val pattern: String, val patternType: String, val categoryId: String,
+    val priority: Int, val learnedFromUser: Boolean, val createdAt: Instant,
+)
+
+@Serializable
+internal data class BackupWishlistItem(
+    val id: String, val name: String, val costMinor: Long, val currentSavedMinor: Long,
+    val currency: String, val desiredMonths: Int?, val startYear: Int, val startMonth: Int,
+    val notes: String?,
+)
+
+@Serializable
+internal data class BackupInvestmentPool(
+    val id: String, val name: String, val period: String,
+    val totalReturnMinor: Long, val currency: String,
+)
+
+@Serializable
+internal data class BackupInvestmentContribution(
+    val id: String, val poolId: String, val ownerName: String,
+    val amountMinor: Long, val currency: String,
+)
+
+@Serializable
+internal data class BackupSmsMessage(
+    val id: String, val sender: String, val body: String, val receivedAt: Instant,
+    val parsedTransactionId: String?, val parseStatus: String, val parseError: String?,
+)
+
+internal fun AccountEntity.toBackup(): BackupAccount = BackupAccount(id, name, type, currency, smsSenders, active, createdAt)
+internal fun CategoryEntity.toBackup(): BackupCategory = BackupCategory(id, name, nameAr, kind, icon, monthlyTargetMinor, currency, archived, sortOrder)
+internal fun TransactionEntity.toBackup(): BackupTransaction = BackupTransaction(id, accountId, type, amountMinor, currency, date, occurredAt, merchant, merchantNormalized, categoryId, notes, source, sourceRefId, status, confidence, createdAt, updatedAt)
+internal fun CategoryRuleEntity.toBackup(): BackupCategoryRule = BackupCategoryRule(id, pattern, patternType, categoryId, priority, learnedFromUser, createdAt)
+internal fun WishlistEntity.toBackup(): BackupWishlistItem = BackupWishlistItem(id, name, costMinor, currentSavedMinor, currency, desiredMonths, startYear, startMonth, notes)
+internal fun InvestmentPoolEntity.toBackup(): BackupInvestmentPool = BackupInvestmentPool(id, name, period, totalReturnMinor, currency)
+internal fun InvestmentContributionEntity.toBackup(): BackupInvestmentContribution = BackupInvestmentContribution(id, poolId, ownerName, amountMinor, currency)
+internal fun SmsMessageEntity.toBackup(): BackupSmsMessage = BackupSmsMessage(id, sender, body, receivedAt, parsedTransactionId, parseStatus, parseError)
+
+internal fun BackupAccount.toEntity(): AccountEntity = AccountEntity(id, name, type, currency, smsSenders, active, createdAt)
+internal fun BackupCategory.toEntity(): CategoryEntity = CategoryEntity(id, name, nameAr, kind, icon, monthlyTargetMinor, currency, archived, sortOrder)
+internal fun BackupTransaction.toEntity(): TransactionEntity = TransactionEntity(id, accountId, type, amountMinor, currency, date, occurredAt, merchant, merchantNormalized, categoryId, notes, source, sourceRefId, status, confidence, createdAt, updatedAt)
+internal fun BackupCategoryRule.toEntity(): CategoryRuleEntity = CategoryRuleEntity(id, pattern, patternType, categoryId, priority, learnedFromUser, createdAt)
+internal fun BackupWishlistItem.toEntity(): WishlistEntity = WishlistEntity(id, name, costMinor, currentSavedMinor, currency, desiredMonths, startYear, startMonth, notes)
+internal fun BackupInvestmentPool.toEntity(): InvestmentPoolEntity = InvestmentPoolEntity(id, name, period, totalReturnMinor, currency)
+internal fun BackupInvestmentContribution.toEntity(): InvestmentContributionEntity = InvestmentContributionEntity(id, poolId, ownerName, amountMinor, currency)
+internal fun BackupSmsMessage.toEntity(): SmsMessageEntity = SmsMessageEntity(id, sender, body, receivedAt, parsedTransactionId, parseStatus, parseError)

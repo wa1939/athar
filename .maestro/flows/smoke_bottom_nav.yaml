@@ -1,0 +1,21 @@
+# Smoke test for Phase 0 acceptance: app boots to Today, bottom bar switches screens.
+# Ticket F-09. Will be expanded into Phase 1 add/edit/delete flow at M-18.
+appId: com.athar.personal.debug
+---
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd
+- assertVisible:
+    text: "اليوم"
+- tapOn:
+    text: "النمط"
+- assertVisible:
+    text: "النمط"
+- tapOn:
+    text: "الخطة"
+- assertVisible:
+    text: "الخطة"
+- tapOn:
+    text: "اليوم"
+- assertVisible:
+    text: "اليوم"

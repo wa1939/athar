@@ -1,0 +1,36 @@
+Athar
+Copyright 2026 The Athar Authors
+
+This product includes software developed at the Athar project
+(https://github.com/wa1939/athar).
+
+================================================================================
+Third-party typefaces
+================================================================================
+
+This product bundles the **Thmanyah typeface family** (Sans, Serif Display,
+Serif Text — 5 weights each) in `core/design-system/src/main/res/font/`. The
+typefaces are © Thmanyah (https://thmanyah.com). They are used here under the
+license terms published by Thmanyah; consult that license before redistributing
+the OTF files outside this Android application package.
+
+If Thmanyah's license does not permit your intended use, replace the OTFs in
+`core:design-system/src/main/res/font/` with any other compatible Arabic + Latin
+font family and update `core:design-system/.../theme/Typography.kt` accordingly.
+
+================================================================================
+Third-party libraries
+================================================================================
+
+This product depends on the open-source libraries listed in
+`gradle/libs.versions.toml`, each used under their respective licenses:
+
+- Jetpack Compose / AndroidX — Apache 2.0
+- Kotlin / kotlinx — Apache 2.0
+- Hilt (Dagger) — Apache 2.0
+- Room — Apache 2.0
+- SQLCipher for Android — BSD-3-Clause
+- Timber — Apache 2.0
+- TensorFlow Lite — Apache 2.0
+
+Full dependency list with versions: see `gradle/libs.versions.toml`.
