@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -54,8 +52,13 @@ fun WishlistContent(viewModel: WishlistViewModel = hiltViewModel()) {
                 subtle = "أضف ما تتمنى شراءه — سنخبرك متى يمكنك ذلك بدون أن تقع في الحفرة.",
             )
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
-                items(state.items, key = { it.item.id }) { row ->
+            // Parent PlanScreen already provides a Column(verticalScroll); a LazyColumn here
+            // would receive infinite-height constraints and crash with IllegalStateException
+            // ("Vertically scrollable component was measured with an infinity maximum height").
+            // Wishlists are short by nature (typically <20 items) — non-virtualized rendering
+            // is cheaper than restructuring the screen into a single LazyColumn.
+            Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+                state.items.forEach { row ->
                     WishlistRowView(row = row, onClick = { editing = row.item })
                 }
             }
