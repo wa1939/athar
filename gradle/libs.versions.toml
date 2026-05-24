@@ -22,7 +22,7 @@ compose-bom = "2025.01.00"
 compose-material3-adaptive = "1.0.0"
 
 # Hilt — 2.54+ required for Kotlin 2.1.0 metadata
-hilt = "2.54"
+hilt = "2.59.2"
 hilt-navigation-compose = "1.2.0"
 
 # Room
