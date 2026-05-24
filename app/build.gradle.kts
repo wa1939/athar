@@ -26,7 +26,7 @@ android {
 
     defaultConfig {
         applicationId = "com.athar"
-        versionCode = 2
+        versionCode = 3
         versionName = providers.gradleProperty("athar.version").orNull ?: "0.1.0"
         buildConfigField("boolean", "SEED_ON_FIRST_LAUNCH", atharSeed.toString())
     }

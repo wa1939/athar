@@ -49,6 +49,7 @@ fun SettingsScreen(
     onOpenCategories: () -> Unit = {},
     onOpenSmsAudit: () -> Unit = {},
     onOpenActivityLog: () -> Unit = {},
+    onOpenUserTemplates: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -137,6 +138,8 @@ fun SettingsScreen(
             )
 
             SmsAuditEntryCard(onOpen = onOpenSmsAudit)
+
+            UserTemplatesEntryCard(onOpen = onOpenUserTemplates)
 
             ActivityLogEntryCard(onOpen = onOpenActivityLog)
 
@@ -385,6 +388,24 @@ private fun AboutCard() {
             AtharText(
                 text = "كل بياناتك محفوظة محليًا على جهازك. لا حسابات، لا خوادم، لا تتبع.",
                 style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+        }
+    }
+}
+
+@Composable
+private fun UserTemplatesEntryCard(onOpen: () -> Unit) {
+    val theme = AtharTheme
+    AtharCard(modifier = Modifier
+        .fillMaxWidth()
+        .clickable(onClick = onOpen)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = "قوالب البنوك", style = theme.typography.headline)
+            AtharText(
+                text = "علِّم أثر تنسيق رسائل بنكك إذا لم يكن من ضمن البنوك المدعومة افتراضيًا. الصق رسالة، اكتب الكلمات المحيطة بالمبلغ، احفظ.",
+                style = theme.typography.body,
                 color = theme.colors.muted,
             )
         }

@@ -30,6 +30,9 @@ internal interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY date DESC, createdAt DESC")
     suspend fun all(): List<TransactionEntity>
 
+    @Query("SELECT id FROM transactions LIMIT 1")
+    suspend fun firstId(): String?
+
     @Query("DELETE FROM transactions")
     suspend fun clear()
 

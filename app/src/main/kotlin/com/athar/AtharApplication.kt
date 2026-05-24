@@ -37,7 +37,7 @@ class AtharApplication : Application() {
         installCrashHandler()
         Timber.i("Athar starting · versionName=%s", BuildConfig.VERSION_NAME)
 
-        scope.launch { dataInitializer.initialize() }
+        scope.launch { dataInitializer.initialize(seedTmoap = BuildConfig.SEED_ON_FIRST_LAUNCH) }
     }
 
     private fun installCrashHandler() {

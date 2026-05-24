@@ -15,4 +15,5 @@ object Routes {
     @Serializable data object Categories
     @Serializable data object SmsAudit
     @Serializable data object ActivityLog
+    @Serializable data object UserTemplates
 }

@@ -12,6 +12,7 @@ import com.athar.core.data.db.dao.CategoryRuleDao
 import com.athar.core.data.db.dao.InvestmentDao
 import com.athar.core.data.db.dao.SmsMessageDao
 import com.athar.core.data.db.dao.TransactionDao
+import com.athar.core.data.db.dao.UserTemplateDao
 import com.athar.core.data.db.dao.WishlistDao
 import com.athar.core.data.db.entity.AccountEntity
 import com.athar.core.data.db.entity.ActivityLogEntity
@@ -21,10 +22,11 @@ import com.athar.core.data.db.entity.InvestmentContributionEntity
 import com.athar.core.data.db.entity.InvestmentPoolEntity
 import com.athar.core.data.db.entity.SmsMessageEntity
 import com.athar.core.data.db.entity.TransactionEntity
+import com.athar.core.data.db.entity.UserTemplateEntity
 import com.athar.core.data.db.entity.WishlistEntity
 
 @Database(
-    version = 2,
+    version = 3,
     exportSchema = true,
     entities = [
         AccountEntity::class,
@@ -36,6 +38,7 @@ import com.athar.core.data.db.entity.WishlistEntity
         InvestmentContributionEntity::class,
         SmsMessageEntity::class,
         ActivityLogEntity::class,
+        UserTemplateEntity::class,
     ],
 )
 @TypeConverters(Converters::class)
@@ -48,6 +51,7 @@ internal abstract class AtharDatabase : RoomDatabase() {
     abstract fun investmentDao(): InvestmentDao
     abstract fun smsMessageDao(): SmsMessageDao
     abstract fun activityLogDao(): ActivityLogDao
+    abstract fun userTemplateDao(): UserTemplateDao
 
     companion object {
         internal const val NAME: String = "athar.db"
@@ -70,6 +74,34 @@ internal abstract class AtharDatabase : RoomDatabase() {
                     """.trimIndent(),
                 )
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_activity_log_timestamp ON activity_log(timestamp)")
+            }
+        }
+
+        /**
+         * v2 → v3: adds the `user_template` table (W-4). User-defined bank-SMS
+         * parsing templates with anchor-based field extraction.
+         */
+        internal val MIGRATION_2_3: Migration = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS user_template (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        displayName TEXT NOT NULL,
+                        sender TEXT NOT NULL,
+                        txType TEXT NOT NULL,
+                        amountAnchorBefore TEXT NOT NULL,
+                        amountAnchorAfter TEXT,
+                        merchantAnchorBefore TEXT,
+                        merchantAnchorAfter TEXT,
+                        counterpartyAnchorBefore TEXT,
+                        counterpartyAnchorAfter TEXT,
+                        sampleBody TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_user_template_sender ON user_template(sender)")
             }
         }
     }

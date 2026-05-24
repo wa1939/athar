@@ -37,6 +37,7 @@ import com.athar.feature.settings.ActivityLogScreen
 import com.athar.feature.settings.CategoriesScreen
 import com.athar.feature.settings.SettingsScreen
 import com.athar.feature.settings.SmsAuditScreen
+import com.athar.feature.settings.UserTemplatesScreen
 import com.athar.feature.today.TodayScreen
 import com.athar.feature.trends.TrendsScreen
 import com.athar.ui.onboarding.OnboardingScreen
@@ -57,7 +58,8 @@ fun AtharApp() {
     val isSettingsArea = routeName.endsWith("Settings") ||
         routeName.endsWith("Categories") ||
         routeName.endsWith("SmsAudit") ||
-        routeName.endsWith("ActivityLog")
+        routeName.endsWith("ActivityLog") ||
+        routeName.endsWith("UserTemplates")
     val theme = AtharTheme
 
     CompositionLocalProvider(LocalHijriEnabled provides hijriEnabled) {
@@ -122,7 +124,11 @@ fun AtharApp() {
                         onOpenCategories = { navController.navigate(Routes.Categories) },
                         onOpenSmsAudit = { navController.navigate(Routes.SmsAudit) },
                         onOpenActivityLog = { navController.navigate(Routes.ActivityLog) },
+                        onOpenUserTemplates = { navController.navigate(Routes.UserTemplates) },
                     )
+                }
+                composable<Routes.UserTemplates> {
+                    UserTemplatesScreen(onBack = { navController.popBackStack() })
                 }
                 composable<Routes.Categories> {
                     CategoriesScreen(onBack = { navController.popBackStack() })

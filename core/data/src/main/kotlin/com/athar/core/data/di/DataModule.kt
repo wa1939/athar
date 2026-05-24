@@ -11,6 +11,7 @@ import com.athar.core.data.db.dao.CategoryRuleDao
 import com.athar.core.data.db.dao.InvestmentDao
 import com.athar.core.data.db.dao.SmsMessageDao
 import com.athar.core.data.db.dao.TransactionDao
+import com.athar.core.data.db.dao.UserTemplateDao
 import com.athar.core.data.db.dao.WishlistDao
 import com.athar.core.data.backup.BackupService
 import com.athar.core.data.csv.CsvExporter
@@ -22,6 +23,7 @@ import com.athar.core.data.repo.InvestmentRepositoryImpl
 import com.athar.core.data.repo.SmsAuditRepositoryImpl
 import com.athar.core.data.prefs.UserPreferencesRepositoryImpl
 import com.athar.core.data.repo.TransactionRepositoryImpl
+import com.athar.core.data.repo.UserTemplateRepositoryImpl
 import com.athar.core.data.repo.WishlistRepositoryImpl
 import com.athar.core.domain.repo.ActivityLogRepository
 import com.athar.core.domain.repo.BackupRepository
@@ -33,6 +35,7 @@ import com.athar.core.domain.repo.InvestmentRepository
 import com.athar.core.domain.repo.SmsAuditRepository
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
+import com.athar.core.domain.repo.UserTemplateRepository
 import com.athar.core.domain.repo.WishlistRepository
 import dagger.Binds
 import dagger.Module
@@ -77,7 +80,7 @@ internal object DatabaseModule {
             val factory = SupportOpenHelperFactory(key)
             Room.databaseBuilder(context, AtharDatabase::class.java, AtharDatabase.NAME)
                 .openHelperFactory(factory)
-                .addMigrations(AtharDatabase.MIGRATION_1_2)
+                .addMigrations(AtharDatabase.MIGRATION_1_2, AtharDatabase.MIGRATION_2_3)
                 .fallbackToDestructiveMigrationOnDowngrade()
                 .build()
         }.onFailure { t ->
@@ -93,6 +96,7 @@ internal object DatabaseModule {
         }.getOrThrow()
     }
 
+    @Provides fun provideUserTemplateDao(db: AtharDatabase): UserTemplateDao = db.userTemplateDao()
     @Provides fun provideAccountDao(db: AtharDatabase): AccountDao = db.accountDao()
     @Provides fun provideCategoryDao(db: AtharDatabase): CategoryDao = db.categoryDao()
     @Provides fun provideTransactionDao(db: AtharDatabase): TransactionDao = db.transactionDao()
@@ -141,4 +145,7 @@ internal abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindActivityLogRepository(impl: ActivityLogRepositoryImpl): ActivityLogRepository
+
+    @Binds @Singleton
+    abstract fun bindUserTemplateRepository(impl: UserTemplateRepositoryImpl): UserTemplateRepository
 }

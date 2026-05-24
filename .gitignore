@@ -69,6 +69,11 @@ hs_err_pid*
 /authar logo no background.png
 /thmanyah typeface/
 
+# Built APKs — kept locally for sideload, never published to git.
+# GitHub Releases is the canonical distribution surface for public APKs.
+/release-artifacts/
+/error.jpg
+
 # .claude scratch dir (private session state)
 .claude/
 

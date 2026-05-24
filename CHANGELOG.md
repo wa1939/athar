@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Nothing yet.
 
+## [0.1.0-beta.2] — 2026-05-25
+
+### Added
+
+- **User-defined bank templates** — Settings → "قوالب البنوك" lets the user teach Athar new SMS formats from inside the app. Paste a sample, name the bank, point to the words that surround the amount/merchant/recipient, save. Stored locally in the encrypted Room DB (new `user_template` table, migration `2 → 3`). The parser observes the template list as a Flow and rebuilds itself live — no app restart. Each saved template's anchor strings, sender, and transaction type appear at the top of the screen with a delete button.
+- **Multi-bank parser expansion** — `PoS purchase / Amount:X SAR / Card:Y / At: MERCHANT` Al-Rajhi format, internal-transfer Al-Rajhi format, STC Pay (outgoing/incoming/ignore), Alinma, D360, Barq, Riyad Bank, SNB, ANB. Plus a universal multi-currency / multi-language fallback (SAR/AED/USD/EUR/GBP/INR/PKR/TRY/EGP/KWD/QAR/BHD/OMR/JOD; Arabic/English/Spanish/French/Turkish/Urdu/Hindi). Messages from the screenshot's "552 failed" pile now parse cleanly.
+- **Approach-limit warnings on Plan** — each budget row computes a `LimitState` from `actual ÷ target` (70% Watch / 90% Tight / >100% Over). A new strip near the top of Plan reads "X, Y, Z · اقتربت من الحد" calling out categories nearing their cap. The variance pill switches between olive/dust/ember accordingly.
+- **`-Pathar.seed=true` build flag** — wires a `seeded/` source set + BuildConfig boolean for a private personal build seeded with the user's TMOAP workbook data (Categories / Expenses / Income / Budget Targets / Wishlist / Family Investments). Extracted via `scripts/extract_tmoap.py`. The seeded source set is gitignored — never ships to a public build.
+- **ADR-005** — three-layer parser architecture (bank-specific templates → user-defined templates → universal heuristic). Documents the future on-device ML option (MobileBERT-NER INT8) without committing to it.
+
+### Fixed
+
+- **Number regex truncating long amounts** — the parser's number regex was matching `135` from `1350` because the first alternation didn't require a thousands separator. Fixed to `\d{1,3}(?:[ ,]\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?` — first alternation now requires at least one separator, so plain digit-runs fall to the second alternation and stay whole.
+- **Plan → Wishlist crash** — `IllegalStateException: Vertically scrollable component was measured with an infinity maximum height constraints` because `LazyColumn` was nested inside a `Column.verticalScroll`. Replaced with `Column { state.items.forEach }` since the count is small and the outer scroll already handles overflow.
+
 ## [0.1.0-beta.1] — 2026-05-24
 
 ### Fixed
