@@ -20,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId = "com.athar"
-        versionCode = 1
+        versionCode = 2
         versionName = providers.gradleProperty("athar.version").orNull ?: "0.1.0"
     }
 

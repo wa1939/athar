@@ -141,6 +141,8 @@ fun SettingsScreen(
             ActivityLogEntryCard(onOpen = onOpenActivityLog)
 
             CategoriesEntryCard(onOpen = onOpenCategories)
+
+            AboutCard()
         }
     }
 
@@ -344,6 +346,45 @@ private fun SmsAuditEntryCard(onOpen: () -> Unit) {
             AtharText(
                 text = "كل رسالة وصلت — مع نتيجة المعالجة (ناجحة، فاشلة، أو مُتجاهَلة). لا تغادر هذه القائمة الجهاز.",
                 style = theme.typography.body,
+                color = theme.colors.muted,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AboutCard() {
+    val theme = AtharTheme
+    val context = LocalContext.current
+    val versionName = remember {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        }.getOrNull() ?: "—"
+    }
+    AtharCard {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(theme.spacing.s),
+        ) {
+            AtharText(text = "عن أثر", style = theme.typography.headline)
+            AtharText(
+                text = "إصدار $versionName",
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+            AtharText(
+                text = "طوّر هذا التطبيق وليد الحامد · walhamed.com",
+                style = theme.typography.body,
+                color = theme.colors.ink,
+            )
+            AtharText(
+                text = "مستوحى من جدول The Measure of a Plan (TMOAP)، الذي ألهم منهجية أثر في تتبّع المصروف الشهري وقياس الخطة المالية.",
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
+            AtharText(
+                text = "كل بياناتك محفوظة محليًا على جهازك. لا حسابات، لا خوادم، لا تتبع.",
+                style = theme.typography.caption,
                 color = theme.colors.muted,
             )
         }

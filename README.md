@@ -80,13 +80,22 @@ Existing tools force a trade-off:
 
 ## Screenshots
 
-> Add screenshots here as you ship. Suggested order:
->
-> `Today → Trends drilldown → Plan/Budget → Plan/Wishlist → Settings → SMS audit`
+Captured from the `v0.1.0-beta.1` signed APK running on a Pixel 6 / Android 14 emulator.
 
-<p align="center">
-  <em>Screenshots from the v0.1.0-beta build land in <a href="docs/screenshots/">docs/screenshots/</a> after the first device install.</em>
-</p>
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/01_onboarding.png" width="220"/><br/><sub>Onboarding · welcome</sub></td>
+    <td align="center"><img src="docs/screenshots/02_onboarding2.png" width="220"/><br/><sub>Onboarding · privacy</sub></td>
+    <td align="center"><img src="docs/screenshots/03_onboarding3.png" width="220"/><br/><sub>Onboarding · SMS perm</sub></td>
+    <td align="center"><img src="docs/screenshots/04_today.png" width="220"/><br/><sub>Today · empty state</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/05_trends.png" width="220"/><br/><sub>Trends · empty</sub></td>
+    <td align="center"><img src="docs/screenshots/06_plan_budget.png" width="220"/><br/><sub>Plan · budget targets</sub></td>
+    <td align="center"><img src="docs/screenshots/07_settings.png" width="220"/><br/><sub>Settings</sub></td>
+    <td align="center"><img src="docs/screenshots/09_settings_about2.png" width="220"/><br/><sub>About · credits</sub></td>
+  </tr>
+</table>
 
 ## How it works
 
@@ -223,6 +232,12 @@ PRs welcome. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the workflow and the s
 ## License
 
 [Apache License 2.0](LICENSE). Bank-template strings in `ingestion:sms-parser` are derived from observed SMS bodies (anonymized) and are released under the same terms.
+
+## Credits
+
+Developed by **Waleed Alhamed** — [walhamed.com](https://walhamed.com)
+
+Inspired by the [**The Measure of a Plan (TMOAP)**](https://themeasureofaplan.com) budget tracking workbook, whose monthly cash-flow + savings-capacity discipline shaped Athar's Plan screen. Athar carries that spreadsheet's clarity into a phone that lives in your pocket.
 
 ---
 

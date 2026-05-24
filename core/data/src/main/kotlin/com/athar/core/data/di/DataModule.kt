@@ -56,28 +56,41 @@ internal object DatabaseModule {
         @ApplicationContext context: Context,
         dbKeyManager: DbKeyManager,
     ): AtharDatabase {
-        // `net.zetetic:sqlcipher-android` auto-loads its native libraries when SupportOpenHelperFactory
-        // first opens a connection — no explicit `SQLiteDatabase.loadLibs(context)` is needed (that API
-        // belongs to the older `android-database-sqlcipher` artifact).
+        // `net.zetetic:sqlcipher-android` 4.6.x ships `libsqlcipher.so` but NO class in the AAR
+        // calls `System.loadLibrary`, so consumers must do it explicitly before the first
+        // SQLiteConnection.nativeOpen — otherwise the JNI lookup fails with UnsatisfiedLinkError.
+        // (Verified by `javap`-scanning the AAR; the 4.6 series dropped the auto-load that
+        // the older `android-database-sqlcipher` artifact had.)
+        return runCatching {
+            System.loadLibrary("sqlcipher")
+            // Pre-encryption dev installs ship a plain-SQLite file with the same name. SQLCipher
+            // cannot open it; rather than a confusing crash, delete it on first encrypted launch.
+            // ADR-003 documents the trade-off.
+            val dbFile = File(context.getDatabasePath(AtharDatabase.NAME).path)
+            val keyFileMarker = File(context.filesDir, "db_key.bin")
+            if (dbFile.exists() && !keyFileMarker.exists()) {
+                Timber.w("Deleting pre-encryption DB at %s (alpha-phase migration)", dbFile.path)
+                context.deleteDatabase(AtharDatabase.NAME)
+            }
 
-        // Pre-encryption dev installs ship a plain-SQLite file with the same name. SQLCipher
-        // cannot open it; rather than a confusing crash, delete it on first encrypted launch.
-        // This is acceptable for an alpha codebase; once we ship to real users we add a proper
-        // PRAGMA cipher_migrate path here. ADR-003 documents the trade-off.
-        val dbFile = File(context.getDatabasePath(AtharDatabase.NAME).path)
-        val keyFileMarker = File(context.filesDir, "db_key.bin")
-        if (dbFile.exists() && !keyFileMarker.exists()) {
-            Timber.w("Deleting pre-encryption DB at %s (alpha-phase migration)", dbFile.path)
-            context.deleteDatabase(AtharDatabase.NAME)
-        }
-
-        val key = dbKeyManager.getOrCreateDbKey()
-        val factory = SupportOpenHelperFactory(key)
-        return Room.databaseBuilder(context, AtharDatabase::class.java, AtharDatabase.NAME)
-            .openHelperFactory(factory)
-            .addMigrations(AtharDatabase.MIGRATION_1_2)
-            .fallbackToDestructiveMigrationOnDowngrade()
-            .build()
+            val key = dbKeyManager.getOrCreateDbKey()
+            val factory = SupportOpenHelperFactory(key)
+            Room.databaseBuilder(context, AtharDatabase::class.java, AtharDatabase.NAME)
+                .openHelperFactory(factory)
+                .addMigrations(AtharDatabase.MIGRATION_1_2)
+                .fallbackToDestructiveMigrationOnDowngrade()
+                .build()
+        }.onFailure { t ->
+            Timber.e(t, "Failed to open Athar database")
+            runCatching {
+                File(context.filesDir, "crash.log").appendText(
+                    "===== DB INIT FAILURE =====\n" +
+                        "${t.javaClass.name}: ${t.message}\n" +
+                        t.stackTraceToString() +
+                        "\n",
+                )
+            }
+        }.getOrThrow()
     }
 
     @Provides fun provideAccountDao(db: AtharDatabase): AccountDao = db.accountDao()

@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Nothing yet.
 
+## [0.1.0-beta.1] — 2026-05-24
+
+### Fixed
+
+- **Launch crash on personalFullSms release build** — release APKs default to `extractNativeLibs="false"`, which prevented SQLCipher's `libsqlcipher.so` from loading and killed the process during DI graph construction. Forced `extractNativeLibs="true"` in the manifest, wrapped Room/SQLCipher initialization in a `runCatching { … }.onFailure { write crash.log }` block, and planted Timber + a global `Thread.UncaughtExceptionHandler` in **all** builds (not just debug) so any future on-device crash is recoverable via `adb shell run-as com.athar.personal cat files/crash.log` or shared from the file picker.
+
+### Added
+
+- **Settings → About card** — credits Waleed Alhamed (walhamed.com) as developer, names TMOAP (The Measure of a Plan) as the spreadsheet that inspired Athar's Plan screen, and surfaces the build's `versionName`.
+- **README credits section** — same attribution made public.
+
 ## [0.1.0-beta] — 2026-05-24
 
 The first build that's actually usable as a daily driver. Built across 24 disciplined waves of spec → code → test → verify.
@@ -45,5 +56,6 @@ See [ADR-004](docs/adr/ADR-004-mvp-status.md). Notably:
 - Paparazzi snapshot baselines need a first record run.
 - Macrobenchmarks need a real device.
 
-[Unreleased]: https://github.com/wa1939/athar/compare/v0.1.0-beta...HEAD
+[Unreleased]: https://github.com/wa1939/athar/compare/v0.1.0-beta.1...HEAD
+[0.1.0-beta.1]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.1
 [0.1.0-beta]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta

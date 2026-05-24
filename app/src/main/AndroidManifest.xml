@@ -15,7 +15,9 @@
         android:enableOnBackInvokedCallback="true"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="false">
+        android:fullBackupContent="false"
+        android:extractNativeLibs="true"
+        android:hardwareAccelerated="true">
 
         <activity
             android:name=".MainActivity"
