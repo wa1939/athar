@@ -146,6 +146,140 @@ class AlRajhiDepositTemplate : BankTemplate {
 }
 
 /**
+ * Real-world Al Rajhi POS purchase format (observed in user audit log 2026-05-25).
+ *
+ * Format (English, single-block with embedded fields):
+ *   AlRajhiBank
+ *   PoS purchase
+ *   Card:5916 ;Visa-Samsung Pay
+ *   At: ALDREES 8
+ *   Amount:201 SAR
+ *
+ * Also covers the Arabic variant where labels appear as: "نقاط بيع" / "البطاقة" / "لدى" / "مبلغ".
+ * This is more specific than [AlRajhiPurchaseTemplate] because it keys on the "Amount:" label
+ * rather than the older "Purchase SAR …" header.
+ */
+class AlRajhiPosPurchaseTemplate : BankTemplate {
+    override val id: String = "al-rajhi-pos-purchase"
+    override val senderMatcher: SenderMatcher = AL_RAJHI_SENDERS
+
+    private val markerEn = Regex("""(?:PoS|POS)\s+(?:purchase|Purchase)""")
+    private val markerAr = Regex("""(?:نقاط\s+بيع|شراء\s+نقطة\s+بيع)""")
+    private val amount = Regex("""(?:Amount|المبلغ|مبلغ)\s*[:\s]\s*(?:SAR\s+)?([\d.,]+)(?:\s*SAR|\s*ر\.?\s*س)?""", RegexOption.IGNORE_CASE)
+    private val merchant = Regex("""(?:At|لدى|من)\s*[:\s]\s*([^\n\r]+?)(?:\n|$)""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
+    private val card = Regex("""(?:Card|البطاقة)\s*[:\s]\s*(\d{3,4})""", RegexOption.IGNORE_CASE)
+
+    override fun tryParse(body: String, receivedAt: Instant): ParseResult {
+        val normalized = Normalize.digits(body)
+        if (!markerEn.containsMatchIn(normalized) && !markerAr.containsMatchIn(normalized)) {
+            return ParseResult.Failed("not a PoS purchase", listOf(id))
+        }
+        val amountRaw = amount.find(normalized)?.groupValues?.get(1)
+            ?: return ParseResult.Failed("amount not found", listOf(id))
+        val parsedAmount = runCatching { BigDecimal(amountRaw.replace(",", "")) }.getOrNull()
+            ?: return ParseResult.Failed("amount unparseable: $amountRaw", listOf(id))
+
+        val merchantName = merchant.find(normalized)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotEmpty() }
+        val cardLast4 = card.find(normalized)?.groupValues?.get(1)
+
+        return ParseResult.Success(
+            type = TxType.EXPENSE,
+            amount = Money.of(parsedAmount),
+            merchant = merchantName,
+            counterparty = cardLast4?.let { "Card $it" },
+            balanceAfter = null,
+            occurredAt = receivedAt,
+            confidence = if (merchantName != null) 0.93f else 0.7f,
+            templateId = id,
+        )
+    }
+}
+
+/**
+ * Real-world Al Rajhi Internal Transfer format (observed 2026-05-25).
+ *
+ * Format:
+ *   AlRajhiBank  Debit Internal Transfer
+ *   From:0930
+ *   Amount:SR 1350
+ *   To:RAGHAD ALGHAMDI
+ *
+ * Also handles Credit Internal Transfer (incoming) and Outgoing Wire / Domestic Transfer.
+ */
+class AlRajhiInternalTransferTemplate : BankTemplate {
+    override val id: String = "al-rajhi-internal-transfer"
+    override val senderMatcher: SenderMatcher = AL_RAJHI_SENDERS
+
+    private val debitMarker = Regex("""(?:Debit|Outgoing).{0,40}(?:Transfer|Wire|تحويل\s+صادر)""", RegexOption.IGNORE_CASE)
+    private val creditMarker = Regex("""(?:Credit|Incoming).{0,40}(?:Transfer|Wire|تحويل\s+وارد)""", RegexOption.IGNORE_CASE)
+    private val amount = Regex("""(?:Amount|المبلغ|مبلغ)\s*[:\s]\s*(?:SR\s+|SAR\s+)?([\d.,]+)(?:\s*SAR|\s*ر\.?\s*س)?""", RegexOption.IGNORE_CASE)
+    private val toField = Regex("""(?:To|الى|إلى|لـ)\s*[:\s]\s*([^\n\r]+?)(?:\n|$)""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
+    private val fromField = Regex("""(?:From|من)\s*[:\s]\s*([^\n\r]+?)(?:\n|$)""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
+
+    override fun tryParse(body: String, receivedAt: Instant): ParseResult {
+        val normalized = Normalize.digits(body)
+        val isDebit = debitMarker.containsMatchIn(normalized)
+        val isCredit = creditMarker.containsMatchIn(normalized)
+        if (!isDebit && !isCredit) {
+            return ParseResult.Failed("not an internal transfer", listOf(id))
+        }
+        val amountRaw = amount.find(normalized)?.groupValues?.get(1)
+            ?: return ParseResult.Failed("amount not found", listOf(id))
+        val parsedAmount = runCatching { BigDecimal(amountRaw.replace(",", "")) }.getOrNull()
+            ?: return ParseResult.Failed("amount unparseable: $amountRaw", listOf(id))
+
+        val to = toField.find(normalized)?.groupValues?.get(1)?.trim()
+        val from = fromField.find(normalized)?.groupValues?.get(1)?.trim()
+        val counterparty = if (isDebit) to else from
+
+        return ParseResult.Success(
+            type = if (isDebit) TxType.TRANSFER else TxType.INCOME,
+            amount = Money.of(parsedAmount),
+            merchant = null,
+            counterparty = counterparty,
+            balanceAfter = null,
+            occurredAt = receivedAt,
+            confidence = if (counterparty != null) 0.9f else 0.7f,
+            templateId = id,
+        )
+    }
+}
+
+/**
+ * Generic Al Rajhi fallback: any message that has a recognizable Amount + (SAR|ر.س)
+ * AND comes from the bank sender. Used as a last-resort capture so legitimate but
+ * unrecognized SMS at least show up in the pending tray with a low confidence score,
+ * rather than getting filed as "failed" and lost.
+ */
+class AlRajhiGenericAmountTemplate : BankTemplate {
+    override val id: String = "al-rajhi-generic-amount"
+    override val senderMatcher: SenderMatcher = AL_RAJHI_SENDERS
+
+    private val amount = Regex("""(?:Amount|المبلغ|مبلغ)\s*[:\s]\s*(?:SAR\s+|SR\s+)?([\d.,]+)(?:\s*SAR|\s*SR|\s*ر\.?\s*س)?""", RegexOption.IGNORE_CASE)
+    private val isIncome = Regex("""(?:Credit|Deposit|ايداع|إيداع|وارد)""", RegexOption.IGNORE_CASE)
+
+    override fun tryParse(body: String, receivedAt: Instant): ParseResult {
+        val normalized = Normalize.digits(body)
+        val amountRaw = amount.find(normalized)?.groupValues?.get(1)
+            ?: return ParseResult.Failed("no Amount: field", listOf(id))
+        val parsedAmount = runCatching { BigDecimal(amountRaw.replace(",", "")) }.getOrNull()
+            ?: return ParseResult.Failed("amount unparseable", listOf(id))
+
+        val type = if (isIncome.containsMatchIn(normalized)) TxType.INCOME else TxType.EXPENSE
+        return ParseResult.Success(
+            type = type,
+            amount = Money.of(parsedAmount),
+            merchant = null,
+            counterparty = null,
+            balanceAfter = null,
+            occurredAt = receivedAt,
+            confidence = 0.5f,  // low — user must confirm
+            templateId = id,
+        )
+    }
+}
+
+/**
  * Balance alert / non-financial messages. Always [ParseResult.Ignored].
  */
 class AlRajhiBalanceAlertTemplate : BankTemplate {

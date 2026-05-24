@@ -34,7 +34,22 @@ data class BudgetRow(
     val variance: Money? = target?.let { actual - it }
     val isOver: Boolean = variance?.isPositive() == true
     val isUnder: Boolean = variance?.isNegative() == true
+
+    val limit: LimitState = when {
+        target == null || target.isZero() -> LimitState.None
+        actual.amount > target.amount -> LimitState.Over
+        else -> {
+            val pct = actual.amount.toDouble() / target.amount.toDouble()
+            when {
+                pct >= 0.90 -> LimitState.Tight
+                pct >= 0.70 -> LimitState.Watch
+                else -> LimitState.Healthy
+            }
+        }
+    }
 }
+
+enum class LimitState { None, Healthy, Watch, Tight, Over }
 
 sealed interface PlanEvent {
     data class OpenTargetEditor(val categoryId: String) : PlanEvent

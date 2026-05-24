@@ -51,6 +51,11 @@ __MACOSX/
 *.athar
 *.athar.bak
 
+# Personal seed data — only the owner's local build sees this directory.
+# The data is exported from `Budget Tracking Tool - TMOAP v5.xlsx` by
+# `scripts/extract_tmoap.py` and packaged into the seeded APK at build time.
+/app/src/seeded/
+
 # Logs
 *.log
 hs_err_pid*

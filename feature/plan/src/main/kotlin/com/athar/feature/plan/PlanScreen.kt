@@ -98,6 +98,7 @@ private fun BudgetContent(
     val theme = AtharTheme
     Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.l)) {
         Header(state = state)
+        LimitWarningStrip(state = state)
         if (state.rows.isEmpty() && !state.isLoading) {
             AtharEmptyState(
                 text = "لا تصنيفات بعد.",
@@ -108,6 +109,29 @@ private fun BudgetContent(
                 BudgetRowView(row = row, onClick = { onClickRow(row) })
             }
         }
+    }
+}
+
+@Composable
+private fun LimitWarningStrip(state: PlanState) {
+    val theme = AtharTheme
+    val tight = state.rows.filter { it.limit == LimitState.Tight }
+    val over = state.rows.filter { it.limit == LimitState.Over }
+    if (tight.isEmpty() && over.isEmpty()) return
+    val (message, color) = when {
+        over.isNotEmpty() -> {
+            val names = over.take(3).joinToString("، ") { it.category.nameAr }
+            val extra = if (over.size > 3) " (+${over.size - 3})" else ""
+            "$names$extra · تجاوز الحد" to theme.colors.ember
+        }
+        else -> {
+            val names = tight.take(3).joinToString("، ") { it.category.nameAr }
+            val extra = if (tight.size > 3) " (+${tight.size - 3})" else ""
+            "$names$extra · اقتربت من الحد" to theme.colors.dust
+        }
+    }
+    AtharCard {
+        AtharText(text = message, style = theme.typography.body, color = color)
     }
 }
 
@@ -170,14 +194,15 @@ private fun BudgetRowView(row: BudgetRow, onClick: () -> Unit) {
 private fun VariancePill(row: BudgetRow) {
     val theme = AtharTheme
     val variance = row.variance ?: return
-    val color = when {
-        row.isOver -> theme.colors.ember
-        row.isUnder -> theme.colors.olive
-        else -> theme.colors.muted
+    val (label, color) = when (row.limit) {
+        LimitState.Over -> "تجاوز " to theme.colors.ember
+        LimitState.Tight -> "اقتربت من الحد · " to theme.colors.ember
+        LimitState.Watch -> "تحت الحد · " to theme.colors.dust
+        LimitState.Healthy -> "تحت الحد " to theme.colors.olive
+        LimitState.None -> "" to theme.colors.muted
     }
-    val label = if (row.isOver) "تجاوز " else "تحت الحد "
     Row(verticalAlignment = Alignment.CenterVertically) {
-        AtharText(text = label, style = theme.typography.caption, color = color)
+        if (label.isNotEmpty()) AtharText(text = label, style = theme.typography.caption, color = color)
         AtharNumber(money = if (variance.isNegative()) -variance else variance, color = color)
     }
 }

@@ -15,6 +15,12 @@ val keystoreProps = Properties().apply {
     if (f.exists()) f.inputStream().use { load(it) }
 }
 
+// `-Pathar.seed=true` enables the personal seeded build. When true, the
+// gitignored `app/src/seeded/` source set is added so the bundled
+// seed/*.csv assets ship inside the APK. The DataSeeder reads them on
+// first launch (controlled by BuildConfig.SEED_ON_FIRST_LAUNCH).
+val atharSeed = (providers.gradleProperty("athar.seed").orNull?.toBoolean() ?: false)
+
 android {
     namespace = "com.athar"
 
@@ -22,6 +28,7 @@ android {
         applicationId = "com.athar"
         versionCode = 2
         versionName = providers.gradleProperty("athar.version").orNull ?: "0.1.0"
+        buildConfigField("boolean", "SEED_ON_FIRST_LAUNCH", atharSeed.toString())
     }
 
     signingConfigs {
@@ -69,6 +76,12 @@ android {
 
     buildFeatures {
         buildConfig = true
+    }
+
+    if (atharSeed) {
+        sourceSets.named("main") {
+            assets.srcDir("src/seeded/assets")
+        }
     }
 }
 
