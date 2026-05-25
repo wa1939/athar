@@ -53,6 +53,7 @@ fun SettingsScreen(
     onOpenUserTemplates: () -> Unit = {},
     onOpenRecurringRules: () -> Unit = {},
     onOpenAccounts: () -> Unit = {},
+    onApplyLocale: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -84,6 +85,7 @@ fun SettingsScreen(
     val rescanStatus by viewModel.rescanStatus.collectAsStateWithLifecycle()
     val ownAccounts by viewModel.ownAccountNumbers.collectAsStateWithLifecycle()
     val displayCurrency by viewModel.displayCurrency.collectAsStateWithLifecycle()
+    val appLocale by viewModel.appLocale.collectAsStateWithLifecycle()
 
     val exportLauncher = rememberLauncherForActivityResult(CreateDocument("application/octet-stream")) { uri ->
         if (uri != null) pendingExportUri = uri
@@ -147,6 +149,14 @@ fun SettingsScreen(
             DisplayCurrencyCard(
                 currentCode = displayCurrency,
                 onSelect = viewModel::setDisplayCurrency,
+            )
+
+            LanguageCard(
+                currentTag = appLocale,
+                onSelect = { tag ->
+                    viewModel.setAppLocale(tag)
+                    onApplyLocale(tag)
+                },
             )
 
             HijriToggleCard(
@@ -564,6 +574,55 @@ private fun RescanAndCleanCard(
                     else -> "إعادة فحص ومسح المُعلَّقات"
                 }
                 AtharText(text = buttonText, style = theme.typography.headline, color = theme.colors.parchment)
+            }
+        }
+    }
+}
+
+@Composable
+private fun LanguageCard(
+    currentTag: String,
+    onSelect: (String) -> Unit,
+) {
+    val theme = AtharTheme
+    val options = remember {
+        listOf(
+            Triple("", "نظام الجهاز", "Follow system"),
+            Triple("ar", "العربية", "Arabic"),
+            Triple("en", "English", "English"),
+        )
+    }
+    AtharCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = "اللغة · Language", style = theme.typography.headline)
+            AtharText(
+                text = "اختر لغة عرض التطبيق. سيتم إعادة تحميل الشاشة لتطبيق اللغة الجديدة.",
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
+            options.forEach { (tag, labelAr, labelEn) ->
+                val isSelected = tag == currentTag
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(theme.spacing.s))
+                        .background(if (isSelected) theme.colors.ember else theme.colors.parchment)
+                        .clickable { onSelect(tag) }
+                        .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    AtharText(
+                        text = labelAr,
+                        style = theme.typography.body,
+                        color = if (isSelected) theme.colors.parchment else theme.colors.ink,
+                    )
+                    AtharText(
+                        text = labelEn,
+                        style = theme.typography.caption,
+                        color = if (isSelected) theme.colors.parchment else theme.colors.muted,
+                    )
+                }
             }
         }
     }

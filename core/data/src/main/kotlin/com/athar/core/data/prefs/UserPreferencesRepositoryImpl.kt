@@ -25,6 +25,7 @@ internal class UserPreferencesRepositoryImpl @Inject constructor(
     private val hijriKey = booleanPreferencesKey("hijri_display_enabled")
     private val ownAccountsKey = stringPreferencesKey("own_account_numbers_csv")
     private val displayCurrencyKey = stringPreferencesKey("display_currency_iso4217")
+    private val appLocaleKey = stringPreferencesKey("app_locale_tag")
 
     override fun onboardingComplete(): Flow<Boolean> =
         context.userPrefs.data.map { it[onboardingKey] ?: false }
@@ -63,5 +64,12 @@ internal class UserPreferencesRepositoryImpl @Inject constructor(
         val normalized = currency.trim().uppercase()
         require(normalized.length == 3) { "Currency must be ISO-4217 3-letter code, got '$currency'" }
         context.userPrefs.edit { it[displayCurrencyKey] = normalized }
+    }
+
+    override fun appLocale(): Flow<String> =
+        context.userPrefs.data.map { it[appLocaleKey].orEmpty() }
+
+    override suspend fun setAppLocale(languageTag: String) {
+        context.userPrefs.edit { it[appLocaleKey] = languageTag.trim() }
     }
 }

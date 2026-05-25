@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  English overrides. App still defaults to Arabic; this file is applied when the user
+  picks "English" in Settings, or when LocaleHelper detects an English system locale and
+  no explicit override has been set.
+
+  This is a starter set — most user-facing strings remain hardcoded in Compose calls and
+  will migrate to stringResource() incrementally. The locale switch already affects
+  layout direction (LTR vs RTL), date formatting, and the resources listed here.
+-->
+<resources>
+    <string name="app_name">Athar</string>
+
+    <string name="tab_today">Today</string>
+    <string name="tab_trends">Trends</string>
+    <string name="tab_plan">Plan</string>
+    <string name="tab_settings">Settings</string>
+
+    <string name="action_back">Back</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="action_apply">Apply</string>
+    <string name="action_done">Done</string>
+
+    <string name="settings_language_title">Language · اللغة</string>
+    <string name="settings_language_subtitle">Choose the app language. The screen reloads to apply the new language.</string>
+    <string name="settings_language_system">Follow system</string>
+    <string name="settings_language_arabic">العربية · Arabic</string>
+    <string name="settings_language_english">English</string>
+</resources>

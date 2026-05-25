@@ -1,12 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Default (Arabic) strings. Arabic is Athar's primary language; English overrides live in
+  values-en/strings.xml. The locale picker in Settings switches between them via a
+  per-app Configuration override (see app/.../ui/LocaleHelper.kt).
+-->
 <resources>
     <string name="app_name">أثر</string>
-    <string name="app_name_en" translatable="false">Athar</string>
 
-    <string name="tab_today_ar">اليوم</string>
-    <string name="tab_today_en" translatable="false">Today</string>
-    <string name="tab_trends_ar">النمط</string>
-    <string name="tab_trends_en" translatable="false">Trends</string>
-    <string name="tab_plan_ar">الخطة</string>
-    <string name="tab_plan_en" translatable="false">Plan</string>
+    <string name="tab_today">اليوم</string>
+    <string name="tab_trends">النمط</string>
+    <string name="tab_plan">الخطة</string>
+    <string name="tab_settings">الإعدادات</string>
+
+    <string name="action_back">رجوع</string>
+    <string name="action_cancel">إلغاء</string>
+    <string name="action_save">حفظ</string>
+    <string name="action_apply">تطبيق</string>
+    <string name="action_done">تم</string>
+
+    <string name="settings_language_title">اللغة · Language</string>
+    <string name="settings_language_subtitle">اختر لغة عرض التطبيق. سيتم إعادة تحميل الشاشة لتطبيق اللغة الجديدة.</string>
+    <string name="settings_language_system">نظام الجهاز</string>
+    <string name="settings_language_arabic">العربية</string>
+    <string name="settings_language_english">English</string>
 </resources>

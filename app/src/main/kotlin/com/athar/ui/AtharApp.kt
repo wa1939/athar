@@ -15,10 +15,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import android.app.Activity
+import android.content.ContextWrapper
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
@@ -54,6 +58,8 @@ fun AtharApp() {
     val appPrefs: AppPrefsViewModel = hiltViewModel()
     val hijriEnabled by appPrefs.hijriEnabled.collectAsStateWithLifecycle()
     val displayCurrency by appPrefs.displayCurrency.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val activity = context.findActivity()
 
     val navController = rememberNavController()
     val current by navController.currentBackStackEntryAsState()
@@ -136,6 +142,10 @@ fun AtharApp() {
                         onOpenUserTemplates = { navController.navigate(Routes.UserTemplates) },
                         onOpenRecurringRules = { navController.navigate(Routes.RecurringRules) },
                         onOpenAccounts = { navController.navigate(Routes.Accounts) },
+                        onApplyLocale = { tag ->
+                            LocaleHelper.persist(context, tag)
+                            activity?.recreate()
+                        },
                     )
                 }
                 composable<Routes.UserTemplates> {
@@ -181,6 +191,12 @@ private val TopLevelTabs: List<AtharBottomBarItem> = listOf(
     AtharBottomBarItem(key = "trends", labelEn = "Trends", labelAr = "النمط"),
     AtharBottomBarItem(key = "plan", labelEn = "Plan", labelAr = "الخطة"),
 )
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
 
 private fun NavBackStackEntry?.selectedTabKey(): String {
     val route = this?.destination?.route.orEmpty()

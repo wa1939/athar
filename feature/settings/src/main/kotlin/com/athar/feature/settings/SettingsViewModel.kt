@@ -73,6 +73,9 @@ class SettingsViewModel @Inject constructor(
     val displayCurrency: StateFlow<String> = prefs.displayCurrency()
         .stateIn(viewModelScope, SharingStarted.Eagerly, "SAR")
 
+    val appLocale: StateFlow<String> = prefs.appLocale()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+
     fun setHijriEnabled(enabled: Boolean) {
         viewModelScope.launch { prefs.setHijriEnabled(enabled) }
     }
@@ -86,6 +89,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setDisplayCurrency(code: String) {
         viewModelScope.launch { prefs.setDisplayCurrency(code) }
+    }
+
+    fun setAppLocale(tag: String) {
+        viewModelScope.launch { prefs.setAppLocale(tag) }
     }
 
     fun export(resolver: ContentResolver, uri: Uri, passphrase: String) {

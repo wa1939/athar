@@ -39,4 +39,15 @@ interface UserPreferencesRepository {
      */
     fun displayCurrency(): Flow<String>
     suspend fun setDisplayCurrency(currency: String)
+
+    /**
+     * The user's chosen UI language. An empty string means "follow the system locale"
+     * (the default). Otherwise an ISO 639-1 language tag like "ar" or "en".
+     *
+     * Applied at activity attach via a Configuration override; switching it triggers
+     * an activity recreate. Stored independently of the system locale so the user can
+     * deliberately read the Arabic UI on an English phone (and vice versa).
+     */
+    fun appLocale(): Flow<String>
+    suspend fun setAppLocale(languageTag: String)
 }
