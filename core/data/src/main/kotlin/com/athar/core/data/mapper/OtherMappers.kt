@@ -30,21 +30,41 @@ private val stringListSerializer = ListSerializer(String.serializer())
 internal fun AccountEntity.toDomain(): Account = Account(
     id = id,
     name = name,
-    type = AccountType.valueOf(type),
+    type = parseAccountType(type),
     currency = currency,
+    openingBalance = Money.ofMinor(openingBalanceMinor, openingBalanceCurrency),
     smsSenders = json.decodeFromString(stringListSerializer, smsSenders),
-    active = active,
+    notes = notes,
+    sortOrder = sortOrder,
+    archived = archivedAt != null,
     createdAt = createdAt,
+    updatedAt = updatedAt,
 )
+
+/**
+ * Tolerant decoder for the enum string column: maps legacy values (DEBIT, CREDIT) onto
+ * the new taxonomy in case a migration row slipped through with an old value.
+ */
+private fun parseAccountType(raw: String): AccountType = when (raw) {
+    "DEBIT" -> AccountType.CHECKING
+    "CREDIT" -> AccountType.CREDIT_CARD
+    else -> runCatching { AccountType.valueOf(raw) }.getOrDefault(AccountType.OTHER)
+}
 
 internal fun Account.toEntity(): AccountEntity = AccountEntity(
     id = id,
     name = name,
     type = type.name,
     currency = currency,
+    openingBalanceMinor = openingBalance.toMinor(),
+    openingBalanceCurrency = openingBalance.currency,
     smsSenders = json.encodeToString(stringListSerializer, smsSenders),
-    active = active,
+    notes = notes,
+    sortOrder = sortOrder,
+    active = !archived,
+    archivedAt = if (archived) updatedAt else null,
     createdAt = createdAt,
+    updatedAt = updatedAt,
 )
 
 internal fun CategoryRuleEntity.toDomain(): CategoryRule = CategoryRule(

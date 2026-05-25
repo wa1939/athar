@@ -34,7 +34,9 @@ internal data class BackupSnapshot(
     val smsAudit: List<BackupSmsMessage>,
 ) {
     companion object {
-        const val CURRENT_VERSION = 1
+        // v2 (G-4): BackupAccount gained openingBalanceMinor/Currency, notes, sortOrder,
+        // archivedAt, updatedAt. All optional with safe defaults so v1 payloads still restore.
+        const val CURRENT_VERSION = 2
     }
 }
 
@@ -42,6 +44,12 @@ internal data class BackupSnapshot(
 internal data class BackupAccount(
     val id: String, val name: String, val type: String, val currency: String,
     val smsSenders: String, val active: Boolean, val createdAt: Instant,
+    val openingBalanceMinor: Long = 0L,
+    val openingBalanceCurrency: String = "SAR",
+    val notes: String? = null,
+    val sortOrder: Int = 0,
+    val archivedAt: Instant? = null,
+    val updatedAt: Instant? = null,
 )
 
 @Serializable
@@ -92,7 +100,13 @@ internal data class BackupSmsMessage(
     val parsedTransactionId: String?, val parseStatus: String, val parseError: String?,
 )
 
-internal fun AccountEntity.toBackup(): BackupAccount = BackupAccount(id, name, type, currency, smsSenders, active, createdAt)
+internal fun AccountEntity.toBackup(): BackupAccount = BackupAccount(
+    id = id, name = name, type = type, currency = currency,
+    smsSenders = smsSenders, active = active, createdAt = createdAt,
+    openingBalanceMinor = openingBalanceMinor,
+    openingBalanceCurrency = openingBalanceCurrency,
+    notes = notes, sortOrder = sortOrder, archivedAt = archivedAt, updatedAt = updatedAt,
+)
 internal fun CategoryEntity.toBackup(): BackupCategory = BackupCategory(id, name, nameAr, kind, icon, monthlyTargetMinor, currency, archived, sortOrder)
 internal fun TransactionEntity.toBackup(): BackupTransaction = BackupTransaction(id, accountId, type, amountMinor, currency, date, occurredAt, merchant, merchantNormalized, categoryId, notes, source, sourceRefId, status, confidence, createdAt, updatedAt)
 internal fun CategoryRuleEntity.toBackup(): BackupCategoryRule = BackupCategoryRule(id, pattern, patternType, categoryId, priority, learnedFromUser, createdAt)
@@ -101,7 +115,16 @@ internal fun InvestmentPoolEntity.toBackup(): BackupInvestmentPool = BackupInves
 internal fun InvestmentContributionEntity.toBackup(): BackupInvestmentContribution = BackupInvestmentContribution(id, poolId, ownerName, amountMinor, currency)
 internal fun SmsMessageEntity.toBackup(): BackupSmsMessage = BackupSmsMessage(id, sender, body, receivedAt, parsedTransactionId, parseStatus, parseError)
 
-internal fun BackupAccount.toEntity(): AccountEntity = AccountEntity(id, name, type, currency, smsSenders, active, createdAt)
+internal fun BackupAccount.toEntity(): AccountEntity = AccountEntity(
+    id = id, name = name, type = type, currency = currency,
+    openingBalanceMinor = openingBalanceMinor,
+    openingBalanceCurrency = openingBalanceCurrency,
+    smsSenders = smsSenders, notes = notes, sortOrder = sortOrder,
+    active = active && archivedAt == null,
+    archivedAt = archivedAt,
+    createdAt = createdAt,
+    updatedAt = updatedAt ?: createdAt,
+)
 internal fun BackupCategory.toEntity(): CategoryEntity = CategoryEntity(id, name, nameAr, kind, icon, monthlyTargetMinor, currency, archived, sortOrder)
 internal fun BackupTransaction.toEntity(): TransactionEntity = TransactionEntity(id, accountId, type, amountMinor, currency, date, occurredAt, merchant, merchantNormalized, categoryId, notes, source, sourceRefId, status, confidence, createdAt, updatedAt)
 internal fun BackupCategoryRule.toEntity(): CategoryRuleEntity = CategoryRuleEntity(id, pattern, patternType, categoryId, priority, learnedFromUser, createdAt)

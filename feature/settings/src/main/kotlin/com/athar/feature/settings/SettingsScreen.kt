@@ -52,6 +52,7 @@ fun SettingsScreen(
     onOpenActivityLog: () -> Unit = {},
     onOpenUserTemplates: () -> Unit = {},
     onOpenRecurringRules: () -> Unit = {},
+    onOpenAccounts: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -157,6 +158,8 @@ fun SettingsScreen(
                 accounts = ownAccounts,
                 onSave = viewModel::setOwnAccountNumbers,
             )
+
+            AccountsEntryCard(onOpen = onOpenAccounts)
 
             RecurringRulesEntryCard(onOpen = onOpenRecurringRules)
 
@@ -562,6 +565,24 @@ private fun RescanAndCleanCard(
                 }
                 AtharText(text = buttonText, style = theme.typography.headline, color = theme.colors.parchment)
             }
+        }
+    }
+}
+
+@Composable
+private fun AccountsEntryCard(onOpen: () -> Unit) {
+    val theme = AtharTheme
+    AtharCard(modifier = Modifier
+        .fillMaxWidth()
+        .clickable(onClick = onOpen)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = "الحسابات", style = theme.typography.headline)
+            AtharText(
+                text = "أضف حسابات الجاري، الادخار، البطاقات الائتمانية، والاستثمار. صافي ثروتك = مجموع الأرصدة الحالية.",
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
         }
     }
 }

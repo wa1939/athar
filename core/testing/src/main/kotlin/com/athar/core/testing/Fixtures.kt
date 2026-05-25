@@ -26,14 +26,21 @@ object Fixtures {
         id: String = "acc-1",
         name: String = "Al Rajhi Visa",
         smsSenders: List<String> = listOf("AlRajhiBank"),
+        type: AccountType = AccountType.CREDIT_CARD,
+        openingBalance: Money = Money.zero(Money.SAR),
+        archived: Boolean = false,
     ): Account = Account(
         id = id,
         name = name,
-        type = AccountType.CREDIT,
+        type = type,
         currency = Money.SAR,
+        openingBalance = openingBalance,
         smsSenders = smsSenders,
-        active = true,
+        notes = null,
+        sortOrder = 0,
+        archived = archived,
         createdAt = fixedInstant,
+        updatedAt = fixedInstant,
     )
 
     fun category(

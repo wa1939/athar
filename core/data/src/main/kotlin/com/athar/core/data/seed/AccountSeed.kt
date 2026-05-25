@@ -10,8 +10,10 @@ import javax.inject.Inject
  * Ensures the synthetic "manual" account exists so foreign-key constraints on
  * manually-entered transactions are satisfied. Idempotent.
  *
- * Replaced once real account CRUD lands (S-20). The id is stable so existing manual
- * transactions keep referring to it after that migration.
+ * Since G-4 (multi-account), this seed remains the default account for new manual
+ * transactions until the user creates their own. The user can rename it, change its
+ * type/currency, or archive it — but never hard-delete it (the row is also the
+ * fallback target for transactions whose source account can't be resolved).
  */
 internal class AccountSeed @Inject constructor(
     private val dao: AccountDao,
@@ -19,15 +21,24 @@ internal class AccountSeed @Inject constructor(
 ) {
 
     suspend fun seedManualIfMissing() {
+        val existing = dao.get(MANUAL_ACCOUNT_ID)
+        if (existing != null) return
+        val now = clock.now()
         dao.upsert(
             AccountEntity(
                 id = MANUAL_ACCOUNT_ID,
-                name = "يدوي",
+                name = "النقدي",
                 type = "CASH",
                 currency = "SAR",
+                openingBalanceMinor = 0,
+                openingBalanceCurrency = "SAR",
                 smsSenders = "[]",
+                notes = null,
+                sortOrder = 0,
                 active = true,
-                createdAt = clock.now(),
+                archivedAt = null,
+                createdAt = now,
+                updatedAt = now,
             ),
         )
     }

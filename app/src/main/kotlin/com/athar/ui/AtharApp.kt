@@ -34,6 +34,7 @@ import com.athar.core.designsystem.display.LocalHijriEnabled
 import com.athar.core.designsystem.theme.AtharTheme
 import com.athar.core.designsystem.theme.MinTouchTarget
 import com.athar.feature.plan.PlanScreen
+import com.athar.feature.settings.AccountsScreen
 import com.athar.feature.settings.ActivityLogScreen
 import com.athar.feature.settings.CategoriesScreen
 import com.athar.feature.settings.RecurringRulesScreen
@@ -63,7 +64,8 @@ fun AtharApp() {
         routeName.endsWith("SmsAudit") ||
         routeName.endsWith("ActivityLog") ||
         routeName.endsWith("UserTemplates") ||
-        routeName.endsWith("RecurringRules")
+        routeName.endsWith("RecurringRules") ||
+        routeName.endsWith("Accounts")
     val theme = AtharTheme
 
     CompositionLocalProvider(
@@ -133,6 +135,7 @@ fun AtharApp() {
                         onOpenActivityLog = { navController.navigate(Routes.ActivityLog) },
                         onOpenUserTemplates = { navController.navigate(Routes.UserTemplates) },
                         onOpenRecurringRules = { navController.navigate(Routes.RecurringRules) },
+                        onOpenAccounts = { navController.navigate(Routes.Accounts) },
                     )
                 }
                 composable<Routes.UserTemplates> {
@@ -140,6 +143,9 @@ fun AtharApp() {
                 }
                 composable<Routes.RecurringRules> {
                     RecurringRulesScreen(onBack = { navController.popBackStack() })
+                }
+                composable<Routes.Accounts> {
+                    AccountsScreen(onBack = { navController.popBackStack() })
                 }
                 composable<Routes.Categories> {
                     CategoriesScreen(onBack = { navController.popBackStack() })

@@ -28,7 +28,7 @@ import com.athar.core.data.db.entity.UserTemplateEntity
 import com.athar.core.data.db.entity.WishlistEntity
 
 @Database(
-    version = 4,
+    version = 5,
     exportSchema = true,
     entities = [
         AccountEntity::class,
@@ -142,6 +142,34 @@ internal abstract class AtharDatabase : RoomDatabase() {
                 )
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_recurring_rule_nextRunDate ON recurring_rule(nextRunDate)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_recurring_rule_isActive ON recurring_rule(isActive)")
+            }
+        }
+
+        /**
+         * v4 → v5: multi-account + net worth (G-4).
+         *
+         * Extends the `account` table with the columns needed to model real
+         * checking/savings/credit/cash/investment buckets and to compute live net
+         * worth. Also remaps the legacy `DEBIT`/`CREDIT` enum values to the new
+         * `CHECKING`/`CREDIT_CARD` taxonomy.
+         */
+        internal val MIGRATION_4_5: Migration = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE account ADD COLUMN openingBalanceMinor INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE account ADD COLUMN openingBalanceCurrency TEXT NOT NULL DEFAULT 'SAR'")
+                db.execSQL("ALTER TABLE account ADD COLUMN notes TEXT")
+                db.execSQL("ALTER TABLE account ADD COLUMN sortOrder INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE account ADD COLUMN archivedAt INTEGER")
+                db.execSQL("ALTER TABLE account ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE account SET updatedAt = createdAt WHERE updatedAt = 0")
+                db.execSQL("UPDATE account SET type = 'CHECKING'    WHERE type = 'DEBIT'")
+                db.execSQL("UPDATE account SET type = 'CREDIT_CARD' WHERE type = 'CREDIT'")
+                db.execSQL(
+                    "UPDATE account SET type = 'OTHER' " +
+                        "WHERE type NOT IN ('CHECKING','SAVINGS','CREDIT_CARD','CASH','INVESTMENT','OTHER')",
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_account_archivedAt ON account(archivedAt)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_account_sortOrder ON account(sortOrder)")
             }
         }
     }

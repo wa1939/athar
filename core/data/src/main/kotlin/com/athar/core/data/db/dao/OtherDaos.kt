@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.athar.core.data.db.entity.AccountBalanceRow
 import com.athar.core.data.db.entity.AccountEntity
 import com.athar.core.data.db.entity.CategoryRuleEntity
 import com.athar.core.data.db.entity.InvestmentContributionEntity
@@ -15,14 +16,26 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 internal interface AccountDao {
-    @Query("SELECT * FROM account WHERE active = 1 ORDER BY name")
+    @Query("SELECT * FROM account WHERE archivedAt IS NULL ORDER BY sortOrder ASC, name ASC")
     fun observeActive(): Flow<List<AccountEntity>>
+
+    @Query("SELECT * FROM account ORDER BY archivedAt IS NOT NULL ASC, sortOrder ASC, name ASC")
+    fun observeAll(): Flow<List<AccountEntity>>
+
+    @Query("SELECT * FROM account WHERE id = :id")
+    suspend fun get(id: String): AccountEntity?
 
     @Query("SELECT * FROM account ORDER BY name")
     suspend fun all(): List<AccountEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(account: AccountEntity)
+
+    @Query("UPDATE account SET archivedAt = :archivedAt, active = :active, updatedAt = :now WHERE id = :id")
+    suspend fun setArchived(id: String, archivedAt: kotlinx.datetime.Instant?, active: Boolean, now: kotlinx.datetime.Instant)
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE accountId = :id")
+    suspend fun countTransactions(id: String): Int
 
     @Query("DELETE FROM account WHERE id = :id")
     suspend fun delete(id: String)

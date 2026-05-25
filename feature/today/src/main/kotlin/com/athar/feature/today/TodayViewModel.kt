@@ -8,6 +8,7 @@ import com.athar.core.domain.model.PatternType
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.repo.AccountRepository
 import com.athar.core.domain.repo.CategoryRuleRepository
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
@@ -32,6 +33,7 @@ class TodayViewModel @Inject constructor(
     private val transactions: TransactionRepository,
     private val rules: CategoryRuleRepository,
     private val prefs: UserPreferencesRepository,
+    private val accounts: AccountRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -42,12 +44,14 @@ class TodayViewModel @Inject constructor(
         month
             .flatMapLatest { m ->
                 val period = Period.Month(m)
-                combine(
-                    transactions.observeByPeriod(period, status = TxStatus.CONFIRMED),
-                    transactions.observePending(),
-                    prefs.displayCurrency(),
-                ) { confirmed, pending, currency ->
-                    deriveState(m, confirmed, pending, currency)
+                prefs.displayCurrency().flatMapLatest { currency ->
+                    combine(
+                        transactions.observeByPeriod(period, status = TxStatus.CONFIRMED),
+                        transactions.observePending(),
+                        accounts.observeNetWorth(currency),
+                    ) { confirmed, pending, netWorth ->
+                        deriveState(m, confirmed, pending, currency, netWorth)
+                    }
                 }
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayState.empty(currentMonth()))
@@ -98,6 +102,7 @@ class TodayViewModel @Inject constructor(
         confirmed: List<Transaction>,
         pending: List<Transaction>,
         currency: String,
+        netWorth: com.athar.core.domain.model.NetWorth,
     ): TodayState {
         val (income, expense) = confirmed.partition { it.type == TxType.INCOME }
         val incomeSum = Money.sumAmounts(income.map { it.amount }, currency)
@@ -107,6 +112,8 @@ class TodayViewModel @Inject constructor(
             netFlow = incomeSum - expenseSum,
             totalExpense = expenseSum,
             totalIncome = incomeSum,
+            netWorth = netWorth.total,
+            netWorthIsMixed = netWorth.isMixedCurrency,
             recent = confirmed.take(10).toImmutableList(),
             pending = pending.toImmutableList(),
             isLoading = false,

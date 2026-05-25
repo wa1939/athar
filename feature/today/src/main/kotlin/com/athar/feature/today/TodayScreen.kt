@@ -141,10 +141,11 @@ private fun Header(state: TodayState) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = theme.spacing.s),
-            horizontalArrangement = Arrangement.spacedBy(theme.spacing.m),
+            horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
         ) {
             FlowPill(label = "الدخل", money = state.totalIncome, accent = theme.colors.olive, modifier = Modifier.weight(1f))
             FlowPill(label = "المصاريف", money = state.totalExpense, accent = theme.colors.ember, modifier = Modifier.weight(1f))
+            FlowPill(label = "صافي الثروة", money = state.netWorth, accent = theme.colors.ink, modifier = Modifier.weight(1f))
         }
         val savingsRate = state.savingsRate
         if (savingsRate != null) {
@@ -152,6 +153,13 @@ private fun Header(state: TodayState) {
                 text = "معدّل الادخار · ${"%.0f".format(savingsRate)}٪",
                 style = theme.typography.caption,
                 color = if (savingsRate >= 0) theme.colors.olive else theme.colors.ember,
+            )
+        }
+        if (state.netWorthIsMixed) {
+            AtharText(
+                text = "الثروة بعملات متعددة · بدون تحويل",
+                style = theme.typography.caption,
+                color = theme.colors.muted,
             )
         }
     }

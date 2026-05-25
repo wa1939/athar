@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.athar.core.data.db.entity.AccountBalanceRow
 import com.athar.core.data.db.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
@@ -59,4 +60,21 @@ internal interface TransactionDao {
 
     @Query("UPDATE transactions SET status = :status, updatedAt = :now WHERE id = :id")
     suspend fun setStatus(id: String, status: String, now: kotlinx.datetime.Instant)
+
+    /**
+     * Per-account, per-currency net of CONFIRMED transactions in signed minor units
+     * (INCOME positive, EXPENSE negative). TRANSFER rows are excluded — they're net-zero
+     * across both legs and v1 doesn't model the second leg yet.
+     */
+    @Query(
+        """
+        SELECT accountId AS accountId,
+               currency AS currency,
+               SUM(CASE WHEN type = 'EXPENSE' THEN -amountMinor ELSE amountMinor END) AS sumMinor
+        FROM transactions
+        WHERE status = 'CONFIRMED' AND type != 'TRANSFER'
+        GROUP BY accountId, currency
+        """,
+    )
+    fun observeBalancesByAccount(): Flow<List<AccountBalanceRow>>
 }

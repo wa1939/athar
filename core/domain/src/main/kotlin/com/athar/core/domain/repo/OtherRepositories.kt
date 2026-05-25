@@ -1,7 +1,9 @@
 package com.athar.core.domain.repo
 
 import com.athar.core.domain.model.Account
+import com.athar.core.domain.model.AccountBalance
 import com.athar.core.domain.model.CategoryRule
+import com.athar.core.domain.model.NetWorth
 import com.athar.core.domain.model.InvestmentContribution
 import com.athar.core.domain.model.InvestmentPool
 import com.athar.core.domain.model.PatternType
@@ -12,8 +14,24 @@ import kotlinx.coroutines.flow.Flow
 
 interface AccountRepository {
     fun observeActive(): Flow<List<Account>>
+    fun observeAll(includeArchived: Boolean = true): Flow<List<Account>>
+    suspend fun get(id: String): Account?
     suspend fun upsert(account: Account)
+    suspend fun setArchived(id: String, archived: Boolean)
     suspend fun delete(id: String)
+
+    /**
+     * Live net worth for the user's chosen display currency. Combines active accounts
+     * with CONFIRMED transaction balances. Reads displayCurrency from prefs implicitly
+     * via the call site — pass it in so this stays pure.
+     */
+    fun observeNetWorth(displayCurrency: String): Flow<NetWorth>
+
+    /**
+     * Computed balance per active account (openingBalance + confirmed Σ).
+     * Use for the Accounts screen list rows.
+     */
+    fun observeBalances(): Flow<List<AccountBalance>>
 }
 
 interface CategoryRuleRepository {

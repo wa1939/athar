@@ -17,4 +17,5 @@ object Routes {
     @Serializable data object ActivityLog
     @Serializable data object UserTemplates
     @Serializable data object RecurringRules
+    @Serializable data object Accounts
 }

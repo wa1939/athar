@@ -16,6 +16,7 @@ import com.athar.core.data.db.dao.WishlistDao
 import com.athar.core.data.backup.BackupService
 import com.athar.core.data.csv.CsvExporter
 import com.athar.core.data.csv.CsvImporter
+import com.athar.core.data.repo.AccountRepositoryImpl
 import com.athar.core.data.repo.ActivityLogRepositoryImpl
 import com.athar.core.data.repo.CategoryRepositoryImpl
 import com.athar.core.data.repo.CategoryRuleRepositoryImpl
@@ -25,6 +26,7 @@ import com.athar.core.data.prefs.UserPreferencesRepositoryImpl
 import com.athar.core.data.repo.TransactionRepositoryImpl
 import com.athar.core.data.repo.UserTemplateRepositoryImpl
 import com.athar.core.data.repo.WishlistRepositoryImpl
+import com.athar.core.domain.repo.AccountRepository
 import com.athar.core.domain.repo.ActivityLogRepository
 import com.athar.core.domain.repo.BackupRepository
 import com.athar.core.domain.repo.CategoryRepository
@@ -84,6 +86,7 @@ internal object DatabaseModule {
                     AtharDatabase.MIGRATION_1_2,
                     AtharDatabase.MIGRATION_2_3,
                     AtharDatabase.MIGRATION_3_4,
+                    AtharDatabase.MIGRATION_4_5,
                 )
                 .fallbackToDestructiveMigrationOnDowngrade()
                 .build()
@@ -117,6 +120,9 @@ internal object DatabaseModule {
 @Module
 @InstallIn(SingletonComponent::class)
 internal abstract class RepositoryModule {
+
+    @Binds @Singleton
+    abstract fun bindAccountRepository(impl: AccountRepositoryImpl): AccountRepository
 
     @Binds @Singleton
     abstract fun bindTransactionRepository(impl: TransactionRepositoryImpl): TransactionRepository

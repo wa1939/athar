@@ -12,8 +12,12 @@ enum class TxStatus { PENDING, CONFIRMED, DISMISSED }
 /** Master Brief §4.5 — Category.kind. */
 enum class CategoryKind { EXPENSE, INCOME }
 
-/** Master Brief §4.5 — Account.type. */
-enum class AccountType { DEBIT, CREDIT, CASH, OTHER }
+/**
+ * Account types. v2 (G-4) expanded from the original DEBIT/CREDIT/CASH/OTHER
+ * to the six-bucket TMOAP-style taxonomy. Migration MIGRATION_4_5 remaps
+ * legacy DEBIT → CHECKING and CREDIT → CREDIT_CARD.
+ */
+enum class AccountType { CHECKING, SAVINGS, CREDIT_CARD, CASH, INVESTMENT, OTHER }
 
 /** Master Brief §4.7 — CategoryRule.patternType. */
 enum class PatternType { SUBSTRING, REGEX, EXACT }
