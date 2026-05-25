@@ -137,6 +137,43 @@ private fun Header(state: TodayState) {
             style = theme.typography.caption,
             color = theme.colors.muted,
         )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = theme.spacing.s),
+            horizontalArrangement = Arrangement.spacedBy(theme.spacing.m),
+        ) {
+            FlowPill(label = "الدخل", money = state.totalIncome, accent = theme.colors.olive, modifier = Modifier.weight(1f))
+            FlowPill(label = "المصاريف", money = state.totalExpense, accent = theme.colors.ember, modifier = Modifier.weight(1f))
+        }
+        val savingsRate = state.savingsRate
+        if (savingsRate != null) {
+            AtharText(
+                text = "معدّل الادخار · ${"%.0f".format(savingsRate)}٪",
+                style = theme.typography.caption,
+                color = if (savingsRate >= 0) theme.colors.olive else theme.colors.ember,
+            )
+        }
+    }
+}
+
+@Composable
+private fun FlowPill(
+    label: String,
+    money: com.athar.core.common.money.Money,
+    accent: Color,
+    modifier: Modifier = Modifier,
+) {
+    val theme = AtharTheme
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(theme.colors.surface)
+            .padding(theme.spacing.s),
+        verticalArrangement = Arrangement.spacedBy(theme.spacing.xs),
+    ) {
+        AtharText(text = label, style = theme.typography.caption, color = theme.colors.muted)
+        AtharNumber(money = money, color = accent)
     }
 }
 

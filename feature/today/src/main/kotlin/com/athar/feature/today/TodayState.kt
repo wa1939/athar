@@ -17,6 +17,11 @@ data class TodayState(
     val pending: ImmutableList<Transaction>,
     val isLoading: Boolean,
 ) {
+    /** Percentage of income that became savings this month, or null if no income yet. */
+    val savingsRate: Double? =
+        if (totalIncome.isZero()) null
+        else netFlow.amount.toDouble() / totalIncome.amount.toDouble() * 100.0
+
     companion object {
         fun empty(month: YearMonth): TodayState = TodayState(
             month = month,
