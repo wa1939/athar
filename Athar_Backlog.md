@@ -136,6 +136,7 @@ Legend
 | B-06 | Subscription detection (heuristic: same merchant + similar amount monthly) | P2 | 2 | S-07 | Settings → Subscriptions list |
 | B-07 | Receipt photo OCR via ML Kit (camera + parse → prefill transaction sheet) | P2 | 3 | M-03 | 70%+ accuracy on Saudi receipts |
 | B-08 | Multi-account support (add a second account with its own SMS senders) | P2 | 2 | S-20 | Account filter on Today / Trends |
+| H-01 | All-Transactions / History screen — full-list view with merchant search + category filter + date range + bulk re-categorize | P1 | 2 | M-01, M-04 | New `feature/history` module (or Settings entry); list shows all CONFIRMED transactions across time; search box filters by merchant substring; category-filter chip row; tap row opens existing EditTransactionSheet; "select multiple → reassign category" bulk action; works on 10k+ rows without jank (LazyColumn + paged DAO). |
 
 **Phase 5 total:** open-ended
 
