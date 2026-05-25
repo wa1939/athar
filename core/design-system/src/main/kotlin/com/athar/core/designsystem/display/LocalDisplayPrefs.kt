@@ -9,3 +9,11 @@ import androidx.compose.runtime.staticCompositionLocalOf
  * Default: Hijri off (Gregorian only). The wiring lives in app/AtharApp.
  */
 val LocalHijriEnabled = staticCompositionLocalOf { false }
+
+/**
+ * The user's chosen display currency (ISO-4217). Defaults to SAR (Saudi-first) so the
+ * design system renders correctly in previews and tests without the app wiring it in.
+ * The real app overrides this from [com.athar.core.domain.repo.UserPreferencesRepository]
+ * at [com.athar.ui.AtharApp].
+ */
+val LocalDisplayCurrency = staticCompositionLocalOf { "SAR" }

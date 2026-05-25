@@ -29,6 +29,7 @@ import androidx.navigation.compose.rememberNavController
 import com.athar.core.designsystem.component.AtharBottomBar
 import com.athar.core.designsystem.component.AtharBottomBarItem
 import com.athar.core.designsystem.component.AtharText
+import com.athar.core.designsystem.display.LocalDisplayCurrency
 import com.athar.core.designsystem.display.LocalHijriEnabled
 import com.athar.core.designsystem.theme.AtharTheme
 import com.athar.core.designsystem.theme.MinTouchTarget
@@ -50,6 +51,7 @@ fun AtharApp() {
 
     val appPrefs: AppPrefsViewModel = hiltViewModel()
     val hijriEnabled by appPrefs.hijriEnabled.collectAsStateWithLifecycle()
+    val displayCurrency by appPrefs.displayCurrency.collectAsStateWithLifecycle()
 
     val navController = rememberNavController()
     val current by navController.currentBackStackEntryAsState()
@@ -62,7 +64,10 @@ fun AtharApp() {
         routeName.endsWith("UserTemplates")
     val theme = AtharTheme
 
-    CompositionLocalProvider(LocalHijriEnabled provides hijriEnabled) {
+    CompositionLocalProvider(
+        LocalHijriEnabled provides hijriEnabled,
+        LocalDisplayCurrency provides displayCurrency,
+    ) {
         Scaffold(
             topBar = {
                 if (!isOnboarding && !isSettingsArea) {

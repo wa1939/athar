@@ -24,6 +24,7 @@ internal class UserPreferencesRepositoryImpl @Inject constructor(
     private val lastBackfillKey = longPreferencesKey("last_sms_backfill_epoch_seconds")
     private val hijriKey = booleanPreferencesKey("hijri_display_enabled")
     private val ownAccountsKey = stringPreferencesKey("own_account_numbers_csv")
+    private val displayCurrencyKey = stringPreferencesKey("display_currency_iso4217")
 
     override fun onboardingComplete(): Flow<Boolean> =
         context.userPrefs.data.map { it[onboardingKey] ?: false }
@@ -53,5 +54,14 @@ internal class UserPreferencesRepositoryImpl @Inject constructor(
 
     override suspend fun setOwnAccountNumbers(numbers: List<String>) {
         context.userPrefs.edit { it[ownAccountsKey] = numbers.joinToString(",") { it.trim() } }
+    }
+
+    override fun displayCurrency(): Flow<String> =
+        context.userPrefs.data.map { it[displayCurrencyKey] ?: "SAR" }
+
+    override suspend fun setDisplayCurrency(currency: String) {
+        val normalized = currency.trim().uppercase()
+        require(normalized.length == 3) { "Currency must be ISO-4217 3-letter code, got '$currency'" }
+        context.userPrefs.edit { it[displayCurrencyKey] = normalized }
     }
 }

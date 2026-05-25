@@ -79,5 +79,19 @@ data class Money internal constructor(
          */
         fun ofMinor(minor: Long, currency: String = SAR, fractionDigits: Int = 2): Money =
             Money(BigDecimal.valueOf(minor, fractionDigits), currency)
+
+        /**
+         * Sum a sequence's [Money] amounts into a single currency. Unlike `+`, this
+         * does NOT require source items to share a currency — it adds the raw
+         * BigDecimal amounts and wraps with [intoCurrency]. Use only at presentation
+         * boundaries when aggregating mixed-currency data into the user's display
+         * currency; the result is a 1:1 (no-FX) projection, not a converted total.
+         *
+         * Returns [zero] in [intoCurrency] for an empty input.
+         */
+        fun sumAmounts(items: Iterable<Money>, intoCurrency: String = SAR): Money {
+            val total = items.fold(BigDecimal.ZERO) { acc, m -> acc + m.amount }
+            return Money(total, intoCurrency)
+        }
     }
 }

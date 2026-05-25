@@ -10,6 +10,7 @@ import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRuleRepository
 import com.athar.core.domain.repo.TransactionRepository
+import com.athar.core.domain.repo.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -30,6 +31,7 @@ import javax.inject.Inject
 class TodayViewModel @Inject constructor(
     private val transactions: TransactionRepository,
     private val rules: CategoryRuleRepository,
+    private val prefs: UserPreferencesRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -43,8 +45,9 @@ class TodayViewModel @Inject constructor(
                 combine(
                     transactions.observeByPeriod(period, status = TxStatus.CONFIRMED),
                     transactions.observePending(),
-                ) { confirmed, pending ->
-                    deriveState(m, confirmed, pending)
+                    prefs.displayCurrency(),
+                ) { confirmed, pending, currency ->
+                    deriveState(m, confirmed, pending, currency)
                 }
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayState.empty(currentMonth()))
@@ -94,10 +97,11 @@ class TodayViewModel @Inject constructor(
         month: YearMonth,
         confirmed: List<Transaction>,
         pending: List<Transaction>,
+        currency: String,
     ): TodayState {
         val (income, expense) = confirmed.partition { it.type == TxType.INCOME }
-        val incomeSum = income.fold(Money.zero()) { acc, tx -> acc + tx.amount }
-        val expenseSum = expense.fold(Money.zero()) { acc, tx -> acc + tx.amount }
+        val incomeSum = Money.sumAmounts(income.map { it.amount }, currency)
+        val expenseSum = Money.sumAmounts(expense.map { it.amount }, currency)
         return TodayState(
             month = month,
             netFlow = incomeSum - expenseSum,

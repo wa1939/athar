@@ -70,6 +70,9 @@ class SettingsViewModel @Inject constructor(
     val ownAccountNumbers: StateFlow<List<String>> = prefs.ownAccountNumbers()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    val displayCurrency: StateFlow<String> = prefs.displayCurrency()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "SAR")
+
     fun setHijriEnabled(enabled: Boolean) {
         viewModelScope.launch { prefs.setHijriEnabled(enabled) }
     }
@@ -79,6 +82,10 @@ class SettingsViewModel @Inject constructor(
             val list = csv.split(',').map { it.trim() }.filter { it.isNotEmpty() }
             prefs.setOwnAccountNumbers(list)
         }
+    }
+
+    fun setDisplayCurrency(code: String) {
+        viewModelScope.launch { prefs.setDisplayCurrency(code) }
     }
 
     fun export(resolver: ContentResolver, uri: Uri, passphrase: String) {

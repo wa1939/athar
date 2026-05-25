@@ -21,4 +21,7 @@ class AppPrefsViewModel @Inject constructor(
 
     val hijriEnabled: StateFlow<Boolean> = prefs.hijriEnabled()
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val displayCurrency: StateFlow<String> = prefs.displayCurrency()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "SAR")
 }

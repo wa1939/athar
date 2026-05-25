@@ -546,11 +546,12 @@ private fun DrilldownSheet(
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         AtharText(text = "المتوسط (١٢ شهرًا)", style = theme.typography.caption, color = theme.colors.muted)
-                        val avg = state.bars.fold(com.athar.core.common.money.Money.zero()) { acc, b -> acc + b.amount }
+                        val barCurrency = state.bars.firstOrNull()?.amount?.currency ?: target.currency
+                        val avg = com.athar.core.common.money.Money.sumAmounts(state.bars.map { it.amount }, barCurrency)
                         val n = state.bars.size.coerceAtLeast(1)
                         val avgMoney = com.athar.core.common.money.Money.of(
                             avg.amount.divide(java.math.BigDecimal(n), 2, java.math.RoundingMode.HALF_EVEN),
-                            avg.currency,
+                            barCurrency,
                         )
                         AtharNumber(money = avgMoney)
                     }

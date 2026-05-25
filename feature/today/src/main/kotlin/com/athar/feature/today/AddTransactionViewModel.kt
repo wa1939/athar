@@ -11,6 +11,8 @@ import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.TransactionRepository
+import com.athar.core.domain.repo.UserPreferencesRepository
+import kotlinx.coroutines.flow.first
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -32,6 +34,7 @@ import javax.inject.Inject
 class AddTransactionViewModel @Inject constructor(
     private val transactions: TransactionRepository,
     private val categories: CategoryRepository,
+    private val prefs: UserPreferencesRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -77,11 +80,12 @@ class AddTransactionViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true) }
             val now = clock.now()
+            val currency = prefs.displayCurrency().first()
             val tx = Transaction(
                 id = UUID.randomUUID().toString(),
                 accountId = MANUAL_ACCOUNT_ID,
                 type = s.type,
-                amount = Money.of(BigDecimal(s.amount)),
+                amount = Money.of(BigDecimal(s.amount), currency),
                 date = s.date,
                 occurredAt = now,
                 merchant = s.merchant.trim(),

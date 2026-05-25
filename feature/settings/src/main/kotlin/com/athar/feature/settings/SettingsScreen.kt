@@ -42,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.athar.core.designsystem.component.AtharCard
 import com.athar.core.designsystem.component.AtharText
 import com.athar.core.designsystem.component.AtharTextField
+import com.athar.core.designsystem.display.CurrencyCatalog
 import com.athar.core.designsystem.theme.AtharTheme
 
 @Composable
@@ -80,6 +81,7 @@ fun SettingsScreen(
     val hijriEnabled by viewModel.hijriEnabled.collectAsStateWithLifecycle()
     val rescanStatus by viewModel.rescanStatus.collectAsStateWithLifecycle()
     val ownAccounts by viewModel.ownAccountNumbers.collectAsStateWithLifecycle()
+    val displayCurrency by viewModel.displayCurrency.collectAsStateWithLifecycle()
 
     val exportLauncher = rememberLauncherForActivityResult(CreateDocument("application/octet-stream")) { uri ->
         if (uri != null) pendingExportUri = uri
@@ -138,6 +140,11 @@ fun SettingsScreen(
                 onImport = { csvLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "*/*")) },
                 onExport = { csvExportLauncher.launch("athar-transactions.csv") },
                 onClear = viewModel::clearCsvStatus,
+            )
+
+            DisplayCurrencyCard(
+                currentCode = displayCurrency,
+                onSelect = viewModel::setDisplayCurrency,
             )
 
             HijriToggleCard(
@@ -403,6 +410,78 @@ private fun AboutCard() {
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
+        }
+    }
+}
+
+@Composable
+private fun DisplayCurrencyCard(
+    currentCode: String,
+    onSelect: (String) -> Unit,
+) {
+    val theme = AtharTheme
+    var expanded by remember { mutableStateOf(false) }
+    val current = remember(currentCode) { CurrencyCatalog.entryOf(currentCode) }
+    AtharCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = "العملة المعروضة", style = theme.typography.headline)
+            AtharText(
+                text = "اختر عملة العرض. الحركات المستوردة من الرسائل تحتفظ بعملتها الأصلية، لكن إدخالاتك اليدوية ستستخدم هذه العملة. لا يوجد تحويل تلقائي.",
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(theme.spacing.s))
+                    .background(theme.colors.divider)
+                    .clickable { expanded = !expanded }
+                    .padding(theme.spacing.m),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                AtharText(
+                    text = current?.labelAr ?: currentCode,
+                    style = theme.typography.headline,
+                    color = theme.colors.ink,
+                )
+                AtharText(
+                    text = "${current?.symbol ?: currentCode} · $currentCode",
+                    style = theme.typography.body,
+                    color = theme.colors.muted,
+                )
+            }
+            if (expanded) {
+                Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+                    CurrencyCatalog.supported.forEach { entry ->
+                        val isSelected = entry.code == currentCode
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(theme.spacing.s))
+                                .background(if (isSelected) theme.colors.ember else theme.colors.parchment)
+                                .clickable {
+                                    onSelect(entry.code)
+                                    expanded = false
+                                }
+                                .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            AtharText(
+                                text = entry.labelAr,
+                                style = theme.typography.body,
+                                color = if (isSelected) theme.colors.parchment else theme.colors.ink,
+                            )
+                            AtharText(
+                                text = "${entry.symbol} · ${entry.code}",
+                                style = theme.typography.caption,
+                                color = if (isSelected) theme.colors.parchment else theme.colors.muted,
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

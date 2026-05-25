@@ -10,6 +10,7 @@ import com.athar.core.domain.model.TxType
 import com.athar.core.domain.model.WishlistItem
 import com.athar.core.domain.model.WishlistStatus
 import com.athar.core.domain.repo.TransactionRepository
+import com.athar.core.domain.repo.UserPreferencesRepository
 import com.athar.core.domain.repo.WishlistRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
@@ -31,6 +32,7 @@ import kotlin.math.ceil
 class WishlistViewModel @Inject constructor(
     private val wishlist: WishlistRepository,
     private val transactions: TransactionRepository,
+    private val prefs: UserPreferencesRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -38,8 +40,9 @@ class WishlistViewModel @Inject constructor(
         combine(
             wishlist.observeAll(),
             transactions.observeByPeriod(last3MonthsPeriod(), status = TxStatus.CONFIRMED),
-        ) { items, tx ->
-            derive(items, tx)
+            prefs.displayCurrency(),
+        ) { items, tx, currency ->
+            derive(items, tx, currency)
         }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WishlistState.initial())
 
@@ -52,13 +55,13 @@ class WishlistViewModel @Inject constructor(
         }
     }
 
-    private fun derive(items: List<WishlistItem>, tx: List<Transaction>): WishlistState {
-        val income = tx.filter { it.type == TxType.INCOME }.fold(Money.zero()) { a, t -> a + t.amount }
-        val expense = tx.filter { it.type == TxType.EXPENSE }.fold(Money.zero()) { a, t -> a + t.amount }
+    private fun derive(items: List<WishlistItem>, tx: List<Transaction>, currency: String): WishlistState {
+        val income = Money.sumAmounts(tx.filter { it.type == TxType.INCOME }.map { it.amount }, currency)
+        val expense = Money.sumAmounts(tx.filter { it.type == TxType.EXPENSE }.map { it.amount }, currency)
         val net = income - expense
         // Monthly capacity = (3-month net flow) / 3, floored at zero.
-        val capacity: Money = if (net.amount.signum() <= 0) Money.zero() else
-            Money.of(net.amount.divide(BigDecimal(3), 2, RoundingMode.HALF_EVEN))
+        val capacity: Money = if (net.amount.signum() <= 0) Money.zero(currency) else
+            Money.of(net.amount.divide(BigDecimal(3), 2, RoundingMode.HALF_EVEN), currency)
 
         val rows = items.map { item -> classify(item, capacity) }.toImmutableList()
 

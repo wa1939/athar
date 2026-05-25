@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import com.athar.core.common.money.Money
+import com.athar.core.designsystem.display.CurrencyCatalog
+import com.athar.core.designsystem.display.LocalDisplayCurrency
 import com.athar.core.designsystem.theme.AtharTheme
 import java.math.BigDecimal
 import java.text.NumberFormat
@@ -35,6 +37,7 @@ fun AtharNumber(
 ) {
     val style: TextStyle = if (landmark) AtharTheme.typography.moneyLandmark else AtharTheme.typography.money
     val resolvedColor: Color = color ?: AtharTheme.colors.ink
+    val displayCurrency = LocalDisplayCurrency.current
     val targetValue = money.amount.toFloat()
     val displayedAmount = if (animate) {
         val animated by animateFloatAsState(
@@ -47,7 +50,7 @@ fun AtharNumber(
         money.amount
     }
     Text(
-        text = format(displayedAmount, money.currency, locale),
+        text = format(displayedAmount, money.currency, displayCurrency, locale),
         modifier = modifier,
         color = resolvedColor,
         style = style,
@@ -57,7 +60,12 @@ fun AtharNumber(
 private const val CountUpDurationMs = 600
 private val CountUpSpec: AnimationSpec<Float> = tween(durationMillis = CountUpDurationMs, easing = EaseOut)
 
-private fun format(amount: BigDecimal, currency: String, locale: Locale): String {
+private fun format(
+    amount: BigDecimal,
+    moneyCurrency: String,
+    displayCurrency: String,
+    locale: Locale,
+): String {
     val formatter = NumberFormat.getNumberInstance(locale).apply {
         maximumFractionDigits = 2
         minimumFractionDigits = 0
@@ -66,10 +74,12 @@ private fun format(amount: BigDecimal, currency: String, locale: Locale): String
     val sign = if (amount.signum() < 0) "-" else ""
     val abs = amount.abs()
     val number = formatter.format(abs)
-    return when (currency) {
-        Money.SAR -> "$sign$number ر.س"
-        else -> "$sign$number $currency"
-    }
+    // The Money value keeps its own currency code (e.g., a SAR-stored SMS transaction
+    // stays SAR even when the user picked USD as display). Render with the Money's
+    // currency symbol — that's the truth. If the user wants foreign amounts converted
+    // they'll switch the underlying transactions, not the formatter.
+    val symbol = CurrencyCatalog.symbolOf(moneyCurrency)
+    return "$sign$number $symbol"
 }
 
 @Preview

@@ -26,4 +26,17 @@ interface UserPreferencesRepository {
      */
     fun ownAccountNumbers(): Flow<List<String>>
     suspend fun setOwnAccountNumbers(numbers: List<String>)
+
+    /**
+     * The user's chosen display currency (ISO-4217 3-letter code). Defaults to SAR.
+     * Drives the symbol shown in [com.athar.core.designsystem.component.AtharNumber]
+     * and the default currency for new Money values created from manual entry.
+     *
+     * Stored transactions keep their original currency code (e.g., SMS-parsed Saudi
+     * transactions stay SAR even if the user later switches display to USD). The display
+     * layer renders them with the currency code suffix when they differ from the user's
+     * chosen display currency.
+     */
+    fun displayCurrency(): Flow<String>
+    suspend fun setDisplayCurrency(currency: String)
 }

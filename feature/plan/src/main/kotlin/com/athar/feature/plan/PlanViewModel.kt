@@ -11,6 +11,7 @@ import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.TransactionRepository
+import com.athar.core.domain.repo.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -31,6 +33,7 @@ import javax.inject.Inject
 class PlanViewModel @Inject constructor(
     private val transactions: TransactionRepository,
     private val categories: CategoryRepository,
+    private val prefs: UserPreferencesRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -44,8 +47,9 @@ class PlanViewModel @Inject constructor(
                 combine(
                     categories.observeAll(kind = CategoryKind.EXPENSE),
                     transactions.observeByPeriod(period, status = TxStatus.CONFIRMED),
-                ) { cats, txs ->
-                    derive(m, cats, txs)
+                    prefs.displayCurrency(),
+                ) { cats, txs, currency ->
+                    derive(m, cats, txs, currency)
                 }
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlanState.empty(currentMonth()))
@@ -60,7 +64,8 @@ class PlanViewModel @Inject constructor(
     private fun saveTarget(categoryId: String, targetMinor: Long?) {
         viewModelScope.launch {
             val current = categories.get(categoryId) ?: return@launch
-            val newTarget = targetMinor?.let { Money.ofMinor(it) }
+            val currency = prefs.displayCurrency().first()
+            val newTarget = targetMinor?.let { Money.ofMinor(it, currency = currency) }
             categories.upsert(current.copy(monthlyTarget = newTarget))
         }
     }
@@ -69,22 +74,23 @@ class PlanViewModel @Inject constructor(
         month: YearMonth,
         cats: List<Category>,
         txs: List<Transaction>,
+        currency: String,
     ): PlanState {
         val byCategory = txs
             .filter { it.type == TxType.EXPENSE }
             .groupBy { it.categoryId }
-            .mapValues { (_, list) -> list.fold(Money.zero()) { acc, tx -> acc + tx.amount } }
+            .mapValues { (_, list) -> Money.sumAmounts(list.map { it.amount }, currency) }
 
         val rows = cats.map { cat ->
             BudgetRow(
                 category = cat,
-                actual = byCategory[cat.id] ?: Money.zero(),
+                actual = byCategory[cat.id] ?: Money.zero(currency),
                 target = cat.monthlyTarget,
             )
         }.toImmutableList()
 
-        val totalTarget = cats.mapNotNull { it.monthlyTarget }.fold(Money.zero()) { acc, m -> acc + m }
-        val totalActual = byCategory.values.fold(Money.zero()) { acc, m -> acc + m }
+        val totalTarget = Money.sumAmounts(cats.mapNotNull { it.monthlyTarget }, currency)
+        val totalActual = Money.sumAmounts(byCategory.values, currency)
 
         return PlanState(
             month = month,

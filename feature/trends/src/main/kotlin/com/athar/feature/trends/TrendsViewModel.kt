@@ -16,6 +16,7 @@ import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.TransactionRepository
+import com.athar.core.domain.repo.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -49,6 +50,7 @@ data class DrilldownState(
 class TrendsViewModel @Inject constructor(
     private val transactions: TransactionRepository,
     private val categories: CategoryRepository,
+    private val prefs: UserPreferencesRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -69,8 +71,9 @@ class TrendsViewModel @Inject constructor(
                         transactions.observeByPeriod(period, status = TxStatus.CONFIRMED),
                         transactions.observeByPeriod(previous, status = TxStatus.CONFIRMED),
                         transactions.observeByPeriod(last12, status = TxStatus.CONFIRMED),
-                    ) { cats, current, prior, twelveMonths ->
-                        derive(key, period, range, cats, current, prior, twelveMonths)
+                        prefs.displayCurrency(),
+                    ) { cats, current, prior, twelveMonths, currency ->
+                        derive(key, period, range, cats, current, prior, twelveMonths, currency)
                     }
                 }
             }
@@ -84,7 +87,8 @@ class TrendsViewModel @Inject constructor(
                 else combine(
                     categories.observeAll(includeArchived = true),
                     transactions.observeByPeriod(last12Months(), status = TxStatus.CONFIRMED),
-                ) { cats, txs -> buildDrilldown(catId, cats, txs) }
+                    prefs.displayCurrency(),
+                ) { cats, txs, currency -> buildDrilldown(catId, cats, txs, currency) }
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
@@ -132,20 +136,21 @@ class TrendsViewModel @Inject constructor(
         current: List<Transaction>,
         prior: List<Transaction>,
         twelveMonths: List<Transaction>,
+        currency: String,
     ): TrendsState {
         val expense = current.filter { it.type == TxType.EXPENSE }
         val income = current.filter { it.type == TxType.INCOME }
-        val expenseSum = expense.fold(Money.zero()) { acc, tx -> acc + tx.amount }
-        val incomeSum = income.fold(Money.zero()) { acc, tx -> acc + tx.amount }
+        val expenseSum = Money.sumAmounts(expense.map { it.amount }, currency)
+        val incomeSum = Money.sumAmounts(income.map { it.amount }, currency)
         val priorExpense = prior.filter { it.type == TxType.EXPENSE }
         val priorIncome = prior.filter { it.type == TxType.INCOME }
-        val priorExpenseSum = priorExpense.fold(Money.zero()) { acc, tx -> acc + tx.amount }
-        val priorIncomeSum = priorIncome.fold(Money.zero()) { acc, tx -> acc + tx.amount }
+        val priorExpenseSum = Money.sumAmounts(priorExpense.map { it.amount }, currency)
+        val priorIncomeSum = Money.sumAmounts(priorIncome.map { it.amount }, currency)
 
         val byCategoryId = expense.groupBy { it.categoryId }
-            .mapValues { (_, list) -> list.fold(Money.zero()) { acc, tx -> acc + tx.amount } }
+            .mapValues { (_, list) -> Money.sumAmounts(list.map { it.amount }, currency) }
         val priorByCategoryId = priorExpense.groupBy { it.categoryId }
-            .mapValues { (_, list) -> list.fold(Money.zero()) { acc, tx -> acc + tx.amount } }
+            .mapValues { (_, list) -> Money.sumAmounts(list.map { it.amount }, currency) }
 
         val categoryById = cats.associateBy { it.id }
         val bars = byCategoryId
@@ -169,8 +174,8 @@ class TrendsViewModel @Inject constructor(
                 categoryId = catId,
                 labelAr = cat.nameAr,
                 labelEn = cat.name,
-                currentTotal = byCategoryId[catId] ?: Money.zero(),
-                previousTotal = priorByCategoryId[catId] ?: Money.zero(),
+                currentTotal = byCategoryId[catId] ?: Money.zero(currency),
+                previousTotal = priorByCategoryId[catId] ?: Money.zero(currency),
             )
         }.sortedByDescending { it.currentTotal.amount.max(it.previousTotal.amount) }
             .toImmutableList()
@@ -191,7 +196,7 @@ class TrendsViewModel @Inject constructor(
             .take(12)
             .toImmutableList()
 
-        val monthly = buildMonthlySeries(cats, twelveMonths)
+        val monthly = buildMonthlySeries(cats, twelveMonths, currency)
 
         return TrendsState(
             periodKey = key,
@@ -212,36 +217,38 @@ class TrendsViewModel @Inject constructor(
         )
     }
 
-    private fun buildMonthlySeries(cats: List<Category>, txs: List<Transaction>): MonthlySeries {
+    private fun buildMonthlySeries(cats: List<Category>, txs: List<Transaction>, currency: String): MonthlySeries {
         val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
         val nowYm = YearMonth.of(now.year, now.monthNumber)
         val months: List<YearMonth> = (11 downTo 0).map { o -> nowYm.minusMonths(o.toLong()) }
-        val incomeByMonth = mutableMapOf<YearMonth, Money>().apply { months.forEach { put(it, Money.zero()) } }
-        val expenseByMonth = mutableMapOf<YearMonth, Money>().apply { months.forEach { put(it, Money.zero()) } }
+        val incomeByMonthAmt = mutableMapOf<YearMonth, BigDecimal>().apply { months.forEach { put(it, BigDecimal.ZERO) } }
+        val expenseByMonthAmt = mutableMapOf<YearMonth, BigDecimal>().apply { months.forEach { put(it, BigDecimal.ZERO) } }
         txs.forEach { tx ->
             val ym = YearMonth.of(tx.date.year, tx.date.monthNumber)
-            if (ym !in incomeByMonth) return@forEach
+            if (ym !in incomeByMonthAmt) return@forEach
             when (tx.type) {
-                TxType.INCOME -> incomeByMonth[ym] = incomeByMonth.getValue(ym) + tx.amount
-                TxType.EXPENSE -> expenseByMonth[ym] = expenseByMonth.getValue(ym) + tx.amount
+                TxType.INCOME -> incomeByMonthAmt[ym] = incomeByMonthAmt.getValue(ym) + tx.amount.amount
+                TxType.EXPENSE -> expenseByMonthAmt[ym] = expenseByMonthAmt.getValue(ym) + tx.amount.amount
                 else -> Unit
             }
         }
-        val incomeBars = months.map { ym -> AtharMonthlyBar(month = ym, amount = incomeByMonth.getValue(ym)) }
-        val expenseBars = months.map { ym -> AtharMonthlyBar(month = ym, amount = expenseByMonth.getValue(ym)) }
+        val incomeBars = months.map { ym -> AtharMonthlyBar(month = ym, amount = Money.of(incomeByMonthAmt.getValue(ym), currency)) }
+        val expenseBars = months.map { ym -> AtharMonthlyBar(month = ym, amount = Money.of(expenseByMonthAmt.getValue(ym), currency)) }
         val savingsBars = months.map { ym ->
-            AtharMonthlyBar(month = ym, amount = incomeByMonth.getValue(ym) - expenseByMonth.getValue(ym))
+            AtharMonthlyBar(month = ym, amount = Money.of(incomeByMonthAmt.getValue(ym) - expenseByMonthAmt.getValue(ym), currency))
         }
         val n = months.size
-        val avgIncome = average(incomeBars.map { it.amount }, n)
-        val avgExpense = average(expenseBars.map { it.amount }, n)
-        val avgSavings = average(savingsBars.map { it.amount }, n)
-        val targetExpense = cats
-            .filter { it.kind == CategoryKind.EXPENSE && it.monthlyTarget != null }
-            .fold(Money.zero()) { acc, c -> acc + (c.monthlyTarget ?: Money.zero()) }
-        val targetIncome = cats
-            .filter { it.kind == CategoryKind.INCOME && it.monthlyTarget != null }
-            .fold(Money.zero()) { acc, c -> acc + (c.monthlyTarget ?: Money.zero()) }
+        val avgIncome = average(incomeBars.map { it.amount }, n, currency)
+        val avgExpense = average(expenseBars.map { it.amount }, n, currency)
+        val avgSavings = average(savingsBars.map { it.amount }, n, currency)
+        val targetExpense = Money.sumAmounts(
+            cats.filter { it.kind == CategoryKind.EXPENSE }.mapNotNull { it.monthlyTarget },
+            currency,
+        )
+        val targetIncome = Money.sumAmounts(
+            cats.filter { it.kind == CategoryKind.INCOME }.mapNotNull { it.monthlyTarget },
+            currency,
+        )
         val targetSavings = if (targetIncome.isPositive() && targetExpense.isPositive())
             targetIncome - targetExpense else null
 
@@ -258,11 +265,11 @@ class TrendsViewModel @Inject constructor(
         )
     }
 
-    private fun average(values: List<Money>, n: Int): Money {
-        if (n == 0) return Money.zero()
-        val total = values.fold(Money.zero()) { acc, m -> acc + m }
+    private fun average(values: List<Money>, n: Int, currency: String): Money {
+        if (n == 0) return Money.zero(currency)
+        val total = Money.sumAmounts(values, currency)
         val avg = total.amount.divide(BigDecimal(n), 2, RoundingMode.HALF_EVEN)
-        return Money.of(avg, total.currency)
+        return Money.of(avg, currency)
     }
 
     private fun colorForCategory(cat: Category): Color {
@@ -280,18 +287,19 @@ class TrendsViewModel @Inject constructor(
         categoryId: String,
         cats: List<Category>,
         txs: List<Transaction>,
+        currency: String,
     ): DrilldownState {
         val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
         val nowYm = YearMonth.of(now.year, now.monthNumber)
         val months: List<YearMonth> = (11 downTo 0).map { o -> nowYm.minusMonths(o.toLong()) }
-        val bucketed = mutableMapOf<YearMonth, Money>().apply { months.forEach { put(it, Money.zero()) } }
+        val bucketed = mutableMapOf<YearMonth, BigDecimal>().apply { months.forEach { put(it, BigDecimal.ZERO) } }
         txs.filter { it.categoryId == categoryId }.forEach { tx ->
             val ym = YearMonth.of(tx.date.year, tx.date.monthNumber)
-            if (ym in bucketed) bucketed[ym] = bucketed.getValue(ym) + tx.amount
+            if (ym in bucketed) bucketed[ym] = bucketed.getValue(ym) + tx.amount.amount
         }
-        val bars = months.map { ym -> AtharMonthlyBar(month = ym, amount = bucketed.getValue(ym)) }
+        val bars = months.map { ym -> AtharMonthlyBar(month = ym, amount = Money.of(bucketed.getValue(ym), currency)) }
             .toImmutableList()
-        val total = bars.fold(Money.zero()) { acc, b -> acc + b.amount }
+        val total = Money.sumAmounts(bars.map { it.amount }, currency)
         val cat = cats.firstOrNull { it.id == categoryId }
         return DrilldownState(
             categoryId = categoryId,
