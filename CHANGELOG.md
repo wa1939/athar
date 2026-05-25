@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Nothing yet.
 
+## [0.1.0-beta.17] — 2026-05-26
+
+The "Subscriptions + 12× more merchants known" release. Splits R-03 (confirm before create) and R-04 (Subscriptions framing) — the two missing pieces between *suggest a rule* and *actually use the rule list to manage your recurring spend* — and ships an AI-derived merchant-rule expansion that boosts categorization coverage by ~12×.
+
+### Added
+
+- **R-03 · Confirm sheet before rule creation.** Tapping a recurring suggestion now opens a `ModalBottomSheet` where the user picks **cadence** (Monthly / Weekly / Yearly), edits the **day-of-month**, and assigns a **category** (filtered to INCOME / EXPENSE kinds) before the rule is upserted. The merchant name and amount appear as a read-only header. Replaces the previous silent one-tap create which gave zero feedback. Plumbing: `RecurringRulesViewModel.acceptSuggestion(suggestion, notes, cadence, dayOfMonth, categoryId)`, `CategoryRepository` injected for the picker, `lastAccepted` StateFlow drives a 3-second olive toast on success.
+- **R-04 · Subscriptions UI.** Recurring rules screen now partitions rules into **Active** and **Paused** sections; a **"N active subscription(s) · Monthly total · X ر.س"** card sits between Suggestions and Active. Each rule row has an `Active`/`Paused` pill (one-tap toggle) plus a `Delete` button. Reframes the screen from "rule manager" to "subscription manager" so users can say *"this is no longer active"* without losing the rule. New strings: `settings_recurring_active_section`, `_paused_section`, `_active_count`, `_monthly_total_label`.
+- **AI-seeded merchant catalog · 44 → 551 rules.** `core/data/src/main/assets/seed_rules.json` expanded with **507 high-confidence (≥0.70) merchant→category mappings** extracted by running a 1,000-message AlRajhi SMS corpus (the developer's) plus a friend's SMS history through an AI categorizer. Confidence-to-priority mapping: ≥0.85 → priority 80, ≥0.70 → priority 60, <0.70 dropped as noise. 22 categories now have rules; top coverage: `cat-public-transport` (103), `cat-restaurant` (99), `cat-side-income` (69), `cat-groceries` (60), `cat-coffee` (43). Curated rules retain priority 100 and win over AI rules on conflict.
+- **Self-refreshing seed mechanism.** `RuleSeed.seedIfEmpty()` now re-seeds when `seed_rules.json` count changes (was: "skip if any system rule exists"). New DAO methods `CategoryRuleDao.clearSystemRules()` and `countSystemRules()` allow refreshing the system catalog without touching user-learned rules (`learnedFromUser = true`). Upgraded users get the expanded catalog automatically on next launch.
+- **`scripts/merge_ai_seed_rules.py`** — repeatable pipeline for merging future AI rule batches into the seed file with confidence-bucketing, dedupe (lowercased pattern key), and category-count reporting.
+- **`scripts/push_sms_sample.py`** — helper for E2E testing: parses an SMS Exporter `.txt` export and bulk-inserts the messages into an Android emulator's `mmssms.db` via `adb root` + `sqlite3`. Used to verify the parser + categorizer + R-03 + R-04 against a real 1,000-message corpus inside the emulator.
+
+### Verified end-to-end
+
+Pushed all 1,000 AlRajhi messages into the emulator inbox, ran Rescan SMS, then walked the UI:
+
+- **829 / 1000** SMS ingested as transactions (the rest filtered as balance alerts, OTPs, marketing, etc.)
+- **551 system categorization rules seeded** (logged at startup: `I RuleSeed: Seeded 551 categorization rules`)
+- **4 recurring patterns auto-detected** (Yaqoot · day 21 · 80 ر.س · 4 occurrences; Dallah Ho · day 22 · 33.35 ر.س · 3 occurrences; BADRIA MO · day 6 · 4 ر.س · 3 occurrences; SAUDI ELECTRIC COMPANY · day 6 · 443 ر.س · 3 occurrences)
+- **R-03 confirm sheet** opens with `Monthly` preselected and the inferred day-of-month populated; the category picker scrolls Arabic + English labels with an in-sheet search box
+- **R-04 Active section** appears after creation with a "1 active subscription(s) · Monthly total · 80 ر.س" header
+- **Active → Paused toggle** moves the rule to a `Paused · 1` section; the monthly total drops to 0 and the `Active` header card disappears
+- **Save accounts** caption "Saved · N account number stored" confirmed olive-color visible feedback (R-92 from beta.16)
+
 ## [0.1.0-beta.4] — 2026-05-25
 
 The "no more 618-pending-entries" release. Six tightly-coupled fixes addressing the headaches a user with hundreds of historical SMS hits on day one.
@@ -100,6 +125,7 @@ See [ADR-004](docs/adr/ADR-004-mvp-status.md). Notably:
 - Paparazzi snapshot baselines need a first record run.
 - Macrobenchmarks need a real device.
 
-[Unreleased]: https://github.com/wa1939/athar/compare/v0.1.0-beta.1...HEAD
+[Unreleased]: https://github.com/wa1939/athar/compare/v0.1.0-beta.17...HEAD
+[0.1.0-beta.17]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.17
 [0.1.0-beta.1]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.1
 [0.1.0-beta]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta

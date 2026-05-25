@@ -140,7 +140,7 @@ Below is the prioritized gap list, in delivery order.
 
 ---
 
-## Post-Tier-1 user-testing patches (beta.11 → beta.15)
+## Post-Tier-1 user-testing patches (beta.11 → beta.17)
 
 Real-user testing on top of imported SMS history surfaced bugs and one architectural-policy regression that needed fixing before the app could be trusted as a daily-driver replacement for TMOAP. All of these are now in main; full rationale in the ADR list below.
 
@@ -152,12 +152,15 @@ Real-user testing on top of imported SMS history surfaced bugs and one architect
 | **beta.13** | Ember "Pending awaiting review" banner on Today + stale-edit-sheet bug fix | The pending tray was below the fold on first load; users didn't see they had work. Banner is impossible to miss. Also fixed a Compose state bug where opening Tx2 after Tx1 showed Tx1's data because `EditTransactionViewModel.load(tx)` was preserving existing state. | — |
 | **beta.14** | Dust-color "%d dismissed today — review" banner + AI triage prompt | Parser false-negatives (auto-dismissed transactions) were invisible. Banner forces them above the fold. AI triage prompt unlocks user-driven bank-coverage expansion without code changes. | — |
 | **beta.15** | **Auto-dismiss removed from SMS ingestion pipeline** + one-tap recovery action | The previous policy auto-DISMISSED any successfully-parsed transaction with merchant confidence < 0.50. **Real money silently disappeared from the ledger** every time the categorizer was uncertain. User-reported: *"if the user didn't categorize or delete it, record it — don't lose the money transaction."* Pipeline now lands every parsed transaction in CONFIRMED (categorizer matched) or PENDING (user must decide). DISMISSED is reachable only by explicit user swipe. Recovery action moves legacy DISMISSED rows back to PENDING. | [ADR-008](adr/ADR-008-ingestion-fail-safe.md) |
+| **beta.16** | Visible feedback on Save accounts + Create rule from suggestion · TRANSFER segment in edit sheet | "Save accounts" silently persisted last-4 digits with no visible confirmation — users couldn't tell the action worked. "Activate" on a suggestion immediately upserted a rule with no visual feedback (the rule was being created — but the user was looking elsewhere). Edit sheet only offered Expense/Income — users couldn't reclassify a spend as savings. Added 3-second olive toasts, permanent caption ("Saved · N account numbers stored"), and a third TRANSFER segment that hides the category picker. | — |
+| **beta.17** | **R-03 · confirm sheet before recurring-rule creation** + **R-04 · Subscriptions UI** (Active / Paused groups + monthly total) + **507 AI-seeded merchant rules** (44 → 551 across 22 categories) | R-03: "Activate" alone is too coarse — the user often needs to override the auto-detected cadence (Monthly vs Yearly) or pick a different category before saving. R-04: the rules screen showed all rules as a flat list — there was no way to say *"this subscription is no longer active"* without deleting the rule entirely (and losing the history that it was a recurring expense). Rule expansion: 44 curated rules covered only the most generic merchants (Starbucks, KFC, Panda) — leaving hundreds of real-world merchants from the user's 1,000-message corpus in UNKNOWN. Running both the developer's and a friend's SMS through an AI categorizer produced 1,310 candidate rules; 507 with confidence ≥0.70 were merged (priority 80 for ≥0.85, priority 60 for ≥0.70). `RuleSeed` now refreshes when the seed JSON rule count changes, so upgraded users get the catalog automatically. | — |
 
 ### Known issue carried forward
 
 | ID | What | Fix path |
 |---|---|---|
 | R-01 (P0) | First big SMS backfill (>100 messages) doesn't propagate to Today/History flows until activity recreate. Room's invalidation tracker is saturated by 7000+ concurrent `pipeline.process(event)` coroutines. | Route SMS dispatcher through a Channel with batched DB transactions (e.g., 50 events per `db.withTransaction { … }`). Debounce flow emissions. Estimated 1 day. Tracked in Phase 5. |
+| R-05 (P2) | ~228 rules in the AI-extracted set had no category assigned (`"category": null`) because the AI flagged them low-confidence — these merchants stay UNKNOWN. `AI template and output Categorization/athar_first_user_unknown_merchant_review.json` lists them for manual review. | Open the review file, assign categories by hand (or run a second AI pass with the categorized neighbours as in-context examples), append to `seed_rules.json`. Estimated 2–3 hours of human review per 100 rules. |
 
 ## Tier 1 retrospective — what we shipped
 
