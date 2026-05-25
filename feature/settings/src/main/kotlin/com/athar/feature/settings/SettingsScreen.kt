@@ -85,6 +85,7 @@ fun SettingsScreen(
     val csvStatus by viewModel.csvStatus.collectAsStateWithLifecycle()
     val hijriEnabled by viewModel.hijriEnabled.collectAsStateWithLifecycle()
     val rescanStatus by viewModel.rescanStatus.collectAsStateWithLifecycle()
+    val recoverStatus by viewModel.recoverStatus.collectAsStateWithLifecycle()
     val ownAccounts by viewModel.ownAccountNumbers.collectAsStateWithLifecycle()
     val displayCurrency by viewModel.displayCurrency.collectAsStateWithLifecycle()
     val appLocale by viewModel.appLocale.collectAsStateWithLifecycle()
@@ -140,6 +141,12 @@ fun SettingsScreen(
                 status = rescanStatus,
                 onRescan = viewModel::rescanAndClean,
                 onClearStatus = viewModel::clearRescanStatus,
+            )
+
+            RecoverDismissedCard(
+                status = recoverStatus,
+                onRecover = viewModel::recoverDismissed,
+                onClearStatus = viewModel::clearRecoverStatus,
             )
 
             BackupCard(
@@ -605,6 +612,50 @@ private fun RescanAndCleanCard(
                 val buttonText = when (status) {
                     is RescanStatus.Done -> stringResource(R.string.settings_action_done)
                     else -> stringResource(R.string.settings_rescan_action)
+                }
+                AtharText(text = buttonText, style = theme.typography.headline, color = theme.colors.parchment)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecoverDismissedCard(
+    status: RecoverStatus,
+    onRecover: () -> Unit,
+    onClearStatus: () -> Unit,
+) {
+    val theme = AtharTheme
+    AtharCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = stringResource(R.string.settings_recover_title), style = theme.typography.headline)
+            AtharText(
+                text = stringResource(R.string.settings_recover_body),
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
+            val statusText = when (status) {
+                RecoverStatus.Idle -> null
+                RecoverStatus.Working -> stringResource(R.string.settings_rescan_working)
+                is RecoverStatus.Done -> stringResource(R.string.settings_recover_done, status.recovered)
+            }
+            statusText?.let {
+                AtharText(text = it, style = theme.typography.caption, color = theme.colors.muted)
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(theme.spacing.s))
+                    .background(theme.colors.dust)
+                    .clickable(enabled = status != RecoverStatus.Working) {
+                        if (status is RecoverStatus.Done) onClearStatus() else onRecover()
+                    }
+                    .padding(theme.spacing.m),
+                contentAlignment = Alignment.Center,
+            ) {
+                val buttonText = when (status) {
+                    is RecoverStatus.Done -> stringResource(R.string.settings_action_done)
+                    else -> stringResource(R.string.settings_recover_action)
                 }
                 AtharText(text = buttonText, style = theme.typography.headline, color = theme.colors.parchment)
             }

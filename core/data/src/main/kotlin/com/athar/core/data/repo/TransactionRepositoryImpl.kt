@@ -119,6 +119,11 @@ internal class TransactionRepositoryImpl @Inject constructor(
             if (it > 0) logBulk(ActivityAction.DISMISS, "Dismissed all $it pending")
         }
 
+    override suspend fun recoverDismissedToPending(): Int =
+        dao.recoverDismissedToPending(clock.now()).also {
+            if (it > 0) logBulk(ActivityAction.UPDATE, "Recovered $it dismissed → pending")
+        }
+
     private suspend fun logBulk(action: ActivityAction, summary: String) {
         activityLog.record(
             ActivityLogEntry(

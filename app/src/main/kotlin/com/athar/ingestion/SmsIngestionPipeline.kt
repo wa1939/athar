@@ -103,16 +103,16 @@ class SmsIngestionPipeline @Inject constructor(
         val date = occurredAt.toLocalDateTime(TimeZone.currentSystemDefault()).date
         val txId = UUID.randomUUID().toString()
 
-        // Auto-confirm rule: if the categorizer assigned a category, we know what this
-        // spending is — don't ask the user. They can re-categorize later if needed.
-        // No category? It still lands as PENDING unless confidence is so low it's
-        // probably noise (< 0.50). Self-transfers always go to PENDING so the user
-        // can label them as savings vs regular outgoing.
+        // Never auto-dismiss a successfully-parsed transaction. If the SMS got far enough
+        // to extract amount + type, money moved — the user must be the one to discard it.
+        // CONFIRMED only when the categorizer matched a rule. Everything else (no category
+        // match, low confidence, self-transfer) lands in PENDING for explicit user review.
+        // Spam-shaped messages are filtered out earlier by IgnorePatterns and never reach
+        // this point (they're tagged "ignored" in the SMS audit log instead).
         val confidence = suggestion.confidence
         val initialStatus = when {
             isSelfTransfer -> TxStatus.PENDING
             suggestion.categoryId != null -> TxStatus.CONFIRMED
-            confidence < AUTO_DISMISS_THRESHOLD -> TxStatus.DISMISSED
             else -> TxStatus.PENDING
         }
 
@@ -165,7 +165,5 @@ class SmsIngestionPipeline @Inject constructor(
     }
 
     private companion object {
-        /** Parses below this confidence go directly to DISMISSED (kept in DB only via audit log). */
-        const val AUTO_DISMISS_THRESHOLD = 0.50f
     }
 }

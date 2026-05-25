@@ -45,6 +45,12 @@ sealed interface RescanStatus {
     data class Done(val clearedPending: Int) : RescanStatus
 }
 
+sealed interface RecoverStatus {
+    data object Idle : RecoverStatus
+    data object Working : RecoverStatus
+    data class Done(val recovered: Int) : RecoverStatus
+}
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val backup: BackupRepository,
@@ -57,6 +63,9 @@ class SettingsViewModel @Inject constructor(
 
     private val _rescan = MutableStateFlow<RescanStatus>(RescanStatus.Idle)
     val rescanStatus: StateFlow<RescanStatus> = _rescan.asStateFlow()
+
+    private val _recover = MutableStateFlow<RecoverStatus>(RecoverStatus.Idle)
+    val recoverStatus: StateFlow<RecoverStatus> = _recover.asStateFlow()
 
     private val _status = MutableStateFlow<BackupStatus>(BackupStatus.Idle)
     val status: StateFlow<BackupStatus> = _status.asStateFlow()
@@ -174,6 +183,24 @@ class SettingsViewModel @Inject constructor(
 
     fun clearRescanStatus() {
         _rescan.value = RescanStatus.Idle
+    }
+
+    /**
+     * Recovers transactions that older builds auto-dismissed for low confidence.
+     * Older policy auto-DISMISSED any parse with confidence < 0.50; the new policy
+     * keeps them all in PENDING so the user decides. This action moves the legacy
+     * DISMISSED rows back to PENDING so the user can review what was hidden.
+     */
+    fun recoverDismissed() {
+        viewModelScope.launch {
+            _recover.value = RecoverStatus.Working
+            val count = transactions.recoverDismissedToPending()
+            _recover.value = RecoverStatus.Done(count)
+        }
+    }
+
+    fun clearRecoverStatus() {
+        _recover.value = RecoverStatus.Idle
     }
 
     fun clearStatus() {

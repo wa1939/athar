@@ -42,6 +42,12 @@
     <string name="settings_rescan_done" formatted="true">تم حذف %1$d عنصرًا من قائمة الانتظار، وأُعيد فحص السجل.</string>
     <string name="settings_rescan_action">إعادة فحص ومسح المُعلَّقات</string>
 
+    <!-- Recover dismissed transactions card -->
+    <string name="settings_recover_title">استرجاع الحركات المتجاهَلة</string>
+    <string name="settings_recover_body">الإصدارات السابقة كانت تتجاهل تلقائيًا أي رسالة بثقة منخفضة. هذه الميزة تعيد كل الحركات المتجاهَلة إلى قائمة الانتظار حتى تراجعها بنفسك ولا تفقد أي حركة حقيقية.</string>
+    <string name="settings_recover_action">استرجاع الكل إلى المعلّقة</string>
+    <string name="settings_recover_done" formatted="true">تم استرجاع %1$d حركة. راجعها في «اليوم» أو في سجل الحركات.</string>
+
     <!-- Backup card -->
     <string name="settings_backup_export_success">تم حفظ النسخة الاحتياطية.</string>
     <string name="settings_backup_import_success">تم استرجاع النسخة.</string>

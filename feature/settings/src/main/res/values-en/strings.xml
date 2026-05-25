@@ -42,6 +42,12 @@
     <string name="settings_rescan_done" formatted="true">Cleared %1$d pending items and rescanned the log.</string>
     <string name="settings_rescan_action">Rescan and clear pending</string>
 
+    <!-- Recover dismissed transactions card -->
+    <string name="settings_recover_title">Recover dismissed transactions</string>
+    <string name="settings_recover_body">Earlier builds auto-dismissed any SMS with low parser confidence. This action moves every dismissed transaction back to Pending so you can review what was hidden — you never lose a real transaction silently again.</string>
+    <string name="settings_recover_action">Move all back to Pending</string>
+    <string name="settings_recover_done" formatted="true">Recovered %1$d transactions. Review them on Today or in History.</string>
+
     <!-- Backup card -->
     <string name="settings_backup_export_success">Backup saved.</string>
     <string name="settings_backup_import_success">Backup restored.</string>

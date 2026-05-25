@@ -37,4 +37,11 @@ interface TransactionRepository {
 
     /** Dismiss every PENDING transaction outright. */
     suspend fun dismissAllPending(): Int
+
+    /**
+     * Move every DISMISSED transaction back to PENDING so the user can review them.
+     * Used to recover transactions that older builds auto-dismissed for low confidence —
+     * the user may have lost real spending records that way.
+     */
+    suspend fun recoverDismissedToPending(): Int
 }
