@@ -100,6 +100,8 @@
     <string name="settings_own_accounts_body">Enter the last 4 digits of each account you own (comma-separated, e.g. 0930, 4268). Transfers to these numbers are treated as "internal transfer · possible savings" instead of expenses.</string>
     <string name="settings_own_accounts_field_label">Your account numbers</string>
     <string name="settings_own_accounts_save">Save accounts</string>
+    <string name="settings_own_accounts_saved" formatted="true">Saved · %1$d account number stored</string>
+    <string name="settings_own_accounts_current" formatted="true">Currently stored · %1$d numbers</string>
 
     <!-- Entry cards (links to sub-screens) -->
     <string name="settings_entry_history_title">All transactions</string>
@@ -166,6 +168,7 @@
     <string name="settings_recurring_suggestions_title" formatted="true">Auto suggestions · %1$d</string>
     <string name="settings_recurring_suggestions_body">We spotted these patterns in your history. Confirm any to create a recurring rule.</string>
     <string name="settings_recurring_auto_detected_notes" formatted="true">Auto-detected from %1$d previous transactions.</string>
+    <string name="settings_recurring_accepted_toast" formatted="true">Rule created for %1$s · it now appears below in Active subscriptions. Tap "Active" to deactivate it later.</string>
     <string name="settings_recurring_add">+ Add rule</string>
     <string name="settings_recurring_hide_form">Hide form</string>
     <string name="settings_recurring_empty">No rules yet. Start with your rent, your salary, or your Netflix subscription.</string>

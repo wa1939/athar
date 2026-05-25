@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +50,13 @@ fun RecurringRulesScreen(
     val rules by viewModel.state.collectAsStateWithLifecycle()
     val materialized by viewModel.lastMaterializeCount.collectAsStateWithLifecycle()
     val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
+    val lastAccepted by viewModel.lastAccepted.collectAsStateWithLifecycle()
+    LaunchedEffect(lastAccepted) {
+        if (lastAccepted != null) {
+            kotlinx.coroutines.delay(3000)
+            viewModel.clearLastAccepted()
+        }
+    }
     val currency = LocalDisplayCurrency.current
     var showAdd by remember { mutableStateOf(false) }
 
@@ -96,6 +104,19 @@ fun RecurringRulesScreen(
                     PrimaryActionButton(
                         text = stringResource(R.string.settings_recurring_run_now),
                         onClick = viewModel::materializeNow,
+                    )
+                }
+            }
+
+            lastAccepted?.let { merchant ->
+                AtharCard(modifier = Modifier
+                    .fillMaxWidth()
+                    .background(theme.colors.olive)
+                ) {
+                    AtharText(
+                        text = stringResource(R.string.settings_recurring_accepted_toast, merchant),
+                        style = theme.typography.body,
+                        color = theme.colors.parchment,
                     )
                 }
             }

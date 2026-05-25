@@ -43,6 +43,11 @@ class RecurringRulesViewModel @Inject constructor(
     private val _materializeStatus = MutableStateFlow(0)
     val lastMaterializeCount: StateFlow<Int> = _materializeStatus.asStateFlow()
 
+    private val _lastAccepted = MutableStateFlow<String?>(null)
+    val lastAccepted: StateFlow<String?> = _lastAccepted.asStateFlow()
+
+    fun clearLastAccepted() { _lastAccepted.value = null }
+
     fun add(
         displayName: String,
         merchant: String,
@@ -119,6 +124,9 @@ class RecurringRulesViewModel @Inject constructor(
             createdAt = now,
             updatedAt = now,
         )
-        viewModelScope.launch { rules.upsert(rule) }
+        viewModelScope.launch {
+            rules.upsert(rule)
+            _lastAccepted.value = suggestion.merchant
+        }
     }
 }

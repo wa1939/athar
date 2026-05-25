@@ -84,6 +84,8 @@
 
     <!-- Edit transaction sheet -->
     <string name="edit_tx_title">Edit transaction</string>
+    <string name="edit_tx_segment_transfer">Savings · Transfer</string>
+    <string name="edit_tx_transfer_hint">This isn\'t spending — it\'s a transfer between your accounts or money set aside. It won\'t count in expense or income totals.</string>
     <string name="edit_tx_delete">Delete</string>
     <string name="edit_tx_save">Save</string>
     <string name="edit_tx_learn_title">Learn this category?</string>

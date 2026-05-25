@@ -24,6 +24,7 @@ import androidx.compose.material3.TextButton
 import com.athar.core.domain.repo.BackfillProgress
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -546,6 +547,14 @@ private fun DisplayCurrencyCard(
 private fun OwnAccountsCard(accounts: List<String>, onSave: (String) -> Unit) {
     val theme = AtharTheme
     var draft by remember(accounts) { mutableStateOf(accounts.joinToString(", ")) }
+    var savedAt by remember { mutableStateOf<Long?>(null) }
+    val savedCount = accounts.size
+    LaunchedEffect(savedAt) {
+        if (savedAt != null) {
+            kotlinx.coroutines.delay(3000)
+            savedAt = null
+        }
+    }
     AtharCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
             AtharText(text = stringResource(R.string.settings_own_accounts_title), style = theme.typography.headline)
@@ -560,12 +569,28 @@ private fun OwnAccountsCard(accounts: List<String>, onSave: (String) -> Unit) {
                 label = stringResource(R.string.settings_own_accounts_field_label),
                 modifier = Modifier.fillMaxWidth(),
             )
+            if (savedAt != null) {
+                AtharText(
+                    text = stringResource(R.string.settings_own_accounts_saved, savedCount),
+                    style = theme.typography.caption,
+                    color = theme.colors.olive,
+                )
+            } else if (accounts.isNotEmpty()) {
+                AtharText(
+                    text = stringResource(R.string.settings_own_accounts_current, savedCount),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+            }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(theme.spacing.s))
                     .background(theme.colors.ember)
-                    .clickable { onSave(draft) }
+                    .clickable {
+                        onSave(draft)
+                        savedAt = System.currentTimeMillis()
+                    }
                     .padding(theme.spacing.m),
                 contentAlignment = Alignment.Center,
             ) {

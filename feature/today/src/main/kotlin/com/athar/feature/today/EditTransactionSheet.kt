@@ -70,7 +70,11 @@ data class EditTransactionState(
     val incomeCategories: ImmutableList<Category>,
 ) {
     val categoriesForType: ImmutableList<Category>
-        get() = if (type == TxType.INCOME) incomeCategories else expenseCategories
+        get() = when (type) {
+            TxType.INCOME -> incomeCategories
+            TxType.EXPENSE -> expenseCategories
+            TxType.TRANSFER -> kotlinx.collections.immutable.persistentListOf()
+        }
 
     val categoryChanged: Boolean
         get() = original.categoryId != selectedCategoryId
@@ -157,6 +161,7 @@ fun EditTransactionSheet(
                 segments = listOf(
                     AtharSegment(TxType.EXPENSE, stringResource(R.string.add_tx_segment_expense)),
                     AtharSegment(TxType.INCOME, stringResource(R.string.add_tx_segment_income)),
+                    AtharSegment(TxType.TRANSFER, stringResource(R.string.edit_tx_segment_transfer)),
                 ),
                 selected = s.type,
                 onSelect = { viewModel.setType(it) },
@@ -175,17 +180,25 @@ fun EditTransactionSheet(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            AtharText(text = stringResource(R.string.add_tx_label_category), style = theme.typography.caption, color = theme.colors.muted)
-            AtharCategoryPicker(
-                items = s.categoriesForType.map {
-                    AtharPickerItem(key = it.id, labelEn = it.name, labelAr = it.nameAr)
-                },
-                selectedKey = s.selectedCategoryId,
-                onSelect = { viewModel.selectCategory(it) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 180.dp, max = 280.dp),
-            )
+            if (s.type == TxType.TRANSFER) {
+                AtharText(
+                    text = stringResource(R.string.edit_tx_transfer_hint),
+                    style = theme.typography.body,
+                    color = theme.colors.muted,
+                )
+            } else {
+                AtharText(text = stringResource(R.string.add_tx_label_category), style = theme.typography.caption, color = theme.colors.muted)
+                AtharCategoryPicker(
+                    items = s.categoriesForType.map {
+                        AtharPickerItem(key = it.id, labelEn = it.name, labelAr = it.nameAr)
+                    },
+                    selectedKey = s.selectedCategoryId,
+                    onSelect = { viewModel.selectCategory(it) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 180.dp, max = 280.dp),
+                )
+            }
 
             AtharTextField(
                 value = s.notes,

@@ -84,6 +84,8 @@
 
     <!-- Edit transaction sheet -->
     <string name="edit_tx_title">تعديل حركة</string>
+    <string name="edit_tx_segment_transfer">ادخار · تحويل</string>
+    <string name="edit_tx_transfer_hint">هذه ليست مصروفًا — مجرد تحويل بين حساباتك أو ادخار. لن تُحتسب في إجمالي المصاريف أو الدخل.</string>
     <string name="edit_tx_delete">حذف</string>
     <string name="edit_tx_save">حفظ</string>
     <string name="edit_tx_learn_title">تعلّم من التصنيف؟</string>

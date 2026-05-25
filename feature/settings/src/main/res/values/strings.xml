@@ -100,6 +100,8 @@
     <string name="settings_own_accounts_body">اكتب آخر ٤ أرقام لكل حساب تملكه (مفصولة بفواصل، مثلاً: 0930, 4268). أي تحويل إلى أحد هذه الأرقام يُعتبر «تحويل داخلي · ادخار محتمل» بدلاً من مصروف.</string>
     <string name="settings_own_accounts_field_label">أرقام حساباتك</string>
     <string name="settings_own_accounts_save">حفظ الحسابات</string>
+    <string name="settings_own_accounts_saved" formatted="true">تم الحفظ · %1$d رقم محفوظ</string>
+    <string name="settings_own_accounts_current" formatted="true">المحفوظ حاليًا · %1$d رقم</string>
 
     <!-- Entry cards (links to sub-screens) -->
     <string name="settings_entry_history_title">سجل كل الحركات</string>
@@ -166,6 +168,7 @@
     <string name="settings_recurring_suggestions_title" formatted="true">اقتراحات تلقائية · %1$d</string>
     <string name="settings_recurring_suggestions_body">اكتشفنا هذه الأنماط من حركاتك السابقة. تأكد منها لإنشاء قاعدة تكرار.</string>
     <string name="settings_recurring_auto_detected_notes" formatted="true">اكتُشف تلقائيًا من %1$d حركات سابقة.</string>
+    <string name="settings_recurring_accepted_toast" formatted="true">تم إنشاء قاعدة لـ %1$s · ستظهر في الأسفل ضمن الاشتراكات النشطة. اضغط «نشطة» لإيقافها لاحقًا.</string>
     <string name="settings_recurring_add">+ إضافة قاعدة</string>
     <string name="settings_recurring_hide_form">إخفاء النموذج</string>
     <string name="settings_recurring_empty">لا قواعد بعد. ابدأ بإيجارك أو راتبك أو اشتراك Netflix.</string>
