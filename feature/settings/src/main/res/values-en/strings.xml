@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  English overrides for the Settings feature. App defaults to Arabic; this file
+  is applied when the user picks "English" in Settings, or when LocaleHelper
+  detects an English system locale and no explicit override has been set.
+-->
+<resources>
+
+    <!-- Screen header / common actions -->
+    <string name="settings_screen_overline">Settings</string>
+    <string name="settings_action_back">Back</string>
+    <string name="settings_action_close">Close</string>
+    <string name="settings_action_save">Save</string>
+    <string name="settings_action_cancel">Cancel</string>
+    <string name="settings_action_done">Done</string>
+    <string name="settings_action_ok">OK</string>
+    <string name="settings_action_apply">Apply</string>
+    <string name="settings_action_delete">Delete</string>
+    <string name="settings_status_working">Working…</string>
+    <string name="settings_status_in_progress">Working…</string>
+
+    <!-- SMS permission card -->
+    <string name="settings_sms_card_title_granted">SMS reading · enabled</string>
+    <string name="settings_sms_card_title_denied">SMS reading · disabled</string>
+    <string name="settings_sms_card_body_granted">Bank SMS messages are read locally on your device. They never leave it.</string>
+    <string name="settings_sms_card_body_denied">To read bank SMS automatically, Athar needs SMS permission. Messages and financial data stay on your device.</string>
+    <string name="settings_sms_card_grant_action">Enable SMS reading</string>
+
+    <!-- Backfill card -->
+    <string name="settings_backfill_title">Rescan SMS</string>
+    <string name="settings_backfill_body">Read the last 90 days of SMS in your inbox and create pending transactions awaiting confirmation.</string>
+    <string name="settings_backfill_running" formatted="true">Scanning… (%1$d messages)</string>
+    <string name="settings_backfill_done" formatted="true">Scanned %1$d messages, sent %2$d for processing.</string>
+    <string name="settings_backfill_failed" formatted="true">Scan failed: %1$s</string>
+    <string name="settings_backfill_action_start">Start scan</string>
+    <string name="settings_backfill_action_running">Scanning…</string>
+
+    <!-- Rescan & clean card -->
+    <string name="settings_rescan_title">Rescan SMS</string>
+    <string name="settings_rescan_body">Removes all pending transactions and re-reads the SMS log with the latest templates. Your confirmed transactions are untouched. Useful after an update to clear ads and false positives.</string>
+    <string name="settings_rescan_working">Rescanning…</string>
+    <string name="settings_rescan_done" formatted="true">Cleared %1$d pending items and rescanned the log.</string>
+    <string name="settings_rescan_action">Rescan and clear pending</string>
+
+    <!-- Backup card -->
+    <string name="settings_backup_title">Backup and restore</string>
+    <string name="settings_backup_body">Backups are encrypted with a passphrase you choose. They cannot be restored without it.</string>
+    <string name="settings_backup_export">Export</string>
+    <string name="settings_backup_import">Restore</string>
+    <string name="settings_backup_passphrase_export_title">Backup passphrase</string>
+    <string name="settings_backup_passphrase_export_body">Choose a passphrase to protect the backup file. You\'ll need it later to restore.</string>
+    <string name="settings_backup_passphrase_export_confirm">Save backup</string>
+    <string name="settings_backup_passphrase_import_title">Restore backup</string>
+    <string name="settings_backup_passphrase_import_body">Enter the backup passphrase. Current data will be replaced.</string>
+    <string name="settings_backup_passphrase_import_confirm">Restore</string>
+    <string name="settings_backup_passphrase_label">Passphrase</string>
+
+    <!-- CSV card -->
+    <string name="settings_csv_title">CSV exchange</string>
+    <string name="settings_csv_body">Import from your old Excel sheet, or export transactions to CSV (columns: date · vendor · amount · category · type · notes).</string>
+    <string name="settings_csv_done" formatted="true">Imported %1$d transactions. (Skipped %2$d rows.)</string>
+    <string name="settings_csv_exported" formatted="true">Exported %1$d transactions.</string>
+    <string name="settings_csv_action_import">Import</string>
+    <string name="settings_csv_action_export">Export</string>
+
+    <!-- Display currency card -->
+    <string name="settings_currency_title">Display currency</string>
+    <string name="settings_currency_body">Choose the display currency. Transactions imported from SMS keep their original currency, but your manual entries will use this one. No automatic conversion.</string>
+
+    <!-- Language card -->
+    <string name="settings_language_title">Language · اللغة</string>
+    <string name="settings_language_body">Choose the app language. The screen reloads to apply the new language.</string>
+    <string name="settings_language_option_system_ar">نظام الجهاز</string>
+    <string name="settings_language_option_system_en">Follow system</string>
+    <string name="settings_language_option_arabic_ar">العربية</string>
+    <string name="settings_language_option_arabic_en">Arabic</string>
+    <string name="settings_language_option_english_ar">English</string>
+    <string name="settings_language_option_english_en">English</string>
+
+    <!-- Hijri toggle card -->
+    <string name="settings_hijri_title">Show Hijri date</string>
+    <string name="settings_hijri_body_on">Shown next to the Gregorian date on the home screen.</string>
+    <string name="settings_hijri_body_off">Default: Gregorian only.</string>
+    <string name="settings_hijri_pill_on">On</string>
+    <string name="settings_hijri_pill_off">Off</string>
+
+    <!-- Own accounts card -->
+    <string name="settings_own_accounts_title">Your own accounts</string>
+    <string name="settings_own_accounts_body">Enter the last 4 digits of each account you own (comma-separated, e.g. 0930, 4268). Transfers to these numbers are treated as "internal transfer · possible savings" instead of expenses.</string>
+    <string name="settings_own_accounts_field_label">Your account numbers</string>
+    <string name="settings_own_accounts_save">Save accounts</string>
+
+    <!-- Entry cards (links to sub-screens) -->
+    <string name="settings_entry_accounts_title">Accounts</string>
+    <string name="settings_entry_accounts_body">Add checking, savings, credit card, and investment accounts. Your net worth = sum of current balances.</string>
+    <string name="settings_entry_recurring_title">Recurring transactions</string>
+    <string name="settings_entry_recurring_body">Create rules for monthly, weekly, or yearly recurrences — rent, salary, Netflix. They generate pending transactions in "Today" when due.</string>
+    <string name="settings_entry_sms_audit_title">SMS log</string>
+    <string name="settings_entry_sms_audit_body">Every SMS that arrived — with its parse result (parsed, failed, or ignored). This list never leaves the device.</string>
+    <string name="settings_entry_user_templates_title">Bank templates</string>
+    <string name="settings_entry_user_templates_body">Teach Athar your bank\'s SMS format if it\'s not supported by default. Paste a message, note the words around the amount, save.</string>
+    <string name="settings_entry_activity_log_title">Activity log</string>
+    <string name="settings_entry_activity_log_body">Every add, edit, delete, or confirm of a transaction, with its time. A reference to recall what you remember vaguely.</string>
+    <string name="settings_entry_categories_title">Categories and rules</string>
+    <string name="settings_entry_categories_body">Add, rename, or archive categories. Changes persist across backups.</string>
+
+    <!-- About card -->
+    <string name="settings_about_title">About Athar</string>
+    <string name="settings_about_version" formatted="true">Version %1$s</string>
+    <string name="settings_about_author">Built by Waleed Al-Hamed · walhamed.com</string>
+    <string name="settings_about_inspiration">Inspired by The Measure of a Plan (TMOAP), which informed Athar\'s approach to monthly expense tracking and financial planning.</string>
+    <string name="settings_about_local">All your data is stored locally on your device. No accounts, no servers, no tracking.</string>
+
+    <!-- Accounts screen -->
+    <string name="settings_accounts_overline">Accounts</string>
+    <string name="settings_accounts_net_worth_title">Net worth</string>
+    <string name="settings_accounts_net_worth_mixed">No currency conversion</string>
+    <string name="settings_accounts_net_worth_body">Total net worth across your active accounts. Internal transfers don\'t change this number.</string>
+    <string name="settings_accounts_add">+ Add account</string>
+    <string name="settings_accounts_hide_form">Hide form</string>
+    <string name="settings_accounts_empty">No accounts yet. Add your first one (checking, savings, cash) to get started.</string>
+    <string name="settings_accounts_form_add_title">Add new account</string>
+    <string name="settings_accounts_form_edit_title">Edit account</string>
+    <string name="settings_accounts_field_name">Account name</string>
+    <string name="settings_accounts_field_name_hint">Account name (e.g. Al Rajhi - Checking)</string>
+    <string name="settings_accounts_field_opening" formatted="true">Opening balance (%1$s)</string>
+    <string name="settings_accounts_field_notes">Notes (optional)</string>
+    <string name="settings_accounts_save_edits">Save changes</string>
+    <string name="settings_accounts_action_edit">Edit</string>
+    <string name="settings_accounts_action_close">Close</string>
+    <string name="settings_accounts_action_archive">Archive</string>
+    <string name="settings_accounts_action_unarchive">Reactivate</string>
+    <string name="settings_accounts_archived_badge">Archived</string>
+
+    <!-- Account types -->
+    <string name="settings_account_type_checking">Checking</string>
+    <string name="settings_account_type_savings">Savings</string>
+    <string name="settings_account_type_credit_card">Credit card</string>
+    <string name="settings_account_type_cash">Cash</string>
+    <string name="settings_account_type_investment">Investment</string>
+    <string name="settings_account_type_other">Other</string>
+
+    <!-- Recurring rules screen -->
+    <string name="settings_recurring_overline">Recurring transactions</string>
+    <string name="settings_recurring_how_title">How it works</string>
+    <string name="settings_recurring_how_body">Create a rule that repeats monthly, weekly, or yearly (rent, salary, subscriptions). When it\'s due, the transaction appears in your "Today" pending tray — confirm it with one tap.</string>
+    <string name="settings_recurring_materialized" formatted="true">Created %1$d new pending transactions.</string>
+    <string name="settings_recurring_run_now">Run now</string>
+    <string name="settings_recurring_suggestions_title" formatted="true">Auto suggestions · %1$d</string>
+    <string name="settings_recurring_suggestions_body">We spotted these patterns in your history. Confirm any to create a recurring rule.</string>
+    <string name="settings_recurring_add">+ Add rule</string>
+    <string name="settings_recurring_hide_form">Hide form</string>
+    <string name="settings_recurring_empty">No rules yet. Start with your rent, your salary, or your Netflix subscription.</string>
+    <string name="settings_recurring_form_title">Add new rule</string>
+    <string name="settings_recurring_field_name">Name (e.g. Salary)</string>
+    <string name="settings_recurring_field_merchant">Source (e.g. Company, Netflix)</string>
+    <string name="settings_recurring_field_amount" formatted="true">Amount (%1$s)</string>
+    <string name="settings_recurring_field_day_of_month">Day of month (1-28)</string>
+    <string name="settings_recurring_type_expense">Expense</string>
+    <string name="settings_recurring_type_income">Income</string>
+    <string name="settings_recurring_cadence_monthly">Monthly</string>
+    <string name="settings_recurring_cadence_weekly">Weekly</string>
+    <string name="settings_recurring_cadence_yearly">Yearly</string>
+    <string name="settings_recurring_save">Save rule</string>
+    <string name="settings_recurring_create_rule">Create rule</string>
+    <string name="settings_recurring_row_next" formatted="true">Next: %1$s</string>
+    <string name="settings_recurring_row_active">Active</string>
+    <string name="settings_recurring_row_inactive">Paused</string>
+    <string name="settings_recurring_suggestion_counts" formatted="true">%1$d occurrences · day %2$s</string>
+    <string name="settings_recurring_suggestion_last" formatted="true">Last seen: %1$s</string>
+
+    <!-- Categories screen -->
+    <string name="settings_categories_title">Categories</string>
+    <string name="settings_categories_segment_expense">Expenses</string>
+    <string name="settings_categories_segment_income">Income</string>
+    <string name="settings_categories_add">Add category</string>
+    <string name="settings_categories_editor_new">New category</string>
+    <string name="settings_categories_editor_edit">Edit category</string>
+    <string name="settings_categories_editor_kind_expense">Expense</string>
+    <string name="settings_categories_editor_kind_income">Income</string>
+    <string name="settings_categories_editor_name_ar">Arabic name</string>
+    <string name="settings_categories_editor_name_en">English name</string>
+    <string name="settings_categories_archive">Archive</string>
+    <string name="settings_categories_archived_label">(archived)</string>
+    <string name="settings_categories_row_archived_suffix" formatted="true">%1$s (archived)</string>
+
+    <!-- SMS audit screen -->
+    <string name="settings_sms_audit_title">SMS log</string>
+    <string name="settings_sms_audit_filter_all">All</string>
+    <string name="settings_sms_audit_filter_parsed">Parsed</string>
+    <string name="settings_sms_audit_filter_failed">Failed</string>
+    <string name="settings_sms_audit_filter_ignored">Ignored</string>
+    <string name="settings_sms_audit_empty">No messages in this filter yet.</string>
+    <string name="settings_sms_audit_empty_subtle">Messages appear here as they arrive or when you rescan from Settings.</string>
+
+    <!-- Activity log screen -->
+    <string name="settings_activity_log_title">Activity log</string>
+    <string name="settings_activity_log_empty">No activity yet.</string>
+    <string name="settings_activity_log_empty_subtle">Every transaction edit or delete is logged here.</string>
+    <string name="settings_activity_log_no_details">(no details)</string>
+    <string name="settings_activity_log_action_create">Created</string>
+    <string name="settings_activity_log_action_update">Updated</string>
+    <string name="settings_activity_log_action_delete">Deleted</string>
+    <string name="settings_activity_log_action_confirm">Confirmed</string>
+    <string name="settings_activity_log_action_dismiss">Dismissed</string>
+
+    <!-- User templates screen -->
+    <string name="settings_templates_title">Bank templates</string>
+    <string name="settings_templates_intro">If parsing fails for a particular bank, teach Athar its format here. Paste a sample message, then write the word that comes just before the amount and the one just after — Athar uses these anchors to extract the amount from any message in that format.</string>
+    <string name="settings_templates_saved_header">Your templates</string>
+    <string name="settings_templates_new_header">Add a new template</string>
+    <string name="settings_templates_field_display_name">Bank name (e.g. Alinma Bank)</string>
+    <string name="settings_templates_field_sender">Sender as it appears on your device (e.g. AlinmaBank)</string>
+    <string name="settings_templates_field_sample_body">Paste a sample message here</string>
+    <string name="settings_templates_field_before">Before</string>
+    <string name="settings_templates_field_after">After (optional)</string>
+    <string name="settings_templates_anchor_amount_label">Amount</string>
+    <string name="settings_templates_anchor_amount_hint">The word right before the amount (e.g. Amount: or المبلغ)</string>
+    <string name="settings_templates_anchor_merchant_label">Merchant (optional)</string>
+    <string name="settings_templates_anchor_merchant_hint">For purchases: the word before the merchant name (e.g. At: or لدى)</string>
+    <string name="settings_templates_anchor_counterparty_label">Recipient (optional)</string>
+    <string name="settings_templates_anchor_counterparty_hint">For transfers: the word before the recipient name (e.g. To: or إلى)</string>
+    <string name="settings_templates_save">Save template</string>
+    <string name="settings_templates_row_sender" formatted="true">Sender: %1$s · %2$s</string>
+    <string name="settings_templates_row_anchor_before" formatted="true">Before amount: \"%1$s\"</string>
+    <string name="settings_templates_row_anchor_after" formatted="true"> · After: \"%1$s\"</string>
+    <string name="settings_templates_type_expense">Purchase</string>
+    <string name="settings_templates_type_transfer">Transfer</string>
+    <string name="settings_templates_type_income">Deposit</string>
+
+</resources>

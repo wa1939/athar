@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,14 +54,14 @@ fun ActivityLogScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 BackButton(onClick = onBack)
-                AtharText(text = "السجل", style = theme.typography.headline)
+                AtharText(text = stringResource(R.string.settings_activity_log_title), style = theme.typography.headline)
                 Box(modifier = Modifier.size(MinTouchTarget))
             }
 
             if (state.entries.isEmpty() && !state.isLoading) {
                 AtharEmptyState(
-                    text = "لا توجد إجراءات بعد.",
-                    subtle = "كل تعديل أو حذف لحركة يُسجَّل هنا.",
+                    text = stringResource(R.string.settings_activity_log_empty),
+                    subtle = stringResource(R.string.settings_activity_log_empty_subtle),
                 )
             } else {
                 LazyColumn(
@@ -89,12 +90,13 @@ private fun EntryRow(entry: ActivityLogEntry) {
         ActivityAction.DISMISS -> theme.colors.muted
     }
     val actionLabel = when (entry.action) {
-        ActivityAction.CREATE -> "أُنشئت"
-        ActivityAction.UPDATE -> "عُدِّلت"
-        ActivityAction.DELETE -> "حُذِفت"
-        ActivityAction.CONFIRM -> "تأكيد"
-        ActivityAction.DISMISS -> "تجاهل"
+        ActivityAction.CREATE -> stringResource(R.string.settings_activity_log_action_create)
+        ActivityAction.UPDATE -> stringResource(R.string.settings_activity_log_action_update)
+        ActivityAction.DELETE -> stringResource(R.string.settings_activity_log_action_delete)
+        ActivityAction.CONFIRM -> stringResource(R.string.settings_activity_log_action_confirm)
+        ActivityAction.DISMISS -> stringResource(R.string.settings_activity_log_action_dismiss)
     }
+    val noDetails = stringResource(R.string.settings_activity_log_no_details)
     AtharCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
             Box(
@@ -107,7 +109,7 @@ private fun EntryRow(entry: ActivityLogEntry) {
                 Row {
                     AtharText(text = "$actionLabel · ", style = theme.typography.body, color = accent)
                     AtharText(
-                        text = entry.summary.ifBlank { "(لا تفاصيل)" },
+                        text = entry.summary.ifBlank { noDetails },
                         style = theme.typography.body,
                     )
                 }

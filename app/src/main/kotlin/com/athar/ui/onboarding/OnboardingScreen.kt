@@ -27,10 +27,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.athar.R
 import com.athar.core.designsystem.component.AtharCard
 import com.athar.core.designsystem.component.AtharText
 import com.athar.core.designsystem.theme.AtharTheme
@@ -81,7 +83,7 @@ fun OnboardingScreen(
             ) {
                 if (state.pageIndex > 0) {
                     SheetButton(
-                        text = "السابق",
+                        text = stringResource(R.string.onboarding_action_back),
                         background = theme.colors.divider,
                         textColor = theme.colors.ink,
                         onClick = viewModel::back,
@@ -89,7 +91,9 @@ fun OnboardingScreen(
                     )
                 }
                 SheetButton(
-                    text = if (state.pageIndex < state.totalPages - 1) "التالي" else "ابدأ",
+                    text = if (state.pageIndex < state.totalPages - 1)
+                        stringResource(R.string.onboarding_action_next)
+                    else stringResource(R.string.onboarding_action_start),
                     background = theme.colors.ember,
                     textColor = theme.colors.parchment,
                     onClick = {
@@ -132,14 +136,14 @@ private fun WelcomePage() {
         verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        AtharText(text = "أثر.", style = theme.typography.landmark)
+        AtharText(text = stringResource(R.string.onboarding_welcome_title), style = theme.typography.landmark)
         AtharText(
-            text = "تتبع كل ريال يخرج من جيبك، بهدوء، دون أن تكتب شيئًا.",
+            text = stringResource(R.string.onboarding_welcome_subtitle),
             style = theme.typography.subtitle,
             color = theme.colors.muted,
         )
         AtharText(
-            text = "خمس دقائق للتجهيز. لا تسجيل، لا حساب، لا تحميل.",
+            text = stringResource(R.string.onboarding_welcome_body),
             style = theme.typography.body,
             color = theme.colors.muted,
         )
@@ -153,15 +157,15 @@ private fun PrivacyPage() {
         verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        AtharText(text = "خصوصيتك", style = theme.typography.title)
+        AtharText(text = stringResource(R.string.onboarding_privacy_title), style = theme.typography.title)
         AtharText(
-            text = "البيانات الماليّة تبقى على جهازك. لا سحابة، لا تحليل خارجي، لا إعلانات.",
+            text = stringResource(R.string.onboarding_privacy_body),
             style = theme.typography.body,
             color = theme.colors.muted,
         )
-        PrivacyBullet(text = "لا نبيع أو نشارك بياناتك مع أي طرف.")
-        PrivacyBullet(text = "لا إعلانات، لا عروض شراكة، لا روابط مدفوعة.")
-        PrivacyBullet(text = "لا إشعارات تشعرك بالذنب. الإحصاءات تخدمك، لا تحكم عليك.")
+        PrivacyBullet(text = stringResource(R.string.onboarding_privacy_bullet_1))
+        PrivacyBullet(text = stringResource(R.string.onboarding_privacy_bullet_2))
+        PrivacyBullet(text = stringResource(R.string.onboarding_privacy_bullet_3))
     }
 }
 
@@ -192,29 +196,28 @@ private fun SmsPage(granted: Boolean, onGrant: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        AtharText(text = "قراءة رسائل البنك", style = theme.typography.title)
+        AtharText(text = stringResource(R.string.onboarding_sms_title), style = theme.typography.title)
         AtharText(
-            text = "أثر يقرأ رسائل البنك على جهازك ليُسجّل كل حركة تلقائيًا. " +
-                "الرسائل لا تغادر الجهاز، ولا تُحفظ في أي مكان آخر.",
+            text = stringResource(R.string.onboarding_sms_body),
             style = theme.typography.body,
             color = theme.colors.muted,
         )
         if (granted) {
             AtharText(
-                text = "تم التفعيل — جاهز للقراءة من البنك.",
+                text = stringResource(R.string.onboarding_sms_granted),
                 style = theme.typography.headline,
                 color = theme.colors.olive,
             )
         } else {
             SheetButton(
-                text = "تفعيل قراءة الرسائل",
+                text = stringResource(R.string.onboarding_sms_grant_button),
                 background = theme.colors.ember,
                 textColor = theme.colors.parchment,
                 onClick = onGrant,
                 modifier = Modifier.fillMaxWidth(),
             )
             AtharText(
-                text = "لو فضّلت لاحقًا، يمكنك تفعيلها من الإعدادات في أي وقت — أثر يعمل بإدخال يدوي بدون قراءة الرسائل.",
+                text = stringResource(R.string.onboarding_sms_skip_note),
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )

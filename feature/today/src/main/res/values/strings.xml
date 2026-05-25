@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Default (Arabic) strings for the Today feature. Arabic is Athar's primary
+  language; English overrides live in values-en/strings.xml. The locale picker
+  in Settings switches between them via a per-app Configuration override.
+-->
+<resources>
+
+    <!-- Header -->
+    <string name="today_header_title">اليوم</string>
+    <string name="today_caption_net_flow_month" formatted="true">صافي الشهر · %1$s</string>
+    <string name="today_caption_net_flow_month_hijri" formatted="true">صافي الشهر · %1$s · %2$s هـ</string>
+
+    <!-- Summary pills -->
+    <string name="today_pill_income">الدخل</string>
+    <string name="today_pill_expense">المصاريف</string>
+    <string name="today_pill_net_worth">صافي الثروة</string>
+
+    <!-- Captions -->
+    <string name="today_caption_savings_rate" formatted="true">معدّل الادخار · %1$s٪</string>
+    <string name="today_caption_net_worth_mixed">الثروة بعملات متعددة · بدون تحويل</string>
+
+    <!-- Empty state -->
+    <string name="today_empty_text">لا حركات هذا الشهر.</string>
+    <string name="today_empty_subtle">أضف حركة بالـ + أو فعّل قراءة الرسائل من الإعدادات.</string>
+
+    <!-- Pending tray -->
+    <string name="today_pending_title" formatted="true">بانتظار التأكيد · %1$d</string>
+    <string name="today_pending_subtle">اسحب للتأكيد أو التجاهل. أو استخدم الإجراءات الجماعية أدناه.</string>
+    <string name="today_pending_more" formatted="true">+%1$d حركة أخرى. استخدم الإجراءات الجماعية لمعالجتها دفعة واحدة.</string>
+
+    <!-- Bulk actions -->
+    <string name="today_bulk_confirm_confident">تأكيد المؤكدة</string>
+    <string name="today_bulk_dismiss_low">تجاهل المشكوك فيه</string>
+    <string name="today_bulk_dismiss_all">تجاهل الكل</string>
+
+    <!-- Misc list -->
+    <string name="today_uncategorized">غير مصنف</string>
+
+    <!-- Add transaction sheet -->
+    <string name="add_tx_title">إضافة حركة</string>
+    <string name="add_tx_segment_expense">مصروف</string>
+    <string name="add_tx_segment_income">دخل</string>
+    <string name="add_tx_error_amount_required">أدخل المبلغ</string>
+    <string name="add_tx_error_amount_invalid">المبلغ غير صحيح</string>
+    <string name="add_tx_label_merchant">التاجر</string>
+    <string name="add_tx_placeholder_merchant">مثال: ستاربكس</string>
+    <string name="add_tx_error_merchant_required">أدخل اسم التاجر</string>
+    <string name="add_tx_label_category">التصنيف</string>
+    <string name="add_tx_error_category_required">اختر تصنيفًا</string>
+    <string name="add_tx_label_notes">ملاحظات</string>
+    <string name="add_tx_save">حفظ</string>
+    <string name="add_tx_saving">جارٍ الحفظ…</string>
+
+    <!-- Edit transaction sheet -->
+    <string name="edit_tx_title">تعديل حركة</string>
+    <string name="edit_tx_delete">حذف</string>
+    <string name="edit_tx_save">حفظ</string>
+    <string name="edit_tx_learn_title">تعلّم من التصنيف؟</string>
+    <string name="edit_tx_learn_message" formatted="true">هل تريد أن يصنّف أثر دائمًا «%1$s» كـ«%2$s»؟</string>
+    <string name="edit_tx_learn_always">دائمًا</string>
+    <string name="edit_tx_learn_once">هذه المرة فقط</string>
+
+</resources>

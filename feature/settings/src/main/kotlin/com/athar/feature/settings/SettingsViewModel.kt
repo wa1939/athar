@@ -95,6 +95,8 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { prefs.setAppLocale(tag) }
     }
 
+    // TODO: localize backup status messages emitted from the ViewModel (Arabic only
+    //  for now; acceptable temporary debt when running in English mode).
     fun export(resolver: ContentResolver, uri: Uri, passphrase: String) {
         viewModelScope.launch {
             _status.value = BackupStatus.Working

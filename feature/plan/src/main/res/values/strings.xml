@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Default (Arabic) strings for the Plan feature. Arabic is Athar's primary
+  language; English overrides live in values-en/strings.xml. The locale picker
+  in Settings switches between them via a per-app Configuration override.
+-->
+<resources>
+
+    <!-- Screen header -->
+    <string name="plan_header_title">الخطة</string>
+
+    <!-- Top-level tabs -->
+    <string name="plan_tab_budget">الميزانية</string>
+    <string name="plan_tab_wishlist">الرغبات</string>
+    <string name="plan_tab_investments">الاستثمارات</string>
+
+    <!-- Period selector -->
+    <string name="plan_period_month">شهر</string>
+    <string name="plan_period_months_3">٣ أشهر</string>
+    <string name="plan_period_year">سنة</string>
+    <string name="plan_period_custom">مخصص</string>
+    <string name="plan_period_label_last_3_months">آخر ٣ أشهر</string>
+    <string name="plan_period_label_custom_default">نطاق مخصص</string>
+
+    <!-- Period caption when targets are scaled across a multi-month range -->
+    <string name="plan_target_caption_scaled" formatted="true">الأهداف مُعدَّلة على طول النطاق (×%1$s). الفعلي مجموع الحركات المؤكدة في هذا النطاق.</string>
+
+    <!-- Budget header & row -->
+    <string name="plan_budget_header_of">من</string>
+    <string name="plan_budget_target_label">هدف </string>
+    <string name="plan_budget_no_target">لا هدف</string>
+
+    <!-- Limit states -->
+    <string name="plan_limit_over">تجاوز</string>
+    <string name="plan_limit_tight">اقتربت من الحد</string>
+    <string name="plan_limit_watch">تحت الحد</string>
+    <string name="plan_limit_healthy">تحت الحد</string>
+
+    <!-- Limit warning strip suffixes (separated · already included) -->
+    <string name="plan_limit_warning_over_suffix"> · تجاوز الحد</string>
+    <string name="plan_limit_warning_tight_suffix"> · اقتربت من الحد</string>
+
+    <!-- Empty state -->
+    <string name="plan_empty_text">لا تصنيفات بعد.</string>
+    <string name="plan_empty_subtle">حدد الهدف الشهري لكل تصنيف. اضغط على البطاقة لتعديل.</string>
+
+    <!-- Target editor sheet -->
+    <string name="plan_target_editor_title_suffix"> · هدف شهري</string>
+    <string name="plan_target_editor_amount_label">المبلغ المستهدف</string>
+    <string name="plan_action_save">حفظ</string>
+    <string name="plan_action_clear_target">إلغاء الهدف</string>
+
+    <!-- Custom range sheet -->
+    <string name="plan_custom_range_title">نطاق مخصص</string>
+    <string name="plan_custom_range_hint">اكتب التاريخين بصيغة YYYY-MM-DD. مثلاً: 2025-08-25 و 2025-09-30.</string>
+    <string name="plan_custom_range_from">من</string>
+    <string name="plan_custom_range_to">إلى</string>
+    <string name="plan_custom_range_apply">تطبيق</string>
+    <string name="plan_custom_range_error_invalid">تاريخ غير صالح</string>
+    <string name="plan_custom_range_error_order">تاريخ البداية يجب ألا يتجاوز النهاية</string>
+    <string name="plan_custom_range_banner" formatted="true">النطاق المخصص: %1$s → %2$s</string>
+    <string name="plan_custom_range_banner_edit">تعديل</string>
+
+    <!-- Wishlist -->
+    <string name="plan_wishlist_capacity_title">السعة الشهرية للرغبات</string>
+    <string name="plan_wishlist_capacity_subtitle">متوسط (الدخل − المصاريف) خلال آخر ٣ أشهر</string>
+    <string name="plan_wishlist_add">إضافة رغبة</string>
+    <string name="plan_wishlist_empty_text">لا رغبات بعد.</string>
+    <string name="plan_wishlist_empty_subtle">أضف ما تتمنى شراءه — سنخبرك متى يمكنك ذلك بدون أن تقع في الحفرة.</string>
+    <string name="plan_wishlist_saved_label">وفّرت </string>
+    <string name="plan_wishlist_status_now">متاحة الآن</string>
+    <string name="plan_wishlist_status_wait_until" formatted="true">بعد %1$d أشهر · %2$s</string>
+    <string name="plan_wishlist_status_infeasible">غير ممكنة حاليًا</string>
+    <string name="plan_wishlist_editor_title_new">رغبة جديدة</string>
+    <string name="plan_wishlist_editor_title_edit">تعديل رغبة</string>
+    <string name="plan_wishlist_label_name">الاسم</string>
+    <string name="plan_wishlist_label_cost">السعر</string>
+    <string name="plan_wishlist_label_saved">ما وفّرته حتى الآن</string>
+    <string name="plan_wishlist_label_notes">ملاحظات</string>
+    <string name="plan_wishlist_action_delete">حذف</string>
+    <string name="plan_wishlist_action_save">حفظ</string>
+
+    <!-- Investments -->
+    <string name="plan_investments_title">الاستثمارات</string>
+    <string name="plan_investments_subtitle">مجموعة المساهمين، نسبة كل واحد، وعائده النسبي.</string>
+    <string name="plan_investments_add_pool">إضافة مجموعة</string>
+    <string name="plan_investments_empty">أضف مجموعة استثمارية لرؤية النِّسَب والعوائد.</string>
+    <string name="plan_investments_pool_delete">حذف المجموعة</string>
+    <string name="plan_investments_pool_period" formatted="true">الفترة · %1$s</string>
+    <string name="plan_investments_pool_total_corpus">إجمالي رأس المال</string>
+    <string name="plan_investments_pool_total_return" formatted="true">إجمالي العائد · %1$s٪ (اضغط للتعديل)</string>
+    <string name="plan_investments_add_contributor">إضافة مساهم</string>
+    <string name="plan_investments_contributor_return_label">عائد </string>
+    <string name="plan_investments_contributor_remove">✕</string>
+    <string name="plan_investments_return_editor_title">نسبة العائد</string>
+    <string name="plan_investments_return_editor_hint">اكتب النسبة المئوية بدلاً من المبلغ. مثلاً 6.5 يعني ٦٫٥٪ من رأس المال.</string>
+    <string name="plan_investments_return_editor_label">النسبة المئوية</string>
+    <string name="plan_investments_return_editor_save">حفظ</string>
+    <string name="plan_investments_delete_pool_title" formatted="true">حذف %1$s؟</string>
+    <string name="plan_investments_delete_pool_body">كل المساهمات والعوائد المرتبطة بهذه المجموعة ستحذف. لا يمكن التراجع.</string>
+    <string name="plan_investments_delete_confirm">حذف</string>
+    <string name="plan_investments_delete_cancel">إلغاء</string>
+    <string name="plan_investments_pool_editor_title">مجموعة استثمارية جديدة</string>
+    <string name="plan_investments_pool_label_name">الاسم</string>
+    <string name="plan_investments_pool_label_period">الفترة (مثال: ٣ أشهر)</string>
+    <string name="plan_investments_pool_label_total_return">إجمالي العائد</string>
+    <string name="plan_investments_pool_action_save">حفظ</string>
+    <string name="plan_investments_contributor_editor_title" formatted="true">مساهم في %1$s</string>
+    <string name="plan_investments_contributor_label_name">الاسم</string>
+    <string name="plan_investments_contributor_label_amount">المبلغ</string>
+    <string name="plan_investments_contributor_action_save">حفظ</string>
+
+</resources>

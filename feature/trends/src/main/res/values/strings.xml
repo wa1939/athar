@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Default (Arabic) strings for the Trends feature. Arabic is Athar's primary language;
+  English overrides live in values-en/strings.xml. The locale picker in Settings switches
+  between them via a per-app Configuration override.
+-->
+<resources>
+    <!-- Overline above the segmented control -->
+    <string name="trends_overline">النمط</string>
+
+    <!-- Period segmented control -->
+    <string name="trends_period_month">شهر</string>
+    <string name="trends_period_months_3">٣ أشهر</string>
+    <string name="trends_period_year">سنة</string>
+    <string name="trends_period_vs_previous">مقارنة</string>
+    <string name="trends_period_custom">مخصص</string>
+
+    <!-- Headline numbers card -->
+    <string name="trends_label_expense">المصاريف</string>
+    <string name="trends_no_comparison">لا مقارنة (لا توجد بيانات سابقة)</string>
+    <string name="trends_vs_previous_period">مقارنة بالفترة السابقة</string>
+    <string name="trends_expense_percent_of_income">تشكّل المصاريف %1$s٪ من الدخل</string>
+
+    <!-- Income / Expense / Savings card -->
+    <string name="trends_income_expense_savings">الدخل · المصاريف · الادخار</string>
+    <string name="trends_label_income">الدخل</string>
+    <string name="trends_label_savings">الادخار</string>
+    <string name="trends_savings_rate">نسبة الادخار: %1$s٪</string>
+
+    <!-- Period comparison card -->
+    <string name="trends_period_comparison">مقارنة الفترتين</string>
+    <string name="trends_period_comparison_legend">الأعمدة الملوّنة = هذه الفترة. الأعمدة الرماديّة = الفترة السابقة.</string>
+    <string name="trends_delta_income">دلتا الدخل</string>
+    <string name="trends_delta_expense">دلتا المصاريف</string>
+    <string name="trends_delta_savings">دلتا الادخار</string>
+    <string name="trends_savings_rate_comparison">نسبة الادخار: %1$s٪ مقابل %2$s٪</string>
+
+    <!-- Monthly dashboard card -->
+    <string name="trends_last_12_months">آخر ١٢ شهرًا</string>
+    <string name="trends_monthly_income">الدخل الشهري</string>
+    <string name="trends_monthly_expense">المصاريف الشهرية</string>
+    <string name="trends_monthly_savings">الادخار الشهري</string>
+    <string name="trends_monthly_average">المتوسط الشهري</string>
+    <string name="trends_target">الهدف</string>
+    <string name="trends_variance_prefix">فرق %1$s</string>
+
+    <!-- Category comparison table -->
+    <string name="trends_category_comparison">مقارنة شهرية · بالتصنيف</string>
+    <string name="trends_category_comparison_legend">هذا الشهر مقابل الشهر السابق. الزيادة بالأحمر، الانخفاض بالزيتي.</string>
+
+    <!-- Category split section -->
+    <string name="trends_section_category_split">توزيع المصاريف على التصنيفات</string>
+
+    <!-- Empty state -->
+    <string name="trends_empty_text">أضف بعض الحركات لرؤية النمط.</string>
+    <string name="trends_empty_subtle">كل حركة مؤكدة تُضاف إلى الرسم البياني.</string>
+
+    <!-- Top categories section -->
+    <string name="trends_section_top_categories">أعلى التصنيفات</string>
+    <string name="trends_top_categories_hint">اضغط على بطاقة لرؤية تطور التصنيف خلال آخر ١٢ شهرًا.</string>
+
+    <!-- Custom range banner -->
+    <string name="trends_custom_range_label">النطاق المخصص: %1$s → %2$s</string>
+    <string name="trends_custom_range_edit">تعديل</string>
+
+    <!-- Custom range picker sheet -->
+    <string name="trends_custom_range_title">نطاق مخصص</string>
+    <string name="trends_custom_range_hint">اكتب التاريخين بصيغة YYYY-MM-DD. مثلاً: 2025-08-25 و 2025-09-30.</string>
+    <string name="trends_custom_range_from">من</string>
+    <string name="trends_custom_range_to">إلى</string>
+    <string name="trends_error_invalid_date">تاريخ غير صالح</string>
+    <string name="trends_error_start_before_end">تاريخ البداية يجب أن يكون قبل النهاية</string>
+    <string name="trends_action_apply">تطبيق</string>
+
+    <!-- Drilldown sheet -->
+    <string name="trends_over_last_12_months">خلال آخر ١٢ شهرًا</string>
+    <string name="trends_monthly_target">الهدف الشهري</string>
+    <string name="trends_average_12_months">المتوسط (١٢ شهرًا)</string>
+</resources>

@@ -93,7 +93,12 @@ class RecurringRulesViewModel @Inject constructor(
         }
     }
 
-    /** Convert an auto-detected suggestion into an active recurring rule. */
+    /**
+     * Convert an auto-detected suggestion into an active recurring rule.
+     *
+     * TODO: localize the auto-generated `notes` field below (Arabic only for now;
+     *  acceptable temporary debt when running in English mode).
+     */
     fun acceptSuggestion(suggestion: RecurringSuggestion) {
         val now = clock.now()
         val rule = RecurringRule(

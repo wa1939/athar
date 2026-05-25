@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  English overrides for the Plan feature. App defaults to Arabic; this file
+  is applied when the user picks "English" in Settings, or when LocaleHelper
+  detects an English system locale and no explicit override has been set.
+-->
+<resources>
+
+    <!-- Screen header -->
+    <string name="plan_header_title">Plan</string>
+
+    <!-- Top-level tabs -->
+    <string name="plan_tab_budget">Budget</string>
+    <string name="plan_tab_wishlist">Wishlist</string>
+    <string name="plan_tab_investments">Investments</string>
+
+    <!-- Period selector -->
+    <string name="plan_period_month">Month</string>
+    <string name="plan_period_months_3">3 months</string>
+    <string name="plan_period_year">Year</string>
+    <string name="plan_period_custom">Custom</string>
+    <string name="plan_period_label_last_3_months">Last 3 months</string>
+    <string name="plan_period_label_custom_default">Custom range</string>
+
+    <!-- Period caption when targets are scaled across a multi-month range -->
+    <string name="plan_target_caption_scaled" formatted="true">Targets scaled to range (×%1$s). Actual = confirmed transactions in this range.</string>
+
+    <!-- Budget header & row -->
+    <string name="plan_budget_header_of">of</string>
+    <string name="plan_budget_target_label">target </string>
+    <string name="plan_budget_no_target">no target</string>
+
+    <!-- Limit states -->
+    <string name="plan_limit_over">Over</string>
+    <string name="plan_limit_tight">Near limit</string>
+    <string name="plan_limit_watch">Under limit</string>
+    <string name="plan_limit_healthy">Under limit</string>
+
+    <!-- Limit warning strip suffixes (separated · already included) -->
+    <string name="plan_limit_warning_over_suffix"> · over limit</string>
+    <string name="plan_limit_warning_tight_suffix"> · near limit</string>
+
+    <!-- Empty state -->
+    <string name="plan_empty_text">No categories yet.</string>
+    <string name="plan_empty_subtle">Set a monthly target per category. Tap any row to edit.</string>
+
+    <!-- Target editor sheet -->
+    <string name="plan_target_editor_title_suffix"> · Monthly target</string>
+    <string name="plan_target_editor_amount_label">Target amount</string>
+    <string name="plan_action_save">Save</string>
+    <string name="plan_action_clear_target">Clear target</string>
+
+    <!-- Custom range sheet -->
+    <string name="plan_custom_range_title">Custom range</string>
+    <string name="plan_custom_range_hint">Enter dates as YYYY-MM-DD. e.g., 2025-08-25 and 2025-09-30.</string>
+    <string name="plan_custom_range_from">From</string>
+    <string name="plan_custom_range_to">To</string>
+    <string name="plan_custom_range_apply">Apply</string>
+    <string name="plan_custom_range_error_invalid">Invalid date</string>
+    <string name="plan_custom_range_error_order">Start date must not be after end.</string>
+    <string name="plan_custom_range_banner" formatted="true">Custom range: %1$s → %2$s</string>
+    <string name="plan_custom_range_banner_edit">Edit</string>
+
+    <!-- Wishlist -->
+    <string name="plan_wishlist_capacity_title">Monthly wishlist capacity</string>
+    <string name="plan_wishlist_capacity_subtitle">Average (income − expenses) over the last 3 months</string>
+    <string name="plan_wishlist_add">Add a wish</string>
+    <string name="plan_wishlist_empty_text">No wishes yet.</string>
+    <string name="plan_wishlist_empty_subtle">Add what you want to buy. We will tell you when it fits without strain.</string>
+    <string name="plan_wishlist_saved_label">saved </string>
+    <string name="plan_wishlist_status_now">Available now</string>
+    <string name="plan_wishlist_status_wait_until" formatted="true">In %1$d months · %2$s</string>
+    <string name="plan_wishlist_status_infeasible">Not feasible yet</string>
+    <string name="plan_wishlist_editor_title_new">New wish</string>
+    <string name="plan_wishlist_editor_title_edit">Edit wish</string>
+    <string name="plan_wishlist_label_name">Name</string>
+    <string name="plan_wishlist_label_cost">Cost</string>
+    <string name="plan_wishlist_label_saved">Saved so far</string>
+    <string name="plan_wishlist_label_notes">Notes</string>
+    <string name="plan_wishlist_action_delete">Delete</string>
+    <string name="plan_wishlist_action_save">Save</string>
+
+    <!-- Investments -->
+    <string name="plan_investments_title">Investments</string>
+    <string name="plan_investments_subtitle">Contributors, each share, and the proportional return.</string>
+    <string name="plan_investments_add_pool">Add a pool</string>
+    <string name="plan_investments_empty">Add an investment pool to see shares and returns.</string>
+    <string name="plan_investments_pool_delete">Delete pool</string>
+    <string name="plan_investments_pool_period" formatted="true">Period · %1$s</string>
+    <string name="plan_investments_pool_total_corpus">Total corpus</string>
+    <string name="plan_investments_pool_total_return" formatted="true">Total return · %1$s%% (tap to edit)</string>
+    <string name="plan_investments_add_contributor">Add a contributor</string>
+    <string name="plan_investments_contributor_return_label">return </string>
+    <string name="plan_investments_contributor_remove">✕</string>
+    <string name="plan_investments_return_editor_title">Return percentage</string>
+    <string name="plan_investments_return_editor_hint">Enter a percentage rather than an amount. e.g., 6.5 means 6.5%% of the corpus.</string>
+    <string name="plan_investments_return_editor_label">Percentage</string>
+    <string name="plan_investments_return_editor_save">Save</string>
+    <string name="plan_investments_delete_pool_title" formatted="true">Delete %1$s?</string>
+    <string name="plan_investments_delete_pool_body">All contributions and returns for this pool will be removed. This cannot be undone.</string>
+    <string name="plan_investments_delete_confirm">Delete</string>
+    <string name="plan_investments_delete_cancel">Cancel</string>
+    <string name="plan_investments_pool_editor_title">New investment pool</string>
+    <string name="plan_investments_pool_label_name">Name</string>
+    <string name="plan_investments_pool_label_period">Period (e.g., 3 months)</string>
+    <string name="plan_investments_pool_label_total_return">Total return</string>
+    <string name="plan_investments_pool_action_save">Save</string>
+    <string name="plan_investments_contributor_editor_title" formatted="true">Contributor in %1$s</string>
+    <string name="plan_investments_contributor_label_name">Name</string>
+    <string name="plan_investments_contributor_label_amount">Amount</string>
+    <string name="plan_investments_contributor_action_save">Save</string>
+
+</resources>

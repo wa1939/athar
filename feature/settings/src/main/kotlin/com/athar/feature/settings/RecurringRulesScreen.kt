@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -68,9 +69,9 @@ fun RecurringRulesScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                AtharText(text = "الحركات المتكررة", style = theme.typography.overline, color = theme.colors.muted)
+                AtharText(text = stringResource(R.string.settings_recurring_overline), style = theme.typography.overline, color = theme.colors.muted)
                 AtharText(
-                    text = "رجوع",
+                    text = stringResource(R.string.settings_action_back),
                     style = theme.typography.body,
                     color = theme.colors.muted,
                     modifier = Modifier.clickable(onClick = onBack),
@@ -79,21 +80,21 @@ fun RecurringRulesScreen(
 
             AtharCard {
                 Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-                    AtharText(text = "كيف تعمل", style = theme.typography.headline)
+                    AtharText(text = stringResource(R.string.settings_recurring_how_title), style = theme.typography.headline)
                     AtharText(
-                        text = "أنشئ قاعدة تُكرَّر شهريًا أو أسبوعيًا أو سنويًا (الإيجار، الراتب، الاشتراكات). عند تاريخ الاستحقاق تظهر الحركة في قائمة الانتظار في «اليوم»، فتؤكدها بنقرة.",
+                        text = stringResource(R.string.settings_recurring_how_body),
                         style = theme.typography.body,
                         color = theme.colors.muted,
                     )
                     if (materialized > 0) {
                         AtharText(
-                            text = "أنشئت $materialized حركة جديدة في قائمة الانتظار.",
+                            text = stringResource(R.string.settings_recurring_materialized, materialized),
                             style = theme.typography.caption,
                             color = theme.colors.olive,
                         )
                     }
                     PrimaryActionButton(
-                        text = "تشغيل الآن",
+                        text = stringResource(R.string.settings_recurring_run_now),
                         onClick = viewModel::materializeNow,
                     )
                 }
@@ -103,12 +104,12 @@ fun RecurringRulesScreen(
                 AtharCard {
                     Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
                         AtharText(
-                            text = "اقتراحات تلقائية · ${suggestions.size}",
+                            text = stringResource(R.string.settings_recurring_suggestions_title, suggestions.size),
                             style = theme.typography.headline,
                             color = theme.colors.ember,
                         )
                         AtharText(
-                            text = "اكتشفنا هذه الأنماط من حركاتك السابقة. تأكد منها لإنشاء قاعدة تكرار.",
+                            text = stringResource(R.string.settings_recurring_suggestions_body),
                             style = theme.typography.body,
                             color = theme.colors.muted,
                         )
@@ -127,7 +128,11 @@ fun RecurringRulesScreen(
                 .clickable { showAdd = !showAdd }
             ) {
                 AtharText(
-                    text = if (showAdd) "إخفاء النموذج" else "+ إضافة قاعدة",
+                    text = if (showAdd) {
+                        stringResource(R.string.settings_recurring_hide_form)
+                    } else {
+                        stringResource(R.string.settings_recurring_add)
+                    },
                     style = theme.typography.headline,
                     color = theme.colors.ember,
                 )
@@ -155,7 +160,7 @@ fun RecurringRulesScreen(
             if (rules.isEmpty()) {
                 AtharCard {
                     AtharText(
-                        text = "لا قواعد بعد. ابدأ بإيجارك أو راتبك أو اشتراك Netflix.",
+                        text = stringResource(R.string.settings_recurring_empty),
                         style = theme.typography.body,
                         color = theme.colors.muted,
                     )
@@ -189,51 +194,51 @@ private fun AddRuleForm(
 
     AtharCard {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-            AtharText(text = "إضافة قاعدة جديدة", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.settings_recurring_form_title), style = theme.typography.headline)
             AtharTextField(
                 value = displayName,
                 onValueChange = { displayName = it },
-                label = "الاسم (مثلاً: راتب)",
+                label = stringResource(R.string.settings_recurring_field_name),
                 modifier = Modifier.fillMaxWidth(),
             )
             AtharTextField(
                 value = merchant,
                 onValueChange = { merchant = it },
-                label = "الجهة (مثلاً: شركة ، Netflix)",
+                label = stringResource(R.string.settings_recurring_field_merchant),
                 modifier = Modifier.fillMaxWidth(),
             )
             AtharTextField(
                 value = amount,
                 onValueChange = { amount = it },
-                label = "المبلغ ($currency)",
+                label = stringResource(R.string.settings_recurring_field_amount, currency),
                 modifier = Modifier.fillMaxWidth(),
                 keyboardType = KeyboardType.Number,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-                Chip(label = "مصروف", selected = type == TxType.EXPENSE, accent = theme.colors.ember,
+                Chip(label = stringResource(R.string.settings_recurring_type_expense), selected = type == TxType.EXPENSE, accent = theme.colors.ember,
                     onClick = { type = TxType.EXPENSE })
-                Chip(label = "دخل", selected = type == TxType.INCOME, accent = theme.colors.olive,
+                Chip(label = stringResource(R.string.settings_recurring_type_income), selected = type == TxType.INCOME, accent = theme.colors.olive,
                     onClick = { type = TxType.INCOME })
             }
             Row(horizontalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-                Chip(label = "شهري", selected = cadence == Cadence.MONTHLY, accent = theme.colors.ember,
+                Chip(label = stringResource(R.string.settings_recurring_cadence_monthly), selected = cadence == Cadence.MONTHLY, accent = theme.colors.ember,
                     onClick = { cadence = Cadence.MONTHLY })
-                Chip(label = "أسبوعي", selected = cadence == Cadence.WEEKLY, accent = theme.colors.ember,
+                Chip(label = stringResource(R.string.settings_recurring_cadence_weekly), selected = cadence == Cadence.WEEKLY, accent = theme.colors.ember,
                     onClick = { cadence = Cadence.WEEKLY })
-                Chip(label = "سنوي", selected = cadence == Cadence.YEARLY, accent = theme.colors.ember,
+                Chip(label = stringResource(R.string.settings_recurring_cadence_yearly), selected = cadence == Cadence.YEARLY, accent = theme.colors.ember,
                     onClick = { cadence = Cadence.YEARLY })
             }
             if (cadence == Cadence.MONTHLY) {
                 AtharTextField(
                     value = dayOfMonth,
                     onValueChange = { dayOfMonth = it.filter { c -> c.isDigit() }.take(2) },
-                    label = "يوم الشهر (1-28)",
+                    label = stringResource(R.string.settings_recurring_field_day_of_month),
                     modifier = Modifier.fillMaxWidth(),
                     keyboardType = KeyboardType.Number,
                 )
             }
             PrimaryActionButton(
-                text = "حفظ القاعدة",
+                text = stringResource(R.string.settings_recurring_save),
                 onClick = {
                     val dom = dayOfMonth.toIntOrNull()
                     val startDate = if (cadence == Cadence.MONTHLY && dom != null) {
@@ -289,7 +294,7 @@ private fun RuleRow(
                         color = theme.colors.muted,
                     )
                     AtharText(
-                        text = "التالي: ${rule.nextRunDate}",
+                        text = stringResource(R.string.settings_recurring_row_next, rule.nextRunDate.toString()),
                         style = theme.typography.caption,
                         color = theme.colors.muted,
                     )
@@ -308,7 +313,11 @@ private fun RuleRow(
                         .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
                 ) {
                     AtharText(
-                        text = if (rule.isActive) "مفعّل" else "موقَف",
+                        text = if (rule.isActive) {
+                            stringResource(R.string.settings_recurring_row_active)
+                        } else {
+                            stringResource(R.string.settings_recurring_row_inactive)
+                        },
                         style = theme.typography.caption,
                         color = if (rule.isActive) theme.colors.parchment else theme.colors.ink,
                     )
@@ -320,7 +329,7 @@ private fun RuleRow(
                         .clickable(onClick = onDelete)
                         .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
                 ) {
-                    AtharText(text = "حذف", style = theme.typography.caption, color = theme.colors.crimson)
+                    AtharText(text = stringResource(R.string.settings_action_delete), style = theme.typography.caption, color = theme.colors.crimson)
                 }
             }
         }
@@ -339,12 +348,16 @@ private fun SuggestionRow(
                 Column(modifier = Modifier.padding(end = theme.spacing.s)) {
                     AtharText(text = suggestion.merchant, style = theme.typography.headline)
                     AtharText(
-                        text = "${suggestion.occurrenceCount} تكرارات · يوم ${suggestion.typicalDayOfMonth}",
+                        text = stringResource(
+                            R.string.settings_recurring_suggestion_counts,
+                            suggestion.occurrenceCount,
+                            suggestion.typicalDayOfMonth.toString(),
+                        ),
                         style = theme.typography.caption,
                         color = theme.colors.muted,
                     )
                     AtharText(
-                        text = "آخر مرة: ${suggestion.lastSeen}",
+                        text = stringResource(R.string.settings_recurring_suggestion_last, suggestion.lastSeen.toString()),
                         style = theme.typography.caption,
                         color = theme.colors.muted,
                     )
@@ -355,17 +368,18 @@ private fun SuggestionRow(
                 )
             }
             PrimaryActionButton(
-                text = "إنشاء قاعدة",
+                text = stringResource(R.string.settings_recurring_create_rule),
                 onClick = onAccept,
             )
         }
     }
 }
 
+@Composable
 private fun cadenceLabel(c: Cadence): String = when (c) {
-    Cadence.MONTHLY -> "شهري"
-    Cadence.WEEKLY -> "أسبوعي"
-    Cadence.YEARLY -> "سنوي"
+    Cadence.MONTHLY -> stringResource(R.string.settings_recurring_cadence_monthly)
+    Cadence.WEEKLY -> stringResource(R.string.settings_recurring_cadence_weekly)
+    Cadence.YEARLY -> stringResource(R.string.settings_recurring_cadence_yearly)
 }
 
 @Composable

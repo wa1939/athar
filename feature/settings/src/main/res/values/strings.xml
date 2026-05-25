@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Default (Arabic) strings for the Settings feature. Arabic is Athar's primary
+  language; English overrides live in values-en/strings.xml. The locale picker
+  in Settings switches between them via a per-app Configuration override.
+-->
+<resources>
+
+    <!-- Screen header / common actions -->
+    <string name="settings_screen_overline">الإعدادات</string>
+    <string name="settings_action_back">رجوع</string>
+    <string name="settings_action_close">إغلاق</string>
+    <string name="settings_action_save">حفظ</string>
+    <string name="settings_action_cancel">إلغاء</string>
+    <string name="settings_action_done">تم</string>
+    <string name="settings_action_ok">حسنًا</string>
+    <string name="settings_action_apply">تطبيق</string>
+    <string name="settings_action_delete">حذف</string>
+    <string name="settings_status_working">جارٍ المعالجة…</string>
+    <string name="settings_status_in_progress">جارٍ…</string>
+
+    <!-- SMS permission card -->
+    <string name="settings_sms_card_title_granted">قراءة الرسائل · مفعّلة</string>
+    <string name="settings_sms_card_title_denied">قراءة الرسائل · غير مفعّلة</string>
+    <string name="settings_sms_card_body_granted">الرسائل من البنوك تُقرأ محليًا على جهازك. لا تغادر الجهاز أبدًا.</string>
+    <string name="settings_sms_card_body_denied">لقراءة رسائل البنوك تلقائيًا، تحتاج أثر إلى صلاحية قراءة الرسائل. تبقى الرسائل والبيانات الماليّة على جهازك.</string>
+    <string name="settings_sms_card_grant_action">تفعيل قراءة الرسائل</string>
+
+    <!-- Backfill card -->
+    <string name="settings_backfill_title">إعادة فحص الرسائل</string>
+    <string name="settings_backfill_body">اقرأ آخر ٩٠ يومًا من الرسائل في صندوق الوارد وأنشئ منها حركات معلّقة في انتظار التأكيد.</string>
+    <string name="settings_backfill_running" formatted="true">جارٍ المسح… (%1$d رسالة)</string>
+    <string name="settings_backfill_done" formatted="true">تم فحص %1$d رسالة، أُرسلت %2$d للمعالجة.</string>
+    <string name="settings_backfill_failed" formatted="true">تعذّر الفحص: %1$s</string>
+    <string name="settings_backfill_action_start">ابدأ الفحص</string>
+    <string name="settings_backfill_action_running">جارٍ المسح…</string>
+
+    <!-- Rescan & clean card -->
+    <string name="settings_rescan_title">إعادة فحص الرسائل</string>
+    <string name="settings_rescan_body">يحذف كل الحركات قيد التأكيد ويعيد قراءة سجل الرسائل بأحدث القوالب. حركاتك المؤكدة لن تتأثر. مفيد بعد التحديث لتنظيف الإعلانات والإشعارات التي دخلت بالخطأ.</string>
+    <string name="settings_rescan_working">جاري إعادة الفحص…</string>
+    <string name="settings_rescan_done" formatted="true">تم حذف %1$d عنصرًا من قائمة الانتظار، وأُعيد فحص السجل.</string>
+    <string name="settings_rescan_action">إعادة فحص ومسح المُعلَّقات</string>
+
+    <!-- Backup card -->
+    <string name="settings_backup_title">النسخ الاحتياطي والاسترجاع</string>
+    <string name="settings_backup_body">النسخة الاحتياطية ملف مشفّر بكلمة مرور تختارها أنت. لا يمكن استرجاعها بدونها.</string>
+    <string name="settings_backup_export">تصدير</string>
+    <string name="settings_backup_import">استرجاع</string>
+    <string name="settings_backup_passphrase_export_title">كلمة مرور النسخة الاحتياطية</string>
+    <string name="settings_backup_passphrase_export_body">اكتب كلمة المرور التي ستحمي ملف النسخة. ستحتاجها لاحقًا لاسترجاع البيانات.</string>
+    <string name="settings_backup_passphrase_export_confirm">حفظ النسخة</string>
+    <string name="settings_backup_passphrase_import_title">استرجاع النسخة</string>
+    <string name="settings_backup_passphrase_import_body">اكتب كلمة مرور النسخة. سيتم استبدال البيانات الحالية.</string>
+    <string name="settings_backup_passphrase_import_confirm">استرجاع</string>
+    <string name="settings_backup_passphrase_label">كلمة المرور</string>
+
+    <!-- CSV card -->
+    <string name="settings_csv_title">تبادل CSV</string>
+    <string name="settings_csv_body">استورد من جدول الاكسل القديم أو صدّر حركاتك بصيغة CSV (الأعمدة: date · vendor · amount · category · type · notes).</string>
+    <string name="settings_csv_done" formatted="true">تم استيراد %1$d حركة. (تم تخطّي %2$d صف.)</string>
+    <string name="settings_csv_exported" formatted="true">تم تصدير %1$d حركة.</string>
+    <string name="settings_csv_action_import">استيراد</string>
+    <string name="settings_csv_action_export">تصدير</string>
+
+    <!-- Display currency card -->
+    <string name="settings_currency_title">العملة المعروضة</string>
+    <string name="settings_currency_body">اختر عملة العرض. الحركات المستوردة من الرسائل تحتفظ بعملتها الأصلية، لكن إدخالاتك اليدوية ستستخدم هذه العملة. لا يوجد تحويل تلقائي.</string>
+
+    <!-- Language card -->
+    <string name="settings_language_title">اللغة · Language</string>
+    <string name="settings_language_body">اختر لغة عرض التطبيق. سيتم إعادة تحميل الشاشة لتطبيق اللغة الجديدة.</string>
+    <string name="settings_language_option_system_ar">نظام الجهاز</string>
+    <string name="settings_language_option_system_en">Follow system</string>
+    <string name="settings_language_option_arabic_ar">العربية</string>
+    <string name="settings_language_option_arabic_en">Arabic</string>
+    <string name="settings_language_option_english_ar">English</string>
+    <string name="settings_language_option_english_en">English</string>
+
+    <!-- Hijri toggle card -->
+    <string name="settings_hijri_title">عرض التاريخ الهجري</string>
+    <string name="settings_hijri_body_on">يظهر بجانب التاريخ الميلادي في الشاشة الرئيسية.</string>
+    <string name="settings_hijri_body_off">افتراضيًا، الميلادي فقط.</string>
+    <string name="settings_hijri_pill_on">مفعّل</string>
+    <string name="settings_hijri_pill_off">معطّل</string>
+
+    <!-- Own accounts card -->
+    <string name="settings_own_accounts_title">حساباتك الخاصة</string>
+    <string name="settings_own_accounts_body">اكتب آخر ٤ أرقام لكل حساب تملكه (مفصولة بفواصل، مثلاً: 0930, 4268). أي تحويل إلى أحد هذه الأرقام يُعتبر «تحويل داخلي · ادخار محتمل» بدلاً من مصروف.</string>
+    <string name="settings_own_accounts_field_label">أرقام حساباتك</string>
+    <string name="settings_own_accounts_save">حفظ الحسابات</string>
+
+    <!-- Entry cards (links to sub-screens) -->
+    <string name="settings_entry_accounts_title">الحسابات</string>
+    <string name="settings_entry_accounts_body">أضف حسابات الجاري، الادخار، البطاقات الائتمانية، والاستثمار. صافي ثروتك = مجموع الأرصدة الحالية.</string>
+    <string name="settings_entry_recurring_title">الحركات المتكررة</string>
+    <string name="settings_entry_recurring_body">أنشئ قواعد للحركات المتكررة شهريًا أو أسبوعيًا أو سنويًا — الإيجار، الراتب، Netflix. تُولِّد حركات معلّقة في «اليوم» عند استحقاقها.</string>
+    <string name="settings_entry_sms_audit_title">سجل الرسائل</string>
+    <string name="settings_entry_sms_audit_body">كل رسالة وصلت — مع نتيجة المعالجة (ناجحة، فاشلة، أو مُتجاهَلة). لا تغادر هذه القائمة الجهاز.</string>
+    <string name="settings_entry_user_templates_title">قوالب البنوك</string>
+    <string name="settings_entry_user_templates_body">علِّم أثر تنسيق رسائل بنكك إذا لم يكن من ضمن البنوك المدعومة افتراضيًا. الصق رسالة، اكتب الكلمات المحيطة بالمبلغ، احفظ.</string>
+    <string name="settings_entry_activity_log_title">السجل</string>
+    <string name="settings_entry_activity_log_body">كل إضافة أو تعديل أو حذف أو تأكيد لحركة، مع وقتها. مرجع لاسترجاع ما تذكره ضمنيًا.</string>
+    <string name="settings_entry_categories_title">التصنيفات والقواعد</string>
+    <string name="settings_entry_categories_body">أضف، أعد تسمية، أو أرشف التصنيفات. التغييرات تبقى في نسخك الاحتياطية.</string>
+
+    <!-- About card -->
+    <string name="settings_about_title">عن أثر</string>
+    <string name="settings_about_version" formatted="true">إصدار %1$s</string>
+    <string name="settings_about_author">طوّر هذا التطبيق وليد الحامد · walhamed.com</string>
+    <string name="settings_about_inspiration">مستوحى من جدول The Measure of a Plan (TMOAP)، الذي ألهم منهجية أثر في تتبّع المصروف الشهري وقياس الخطة المالية.</string>
+    <string name="settings_about_local">كل بياناتك محفوظة محليًا على جهازك. لا حسابات، لا خوادم، لا تتبع.</string>
+
+    <!-- Accounts screen -->
+    <string name="settings_accounts_overline">الحسابات</string>
+    <string name="settings_accounts_net_worth_title">صافي الثروة</string>
+    <string name="settings_accounts_net_worth_mixed">بدون تحويل عملات</string>
+    <string name="settings_accounts_net_worth_body">إجمالي صافي ثروتك عبر الحسابات النشطة. التحويلات داخل حساباتك لا تُغيّر هذا الرقم.</string>
+    <string name="settings_accounts_add">+ إضافة حساب</string>
+    <string name="settings_accounts_hide_form">إخفاء النموذج</string>
+    <string name="settings_accounts_empty">لا حسابات بعد. أضف أول حساب لك (جاري، ادخار، نقدي) لتبدأ.</string>
+    <string name="settings_accounts_form_add_title">إضافة حساب جديد</string>
+    <string name="settings_accounts_form_edit_title">تعديل الحساب</string>
+    <string name="settings_accounts_field_name">اسم الحساب</string>
+    <string name="settings_accounts_field_name_hint">اسم الحساب (مثلاً: الراجحي - جاري)</string>
+    <string name="settings_accounts_field_opening" formatted="true">الرصيد الافتتاحي (%1$s)</string>
+    <string name="settings_accounts_field_notes">ملاحظات (اختياري)</string>
+    <string name="settings_accounts_save_edits">حفظ التعديلات</string>
+    <string name="settings_accounts_action_edit">تعديل</string>
+    <string name="settings_accounts_action_close">إغلاق</string>
+    <string name="settings_accounts_action_archive">أرشفة</string>
+    <string name="settings_accounts_action_unarchive">إعادة تفعيل</string>
+    <string name="settings_accounts_archived_badge">مؤرشف</string>
+
+    <!-- Account types -->
+    <string name="settings_account_type_checking">جاري</string>
+    <string name="settings_account_type_savings">ادخار</string>
+    <string name="settings_account_type_credit_card">بطاقة ائتمانية</string>
+    <string name="settings_account_type_cash">نقدي</string>
+    <string name="settings_account_type_investment">استثمار</string>
+    <string name="settings_account_type_other">آخر</string>
+
+    <!-- Recurring rules screen -->
+    <string name="settings_recurring_overline">الحركات المتكررة</string>
+    <string name="settings_recurring_how_title">كيف تعمل</string>
+    <string name="settings_recurring_how_body">أنشئ قاعدة تُكرَّر شهريًا أو أسبوعيًا أو سنويًا (الإيجار، الراتب، الاشتراكات). عند تاريخ الاستحقاق تظهر الحركة في قائمة الانتظار في «اليوم»، فتؤكدها بنقرة.</string>
+    <string name="settings_recurring_materialized" formatted="true">أنشئت %1$d حركة جديدة في قائمة الانتظار.</string>
+    <string name="settings_recurring_run_now">تشغيل الآن</string>
+    <string name="settings_recurring_suggestions_title" formatted="true">اقتراحات تلقائية · %1$d</string>
+    <string name="settings_recurring_suggestions_body">اكتشفنا هذه الأنماط من حركاتك السابقة. تأكد منها لإنشاء قاعدة تكرار.</string>
+    <string name="settings_recurring_add">+ إضافة قاعدة</string>
+    <string name="settings_recurring_hide_form">إخفاء النموذج</string>
+    <string name="settings_recurring_empty">لا قواعد بعد. ابدأ بإيجارك أو راتبك أو اشتراك Netflix.</string>
+    <string name="settings_recurring_form_title">إضافة قاعدة جديدة</string>
+    <string name="settings_recurring_field_name">الاسم (مثلاً: راتب)</string>
+    <string name="settings_recurring_field_merchant">الجهة (مثلاً: شركة ، Netflix)</string>
+    <string name="settings_recurring_field_amount" formatted="true">المبلغ (%1$s)</string>
+    <string name="settings_recurring_field_day_of_month">يوم الشهر (1-28)</string>
+    <string name="settings_recurring_type_expense">مصروف</string>
+    <string name="settings_recurring_type_income">دخل</string>
+    <string name="settings_recurring_cadence_monthly">شهري</string>
+    <string name="settings_recurring_cadence_weekly">أسبوعي</string>
+    <string name="settings_recurring_cadence_yearly">سنوي</string>
+    <string name="settings_recurring_save">حفظ القاعدة</string>
+    <string name="settings_recurring_create_rule">إنشاء قاعدة</string>
+    <string name="settings_recurring_row_next" formatted="true">التالي: %1$s</string>
+    <string name="settings_recurring_row_active">مفعّل</string>
+    <string name="settings_recurring_row_inactive">موقَف</string>
+    <string name="settings_recurring_suggestion_counts" formatted="true">%1$d تكرارات · يوم %2$s</string>
+    <string name="settings_recurring_suggestion_last" formatted="true">آخر مرة: %1$s</string>
+
+    <!-- Categories screen -->
+    <string name="settings_categories_title">التصنيفات</string>
+    <string name="settings_categories_segment_expense">مصاريف</string>
+    <string name="settings_categories_segment_income">دخل</string>
+    <string name="settings_categories_add">إضافة تصنيف</string>
+    <string name="settings_categories_editor_new">تصنيف جديد</string>
+    <string name="settings_categories_editor_edit">تعديل تصنيف</string>
+    <string name="settings_categories_editor_kind_expense">مصروف</string>
+    <string name="settings_categories_editor_kind_income">دخل</string>
+    <string name="settings_categories_editor_name_ar">الاسم بالعربية</string>
+    <string name="settings_categories_editor_name_en">الاسم بالإنجليزية</string>
+    <string name="settings_categories_archive">أرشفة</string>
+    <string name="settings_categories_archived_label">(مؤرشف)</string>
+    <string name="settings_categories_row_archived_suffix" formatted="true">%1$s (مؤرشف)</string>
+
+    <!-- SMS audit screen -->
+    <string name="settings_sms_audit_title">سجل الرسائل</string>
+    <string name="settings_sms_audit_filter_all">الكل</string>
+    <string name="settings_sms_audit_filter_parsed">ناجحة</string>
+    <string name="settings_sms_audit_filter_failed">فاشلة</string>
+    <string name="settings_sms_audit_filter_ignored">مُتجاهَلة</string>
+    <string name="settings_sms_audit_empty">لا رسائل في هذا التصنيف بعد.</string>
+    <string name="settings_sms_audit_empty_subtle">تظهر الرسائل هنا كلما وصلت أو فعّلت إعادة الفحص من الإعدادات.</string>
+
+    <!-- Activity log screen -->
+    <string name="settings_activity_log_title">السجل</string>
+    <string name="settings_activity_log_empty">لا توجد إجراءات بعد.</string>
+    <string name="settings_activity_log_empty_subtle">كل تعديل أو حذف لحركة يُسجَّل هنا.</string>
+    <string name="settings_activity_log_no_details">(لا تفاصيل)</string>
+    <string name="settings_activity_log_action_create">أُنشئت</string>
+    <string name="settings_activity_log_action_update">عُدِّلت</string>
+    <string name="settings_activity_log_action_delete">حُذِفت</string>
+    <string name="settings_activity_log_action_confirm">تأكيد</string>
+    <string name="settings_activity_log_action_dismiss">تجاهل</string>
+
+    <!-- User templates screen -->
+    <string name="settings_templates_title">قوالب البنوك</string>
+    <string name="settings_templates_intro">إذا فشل تحليل رسائل بنك معيّن، علِّم أثر تنسيقها هنا. الصق نص الرسالة، ثم اكتب الكلمة التي تسبق المبلغ والكلمة التي تليه — يستخدم أثر هذه الإشارات لاستخراج المبلغ من أي رسالة بنفس التنسيق.</string>
+    <string name="settings_templates_saved_header">قوالبك</string>
+    <string name="settings_templates_new_header">إضافة قالب جديد</string>
+    <string name="settings_templates_field_display_name">اسم البنك (مثلاً: مصرف الإنماء)</string>
+    <string name="settings_templates_field_sender">مرسل الرسائل كما يظهر في الجهاز (مثلاً: AlinmaBank)</string>
+    <string name="settings_templates_field_sample_body">الصق نص رسالة عيّنة هنا</string>
+    <string name="settings_templates_field_before">قبل</string>
+    <string name="settings_templates_field_after">بعد (اختياري)</string>
+    <string name="settings_templates_anchor_amount_label">المبلغ</string>
+    <string name="settings_templates_anchor_amount_hint">اكتب الكلمة قبل المبلغ مباشرة (مثلاً: Amount: أو المبلغ)</string>
+    <string name="settings_templates_anchor_merchant_label">المتجر (اختياري)</string>
+    <string name="settings_templates_anchor_merchant_hint">للمشتريات: الكلمة قبل اسم المتجر (مثلاً: At: أو لدى)</string>
+    <string name="settings_templates_anchor_counterparty_label">المُحوَّل إليه (اختياري)</string>
+    <string name="settings_templates_anchor_counterparty_hint">للتحويلات: الكلمة قبل اسم المستلم (مثلاً: To: أو إلى)</string>
+    <string name="settings_templates_save">حفظ القالب</string>
+    <string name="settings_templates_row_sender" formatted="true">المرسل: %1$s · %2$s</string>
+    <string name="settings_templates_row_anchor_before" formatted="true">قبل المبلغ: \"%1$s\"</string>
+    <string name="settings_templates_row_anchor_after" formatted="true"> · بعد: \"%1$s\"</string>
+    <string name="settings_templates_type_expense">شراء</string>
+    <string name="settings_templates_type_transfer">تحويل</string>
+    <string name="settings_templates_type_income">إيداع</string>
+
+</resources>

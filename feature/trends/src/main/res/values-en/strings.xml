@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  English overrides for the Trends feature. Applied when the user picks "English" in
+  Settings, or when LocaleHelper detects an English system locale and no explicit override
+  has been set.
+-->
+<resources>
+    <!-- Overline above the segmented control -->
+    <string name="trends_overline">Trends</string>
+
+    <!-- Period segmented control -->
+    <string name="trends_period_month">Month</string>
+    <string name="trends_period_months_3">3 months</string>
+    <string name="trends_period_year">Year</string>
+    <string name="trends_period_vs_previous">vs prior</string>
+    <string name="trends_period_custom">Custom</string>
+
+    <!-- Headline numbers card -->
+    <string name="trends_label_expense">Expenses</string>
+    <string name="trends_no_comparison">No comparison (no prior data)</string>
+    <string name="trends_vs_previous_period">vs the previous period</string>
+    <string name="trends_expense_percent_of_income">Expenses are %1$s%% of income</string>
+
+    <!-- Income / Expense / Savings card -->
+    <string name="trends_income_expense_savings">Income / Expenses / Savings</string>
+    <string name="trends_label_income">Income</string>
+    <string name="trends_label_savings">Savings</string>
+    <string name="trends_savings_rate">Savings rate: %1$s%%</string>
+
+    <!-- Period comparison card -->
+    <string name="trends_period_comparison">Period comparison</string>
+    <string name="trends_period_comparison_legend">Colored bars = this period. Grey bars = previous period.</string>
+    <string name="trends_delta_income">Income delta</string>
+    <string name="trends_delta_expense">Expense delta</string>
+    <string name="trends_delta_savings">Savings delta</string>
+    <string name="trends_savings_rate_comparison">Savings rate: %1$s%% vs %2$s%%</string>
+
+    <!-- Monthly dashboard card -->
+    <string name="trends_last_12_months">Last 12 months</string>
+    <string name="trends_monthly_income">Monthly income</string>
+    <string name="trends_monthly_expense">Monthly expenses</string>
+    <string name="trends_monthly_savings">Monthly savings</string>
+    <string name="trends_monthly_average">Monthly average</string>
+    <string name="trends_target">Target</string>
+    <string name="trends_variance_prefix">Variance %1$s</string>
+
+    <!-- Category comparison table -->
+    <string name="trends_category_comparison">Monthly comparison by category</string>
+    <string name="trends_category_comparison_legend">This month vs last month. Increases in red, decreases in olive.</string>
+
+    <!-- Category split section -->
+    <string name="trends_section_category_split">Expenses by category</string>
+
+    <!-- Empty state -->
+    <string name="trends_empty_text">Add some transactions to see your trends.</string>
+    <string name="trends_empty_subtle">Every confirmed transaction joins the chart.</string>
+
+    <!-- Top categories section -->
+    <string name="trends_section_top_categories">Top categories</string>
+    <string name="trends_top_categories_hint">Tap a card to see the category over the last 12 months.</string>
+
+    <!-- Custom range banner -->
+    <string name="trends_custom_range_label">Custom range: %1$s → %2$s</string>
+    <string name="trends_custom_range_edit">Edit</string>
+
+    <!-- Custom range picker sheet -->
+    <string name="trends_custom_range_title">Custom range</string>
+    <string name="trends_custom_range_hint">Enter both dates as YYYY-MM-DD. Example: 2025-08-25 and 2025-09-30.</string>
+    <string name="trends_custom_range_from">From</string>
+    <string name="trends_custom_range_to">To</string>
+    <string name="trends_error_invalid_date">Invalid date</string>
+    <string name="trends_error_start_before_end">Start date must be before end date</string>
+    <string name="trends_action_apply">Apply</string>
+
+    <!-- Drilldown sheet -->
+    <string name="trends_over_last_12_months">Over the last 12 months</string>
+    <string name="trends_monthly_target">Monthly target</string>
+    <string name="trends_average_12_months">Average (12 months)</string>
+</resources>

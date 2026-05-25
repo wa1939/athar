@@ -23,4 +23,21 @@
     <string name="settings_language_system">نظام الجهاز</string>
     <string name="settings_language_arabic">العربية</string>
     <string name="settings_language_english">English</string>
+
+    <string name="onboarding_welcome_title">أثر.</string>
+    <string name="onboarding_welcome_subtitle">تتبع كل ريال يخرج من جيبك، بهدوء، دون أن تكتب شيئًا.</string>
+    <string name="onboarding_welcome_body">خمس دقائق للتجهيز. لا تسجيل، لا حساب، لا تحميل.</string>
+    <string name="onboarding_privacy_title">خصوصيتك</string>
+    <string name="onboarding_privacy_body">البيانات الماليّة تبقى على جهازك. لا سحابة، لا تحليل خارجي، لا إعلانات.</string>
+    <string name="onboarding_privacy_bullet_1">لا نبيع أو نشارك بياناتك مع أي طرف.</string>
+    <string name="onboarding_privacy_bullet_2">لا إعلانات، لا عروض شراكة، لا روابط مدفوعة.</string>
+    <string name="onboarding_privacy_bullet_3">لا إشعارات تشعرك بالذنب. الإحصاءات تخدمك، لا تحكم عليك.</string>
+    <string name="onboarding_sms_title">قراءة رسائل البنك</string>
+    <string name="onboarding_sms_body">أثر يقرأ رسائل البنك على جهازك ليُسجّل كل حركة تلقائيًا. الرسائل لا تغادر الجهاز، ولا تُحفظ في أي مكان آخر.</string>
+    <string name="onboarding_sms_granted">تم التفعيل — جاهز للقراءة من البنك.</string>
+    <string name="onboarding_sms_grant_button">تفعيل قراءة الرسائل</string>
+    <string name="onboarding_sms_skip_note">لو فضّلت لاحقًا، يمكنك تفعيلها من الإعدادات في أي وقت — أثر يعمل بإدخال يدوي بدون قراءة الرسائل.</string>
+    <string name="onboarding_action_back">السابق</string>
+    <string name="onboarding_action_next">التالي</string>
+    <string name="onboarding_action_start">ابدأ</string>
 </resources>

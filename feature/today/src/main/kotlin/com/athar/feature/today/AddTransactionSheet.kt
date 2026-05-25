@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -84,12 +85,12 @@ private fun AddTransactionForm(
             .padding(contentPadding),
         verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
     ) {
-        AtharText(text = "إضافة حركة", style = theme.typography.headline)
+        AtharText(text = stringResource(R.string.add_tx_title), style = theme.typography.headline)
 
         AtharSegmentedControl(
             segments = listOf(
-                AtharSegment(TxType.EXPENSE, "مصروف"),
-                AtharSegment(TxType.INCOME, "دخل"),
+                AtharSegment(TxType.EXPENSE, stringResource(R.string.add_tx_segment_expense)),
+                AtharSegment(TxType.INCOME, stringResource(R.string.add_tx_segment_income)),
             ),
             selected = state.type,
             onSelect = { onEvent(AddTransactionEvent.SetType(it)) },
@@ -102,8 +103,8 @@ private fun AddTransactionForm(
             isError = state.validationError == ValidationError.AMOUNT_REQUIRED ||
                 state.validationError == ValidationError.AMOUNT_INVALID,
             supportingText = when (state.validationError) {
-                ValidationError.AMOUNT_REQUIRED -> "أدخل المبلغ"
-                ValidationError.AMOUNT_INVALID -> "المبلغ غير صحيح"
+                ValidationError.AMOUNT_REQUIRED -> stringResource(R.string.add_tx_error_amount_required)
+                ValidationError.AMOUNT_INVALID -> stringResource(R.string.add_tx_error_amount_invalid)
                 else -> null
             },
         )
@@ -111,15 +112,15 @@ private fun AddTransactionForm(
         AtharTextField(
             value = state.merchant,
             onValueChange = { onEvent(AddTransactionEvent.SetMerchant(it)) },
-            label = "التاجر",
-            placeholder = "مثال: ستاربكس",
+            label = stringResource(R.string.add_tx_label_merchant),
+            placeholder = stringResource(R.string.add_tx_placeholder_merchant),
             modifier = Modifier.fillMaxWidth(),
             isError = state.validationError == ValidationError.MERCHANT_REQUIRED,
-            supportingText = if (state.validationError == ValidationError.MERCHANT_REQUIRED) "أدخل اسم التاجر" else null,
+            supportingText = if (state.validationError == ValidationError.MERCHANT_REQUIRED) stringResource(R.string.add_tx_error_merchant_required) else null,
         )
 
         AtharText(
-            text = if (state.validationError == ValidationError.CATEGORY_REQUIRED) "اختر تصنيفًا" else "التصنيف",
+            text = if (state.validationError == ValidationError.CATEGORY_REQUIRED) stringResource(R.string.add_tx_error_category_required) else stringResource(R.string.add_tx_label_category),
             style = theme.typography.caption,
             color = if (state.validationError == ValidationError.CATEGORY_REQUIRED) theme.colors.crimson else theme.colors.muted,
         )
@@ -138,7 +139,7 @@ private fun AddTransactionForm(
         AtharTextField(
             value = state.notes,
             onValueChange = { onEvent(AddTransactionEvent.SetNotes(it)) },
-            label = "ملاحظات",
+            label = stringResource(R.string.add_tx_label_notes),
             modifier = Modifier.fillMaxWidth(),
             singleLine = false,
         )
@@ -167,7 +168,7 @@ private fun SaveButton(
         contentAlignment = Alignment.Center,
     ) {
         AtharText(
-            text = if (isSaving) "جارٍ الحفظ…" else "حفظ",
+            text = if (isSaving) stringResource(R.string.add_tx_saving) else stringResource(R.string.add_tx_save),
             style = theme.typography.headline,
             color = theme.colors.parchment,
         )

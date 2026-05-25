@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.athar.core.common.money.Money
@@ -43,19 +44,19 @@ fun InvestmentsContent(viewModel: InvestmentsViewModel = hiltViewModel()) {
     Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.l)) {
         AtharCard {
             Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-                AtharText(text = "الاستثمارات", style = theme.typography.headline)
+                AtharText(text = stringResource(R.string.plan_investments_title), style = theme.typography.headline)
                 AtharText(
-                    text = "مجموعة المساهمين، نسبة كل واحد، وعائده النسبي.",
+                    text = stringResource(R.string.plan_investments_subtitle),
                     style = theme.typography.body,
                     color = theme.colors.muted,
                 )
-                PrimaryButton(text = "إضافة مجموعة", onClick = { creatingPool = true })
+                PrimaryButton(text = stringResource(R.string.plan_investments_add_pool), onClick = { creatingPool = true })
             }
         }
 
         if (state.pools.isEmpty() && !state.isLoading) {
             AtharText(
-                text = "أضف مجموعة استثمارية لرؤية النِّسَب والعوائد.",
+                text = stringResource(R.string.plan_investments_empty),
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
@@ -113,17 +114,17 @@ private fun PoolCard(
                         .clickable { confirmingDelete = true }
                         .padding(theme.spacing.xs),
                 ) {
-                    AtharText(text = "حذف المجموعة", style = theme.typography.caption, color = theme.colors.crimson)
+                    AtharText(text = stringResource(R.string.plan_investments_pool_delete), style = theme.typography.caption, color = theme.colors.crimson)
                 }
             }
             AtharText(
-                text = "الفترة · ${row.pool.period}",
+                text = stringResource(R.string.plan_investments_pool_period, row.pool.period),
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
                 AtharNumber(money = row.totalCorpus)
-                AtharText(text = "إجمالي رأس المال", style = theme.typography.caption, color = theme.colors.muted)
+                AtharText(text = stringResource(R.string.plan_investments_pool_total_corpus), style = theme.typography.caption, color = theme.colors.muted)
             }
             Row(
                 modifier = Modifier
@@ -134,7 +135,10 @@ private fun PoolCard(
             ) {
                 AtharNumber(money = row.pool.totalReturn, color = theme.colors.olive)
                 AtharText(
-                    text = "إجمالي العائد · ${"%.2f".format(pctOfCorpus)}٪ (اضغط للتعديل)",
+                    text = stringResource(
+                        R.string.plan_investments_pool_total_return,
+                        "%.2f".format(pctOfCorpus),
+                    ),
                     style = theme.typography.caption,
                     color = theme.colors.muted,
                 )
@@ -142,7 +146,7 @@ private fun PoolCard(
             row.contributors.forEach { c ->
                 ContributorRowView(contributor = c, onDelete = { onDeleteContributor(c.id) })
             }
-            PrimaryButton(text = "إضافة مساهم", onClick = onAddContributor)
+            PrimaryButton(text = stringResource(R.string.plan_investments_add_contributor), onClick = onAddContributor)
         }
     }
 
@@ -158,8 +162,8 @@ private fun PoolCard(
     }
     if (confirmingDelete) {
         DeleteConfirmDialog(
-            title = "حذف ${row.pool.name}؟",
-            body = "كل المساهمات والعوائد المرتبطة بهذه المجموعة ستحذف. لا يمكن التراجع.",
+            title = stringResource(R.string.plan_investments_delete_pool_title, row.pool.name),
+            body = stringResource(R.string.plan_investments_delete_pool_body),
             onConfirm = {
                 confirmingDelete = false
                 onDeletePool()
@@ -190,7 +194,7 @@ private fun ContributorRowView(contributor: ContributorRow, onDelete: () -> Unit
         Column(horizontalAlignment = Alignment.End) {
             AtharNumber(money = contributor.netTotal)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AtharText(text = "عائد ", style = theme.typography.caption, color = theme.colors.muted)
+                AtharText(text = stringResource(R.string.plan_investments_contributor_return_label), style = theme.typography.caption, color = theme.colors.muted)
                 AtharNumber(money = contributor.shareReturn, color = theme.colors.olive)
             }
         }
@@ -200,7 +204,7 @@ private fun ContributorRowView(contributor: ContributorRow, onDelete: () -> Unit
                 .clickable(onClick = onDelete)
                 .padding(start = theme.spacing.s, top = theme.spacing.xs, bottom = theme.spacing.xs),
         ) {
-            AtharText(text = "✕", style = theme.typography.caption, color = theme.colors.crimson)
+            AtharText(text = stringResource(R.string.plan_investments_contributor_remove), style = theme.typography.caption, color = theme.colors.crimson)
         }
     }
 }
@@ -225,15 +229,15 @@ private fun ReturnPercentEditor(
             modifier = Modifier.fillMaxWidth().padding(theme.spacing.m),
             verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
         ) {
-            AtharText(text = "نسبة العائد", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.plan_investments_return_editor_title), style = theme.typography.headline)
             AtharText(
-                text = "اكتب النسبة المئوية بدلاً من المبلغ. مثلاً 6.5 يعني ٦٫٥٪ من رأس المال.",
+                text = stringResource(R.string.plan_investments_return_editor_hint),
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
-            AtharTextField(pctText, { pctText = it }, label = "النسبة المئوية", modifier = Modifier.fillMaxWidth())
+            AtharTextField(pctText, { pctText = it }, label = stringResource(R.string.plan_investments_return_editor_label), modifier = Modifier.fillMaxWidth())
             PrimaryButton(
-                text = "حفظ",
+                text = stringResource(R.string.plan_investments_return_editor_save),
                 onClick = {
                     val pct = pctText.replace(",", ".").toDoubleOrNull()
                     if (pct != null) onSave(pct)
@@ -257,12 +261,12 @@ private fun DeleteConfirmDialog(
         text = { AtharText(text = body, style = theme.typography.body, color = theme.colors.muted) },
         confirmButton = {
             androidx.compose.material3.TextButton(onClick = onConfirm) {
-                AtharText(text = "حذف", style = theme.typography.headline, color = theme.colors.crimson)
+                AtharText(text = stringResource(R.string.plan_investments_delete_confirm), style = theme.typography.headline, color = theme.colors.crimson)
             }
         },
         dismissButton = {
             androidx.compose.material3.TextButton(onClick = onDismiss) {
-                AtharText(text = "إلغاء", style = theme.typography.headline, color = theme.colors.muted)
+                AtharText(text = stringResource(R.string.plan_investments_delete_cancel), style = theme.typography.headline, color = theme.colors.muted)
             }
         },
         containerColor = theme.colors.parchment,
@@ -288,12 +292,12 @@ private fun PoolEditor(onDismiss: () -> Unit, onSave: (InvestmentPool) -> Unit) 
             modifier = Modifier.fillMaxWidth().padding(theme.spacing.m),
             verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
         ) {
-            AtharText(text = "مجموعة استثمارية جديدة", style = theme.typography.headline)
-            AtharTextField(name, { name = it }, label = "الاسم", modifier = Modifier.fillMaxWidth())
-            AtharTextField(period, { period = it }, label = "الفترة (مثال: ٣ أشهر)", modifier = Modifier.fillMaxWidth())
-            AtharAmountField(totalReturn, { totalReturn = it }, label = "إجمالي العائد", modifier = Modifier.fillMaxWidth())
+            AtharText(text = stringResource(R.string.plan_investments_pool_editor_title), style = theme.typography.headline)
+            AtharTextField(name, { name = it }, label = stringResource(R.string.plan_investments_pool_label_name), modifier = Modifier.fillMaxWidth())
+            AtharTextField(period, { period = it }, label = stringResource(R.string.plan_investments_pool_label_period), modifier = Modifier.fillMaxWidth())
+            AtharAmountField(totalReturn, { totalReturn = it }, label = stringResource(R.string.plan_investments_pool_label_total_return), modifier = Modifier.fillMaxWidth())
             PrimaryButton(
-                text = "حفظ",
+                text = stringResource(R.string.plan_investments_pool_action_save),
                 onClick = {
                     val ret = runCatching { BigDecimal(totalReturn) }.getOrNull() ?: BigDecimal.ZERO
                     if (name.isNotBlank() && period.isNotBlank()) {
@@ -334,11 +338,11 @@ private fun ContributorEditor(
             modifier = Modifier.fillMaxWidth().padding(theme.spacing.m),
             verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
         ) {
-            AtharText(text = "مساهم في ${pool.pool.name}", style = theme.typography.headline)
-            AtharTextField(owner, { owner = it }, label = "الاسم", modifier = Modifier.fillMaxWidth())
-            AtharAmountField(amount, { amount = it }, label = "المبلغ", modifier = Modifier.fillMaxWidth())
+            AtharText(text = stringResource(R.string.plan_investments_contributor_editor_title, pool.pool.name), style = theme.typography.headline)
+            AtharTextField(owner, { owner = it }, label = stringResource(R.string.plan_investments_contributor_label_name), modifier = Modifier.fillMaxWidth())
+            AtharAmountField(amount, { amount = it }, label = stringResource(R.string.plan_investments_contributor_label_amount), modifier = Modifier.fillMaxWidth())
             PrimaryButton(
-                text = "حفظ",
+                text = stringResource(R.string.plan_investments_contributor_action_save),
                 onClick = {
                     val amt = runCatching { BigDecimal(amount) }.getOrNull()
                     if (owner.isNotBlank() && amt != null && amt.signum() > 0) {

@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -112,7 +113,7 @@ fun SettingsScreen(
                 .padding(theme.spacing.m),
             verticalArrangement = Arrangement.spacedBy(theme.spacing.l),
         ) {
-            AtharText(text = "الإعدادات", style = theme.typography.overline, color = theme.colors.muted)
+            AtharText(text = stringResource(R.string.settings_screen_overline), style = theme.typography.overline, color = theme.colors.muted)
 
             SmsPermissionCard(
                 granted = smsGranted,
@@ -187,9 +188,9 @@ fun SettingsScreen(
 
     pendingExportUri?.let { uri ->
         PassphrasePrompt(
-            title = "كلمة مرور النسخة الاحتياطية",
-            description = "اكتب كلمة المرور التي ستحمي ملف النسخة. ستحتاجها لاحقًا لاسترجاع البيانات.",
-            confirmLabel = "حفظ النسخة",
+            title = stringResource(R.string.settings_backup_passphrase_export_title),
+            description = stringResource(R.string.settings_backup_passphrase_export_body),
+            confirmLabel = stringResource(R.string.settings_backup_passphrase_export_confirm),
             onConfirm = { pass ->
                 viewModel.export(context.contentResolver, uri, pass)
                 pendingExportUri = null
@@ -200,9 +201,9 @@ fun SettingsScreen(
 
     pendingImportUri?.let { uri ->
         PassphrasePrompt(
-            title = "استرجاع النسخة",
-            description = "اكتب كلمة مرور النسخة. سيتم استبدال البيانات الحالية.",
-            confirmLabel = "استرجاع",
+            title = stringResource(R.string.settings_backup_passphrase_import_title),
+            description = stringResource(R.string.settings_backup_passphrase_import_body),
+            confirmLabel = stringResource(R.string.settings_backup_passphrase_import_confirm),
             onConfirm = { pass ->
                 viewModel.import(context.contentResolver, uri, pass)
                 pendingImportUri = null
@@ -224,21 +225,24 @@ private fun SmsPermissionCard(
             verticalArrangement = Arrangement.spacedBy(theme.spacing.s),
         ) {
             AtharText(
-                text = if (granted) "قراءة الرسائل · مفعّلة" else "قراءة الرسائل · غير مفعّلة",
+                text = if (granted) {
+                    stringResource(R.string.settings_sms_card_title_granted)
+                } else {
+                    stringResource(R.string.settings_sms_card_title_denied)
+                },
                 style = theme.typography.headline,
                 color = if (granted) theme.colors.olive else theme.colors.ink,
             )
             AtharText(
                 text = if (granted) {
-                    "الرسائل من البنوك تُقرأ محليًا على جهازك. لا تغادر الجهاز أبدًا."
+                    stringResource(R.string.settings_sms_card_body_granted)
                 } else {
-                    "لقراءة رسائل البنوك تلقائيًا، تحتاج أثر إلى صلاحية قراءة الرسائل. " +
-                        "تبقى الرسائل والبيانات الماليّة على جهازك."
+                    stringResource(R.string.settings_sms_card_body_denied)
                 },
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
-            if (!granted) PrimaryButton(text = "تفعيل قراءة الرسائل", onClick = onGrant)
+            if (!granted) PrimaryButton(text = stringResource(R.string.settings_sms_card_grant_action), onClick = onGrant)
         }
     }
 }
@@ -259,9 +263,13 @@ private fun HijriToggleCard(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                AtharText(text = "عرض التاريخ الهجري", style = theme.typography.headline)
+                AtharText(text = stringResource(R.string.settings_hijri_title), style = theme.typography.headline)
                 AtharText(
-                    text = if (enabled) "يظهر بجانب التاريخ الميلادي في الشاشة الرئيسية." else "افتراضيًا، الميلادي فقط.",
+                    text = if (enabled) {
+                        stringResource(R.string.settings_hijri_body_on)
+                    } else {
+                        stringResource(R.string.settings_hijri_body_off)
+                    },
                     style = theme.typography.body,
                     color = theme.colors.muted,
                 )
@@ -273,7 +281,11 @@ private fun HijriToggleCard(
                     .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
             ) {
                 AtharText(
-                    text = if (enabled) "مفعّل" else "معطّل",
+                    text = if (enabled) {
+                        stringResource(R.string.settings_hijri_pill_on)
+                    } else {
+                        stringResource(R.string.settings_hijri_pill_off)
+                    },
                     style = theme.typography.caption,
                     color = if (enabled) theme.colors.parchment else theme.colors.ink,
                 )
@@ -292,38 +304,44 @@ private fun CsvImportCard(
     val theme = AtharTheme
     AtharCard {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-            AtharText(text = "تبادل CSV", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.settings_csv_title), style = theme.typography.headline)
             AtharText(
-                text = "استورد من جدول الاكسل القديم أو صدّر حركاتك بصيغة CSV (الأعمدة: date · vendor · amount · category · type · notes).",
+                text = stringResource(R.string.settings_csv_body),
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
             when (val s = status) {
                 CsvStatus.Idle -> Unit
                 CsvStatus.Working -> AtharText(
-                    text = "جارٍ المعالجة…",
+                    text = stringResource(R.string.settings_status_working),
                     style = theme.typography.caption,
                     color = theme.colors.muted,
                 )
                 is CsvStatus.Done -> {
                     AtharText(
-                        text = "تم استيراد ${s.imported} حركة. (تم تخطّي ${s.skipped} صف.)",
+                        text = stringResource(R.string.settings_csv_done, s.imported, s.skipped),
                         style = theme.typography.caption,
                         color = theme.colors.olive,
                     )
-                    TextButton(onClick = onClear) { AtharText("حسنًا", color = theme.colors.muted) }
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
                 }
                 is CsvStatus.Exported -> {
                     AtharText(
-                        text = "تم تصدير ${s.count} حركة.",
+                        text = stringResource(R.string.settings_csv_exported, s.count),
                         style = theme.typography.caption,
                         color = theme.colors.olive,
                     )
-                    TextButton(onClick = onClear) { AtharText("حسنًا", color = theme.colors.muted) }
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
                 }
                 is CsvStatus.Failed -> {
                     AtharText(text = s.reason, style = theme.typography.caption, color = theme.colors.crimson)
-                    TextButton(onClick = onClear) { AtharText("حسنًا", color = theme.colors.muted) }
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
                 }
             }
             val isWorking = status is CsvStatus.Working
@@ -333,7 +351,11 @@ private fun CsvImportCard(
             ) {
                 Box(modifier = Modifier.weight(1f)) {
                     PrimaryButton(
-                        text = if (isWorking) "جارٍ…" else "استيراد",
+                        text = if (isWorking) {
+                            stringResource(R.string.settings_status_in_progress)
+                        } else {
+                            stringResource(R.string.settings_csv_action_import)
+                        },
                         onClick = { if (!isWorking) onImport() },
                     )
                 }
@@ -347,7 +369,15 @@ private fun CsvImportCard(
                             .padding(theme.spacing.m),
                         contentAlignment = Alignment.Center,
                     ) {
-                        AtharText(text = if (isWorking) "جارٍ…" else "تصدير", style = theme.typography.headline, color = theme.colors.ink)
+                        AtharText(
+                            text = if (isWorking) {
+                                stringResource(R.string.settings_status_in_progress)
+                            } else {
+                                stringResource(R.string.settings_csv_action_export)
+                            },
+                            style = theme.typography.headline,
+                            color = theme.colors.ink,
+                        )
                     }
                 }
             }
@@ -363,9 +393,9 @@ private fun ActivityLogEntryCard(onOpen: () -> Unit) {
         .clickable(onClick = onOpen)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-            AtharText(text = "السجل", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.settings_entry_activity_log_title), style = theme.typography.headline)
             AtharText(
-                text = "كل إضافة أو تعديل أو حذف أو تأكيد لحركة، مع وقتها. مرجع لاسترجاع ما تذكره ضمنيًا.",
+                text = stringResource(R.string.settings_entry_activity_log_body),
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
@@ -381,9 +411,9 @@ private fun SmsAuditEntryCard(onOpen: () -> Unit) {
         .clickable(onClick = onOpen)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-            AtharText(text = "سجل الرسائل", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.settings_entry_sms_audit_title), style = theme.typography.headline)
             AtharText(
-                text = "كل رسالة وصلت — مع نتيجة المعالجة (ناجحة، فاشلة، أو مُتجاهَلة). لا تغادر هذه القائمة الجهاز.",
+                text = stringResource(R.string.settings_entry_sms_audit_body),
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
@@ -405,24 +435,24 @@ private fun AboutCard() {
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(theme.spacing.s),
         ) {
-            AtharText(text = "عن أثر", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.settings_about_title), style = theme.typography.headline)
             AtharText(
-                text = "إصدار $versionName",
+                text = stringResource(R.string.settings_about_version, versionName ?: "—"),
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
             AtharText(
-                text = "طوّر هذا التطبيق وليد الحامد · walhamed.com",
+                text = stringResource(R.string.settings_about_author),
                 style = theme.typography.body,
                 color = theme.colors.ink,
             )
             AtharText(
-                text = "مستوحى من جدول The Measure of a Plan (TMOAP)، الذي ألهم منهجية أثر في تتبّع المصروف الشهري وقياس الخطة المالية.",
+                text = stringResource(R.string.settings_about_inspiration),
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
             AtharText(
-                text = "كل بياناتك محفوظة محليًا على جهازك. لا حسابات، لا خوادم، لا تتبع.",
+                text = stringResource(R.string.settings_about_local),
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
@@ -440,9 +470,9 @@ private fun DisplayCurrencyCard(
     val current = remember(currentCode) { CurrencyCatalog.entryOf(currentCode) }
     AtharCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-            AtharText(text = "العملة المعروضة", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.settings_currency_title), style = theme.typography.headline)
             AtharText(
-                text = "اختر عملة العرض. الحركات المستوردة من الرسائل تحتفظ بعملتها الأصلية، لكن إدخالاتك اليدوية ستستخدم هذه العملة. لا يوجد تحويل تلقائي.",
+                text = stringResource(R.string.settings_currency_body),
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
@@ -508,16 +538,16 @@ private fun OwnAccountsCard(accounts: List<String>, onSave: (String) -> Unit) {
     var draft by remember(accounts) { mutableStateOf(accounts.joinToString(", ")) }
     AtharCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-            AtharText(text = "حساباتك الخاصة", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.settings_own_accounts_title), style = theme.typography.headline)
             AtharText(
-                text = "اكتب آخر ٤ أرقام لكل حساب تملكه (مفصولة بفواصل، مثلاً: 0930, 4268). أي تحويل إلى أحد هذه الأرقام يُعتبر «تحويل داخلي · ادخار محتمل» بدلاً من مصروف.",
+                text = stringResource(R.string.settings_own_accounts_body),
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
             AtharTextField(
                 value = draft,
                 onValueChange = { draft = it },
-                label = "أرقام حساباتك",
+                label = stringResource(R.string.settings_own_accounts_field_label),
                 modifier = Modifier.fillMaxWidth(),
             )
             Box(
@@ -529,7 +559,7 @@ private fun OwnAccountsCard(accounts: List<String>, onSave: (String) -> Unit) {
                     .padding(theme.spacing.m),
                 contentAlignment = Alignment.Center,
             ) {
-                AtharText(text = "حفظ الحسابات", style = theme.typography.headline, color = theme.colors.parchment)
+                AtharText(text = stringResource(R.string.settings_own_accounts_save), style = theme.typography.headline, color = theme.colors.parchment)
             }
         }
     }
@@ -544,16 +574,16 @@ private fun RescanAndCleanCard(
     val theme = AtharTheme
     AtharCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-            AtharText(text = "إعادة فحص الرسائل", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.settings_rescan_title), style = theme.typography.headline)
             AtharText(
-                text = "يحذف كل الحركات قيد التأكيد ويعيد قراءة سجل الرسائل بأحدث القوالب. حركاتك المؤكدة لن تتأثر. مفيد بعد التحديث لتنظيف الإعلانات والإشعارات التي دخلت بالخطأ.",
+                text = stringResource(R.string.settings_rescan_body),
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
             val statusText = when (status) {
                 RescanStatus.Idle -> null
-                RescanStatus.Working -> "جاري إعادة الفحص…"
-                is RescanStatus.Done -> "تم حذف ${status.clearedPending} عنصرًا من قائمة الانتظار، وأُعيد فحص السجل."
+                RescanStatus.Working -> stringResource(R.string.settings_rescan_working)
+                is RescanStatus.Done -> stringResource(R.string.settings_rescan_done, status.clearedPending)
             }
             statusText?.let {
                 AtharText(text = it, style = theme.typography.caption, color = theme.colors.muted)
@@ -570,8 +600,8 @@ private fun RescanAndCleanCard(
                 contentAlignment = Alignment.Center,
             ) {
                 val buttonText = when (status) {
-                    is RescanStatus.Done -> "تم"
-                    else -> "إعادة فحص ومسح المُعلَّقات"
+                    is RescanStatus.Done -> stringResource(R.string.settings_action_done)
+                    else -> stringResource(R.string.settings_rescan_action)
                 }
                 AtharText(text = buttonText, style = theme.typography.headline, color = theme.colors.parchment)
             }
@@ -585,18 +615,16 @@ private fun LanguageCard(
     onSelect: (String) -> Unit,
 ) {
     val theme = AtharTheme
-    val options = remember {
-        listOf(
-            Triple("", "نظام الجهاز", "Follow system"),
-            Triple("ar", "العربية", "Arabic"),
-            Triple("en", "English", "English"),
-        )
-    }
+    val options = listOf(
+        Triple("", stringResource(R.string.settings_language_option_system_ar), stringResource(R.string.settings_language_option_system_en)),
+        Triple("ar", stringResource(R.string.settings_language_option_arabic_ar), stringResource(R.string.settings_language_option_arabic_en)),
+        Triple("en", stringResource(R.string.settings_language_option_english_ar), stringResource(R.string.settings_language_option_english_en)),
+    )
     AtharCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-            AtharText(text = "اللغة · Language", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.settings_language_title), style = theme.typography.headline)
             AtharText(
-                text = "اختر لغة عرض التطبيق. سيتم إعادة تحميل الشاشة لتطبيق اللغة الجديدة.",
+                text = stringResource(R.string.settings_language_body),
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
@@ -636,9 +664,9 @@ private fun AccountsEntryCard(onOpen: () -> Unit) {
         .clickable(onClick = onOpen)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-            AtharText(text = "الحسابات", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.settings_entry_accounts_title), style = theme.typography.headline)
             AtharText(
-                text = "أضف حسابات الجاري، الادخار، البطاقات الائتمانية، والاستثمار. صافي ثروتك = مجموع الأرصدة الحالية.",
+                text = stringResource(R.string.settings_entry_accounts_body),
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
@@ -654,9 +682,9 @@ private fun RecurringRulesEntryCard(onOpen: () -> Unit) {
         .clickable(onClick = onOpen)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-            AtharText(text = "الحركات المتكررة", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.settings_entry_recurring_title), style = theme.typography.headline)
             AtharText(
-                text = "أنشئ قواعد للحركات المتكررة شهريًا أو أسبوعيًا أو سنويًا — الإيجار، الراتب، Netflix. تُولِّد حركات معلّقة في «اليوم» عند استحقاقها.",
+                text = stringResource(R.string.settings_entry_recurring_body),
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
@@ -672,9 +700,9 @@ private fun UserTemplatesEntryCard(onOpen: () -> Unit) {
         .clickable(onClick = onOpen)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-            AtharText(text = "قوالب البنوك", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.settings_entry_user_templates_title), style = theme.typography.headline)
             AtharText(
-                text = "علِّم أثر تنسيق رسائل بنكك إذا لم يكن من ضمن البنوك المدعومة افتراضيًا. الصق رسالة، اكتب الكلمات المحيطة بالمبلغ، احفظ.",
+                text = stringResource(R.string.settings_entry_user_templates_body),
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
@@ -690,9 +718,9 @@ private fun CategoriesEntryCard(onOpen: () -> Unit) {
         .clickable(onClick = onOpen)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-            AtharText(text = "التصنيفات والقواعد", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.settings_entry_categories_title), style = theme.typography.headline)
             AtharText(
-                text = "أضف، أعد تسمية، أو أرشف التصنيفات. التغييرات تبقى في نسخك الاحتياطية.",
+                text = stringResource(R.string.settings_entry_categories_body),
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
@@ -711,33 +739,37 @@ private fun BackfillCard(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(theme.spacing.s),
         ) {
-            AtharText(text = "إعادة فحص الرسائل", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.settings_backfill_title), style = theme.typography.headline)
             AtharText(
-                text = "اقرأ آخر ٩٠ يومًا من الرسائل في صندوق الوارد وأنشئ منها حركات معلّقة في انتظار التأكيد.",
+                text = stringResource(R.string.settings_backfill_body),
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
             when (val p = progress) {
                 BackfillProgress.Idle -> Unit
                 is BackfillProgress.Running -> AtharText(
-                    text = "جارٍ المسح… (${p.scanned} رسالة)",
+                    text = stringResource(R.string.settings_backfill_running, p.scanned),
                     style = theme.typography.caption,
                     color = theme.colors.muted,
                 )
                 is BackfillProgress.Done -> AtharText(
-                    text = "تم فحص ${p.scanned} رسالة، أُرسلت ${p.sentToPipeline} للمعالجة.",
+                    text = stringResource(R.string.settings_backfill_done, p.scanned, p.sentToPipeline),
                     style = theme.typography.caption,
                     color = theme.colors.olive,
                 )
                 is BackfillProgress.Failed -> AtharText(
-                    text = "تعذّر الفحص: ${p.reason}",
+                    text = stringResource(R.string.settings_backfill_failed, p.reason),
                     style = theme.typography.caption,
                     color = theme.colors.crimson,
                 )
             }
             val isRunning = progress is BackfillProgress.Running
             PrimaryButton(
-                text = if (isRunning) "جارٍ المسح…" else "ابدأ الفحص",
+                text = if (isRunning) {
+                    stringResource(R.string.settings_backfill_action_running)
+                } else {
+                    stringResource(R.string.settings_backfill_action_start)
+                },
                 onClick = { if (!isRunning) onRescan() },
             )
         }
@@ -757,9 +789,9 @@ private fun BackupCard(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(theme.spacing.s),
         ) {
-            AtharText(text = "النسخ الاحتياطي والاسترجاع", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.settings_backup_title), style = theme.typography.headline)
             AtharText(
-                text = "النسخة الاحتياطية ملف مشفّر بكلمة مرور تختارها أنت. لا يمكن استرجاعها بدونها.",
+                text = stringResource(R.string.settings_backup_body),
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
@@ -767,23 +799,27 @@ private fun BackupCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
             ) {
-                PrimaryButton(text = "تصدير", onClick = onExport, modifier = Modifier.weight(1f))
-                SecondaryButton(text = "استرجاع", onClick = onImport, modifier = Modifier.weight(1f))
+                PrimaryButton(text = stringResource(R.string.settings_backup_export), onClick = onExport, modifier = Modifier.weight(1f))
+                SecondaryButton(text = stringResource(R.string.settings_backup_import), onClick = onImport, modifier = Modifier.weight(1f))
             }
             when (status) {
                 BackupStatus.Idle -> Unit
                 BackupStatus.Working -> AtharText(
-                    text = "جارٍ المعالجة…",
+                    text = stringResource(R.string.settings_status_working),
                     style = theme.typography.caption,
                     color = theme.colors.muted,
                 )
                 is BackupStatus.Success -> {
                     AtharText(text = status.message, style = theme.typography.caption, color = theme.colors.olive)
-                    TextButton(onClick = onClearStatus) { AtharText("حسنًا", color = theme.colors.muted) }
+                    TextButton(onClick = onClearStatus) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
                 }
                 is BackupStatus.Failure -> {
                     AtharText(text = status.reason, style = theme.typography.caption, color = theme.colors.crimson)
-                    TextButton(onClick = onClearStatus) { AtharText("حسنًا", color = theme.colors.muted) }
+                    TextButton(onClick = onClearStatus) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
                 }
             }
         }
@@ -809,7 +845,7 @@ private fun PassphrasePrompt(
                 AtharTextField(
                     value = passphrase,
                     onValueChange = { passphrase = it },
-                    label = "كلمة المرور",
+                    label = stringResource(R.string.settings_backup_passphrase_label),
                     modifier = Modifier.fillMaxWidth(),
                     keyboardType = KeyboardType.Password,
                 )
@@ -822,7 +858,9 @@ private fun PassphrasePrompt(
             ) { AtharText(text = confirmLabel, color = theme.colors.ember) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { AtharText(text = "إلغاء", color = theme.colors.muted) }
+            TextButton(onClick = onDismiss) {
+                AtharText(text = stringResource(R.string.settings_action_cancel), color = theme.colors.muted)
+            }
         },
         containerColor = theme.colors.parchment,
     )

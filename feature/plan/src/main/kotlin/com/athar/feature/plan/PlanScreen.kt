@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.athar.core.common.money.Money
@@ -62,12 +63,12 @@ fun PlanScreen(
                 .padding(theme.spacing.m),
             verticalArrangement = Arrangement.spacedBy(theme.spacing.l),
         ) {
-            AtharText(text = "الخطة", style = theme.typography.overline, color = theme.colors.muted)
+            AtharText(text = stringResource(R.string.plan_header_title), style = theme.typography.overline, color = theme.colors.muted)
             AtharSegmentedControl(
                 segments = listOf(
-                    AtharSegment(PlanTab.BUDGET, "الميزانية"),
-                    AtharSegment(PlanTab.WISHLIST, "الرغبات"),
-                    AtharSegment(PlanTab.INVESTMENTS, "الاستثمارات"),
+                    AtharSegment(PlanTab.BUDGET, stringResource(R.string.plan_tab_budget)),
+                    AtharSegment(PlanTab.WISHLIST, stringResource(R.string.plan_tab_wishlist)),
+                    AtharSegment(PlanTab.INVESTMENTS, stringResource(R.string.plan_tab_investments)),
                 ),
                 selected = tab,
                 onSelect = { tab = it },
@@ -109,10 +110,10 @@ private fun BudgetContent(
         Header(state = state)
         AtharSegmentedControl(
             segments = listOf(
-                AtharSegment(PlanPeriodKey.MONTH, "شهر"),
-                AtharSegment(PlanPeriodKey.MONTHS_3, "٣ أشهر"),
-                AtharSegment(PlanPeriodKey.YEAR, "سنة"),
-                AtharSegment(PlanPeriodKey.CUSTOM, "مخصص"),
+                AtharSegment(PlanPeriodKey.MONTH, stringResource(R.string.plan_period_month)),
+                AtharSegment(PlanPeriodKey.MONTHS_3, stringResource(R.string.plan_period_months_3)),
+                AtharSegment(PlanPeriodKey.YEAR, stringResource(R.string.plan_period_year)),
+                AtharSegment(PlanPeriodKey.CUSTOM, stringResource(R.string.plan_period_custom)),
             ),
             selected = state.periodKey,
             onSelect = {
@@ -129,7 +130,10 @@ private fun BudgetContent(
         }
         if (state.periodKey != PlanPeriodKey.MONTH) {
             AtharText(
-                text = "الأهداف مُعدَّلة على طول النطاق (×${"%.1f".format(state.targetMultiplier)}). الفعلي مجموع الحركات المؤكدة في هذا النطاق.",
+                text = stringResource(
+                    R.string.plan_target_caption_scaled,
+                    "%.1f".format(state.targetMultiplier),
+                ),
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
@@ -137,8 +141,8 @@ private fun BudgetContent(
         LimitWarningStrip(state = state)
         if (state.rows.isEmpty() && !state.isLoading) {
             AtharEmptyState(
-                text = "لا تصنيفات بعد.",
-                subtle = "حدد الهدف الشهري لكل تصنيف. اضغط على البطاقة لتعديل.",
+                text = stringResource(R.string.plan_empty_text),
+                subtle = stringResource(R.string.plan_empty_subtle),
             )
         } else {
             state.rows.forEach { row ->
@@ -173,14 +177,20 @@ private fun CustomRangeBanner(start: LocalDate, end: LocalDate, onEdit: () -> Un
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AtharText(
-            text = "النطاق المخصص: $start → $end",
+            text = stringResource(
+                R.string.plan_custom_range_banner,
+                start.toString(),
+                end.toString(),
+            ),
             style = theme.typography.caption,
             color = theme.colors.muted,
             modifier = Modifier.weight(1f),
         )
-        AtharText(text = "تعديل", style = theme.typography.caption, color = theme.colors.ember)
+        AtharText(text = stringResource(R.string.plan_custom_range_banner_edit), style = theme.typography.caption, color = theme.colors.ember)
     }
 }
+
+private enum class CustomRangeError { INVALID, ORDER }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -194,7 +204,7 @@ private fun CustomRangePickerSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var startText by remember { mutableStateOf(initialStart?.toString().orEmpty()) }
     var endText by remember { mutableStateOf(initialEnd?.toString().orEmpty()) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<CustomRangeError?>(null) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -206,26 +216,30 @@ private fun CustomRangePickerSheet(
             modifier = Modifier.fillMaxWidth().padding(theme.spacing.m),
             verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
         ) {
-            AtharText(text = "نطاق مخصص", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.plan_custom_range_title), style = theme.typography.headline)
             AtharText(
-                text = "اكتب التاريخين بصيغة YYYY-MM-DD. مثلاً: 2025-08-25 و 2025-09-30.",
+                text = stringResource(R.string.plan_custom_range_hint),
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
             AtharTextField(
                 value = startText,
                 onValueChange = { startText = it; error = null },
-                label = "من",
+                label = stringResource(R.string.plan_custom_range_from),
                 modifier = Modifier.fillMaxWidth(),
             )
             AtharTextField(
                 value = endText,
                 onValueChange = { endText = it; error = null },
-                label = "إلى",
+                label = stringResource(R.string.plan_custom_range_to),
                 modifier = Modifier.fillMaxWidth(),
             )
             error?.let {
-                AtharText(text = it, style = theme.typography.caption, color = theme.colors.ember)
+                val message = when (it) {
+                    CustomRangeError.INVALID -> stringResource(R.string.plan_custom_range_error_invalid)
+                    CustomRangeError.ORDER -> stringResource(R.string.plan_custom_range_error_order)
+                }
+                AtharText(text = message, style = theme.typography.caption, color = theme.colors.ember)
             }
             Box(
                 modifier = Modifier
@@ -236,15 +250,15 @@ private fun CustomRangePickerSheet(
                         val s = runCatching { LocalDate.parse(startText.trim()) }.getOrNull()
                         val e = runCatching { LocalDate.parse(endText.trim()) }.getOrNull()
                         when {
-                            s == null || e == null -> error = "تاريخ غير صالح"
-                            !(s <= e) -> error = "تاريخ البداية يجب ألا يتجاوز النهاية"
+                            s == null || e == null -> error = CustomRangeError.INVALID
+                            !(s <= e) -> error = CustomRangeError.ORDER
                             else -> onConfirm(s, e)
                         }
                     }
                     .padding(theme.spacing.m),
                 contentAlignment = Alignment.Center,
             ) {
-                AtharText(text = "تطبيق", style = theme.typography.headline, color = theme.colors.parchment)
+                AtharText(text = stringResource(R.string.plan_custom_range_apply), style = theme.typography.headline, color = theme.colors.parchment)
             }
         }
     }
@@ -260,12 +274,12 @@ private fun LimitWarningStrip(state: PlanState) {
         over.isNotEmpty() -> {
             val names = over.take(3).joinToString("، ") { it.category.nameAr }
             val extra = if (over.size > 3) " (+${over.size - 3})" else ""
-            "$names$extra · تجاوز الحد" to theme.colors.ember
+            "$names$extra${stringResource(R.string.plan_limit_warning_over_suffix)}" to theme.colors.ember
         }
         else -> {
             val names = tight.take(3).joinToString("، ") { it.category.nameAr }
             val extra = if (tight.size > 3) " (+${tight.size - 3})" else ""
-            "$names$extra · اقتربت من الحد" to theme.colors.dust
+            "$names$extra${stringResource(R.string.plan_limit_warning_tight_suffix)}" to theme.colors.dust
         }
     }
     AtharCard {
@@ -277,10 +291,10 @@ private fun LimitWarningStrip(state: PlanState) {
 private fun Header(state: PlanState) {
     val theme = AtharTheme
     Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-        AtharText(text = "الخطة", style = theme.typography.overline, color = theme.colors.muted)
+        AtharText(text = stringResource(R.string.plan_header_title), style = theme.typography.overline, color = theme.colors.muted)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
             AtharNumber(money = state.totalActual)
-            AtharText(text = "من", style = theme.typography.caption, color = theme.colors.muted)
+            AtharText(text = stringResource(R.string.plan_budget_header_of), style = theme.typography.caption, color = theme.colors.muted)
             AtharNumber(money = state.totalTarget, color = theme.colors.muted)
         }
         AtharText(
@@ -291,13 +305,14 @@ private fun Header(state: PlanState) {
     }
 }
 
+@Composable
 private fun periodLabel(state: PlanState): String = when (state.periodKey) {
     PlanPeriodKey.MONTH -> "${state.month.year}/${state.month.monthValue}"
-    PlanPeriodKey.MONTHS_3 -> "آخر ٣ أشهر"
+    PlanPeriodKey.MONTHS_3 -> stringResource(R.string.plan_period_label_last_3_months)
     PlanPeriodKey.YEAR -> "${state.month.year}"
     PlanPeriodKey.CUSTOM -> if (state.customStart != null && state.customEnd != null)
         "${state.customStart} → ${state.customEnd}"
-    else "نطاق مخصص"
+    else stringResource(R.string.plan_period_label_custom_default)
 }
 
 @Composable
@@ -322,7 +337,7 @@ private fun BudgetRowView(row: BudgetRow, onClick: () -> Unit) {
                 if (row.target != null) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         AtharText(
-                            text = "هدف ",
+                            text = stringResource(R.string.plan_budget_target_label),
                             style = theme.typography.caption,
                             color = theme.colors.muted,
                         )
@@ -330,7 +345,7 @@ private fun BudgetRowView(row: BudgetRow, onClick: () -> Unit) {
                     }
                     VariancePill(row = row)
                 } else {
-                    AtharText(text = "لا هدف", style = theme.typography.caption, color = theme.colors.muted)
+                    AtharText(text = stringResource(R.string.plan_budget_no_target), style = theme.typography.caption, color = theme.colors.muted)
                 }
             }
         }
@@ -342,10 +357,10 @@ private fun VariancePill(row: BudgetRow) {
     val theme = AtharTheme
     val variance = row.variance ?: return
     val (label, color) = when (row.limit) {
-        LimitState.Over -> "تجاوز " to theme.colors.ember
-        LimitState.Tight -> "اقتربت من الحد · " to theme.colors.ember
-        LimitState.Watch -> "تحت الحد · " to theme.colors.dust
-        LimitState.Healthy -> "تحت الحد " to theme.colors.olive
+        LimitState.Over -> "${stringResource(R.string.plan_limit_over)} " to theme.colors.ember
+        LimitState.Tight -> "${stringResource(R.string.plan_limit_tight)} · " to theme.colors.ember
+        LimitState.Watch -> "${stringResource(R.string.plan_limit_watch)} · " to theme.colors.dust
+        LimitState.Healthy -> "${stringResource(R.string.plan_limit_healthy)} " to theme.colors.olive
         LimitState.None -> "" to theme.colors.muted
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -379,26 +394,29 @@ private fun TargetEditor(
                 .padding(theme.spacing.m),
             verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
         ) {
-            AtharText(text = "${row.category.nameAr} · هدف شهري", style = theme.typography.headline)
+            AtharText(
+                text = "${row.category.nameAr}${stringResource(R.string.plan_target_editor_title_suffix)}",
+                style = theme.typography.headline,
+            )
             AtharAmountField(
                 value = amount,
                 onValueChange = { amount = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = "المبلغ المستهدف",
+                label = stringResource(R.string.plan_target_editor_amount_label),
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
             ) {
                 SheetButton(
-                    text = "إلغاء الهدف",
+                    text = stringResource(R.string.plan_action_clear_target),
                     background = theme.colors.divider,
                     textColor = theme.colors.ink,
                     onClick = { onSave(null) },
                     modifier = Modifier.weight(1f),
                 )
                 SheetButton(
-                    text = "حفظ",
+                    text = stringResource(R.string.plan_action_save),
                     background = theme.colors.ember,
                     textColor = theme.colors.parchment,
                     onClick = {

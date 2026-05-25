@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -87,9 +88,9 @@ fun AccountsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                AtharText(text = "الحسابات", style = theme.typography.overline, color = theme.colors.muted)
+                AtharText(text = stringResource(R.string.settings_accounts_overline), style = theme.typography.overline, color = theme.colors.muted)
                 AtharText(
-                    text = "رجوع",
+                    text = stringResource(R.string.settings_action_back),
                     style = theme.typography.body,
                     color = theme.colors.muted,
                     modifier = Modifier.clickable(onClick = onBack),
@@ -104,7 +105,11 @@ fun AccountsScreen(
                     .clickable { showAdd = !showAdd },
             ) {
                 AtharText(
-                    text = if (showAdd) "إخفاء النموذج" else "+ إضافة حساب",
+                    text = if (showAdd) {
+                        stringResource(R.string.settings_accounts_hide_form)
+                    } else {
+                        stringResource(R.string.settings_accounts_add)
+                    },
                     style = theme.typography.headline,
                     color = theme.colors.ember,
                 )
@@ -135,7 +140,7 @@ fun AccountsScreen(
                             color = theme.colors.crimson,
                         )
                         TextButton(onClick = viewModel::clearError) {
-                            AtharText("حسنًا", color = theme.colors.muted)
+                            AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
                         }
                     }
                 }
@@ -144,7 +149,7 @@ fun AccountsScreen(
             if (sortedBalances.isEmpty()) {
                 AtharCard {
                     AtharText(
-                        text = "لا حسابات بعد. أضف أول حساب لك (جاري، ادخار، نقدي) لتبدأ.",
+                        text = stringResource(R.string.settings_accounts_empty),
                         style = theme.typography.body,
                         color = theme.colors.muted,
                     )
@@ -178,11 +183,11 @@ private fun NetWorthCard(netWorth: com.athar.core.domain.model.NetWorth) {
     val theme = AtharTheme
     AtharCard {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-            AtharText(text = "صافي الثروة", style = theme.typography.overline, color = theme.colors.muted)
+            AtharText(text = stringResource(R.string.settings_accounts_net_worth_title), style = theme.typography.overline, color = theme.colors.muted)
             AtharNumber(money = netWorth.total, landmark = true)
             if (netWorth.isMixedCurrency) {
                 AtharText(
-                    text = "بدون تحويل عملات",
+                    text = stringResource(R.string.settings_accounts_net_worth_mixed),
                     style = theme.typography.caption,
                     color = theme.colors.muted,
                 )
@@ -204,7 +209,7 @@ private fun NetWorthCard(netWorth: com.athar.core.domain.model.NetWorth) {
                 }
             }
             AtharText(
-                text = "إجمالي صافي ثروتك عبر الحسابات النشطة. التحويلات داخل حساباتك لا تُغيّر هذا الرقم.",
+                text = stringResource(R.string.settings_accounts_net_worth_body),
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
@@ -228,12 +233,12 @@ private fun AddAccountForm(
 
     AtharCard {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-            AtharText(text = "إضافة حساب جديد", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.settings_accounts_form_add_title), style = theme.typography.headline)
 
             AtharTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = "اسم الحساب (مثلاً: الراجحي - جاري)",
+                label = stringResource(R.string.settings_accounts_field_name_hint),
                 modifier = Modifier.fillMaxWidth(),
             )
 
@@ -252,7 +257,7 @@ private fun AddAccountForm(
             AtharTextField(
                 value = opening,
                 onValueChange = { opening = it },
-                label = "الرصيد الافتتاحي ($currency)",
+                label = stringResource(R.string.settings_accounts_field_opening, currency),
                 modifier = Modifier.fillMaxWidth(),
                 keyboardType = KeyboardType.Decimal,
             )
@@ -260,7 +265,7 @@ private fun AddAccountForm(
             AtharTextField(
                 value = notes,
                 onValueChange = { notes = it },
-                label = "ملاحظات (اختياري)",
+                label = stringResource(R.string.settings_accounts_field_notes),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = false,
             )
@@ -270,7 +275,7 @@ private fun AddAccountForm(
                 horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
             ) {
                 EmberButton(
-                    text = "حفظ",
+                    text = stringResource(R.string.settings_action_save),
                     onClick = {
                         if (name.isNotBlank()) {
                             onSave(name, type, currency, opening, notes)
@@ -279,7 +284,7 @@ private fun AddAccountForm(
                     modifier = Modifier.weight(1f),
                 )
                 NeutralButton(
-                    text = "إلغاء",
+                    text = stringResource(R.string.settings_action_cancel),
                     onClick = onCancel,
                     modifier = Modifier.weight(1f),
                 )
@@ -327,7 +332,7 @@ private fun AccountRow(
                         )
                         if (account.archived) {
                             AtharText(
-                                text = "مؤرشف",
+                                text = stringResource(R.string.settings_accounts_archived_badge),
                                 style = theme.typography.caption,
                                 color = theme.colors.muted,
                             )
@@ -342,16 +347,24 @@ private fun AccountRow(
 
             Row(horizontalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
                 NeutralChip(
-                    label = if (isEditing) "إغلاق" else "تعديل",
+                    label = if (isEditing) {
+                        stringResource(R.string.settings_accounts_action_close)
+                    } else {
+                        stringResource(R.string.settings_accounts_action_edit)
+                    },
                     onClick = onToggleEdit,
                 )
                 NeutralChip(
-                    label = if (account.archived) "إعادة تفعيل" else "أرشفة",
+                    label = if (account.archived) {
+                        stringResource(R.string.settings_accounts_action_unarchive)
+                    } else {
+                        stringResource(R.string.settings_accounts_action_archive)
+                    },
                     onClick = { onSetArchived(!account.archived) },
                 )
                 if (!isManualSeed) {
                     DangerChip(
-                        label = "حذف",
+                        label = stringResource(R.string.settings_action_delete),
                         onClick = onDelete,
                     )
                 }
@@ -390,12 +403,12 @@ private fun EditAccountPanel(
             .padding(theme.spacing.m),
         verticalArrangement = Arrangement.spacedBy(theme.spacing.s),
     ) {
-        AtharText(text = "تعديل الحساب", style = theme.typography.headline)
+        AtharText(text = stringResource(R.string.settings_accounts_form_edit_title), style = theme.typography.headline)
 
         AtharTextField(
             value = name,
             onValueChange = { name = it },
-            label = "اسم الحساب",
+            label = stringResource(R.string.settings_accounts_field_name),
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -414,7 +427,7 @@ private fun EditAccountPanel(
         AtharTextField(
             value = opening,
             onValueChange = { opening = it },
-            label = "الرصيد الافتتاحي ($currency)",
+            label = stringResource(R.string.settings_accounts_field_opening, currency),
             modifier = Modifier.fillMaxWidth(),
             keyboardType = KeyboardType.Decimal,
         )
@@ -422,13 +435,13 @@ private fun EditAccountPanel(
         AtharTextField(
             value = notes,
             onValueChange = { notes = it },
-            label = "ملاحظات (اختياري)",
+            label = stringResource(R.string.settings_accounts_field_notes),
             modifier = Modifier.fillMaxWidth(),
             singleLine = false,
         )
 
         EmberButton(
-            text = "حفظ التعديلات",
+            text = stringResource(R.string.settings_accounts_save_edits),
             onClick = {
                 val trimmedName = name.trim()
                 if (trimmedName.isEmpty()) return@EmberButton
@@ -632,11 +645,12 @@ private fun NeutralButton(text: String, onClick: () -> Unit, modifier: Modifier 
     }
 }
 
+@Composable
 private fun accountTypeLabel(type: AccountType): String = when (type) {
-    AccountType.CHECKING -> "جاري"
-    AccountType.SAVINGS -> "ادخار"
-    AccountType.CREDIT_CARD -> "بطاقة ائتمانية"
-    AccountType.CASH -> "نقدي"
-    AccountType.INVESTMENT -> "استثمار"
-    AccountType.OTHER -> "آخر"
+    AccountType.CHECKING -> stringResource(R.string.settings_account_type_checking)
+    AccountType.SAVINGS -> stringResource(R.string.settings_account_type_savings)
+    AccountType.CREDIT_CARD -> stringResource(R.string.settings_account_type_credit_card)
+    AccountType.CASH -> stringResource(R.string.settings_account_type_cash)
+    AccountType.INVESTMENT -> stringResource(R.string.settings_account_type_investment)
+    AccountType.OTHER -> stringResource(R.string.settings_account_type_other)
 }

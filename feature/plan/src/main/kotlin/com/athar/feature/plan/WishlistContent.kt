@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.athar.core.common.money.Money
@@ -48,8 +49,8 @@ fun WishlistContent(viewModel: WishlistViewModel = hiltViewModel()) {
         CapacityCard(state = state, onAdd = { creating = true })
         if (state.items.isEmpty() && !state.isLoading) {
             AtharEmptyState(
-                text = "لا رغبات بعد.",
-                subtle = "أضف ما تتمنى شراءه — سنخبرك متى يمكنك ذلك بدون أن تقع في الحفرة.",
+                text = stringResource(R.string.plan_wishlist_empty_text),
+                subtle = stringResource(R.string.plan_wishlist_empty_subtle),
             )
         } else {
             // Parent PlanScreen already provides a Column(verticalScroll); a LazyColumn here
@@ -98,13 +99,13 @@ private fun CapacityCard(state: WishlistState, onAdd: () -> Unit) {
     AtharCard {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
             AtharText(
-                text = "السعة الشهرية للرغبات",
+                text = stringResource(R.string.plan_wishlist_capacity_title),
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
             AtharNumber(money = state.monthlyCapacity)
             AtharText(
-                text = "متوسط (الدخل − المصاريف) خلال آخر ٣ أشهر",
+                text = stringResource(R.string.plan_wishlist_capacity_subtitle),
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
@@ -117,7 +118,7 @@ private fun CapacityCard(state: WishlistState, onAdd: () -> Unit) {
                     .padding(theme.spacing.m),
                 contentAlignment = Alignment.Center,
             ) {
-                AtharText(text = "إضافة رغبة", style = theme.typography.headline, color = theme.colors.parchment)
+                AtharText(text = stringResource(R.string.plan_wishlist_add), style = theme.typography.headline, color = theme.colors.parchment)
             }
         }
     }
@@ -147,7 +148,7 @@ private fun WishlistRowView(row: WishlistRow, onClick: () -> Unit) {
                 AtharNumber(money = row.item.cost)
                 if (!row.item.currentSaved.isZero()) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        AtharText(text = "وفّرت ", style = theme.typography.caption, color = theme.colors.muted)
+                        AtharText(text = stringResource(R.string.plan_wishlist_saved_label), style = theme.typography.caption, color = theme.colors.muted)
                         AtharNumber(money = row.item.currentSaved, color = theme.colors.olive)
                     }
                 }
@@ -166,10 +167,15 @@ private fun statusColor(row: WishlistRow): androidx.compose.ui.graphics.Color {
     }
 }
 
+@Composable
 private fun statusLabel(row: WishlistRow): String = when (val s = row.status) {
-    WishlistStatus.Now -> "متاحة الآن"
-    is WishlistStatus.WaitUntil -> "بعد ${row.monthsNeeded} أشهر · ${s.month.year}/${s.month.monthValue}"
-    WishlistStatus.Infeasible -> "غير ممكنة حاليًا"
+    WishlistStatus.Now -> stringResource(R.string.plan_wishlist_status_now)
+    is WishlistStatus.WaitUntil -> stringResource(
+        R.string.plan_wishlist_status_wait_until,
+        row.monthsNeeded ?: 0,
+        "${s.month.year}/${s.month.monthValue}",
+    )
+    WishlistStatus.Infeasible -> stringResource(R.string.plan_wishlist_status_infeasible)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -200,31 +206,31 @@ private fun WishlistEditor(
             verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
         ) {
             AtharText(
-                text = if (initial == null) "رغبة جديدة" else "تعديل رغبة",
+                text = if (initial == null) stringResource(R.string.plan_wishlist_editor_title_new) else stringResource(R.string.plan_wishlist_editor_title_edit),
                 style = theme.typography.headline,
             )
             AtharTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = "الاسم",
+                label = stringResource(R.string.plan_wishlist_label_name),
                 modifier = Modifier.fillMaxWidth(),
             )
             AtharAmountField(
                 value = cost,
                 onValueChange = { cost = it },
-                label = "السعر",
+                label = stringResource(R.string.plan_wishlist_label_cost),
                 modifier = Modifier.fillMaxWidth(),
             )
             AtharAmountField(
                 value = saved,
                 onValueChange = { saved = it },
-                label = "ما وفّرته حتى الآن",
+                label = stringResource(R.string.plan_wishlist_label_saved),
                 modifier = Modifier.fillMaxWidth(),
             )
             AtharTextField(
                 value = notes,
                 onValueChange = { notes = it },
-                label = "ملاحظات",
+                label = stringResource(R.string.plan_wishlist_label_notes),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = false,
             )
@@ -234,7 +240,7 @@ private fun WishlistEditor(
             ) {
                 if (onDelete != null) {
                     SheetButton(
-                        text = "حذف",
+                        text = stringResource(R.string.plan_wishlist_action_delete),
                         background = theme.colors.crimson,
                         textColor = theme.colors.parchment,
                         onClick = onDelete,
@@ -242,7 +248,7 @@ private fun WishlistEditor(
                     )
                 }
                 SheetButton(
-                    text = "حفظ",
+                    text = stringResource(R.string.plan_wishlist_action_save),
                     background = theme.colors.ember,
                     textColor = theme.colors.parchment,
                     onClick = {

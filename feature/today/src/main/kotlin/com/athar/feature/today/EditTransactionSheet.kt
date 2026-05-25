@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -141,12 +142,12 @@ fun EditTransactionSheet(
                 .padding(theme.spacing.m),
             verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
         ) {
-            AtharText(text = "تعديل حركة", style = theme.typography.headline)
+            AtharText(text = stringResource(R.string.edit_tx_title), style = theme.typography.headline)
 
             AtharSegmentedControl(
                 segments = listOf(
-                    AtharSegment(TxType.EXPENSE, "مصروف"),
-                    AtharSegment(TxType.INCOME, "دخل"),
+                    AtharSegment(TxType.EXPENSE, stringResource(R.string.add_tx_segment_expense)),
+                    AtharSegment(TxType.INCOME, stringResource(R.string.add_tx_segment_income)),
                 ),
                 selected = s.type,
                 onSelect = { viewModel.setType(it) },
@@ -161,11 +162,11 @@ fun EditTransactionSheet(
             AtharTextField(
                 value = s.merchant,
                 onValueChange = { viewModel.setMerchant(it) },
-                label = "التاجر",
+                label = stringResource(R.string.add_tx_label_merchant),
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            AtharText(text = "التصنيف", style = theme.typography.caption, color = theme.colors.muted)
+            AtharText(text = stringResource(R.string.add_tx_label_category), style = theme.typography.caption, color = theme.colors.muted)
             AtharCategoryPicker(
                 items = s.categoriesForType.map {
                     AtharPickerItem(key = it.id, labelEn = it.name, labelAr = it.nameAr)
@@ -180,7 +181,7 @@ fun EditTransactionSheet(
             AtharTextField(
                 value = s.notes,
                 onValueChange = { viewModel.setNotes(it) },
-                label = "ملاحظات",
+                label = stringResource(R.string.add_tx_label_notes),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = false,
             )
@@ -190,14 +191,14 @@ fun EditTransactionSheet(
                 horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
             ) {
                 SheetButton(
-                    text = "حذف",
+                    text = stringResource(R.string.edit_tx_delete),
                     background = theme.colors.crimson,
                     textColor = theme.colors.parchment,
                     onClick = { onDelete(s.original.id) },
                     modifier = Modifier.weight(1f),
                 )
                 SheetButton(
-                    text = "حفظ",
+                    text = stringResource(R.string.edit_tx_save),
                     background = theme.colors.ember,
                     textColor = theme.colors.parchment,
                     onClick = {
@@ -220,23 +221,23 @@ fun EditTransactionSheet(
             .orEmpty()
         AlertDialog(
             onDismissRequest = { pendingLearn = null },
-            title = { AtharText(text = "تعلّم من التصنيف؟", style = theme.typography.headline) },
+            title = { AtharText(text = stringResource(R.string.edit_tx_learn_title), style = theme.typography.headline) },
             text = {
                 AtharText(
-                    text = "هل تريد أن يصنّف أثر دائمًا «${stateForLearn.merchant}» كـ«$newCatLabel»؟",
+                    text = stringResource(R.string.edit_tx_learn_message, stateForLearn.merchant, newCatLabel),
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
                     commit(stateForLearn, learnRule = true, onSave)
                     pendingLearn = null
-                }) { AtharText(text = "دائمًا", color = theme.colors.ember) }
+                }) { AtharText(text = stringResource(R.string.edit_tx_learn_always), color = theme.colors.ember) }
             },
             dismissButton = {
                 TextButton(onClick = {
                     commit(stateForLearn, learnRule = false, onSave)
                     pendingLearn = null
-                }) { AtharText(text = "هذه المرة فقط", color = theme.colors.muted) }
+                }) { AtharText(text = stringResource(R.string.edit_tx_learn_once), color = theme.colors.muted) }
             },
             containerColor = theme.colors.parchment,
         )

@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -64,7 +65,7 @@ fun SmsAuditScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 BackButton(onClick = onBack)
-                AtharText(text = "سجل الرسائل", style = theme.typography.headline)
+                AtharText(text = stringResource(R.string.settings_sms_audit_title), style = theme.typography.headline)
                 Box(modifier = Modifier.size(MinTouchTarget))
             }
 
@@ -78,10 +79,10 @@ fun SmsAuditScreen(
 
                 AtharSegmentedControl(
                     segments = listOf(
-                        AtharSegment<SmsParseStatus?>(null, "الكل"),
-                        AtharSegment<SmsParseStatus?>(SmsParseStatus.PARSED, "ناجحة"),
-                        AtharSegment<SmsParseStatus?>(SmsParseStatus.FAILED, "فاشلة"),
-                        AtharSegment<SmsParseStatus?>(SmsParseStatus.IGNORED, "مُتجاهَلة"),
+                        AtharSegment<SmsParseStatus?>(null, stringResource(R.string.settings_sms_audit_filter_all)),
+                        AtharSegment<SmsParseStatus?>(SmsParseStatus.PARSED, stringResource(R.string.settings_sms_audit_filter_parsed)),
+                        AtharSegment<SmsParseStatus?>(SmsParseStatus.FAILED, stringResource(R.string.settings_sms_audit_filter_failed)),
+                        AtharSegment<SmsParseStatus?>(SmsParseStatus.IGNORED, stringResource(R.string.settings_sms_audit_filter_ignored)),
                     ),
                     selected = filter,
                     onSelect = { filter = it },
@@ -89,8 +90,8 @@ fun SmsAuditScreen(
 
                 if (filtered.isEmpty()) {
                     AtharEmptyState(
-                        text = "لا رسائل في هذا التصنيف بعد.",
-                        subtle = "تظهر الرسائل هنا كلما وصلت أو فعّلت إعادة الفحص من الإعدادات.",
+                        text = stringResource(R.string.settings_sms_audit_empty),
+                        subtle = stringResource(R.string.settings_sms_audit_empty_subtle),
                     )
                 } else {
                     LazyColumn(
@@ -114,9 +115,9 @@ private fun StatsCard(state: SmsAuditState) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Stat(label = "ناجحة", value = state.totalParsed, color = theme.colors.olive)
-            Stat(label = "فاشلة", value = state.totalFailed, color = theme.colors.ember)
-            Stat(label = "مُتجاهَلة", value = state.totalIgnored, color = theme.colors.muted)
+            Stat(label = stringResource(R.string.settings_sms_audit_filter_parsed), value = state.totalParsed, color = theme.colors.olive)
+            Stat(label = stringResource(R.string.settings_sms_audit_filter_failed), value = state.totalFailed, color = theme.colors.ember)
+            Stat(label = stringResource(R.string.settings_sms_audit_filter_ignored), value = state.totalIgnored, color = theme.colors.muted)
         }
     }
 }

@@ -59,6 +59,8 @@ class AccountsViewModel @Inject constructor(
                 ),
             )
 
+    // TODO: localize ViewModel-emitted error fallbacks (currently Arabic-only;
+    //  acceptable temporary debt when running in English mode).
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 

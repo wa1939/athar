@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.athar.core.designsystem.component.AtharCard
@@ -51,9 +52,9 @@ fun UserTemplatesScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                AtharText(text = "قوالب البنوك", style = theme.typography.title)
+                AtharText(text = stringResource(R.string.settings_templates_title), style = theme.typography.title)
                 AtharText(
-                    text = "إغلاق",
+                    text = stringResource(R.string.settings_action_close),
                     style = theme.typography.body,
                     color = theme.colors.muted,
                     modifier = Modifier.clickable(onClick = onBack).padding(theme.spacing.s),
@@ -62,7 +63,7 @@ fun UserTemplatesScreen(
             AtharCard {
                 Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
                     AtharText(
-                        text = "إذا فشل تحليل رسائل بنك معيّن، علِّم أثر تنسيقها هنا. الصق نص الرسالة، ثم اكتب الكلمة التي تسبق المبلغ والكلمة التي تليه — يستخدم أثر هذه الإشارات لاستخراج المبلغ من أي رسالة بنفس التنسيق.",
+                        text = stringResource(R.string.settings_templates_intro),
                         style = theme.typography.body,
                         color = theme.colors.muted,
                     )
@@ -70,13 +71,13 @@ fun UserTemplatesScreen(
             }
 
             if (templates.isNotEmpty()) {
-                AtharText(text = "قوالبك", style = theme.typography.overline, color = theme.colors.muted)
+                AtharText(text = stringResource(R.string.settings_templates_saved_header), style = theme.typography.overline, color = theme.colors.muted)
                 templates.forEach { template ->
                     SavedTemplateRow(template = template, onDelete = { viewModel.delete(template.id) })
                 }
             }
 
-            AtharText(text = "إضافة قالب جديد", style = theme.typography.overline, color = theme.colors.muted)
+            AtharText(text = stringResource(R.string.settings_templates_new_header), style = theme.typography.overline, color = theme.colors.muted)
             TemplateFormCard(
                 form = form,
                 onChange = { form = it },
@@ -105,21 +106,28 @@ private fun SavedTemplateRow(template: UserTemplate, onDelete: () -> Unit) {
                 Column(modifier = Modifier.weight(1f)) {
                     AtharText(text = template.displayName, style = theme.typography.headline)
                     AtharText(
-                        text = "المرسل: ${template.sender} · ${typeLabel(template.txType)}",
+                        text = stringResource(
+                            R.string.settings_templates_row_sender,
+                            template.sender,
+                            typeLabel(template.txType),
+                        ),
                         style = theme.typography.caption,
                         color = theme.colors.muted,
                     )
                 }
                 AtharText(
-                    text = "حذف",
+                    text = stringResource(R.string.settings_action_delete),
                     style = theme.typography.caption,
                     color = theme.colors.crimson,
                     modifier = Modifier.clickable(onClick = onDelete).padding(theme.spacing.s),
                 )
             }
+            val anchorBeforeText = stringResource(R.string.settings_templates_row_anchor_before, template.amountAnchorBefore)
+            val anchorAfterText = template.amountAnchorAfter?.let {
+                stringResource(R.string.settings_templates_row_anchor_after, it)
+            } ?: ""
             AtharText(
-                text = "قبل المبلغ: \"${template.amountAnchorBefore}\"" +
-                    (template.amountAnchorAfter?.let { " · بعد: \"$it\"" } ?: ""),
+                text = anchorBeforeText + anchorAfterText,
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
@@ -142,19 +150,19 @@ private fun TemplateFormCard(
             AtharTextField(
                 value = form.displayName,
                 onValueChange = { onChange(form.copy(displayName = it)) },
-                label = "اسم البنك (مثلاً: مصرف الإنماء)",
+                label = stringResource(R.string.settings_templates_field_display_name),
                 modifier = Modifier.fillMaxWidth(),
             )
             AtharTextField(
                 value = form.sender,
                 onValueChange = { onChange(form.copy(sender = it)) },
-                label = "مرسل الرسائل كما يظهر في الجهاز (مثلاً: AlinmaBank)",
+                label = stringResource(R.string.settings_templates_field_sender),
                 modifier = Modifier.fillMaxWidth(),
             )
             AtharTextField(
                 value = form.sampleBody,
                 onValueChange = { onChange(form.copy(sampleBody = it)) },
-                label = "الصق نص رسالة عيّنة هنا",
+                label = stringResource(R.string.settings_templates_field_sample_body),
                 singleLine = false,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -164,24 +172,24 @@ private fun TemplateFormCard(
             )
 
             AnchorPair(
-                label = "المبلغ",
-                hint = "اكتب الكلمة قبل المبلغ مباشرة (مثلاً: Amount: أو المبلغ)",
+                label = stringResource(R.string.settings_templates_anchor_amount_label),
+                hint = stringResource(R.string.settings_templates_anchor_amount_hint),
                 before = form.amountAnchorBefore,
                 after = form.amountAnchorAfter,
                 onBeforeChange = { onChange(form.copy(amountAnchorBefore = it)) },
                 onAfterChange = { onChange(form.copy(amountAnchorAfter = it)) },
             )
             AnchorPair(
-                label = "المتجر (اختياري)",
-                hint = "للمشتريات: الكلمة قبل اسم المتجر (مثلاً: At: أو لدى)",
+                label = stringResource(R.string.settings_templates_anchor_merchant_label),
+                hint = stringResource(R.string.settings_templates_anchor_merchant_hint),
                 before = form.merchantAnchorBefore,
                 after = form.merchantAnchorAfter,
                 onBeforeChange = { onChange(form.copy(merchantAnchorBefore = it)) },
                 onAfterChange = { onChange(form.copy(merchantAnchorAfter = it)) },
             )
             AnchorPair(
-                label = "المُحوَّل إليه (اختياري)",
-                hint = "للتحويلات: الكلمة قبل اسم المستلم (مثلاً: To: أو إلى)",
+                label = stringResource(R.string.settings_templates_anchor_counterparty_label),
+                hint = stringResource(R.string.settings_templates_anchor_counterparty_hint),
                 before = form.counterpartyAnchorBefore,
                 after = form.counterpartyAnchorAfter,
                 onBeforeChange = { onChange(form.copy(counterpartyAnchorBefore = it)) },
@@ -214,7 +222,7 @@ private fun AnchorPair(
                 AtharTextField(
                     value = before,
                     onValueChange = onBeforeChange,
-                    label = "قبل",
+                    label = stringResource(R.string.settings_templates_field_before),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -222,7 +230,7 @@ private fun AnchorPair(
                 AtharTextField(
                     value = after,
                     onValueChange = onAfterChange,
-                    label = "بعد (اختياري)",
+                    label = stringResource(R.string.settings_templates_field_after),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -271,15 +279,16 @@ private fun SaveButton(enabled: Boolean, onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         AtharText(
-            text = "حفظ القالب",
+            text = stringResource(R.string.settings_templates_save),
             style = theme.typography.headline,
             color = if (enabled) theme.colors.parchment else theme.colors.muted,
         )
     }
 }
 
+@Composable
 private fun typeLabel(type: TxType): String = when (type) {
-    TxType.EXPENSE -> "شراء"
-    TxType.TRANSFER -> "تحويل"
-    TxType.INCOME -> "إيداع"
+    TxType.EXPENSE -> stringResource(R.string.settings_templates_type_expense)
+    TxType.TRANSFER -> stringResource(R.string.settings_templates_type_transfer)
+    TxType.INCOME -> stringResource(R.string.settings_templates_type_income)
 }

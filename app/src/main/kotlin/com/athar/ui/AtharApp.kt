@@ -23,6 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import java.util.Locale
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
@@ -74,9 +77,11 @@ fun AtharApp() {
         routeName.endsWith("Accounts")
     val theme = AtharTheme
 
+    val layoutDirection = if (Locale.getDefault().language == "ar") LayoutDirection.Rtl else LayoutDirection.Ltr
     CompositionLocalProvider(
         LocalHijriEnabled provides hijriEnabled,
         LocalDisplayCurrency provides displayCurrency,
+        LocalLayoutDirection provides layoutDirection,
     ) {
         Scaffold(
             topBar = {

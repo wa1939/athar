@@ -27,4 +27,21 @@
     <string name="settings_language_system">Follow system</string>
     <string name="settings_language_arabic">العربية · Arabic</string>
     <string name="settings_language_english">English</string>
+
+    <string name="onboarding_welcome_title">Athar.</string>
+    <string name="onboarding_welcome_subtitle">Track every dollar that leaves your wallet — quietly, without typing a thing.</string>
+    <string name="onboarding_welcome_body">Five minutes to set up. No sign-up, no account, no downloads.</string>
+    <string name="onboarding_privacy_title">Your privacy</string>
+    <string name="onboarding_privacy_body">Your financial data stays on your device. No cloud, no external analytics, no ads.</string>
+    <string name="onboarding_privacy_bullet_1">We never sell or share your data with anyone.</string>
+    <string name="onboarding_privacy_bullet_2">No ads, no partnerships, no paid links.</string>
+    <string name="onboarding_privacy_bullet_3">No guilt-trip notifications. Stats serve you; they don\'t judge you.</string>
+    <string name="onboarding_sms_title">Read bank SMS</string>
+    <string name="onboarding_sms_body">Athar reads your bank SMS on-device to log each transaction automatically. The messages never leave your phone and are not stored anywhere else.</string>
+    <string name="onboarding_sms_granted">Enabled — ready to read from your bank.</string>
+    <string name="onboarding_sms_grant_button">Enable SMS reading</string>
+    <string name="onboarding_sms_skip_note">You can enable this later from Settings — Athar works with manual entry too.</string>
+    <string name="onboarding_action_back">Back</string>
+    <string name="onboarding_action_next">Next</string>
+    <string name="onboarding_action_start">Get started</string>
 </resources>

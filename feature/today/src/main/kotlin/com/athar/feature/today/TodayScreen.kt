@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.athar.core.common.time.HijriDate
@@ -124,16 +125,24 @@ private fun Header(state: TodayState) {
         horizontalAlignment = Alignment.Start,
     ) {
         AtharText(
-            text = "اليوم",
+            text = stringResource(R.string.today_header_title),
             style = theme.typography.overline,
             color = theme.colors.muted,
         )
         AtharNumber(money = state.netFlow, landmark = true)
         val hijriOn = LocalHijriEnabled.current
         val gregorian = "${state.month.year}/${state.month.monthValue}"
-        val tail = if (hijriOn) " · ${HijriDate.formatYearMonth(state.month.year, state.month.monthValue)} هـ" else ""
+        val captionText = if (hijriOn) {
+            stringResource(
+                R.string.today_caption_net_flow_month_hijri,
+                gregorian,
+                HijriDate.formatYearMonth(state.month.year, state.month.monthValue),
+            )
+        } else {
+            stringResource(R.string.today_caption_net_flow_month, gregorian)
+        }
         AtharText(
-            text = "صافي الشهر · $gregorian$tail",
+            text = captionText,
             style = theme.typography.caption,
             color = theme.colors.muted,
         )
@@ -143,21 +152,21 @@ private fun Header(state: TodayState) {
                 .padding(top = theme.spacing.s),
             horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
         ) {
-            FlowPill(label = "الدخل", money = state.totalIncome, accent = theme.colors.olive, modifier = Modifier.weight(1f))
-            FlowPill(label = "المصاريف", money = state.totalExpense, accent = theme.colors.ember, modifier = Modifier.weight(1f))
-            FlowPill(label = "صافي الثروة", money = state.netWorth, accent = theme.colors.ink, modifier = Modifier.weight(1f))
+            FlowPill(label = stringResource(R.string.today_pill_income), money = state.totalIncome, accent = theme.colors.olive, modifier = Modifier.weight(1f))
+            FlowPill(label = stringResource(R.string.today_pill_expense), money = state.totalExpense, accent = theme.colors.ember, modifier = Modifier.weight(1f))
+            FlowPill(label = stringResource(R.string.today_pill_net_worth), money = state.netWorth, accent = theme.colors.ink, modifier = Modifier.weight(1f))
         }
         val savingsRate = state.savingsRate
         if (savingsRate != null) {
             AtharText(
-                text = "معدّل الادخار · ${"%.0f".format(savingsRate)}٪",
+                text = stringResource(R.string.today_caption_savings_rate, "%.0f".format(savingsRate)),
                 style = theme.typography.caption,
                 color = if (savingsRate >= 0) theme.colors.olive else theme.colors.ember,
             )
         }
         if (state.netWorthIsMixed) {
             AtharText(
-                text = "الثروة بعملات متعددة · بدون تحويل",
+                text = stringResource(R.string.today_caption_net_worth_mixed),
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
@@ -193,11 +202,11 @@ private fun PendingTray(
     val theme = AtharTheme
     AtharCard {
         AtharText(
-            text = "بانتظار التأكيد · ${state.pending.size}",
+            text = stringResource(R.string.today_pending_title, state.pending.size),
             style = theme.typography.headline,
         )
         AtharText(
-            text = "اسحب للتأكيد أو التجاهل. أو استخدم الإجراءات الجماعية أدناه.",
+            text = stringResource(R.string.today_pending_subtle),
             style = theme.typography.caption,
             color = theme.colors.muted,
         )
@@ -213,7 +222,7 @@ private fun PendingTray(
             ) {
                 AtharListRow(
                     title = tx.merchant,
-                    subtitle = tx.categoryId ?: "غير مصنف",
+                    subtitle = tx.categoryId ?: stringResource(R.string.today_uncategorized),
                     trailing = tx.amount,
                     onClick = { onEvent(TodayEvent.OpenTransaction(tx.id)) },
                 )
@@ -221,7 +230,7 @@ private fun PendingTray(
         }
         if (state.pending.size > MAX_PENDING_VISIBLE) {
             AtharText(
-                text = "+${state.pending.size - MAX_PENDING_VISIBLE} حركة أخرى. استخدم الإجراءات الجماعية لمعالجتها دفعة واحدة.",
+                text = stringResource(R.string.today_pending_more, state.pending.size - MAX_PENDING_VISIBLE),
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
@@ -239,19 +248,19 @@ private fun BulkActionsBar(onEvent: (TodayEvent) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
     ) {
         BulkButton(
-            text = "تأكيد المؤكدة",
+            text = stringResource(R.string.today_bulk_confirm_confident),
             background = theme.colors.olive,
             onClick = { onEvent(TodayEvent.BulkConfirmConfident) },
             modifier = Modifier.weight(1f),
         )
         BulkButton(
-            text = "تجاهل المشكوك فيه",
+            text = stringResource(R.string.today_bulk_dismiss_low),
             background = theme.colors.dust,
             onClick = { onEvent(TodayEvent.BulkDismissLowConfidence) },
             modifier = Modifier.weight(1f),
         )
         BulkButton(
-            text = "تجاهل الكل",
+            text = stringResource(R.string.today_bulk_dismiss_all),
             background = theme.colors.crimson,
             onClick = { onEvent(TodayEvent.BulkDismissAll) },
             modifier = Modifier.weight(1f),
@@ -289,8 +298,8 @@ private fun RecentList(
     val theme = AtharTheme
     if (state.recent.isEmpty()) {
         AtharEmptyState(
-            text = "لا حركات هذا الشهر.",
-            subtle = "أضف حركة بالـ + أو فعّل قراءة الرسائل من الإعدادات.",
+            text = stringResource(R.string.today_empty_text),
+            subtle = stringResource(R.string.today_empty_subtle),
         )
     } else {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
@@ -298,7 +307,7 @@ private fun RecentList(
                 AtharListRow(
                     modifier = Modifier.animateItem(),
                     title = tx.merchant,
-                    subtitle = tx.categoryId ?: "غير مصنف",
+                    subtitle = tx.categoryId ?: stringResource(R.string.today_uncategorized),
                     trailing = tx.amount,
                     onClick = { onEvent(TodayEvent.OpenTransaction(tx.id)) },
                 )

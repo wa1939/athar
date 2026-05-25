@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.athar.core.designsystem.component.AtharCard
@@ -67,7 +68,7 @@ fun CategoriesScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 BackButton(onClick = onBack)
-                AtharText(text = "التصنيفات", style = theme.typography.headline)
+                AtharText(text = stringResource(R.string.settings_categories_title), style = theme.typography.headline)
                 Box(modifier = Modifier.size(MinTouchTarget))  // spacer to balance back button
             }
 
@@ -79,8 +80,8 @@ fun CategoriesScreen(
             ) {
                 AtharSegmentedControl(
                     segments = listOf(
-                        AtharSegment(CategoryKind.EXPENSE, "مصاريف"),
-                        AtharSegment(CategoryKind.INCOME, "دخل"),
+                        AtharSegment(CategoryKind.EXPENSE, stringResource(R.string.settings_categories_segment_expense)),
+                        AtharSegment(CategoryKind.INCOME, stringResource(R.string.settings_categories_segment_income)),
                     ),
                     selected = filterKind ?: CategoryKind.EXPENSE,
                     onSelect = { filterKind = it },
@@ -109,7 +110,7 @@ fun CategoriesScreen(
                         .padding(theme.spacing.m),
                     contentAlignment = Alignment.Center,
                 ) {
-                    AtharText(text = "إضافة تصنيف", style = theme.typography.headline, color = theme.colors.parchment)
+                    AtharText(text = stringResource(R.string.settings_categories_add), style = theme.typography.headline, color = theme.colors.parchment)
                 }
             }
         }
@@ -177,7 +178,11 @@ private fun CategoryRowView(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 AtharText(
-                    text = if (category.archived) "${category.nameAr} (مؤرشف)" else category.nameAr,
+                    text = if (category.archived) {
+                        stringResource(R.string.settings_categories_row_archived_suffix, category.nameAr)
+                    } else {
+                        category.nameAr
+                    },
                     style = theme.typography.headline,
                     color = if (category.archived) theme.colors.muted else theme.colors.ink,
                 )
@@ -228,13 +233,17 @@ private fun CategoryEditor(
             verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
         ) {
             AtharText(
-                text = if (initial == null) "تصنيف جديد" else "تعديل تصنيف",
+                text = if (initial == null) {
+                    stringResource(R.string.settings_categories_editor_new)
+                } else {
+                    stringResource(R.string.settings_categories_editor_edit)
+                },
                 style = theme.typography.headline,
             )
             AtharSegmentedControl(
                 segments = listOf(
-                    AtharSegment(CategoryKind.EXPENSE, "مصروف"),
-                    AtharSegment(CategoryKind.INCOME, "دخل"),
+                    AtharSegment(CategoryKind.EXPENSE, stringResource(R.string.settings_categories_editor_kind_expense)),
+                    AtharSegment(CategoryKind.INCOME, stringResource(R.string.settings_categories_editor_kind_income)),
                 ),
                 selected = kind,
                 onSelect = { kind = it },
@@ -242,13 +251,13 @@ private fun CategoryEditor(
             AtharTextField(
                 value = nameAr,
                 onValueChange = { nameAr = it },
-                label = "الاسم بالعربية",
+                label = stringResource(R.string.settings_categories_editor_name_ar),
                 modifier = Modifier.fillMaxWidth(),
             )
             AtharTextField(
                 value = nameEn,
                 onValueChange = { nameEn = it },
-                label = "الاسم بالإنجليزية",
+                label = stringResource(R.string.settings_categories_editor_name_en),
                 modifier = Modifier.fillMaxWidth(),
             )
             Row(
@@ -257,7 +266,11 @@ private fun CategoryEditor(
             ) {
                 if (onArchive != null) {
                     SheetButton(
-                        text = if (initial?.archived == true) "(مؤرشف)" else "أرشفة",
+                        text = if (initial?.archived == true) {
+                            stringResource(R.string.settings_categories_archived_label)
+                        } else {
+                            stringResource(R.string.settings_categories_archive)
+                        },
                         background = theme.colors.divider,
                         textColor = theme.colors.ink,
                         onClick = onArchive,
@@ -265,7 +278,7 @@ private fun CategoryEditor(
                     )
                 }
                 SheetButton(
-                    text = "حفظ",
+                    text = stringResource(R.string.settings_action_save),
                     background = theme.colors.ember,
                     textColor = theme.colors.parchment,
                     onClick = {
