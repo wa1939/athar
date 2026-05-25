@@ -53,9 +53,12 @@ Other tools force a trade-off:
 - ✅ One landmark net-flow number with **count-up animation**
 - ✅ **Income + Expense pills** (olive / ember) — see your monthly inflow and outflow at a glance
 - ✅ **Savings-rate caption** (e.g., "معدّل الادخار · 18٪") — the TMOAP discipline, on the home screen
+- ✅ **Today section** at the top of the list filters to transactions where `date == today` so you instantly see what you spent today (with `Today's net · X SAR` subtitle in olive/ember). Below it: "This month's recent" for context.
 - ✅ Pending tray for SMS-captured transactions awaiting your confirmation
 - ✅ Swipe right to confirm · swipe left to dismiss · **bulk actions** for 5+ pending entries
-- ✅ Auto-confirm transactions when category is already known; auto-dismiss low-confidence noise
+- ✅ **Ember attention banner** when pending > 0 — "%d transactions awaiting review · Tap to review →" — impossible to miss above the net-flow number. Dust-color secondary banner appears below it when today had any auto-dismissed transactions, so parser false-negatives never go unnoticed.
+- ✅ **Fail-safe ingestion (beta.15):** SMS that parse as transactions are NEVER auto-dismissed; if the categorizer is uncertain, the transaction lands in PENDING for explicit user review. Money never silently disappears. See `docs/adr/ADR-008-ingestion-fail-safe.md` for rationale.
+- ✅ Auto-confirm transactions when category is already known (CategoryRule match); user fixes are recorded as new rules so the same merchant auto-confirms next time
 - ✅ FAB to add a manual transaction in seconds
 
 #### Trends (النمط) — TMOAP-depth analysis
@@ -98,7 +101,11 @@ Other tools force a trade-off:
 - ✅ **SQLCipher** database encryption at rest, key wrapped via Android Keystore
 - ✅ **SMS audit log** — every parsed/failed/ignored SMS retained, never deleted
 - ✅ **Activity log** — every transaction edit, with timestamp
+- ✅ **All transactions history (H-01, beta.12)** — searchable list of every transaction across all time, filter chips for status (All / Confirmed / Pending / Dismissed) and type (Expenses / Income / Transfers), tap any row to edit category or delete. Reachable from Settings → "All transactions"
+- ✅ **Recover dismissed (beta.15)** — one-tap action moves every DISMISSED transaction back to PENDING so users on older builds can recover what was hidden by the now-removed auto-dismiss policy
+- ✅ **SMS backfill scans entire inbox** (beta.11) — no 90-day cap; pass `daysBack: Int? = null` to scan all history
 - ✅ **Rescan + clean** button — wipe pending tray, re-run backfill with latest templates
+- ✅ **Per-app language picker (beta.11)** — Follow system / Arabic / English; flips text + layout direction (RTL/LTR) on the fly via `CompositionLocalProvider(LocalLayoutDirection)`. Language card sits at the TOP of Settings for discoverability
 - ✅ **Own-account list** — register the last-4 of your accounts so internal transfers are flagged as savings moves
 - ✅ **Hijri date toggle**
 - ✅ **Recurring rules management** with "Run now" trigger + auto-detected suggestions
@@ -261,6 +268,17 @@ maestro test .maestro/flows/                     # 10 E2E flows
 - ✅ **G-4** — Multi-account + net worth view: Room v4→v5 migration adds 6 columns to the account table (openingBalance, sortOrder, archivedAt, notes, updatedAt); legacy `DEBIT/CREDIT` enum remapped to `CHECKING/SAVINGS/CREDIT_CARD/CASH/INVESTMENT/OTHER`. New `AccountRepositoryImpl.observeNetWorth()` aggregates `openingBalance + Σ(CONFIRMED transactions)` per account, returns the live net-worth flow used by the Today header pill and the new Accounts screen (CRUD + archive + edit + per-currency breakdown). Manual seed account is now a first-class CASH account, non-deletable but renameable/archivable.
 - ✅ **G-6** — Custom date-range selector on Plan: Plan now has the same period picker as Trends (month / 3-month / year / custom). Monthly targets scale by average month-length of the selected range, with a caption (×N multiplier) so budget-vs-actual stays apples-to-apples.
 - ✅ **G-5** — Localization (full): locale picker, DataStore persistence, `attachBaseContext` Configuration override + Compose `LocalLayoutDirection` provider. **~300 user-facing strings extracted** to `values/` (Arabic default) + `values-en/` across app:onboarding, core:design-system, feature:today, feature:trends, feature:plan, feature:settings. ViewModels emit typed sealed states (`AccountError`, `BackupStatus.ExportSuccess` / `ExportFailure(detail)`, etc.) and the Composable layer resolves them to `stringResource()`, so VMs stay pure (no Context dependency). Visually QA'd end-to-end on emulator: switched to English → all UI English + LTR (chart legends "Average/Target", swipe-row "Confirm/Dismiss", FAB + settings-gear flip sides, category-picker search field translates); switched back to Arabic → all UI Arabic + RTL. Remaining persisted-data debt (acceptable): the auto-seeded "النقدي" Cash-account name (user-renameable), SMS self-transfer merchant/notes (stored in DB at ingest time; future work would inject ApplicationContext or use a sentinel value resolved at render).
+
+**User-testing patches (beta.11–beta.15):**
+- ✅ **H-01 / All-transactions history (beta.12)** — searchable + filterable list of every transaction; user can drill in from Settings, fix categories one by one, learn-rule propagates corrections to future SMS.
+- ✅ **Today-section filter + pending banner (beta.13)** — Today list now splits today's transactions from this-month-recent; ember banner above the header shouts "%d transactions awaiting review" with tap-to-history CTA. Stale-edit-sheet regression fixed with `key(tx.id) { … }` + synchronous state reset on `EditTransactionViewModel.load()`.
+- ✅ **Dismissed-today banner (beta.14)** — dust-color secondary banner surfaces parser false-negatives so the user catches transactions Athar discarded.
+- ✅ **Fail-safe ingestion (beta.15, [ADR-008](docs/adr/ADR-008-ingestion-fail-safe.md))** — auto-dismiss removed entirely from the pipeline. Anything that successfully parses as a transaction lands in CONFIRMED (categorizer matched) or PENDING (user must decide). Never DISMISSED automatically. Money no longer silently disappears. One-tap **"Recover dismissed transactions"** Settings action moves every legacy DISMISSED row back to PENDING for existing users.
+- ✅ **AI triage workflow (R-02, [docs/AI_SMS_TRIAGE_PROMPT.md](docs/AI_SMS_TRIAGE_PROMPT.md))** — copy-paste prompt teaches an external AI (ChatGPT/Claude/Gemini) to read a bulk SMS export and return JSON with `transactions` + new `parser_templates` + new `categorization_rules`. Developer pastes JSON back, merges into `seed_rules.json` and per-bank template files. Lets the user expand bank coverage from any device's SMS without code changes per batch.
+
+### Known issues
+
+- **R-01 (P0):** On first big SMS backfill (>100 messages), Today / History flows don't reflect the inserts until the activity is recreated. Likely cause: `RawIngestDispatcher` launches one coroutine per event → Room's invalidation tracker gets saturated. Fix is a batched Channel-based ingestion pipeline; not a same-evening patch. Workaround: restart the app once after a big backfill.
 
 ### In flight / remaining
 

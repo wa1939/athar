@@ -140,6 +140,25 @@ Below is the prioritized gap list, in delivery order.
 
 ---
 
+## Post-Tier-1 user-testing patches (beta.11 → beta.15)
+
+Real-user testing on top of imported SMS history surfaced bugs and one architectural-policy regression that needed fixing before the app could be trusted as a daily-driver replacement for TMOAP. All of these are now in main; full rationale in the ADR list below.
+
+### Shipped fixes
+
+| Build | What | Why | ADR |
+|---|---|---|---|
+| **beta.12** | H-01 history view — searchable, filterable, every transaction reachable from Settings → "All transactions" | User backfilled 3 months of SMS and had no way to scroll/edit historical transactions. The Today screen only shows current month + this month's recent. Without a history view, mis-categorized records were unreachable. | — |
+| **beta.13** | Ember "Pending awaiting review" banner on Today + stale-edit-sheet bug fix | The pending tray was below the fold on first load; users didn't see they had work. Banner is impossible to miss. Also fixed a Compose state bug where opening Tx2 after Tx1 showed Tx1's data because `EditTransactionViewModel.load(tx)` was preserving existing state. | — |
+| **beta.14** | Dust-color "%d dismissed today — review" banner + AI triage prompt | Parser false-negatives (auto-dismissed transactions) were invisible. Banner forces them above the fold. AI triage prompt unlocks user-driven bank-coverage expansion without code changes. | — |
+| **beta.15** | **Auto-dismiss removed from SMS ingestion pipeline** + one-tap recovery action | The previous policy auto-DISMISSED any successfully-parsed transaction with merchant confidence < 0.50. **Real money silently disappeared from the ledger** every time the categorizer was uncertain. User-reported: *"if the user didn't categorize or delete it, record it — don't lose the money transaction."* Pipeline now lands every parsed transaction in CONFIRMED (categorizer matched) or PENDING (user must decide). DISMISSED is reachable only by explicit user swipe. Recovery action moves legacy DISMISSED rows back to PENDING. | [ADR-008](adr/ADR-008-ingestion-fail-safe.md) |
+
+### Known issue carried forward
+
+| ID | What | Fix path |
+|---|---|---|
+| R-01 (P0) | First big SMS backfill (>100 messages) doesn't propagate to Today/History flows until activity recreate. Room's invalidation tracker is saturated by 7000+ concurrent `pipeline.process(event)` coroutines. | Route SMS dispatcher through a Channel with batched DB transactions (e.g., 50 events per `db.withTransaction { … }`). Debounce flow emissions. Estimated 1 day. Tracked in Phase 5. |
+
 ## Tier 1 retrospective — what we shipped
 
 The global sprint Tier 1 is complete (G-1 currency, G-2 income, G-3 recurring + auto-detect, G-4 net worth, G-5 localization, G-6 custom date ranges, G-9 monthly bars). Total elapsed: ~5 sessions. The original 14-day estimate was reasonable for a senior engineer working alone; with parallel sub-agents most steps ran in 2–3× wall-clock concurrency.
