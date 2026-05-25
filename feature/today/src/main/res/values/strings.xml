@@ -20,9 +20,15 @@
     <string name="today_caption_savings_rate" formatted="true">معدّل الادخار · %1$s٪</string>
     <string name="today_caption_net_worth_mixed">الثروة بعملات متعددة · بدون تحويل</string>
 
+    <!-- Sections -->
+    <string name="today_section_today">حركات اليوم</string>
+    <string name="today_section_recent">أحدث حركات الشهر</string>
+    <string name="today_section_today_net_prefix">صافي اليوم ·</string>
+
     <!-- Empty state -->
     <string name="today_empty_text">لا حركات هذا الشهر.</string>
     <string name="today_empty_subtle">أضف حركة بالـ + أو فعّل قراءة الرسائل من الإعدادات.</string>
+    <string name="today_no_today_transactions">لا حركات اليوم بعد.</string>
 
     <!-- Pending tray -->
     <string name="today_pending_title" formatted="true">بانتظار التأكيد · %1$d</string>

@@ -9,6 +9,7 @@
     <string name="trends_overline">Trends</string>
 
     <!-- Period segmented control -->
+    <string name="trends_period_week">Week</string>
     <string name="trends_period_month">Month</string>
     <string name="trends_period_months_3">3 months</string>
     <string name="trends_period_year">Year</string>

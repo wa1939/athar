@@ -51,7 +51,8 @@ fun TodayScreen(
             when (event) {
                 is TodayEvent.AddManual -> showAddSheet = true
                 is TodayEvent.OpenTransaction -> {
-                    editing = state.recent.firstOrNull { it.id == event.id }
+                    editing = state.today.firstOrNull { it.id == event.id }
+                        ?: state.recent.firstOrNull { it.id == event.id }
                         ?: state.pending.firstOrNull { it.id == event.id }
                 }
                 else -> viewModel.onEvent(event)
@@ -296,14 +297,66 @@ private fun RecentList(
     onEvent: (TodayEvent) -> Unit,
 ) {
     val theme = AtharTheme
-    if (state.recent.isEmpty()) {
+    if (state.today.isEmpty() && state.recent.isEmpty()) {
         AtharEmptyState(
             text = stringResource(R.string.today_empty_text),
             subtle = stringResource(R.string.today_empty_subtle),
         )
-    } else {
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
-            items(state.recent, key = { it.id }) { tx ->
+        return
+    }
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+        item(key = "today-header") {
+            Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+                AtharText(
+                    text = stringResource(R.string.today_section_today),
+                    style = theme.typography.overline,
+                    color = theme.colors.muted,
+                )
+                if (state.today.isNotEmpty()) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+                        AtharText(
+                            text = stringResource(R.string.today_section_today_net_prefix),
+                            style = theme.typography.caption,
+                            color = theme.colors.muted,
+                        )
+                        AtharNumber(
+                            money = state.todayNet,
+                            color = if (state.todayNet.amount.signum() >= 0) theme.colors.olive else theme.colors.ember,
+                        )
+                    }
+                }
+            }
+        }
+        if (state.today.isEmpty()) {
+            item(key = "today-empty") {
+                AtharText(
+                    text = stringResource(R.string.today_no_today_transactions),
+                    style = theme.typography.body,
+                    color = theme.colors.muted,
+                    modifier = Modifier.padding(vertical = theme.spacing.s),
+                )
+            }
+        } else {
+            items(state.today, key = { "today-${it.id}" }) { tx ->
+                AtharListRow(
+                    modifier = Modifier.animateItem(),
+                    title = tx.merchant,
+                    subtitle = tx.categoryId ?: stringResource(R.string.today_uncategorized),
+                    trailing = tx.amount,
+                    onClick = { onEvent(TodayEvent.OpenTransaction(tx.id)) },
+                )
+            }
+        }
+        if (state.recent.isNotEmpty()) {
+            item(key = "recent-header") {
+                AtharText(
+                    text = stringResource(R.string.today_section_recent),
+                    style = theme.typography.overline,
+                    color = theme.colors.muted,
+                    modifier = Modifier.padding(top = theme.spacing.m),
+                )
+            }
+            items(state.recent, key = { "recent-${it.id}" }) { tx ->
                 AtharListRow(
                     modifier = Modifier.animateItem(),
                     title = tx.merchant,

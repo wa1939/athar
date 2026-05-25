@@ -115,6 +115,14 @@ fun SettingsScreen(
         ) {
             AtharText(text = stringResource(R.string.settings_screen_overline), style = theme.typography.overline, color = theme.colors.muted)
 
+            LanguageCard(
+                currentTag = appLocale,
+                onSelect = { tag ->
+                    viewModel.setAppLocale(tag)
+                    onApplyLocale(tag)
+                },
+            )
+
             SmsPermissionCard(
                 granted = smsGranted,
                 onGrant = { smsLauncher.launch(SMS_PERMISSIONS) },
@@ -150,14 +158,6 @@ fun SettingsScreen(
             DisplayCurrencyCard(
                 currentCode = displayCurrency,
                 onSelect = viewModel::setDisplayCurrency,
-            )
-
-            LanguageCard(
-                currentTag = appLocale,
-                onSelect = { tag ->
-                    viewModel.setAppLocale(tag)
-                    onApplyLocale(tag)
-                },
             )
 
             HijriToggleCard(

@@ -43,14 +43,17 @@ class SmsBackfillService @Inject constructor(
     private val _progress = MutableStateFlow<BackfillProgress>(BackfillProgress.Idle)
     override val progress: StateFlow<BackfillProgress> = _progress.asStateFlow()
 
-    override suspend fun backfill(daysBack: Int) {
+    override suspend fun backfill(daysBack: Int?) {
         if (!hasSmsPermissions()) {
             _progress.value = BackfillProgress.Failed("SMS permission not granted")
             return
         }
         _progress.value = BackfillProgress.Running(scanned = 0)
-        val lookbackMs = daysBack * 24L * 3600L * 1000L
-        val cutoffMs = clock.now().toEpochMilliseconds() - lookbackMs
+        val cutoffMs = daysBack?.let { d ->
+            clock.now().toEpochMilliseconds() - d * 24L * 3600L * 1000L
+        }
+        val selection = cutoffMs?.let { "date > ?" }
+        val selectionArgs = cutoffMs?.let { arrayOf(it.toString()) }
 
         var scanned = 0
         var sent = 0
@@ -58,8 +61,8 @@ class SmsBackfillService @Inject constructor(
             context.contentResolver.query(
                 Telephony.Sms.Inbox.CONTENT_URI,
                 arrayOf("_id", "address", "body", "date"),
-                "date > ?",
-                arrayOf(cutoffMs.toString()),
+                selection,
+                selectionArgs,
                 "date ASC",
             )?.use { c ->
                 val idIdx = c.getColumnIndexOrThrow("_id")

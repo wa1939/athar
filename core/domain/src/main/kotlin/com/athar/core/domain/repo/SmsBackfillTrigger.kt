@@ -10,11 +10,8 @@ import kotlinx.coroutines.flow.StateFlow
  */
 interface SmsBackfillTrigger {
     val progress: StateFlow<BackfillProgress>
-    suspend fun backfill(daysBack: Int = DEFAULT_LOOKBACK_DAYS)
-
-    companion object {
-        const val DEFAULT_LOOKBACK_DAYS = 90
-    }
+    /** [daysBack] = null means scan the entire SMS inbox (no cutoff). */
+    suspend fun backfill(daysBack: Int? = null)
 }
 
 sealed interface BackfillProgress {

@@ -107,14 +107,21 @@ class TodayViewModel @Inject constructor(
         val (income, expense) = confirmed.partition { it.type == TxType.INCOME }
         val incomeSum = Money.sumAmounts(income.map { it.amount }, currency)
         val expenseSum = Money.sumAmounts(expense.map { it.amount }, currency)
+        val today = clock.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val (todayTxns, monthTxns) = confirmed.partition { it.date == today }
+        val (todayIncome, todayExpense) = todayTxns.partition { it.type == TxType.INCOME }
+        val todayNet = Money.sumAmounts(todayIncome.map { it.amount }, currency) -
+            Money.sumAmounts(todayExpense.map { it.amount }, currency)
         return TodayState(
             month = month,
             netFlow = incomeSum - expenseSum,
             totalExpense = expenseSum,
             totalIncome = incomeSum,
+            todayNet = todayNet,
             netWorth = netWorth.total,
             netWorthIsMixed = netWorth.isMixedCurrency,
-            recent = confirmed.take(10).toImmutableList(),
+            today = todayTxns.toImmutableList(),
+            recent = monthTxns.take(10).toImmutableList(),
             pending = pending.toImmutableList(),
             isLoading = false,
         )

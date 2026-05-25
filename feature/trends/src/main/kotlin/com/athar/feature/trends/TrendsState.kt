@@ -9,7 +9,7 @@ import com.athar.core.designsystem.component.AtharSplitSegment
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
-enum class PeriodKey { MONTH, MONTHS_3, YEAR, MONTH_VS_PREVIOUS, CUSTOM }
+enum class PeriodKey { WEEK, MONTH, MONTHS_3, YEAR, MONTH_VS_PREVIOUS, CUSTOM }
 
 /** Per-category row in the period-vs-period comparison table (Excel "Historical Comparison" parity). */
 @Immutable

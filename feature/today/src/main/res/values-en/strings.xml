@@ -20,9 +20,15 @@
     <string name="today_caption_savings_rate" formatted="true">Savings rate · %1$s%%</string>
     <string name="today_caption_net_worth_mixed">Net worth spans multiple currencies · not converted</string>
 
+    <!-- Sections -->
+    <string name="today_section_today">Today\'s transactions</string>
+    <string name="today_section_recent">This month\'s recent</string>
+    <string name="today_section_today_net_prefix">Today\'s net ·</string>
+
     <!-- Empty state -->
     <string name="today_empty_text">No transactions this month.</string>
     <string name="today_empty_subtle">Tap + to add one, or enable SMS reading in Settings.</string>
+    <string name="today_no_today_transactions">No transactions today yet.</string>
 
     <!-- Pending tray -->
     <string name="today_pending_title" formatted="true">Pending · %1$d</string>

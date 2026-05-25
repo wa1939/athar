@@ -30,8 +30,11 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.datetime.Clock
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -114,6 +117,10 @@ class TrendsViewModel @Inject constructor(
         val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
         val ym = YearMonth.of(now.year, now.monthNumber)
         return when (key) {
+            PeriodKey.WEEK -> Period.Custom(
+                start = now.date.minus(DatePeriod(days = 6)),
+                endExclusive = now.date.plus(DatePeriod(days = 1)),
+            )
             PeriodKey.MONTH -> Period.Month(ym)
             PeriodKey.MONTHS_3 -> Period.Last(months = 3, endingAt = now.date)
             PeriodKey.YEAR -> Period.Year(now.year)

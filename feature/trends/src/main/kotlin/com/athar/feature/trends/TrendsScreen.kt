@@ -83,6 +83,7 @@ private fun TrendsContent(
 
             AtharSegmentedControl(
                 segments = listOf(
+                    AtharSegment(PeriodKey.WEEK, stringResource(R.string.trends_period_week)),
                     AtharSegment(PeriodKey.MONTH, stringResource(R.string.trends_period_month)),
                     AtharSegment(PeriodKey.MONTHS_3, stringResource(R.string.trends_period_months_3)),
                     AtharSegment(PeriodKey.YEAR, stringResource(R.string.trends_period_year)),

@@ -9,6 +9,7 @@
     <string name="trends_overline">النمط</string>
 
     <!-- Period segmented control -->
+    <string name="trends_period_week">أسبوع</string>
     <string name="trends_period_month">شهر</string>
     <string name="trends_period_months_3">٣ أشهر</string>
     <string name="trends_period_year">سنة</string>
