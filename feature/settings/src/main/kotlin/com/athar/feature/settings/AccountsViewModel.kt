@@ -24,6 +24,13 @@ import java.math.BigDecimal
 import java.util.UUID
 import javax.inject.Inject
 
+enum class AccountError {
+    SAVE_FAILED,
+    UPDATE_FAILED,
+    ARCHIVE_FAILED,
+    DELETE_HAS_TRANSACTIONS,
+}
+
 /**
  * Accounts CRUD screen (G-4). Surfaces:
  *  - the user's full account list (active + archived) with computed balances
@@ -59,10 +66,8 @@ class AccountsViewModel @Inject constructor(
                 ),
             )
 
-    // TODO: localize ViewModel-emitted error fallbacks (currently Arabic-only;
-    //  acceptable temporary debt when running in English mode).
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+    private val _error = MutableStateFlow<AccountError?>(null)
+    val error: StateFlow<AccountError?> = _error.asStateFlow()
 
     fun add(
         name: String,
@@ -93,40 +98,33 @@ class AccountsViewModel @Inject constructor(
                 updatedAt = now,
             )
             runCatching { repo.upsert(account) }
-                .onFailure { e -> _errorMessage.value = e.message ?: "تعذّر حفظ الحساب." }
+                .onFailure { _error.value = AccountError.SAVE_FAILED }
         }
     }
 
     fun update(account: Account) {
         viewModelScope.launch {
             runCatching { repo.upsert(account) }
-                .onFailure { e -> _errorMessage.value = e.message ?: "تعذّر تحديث الحساب." }
+                .onFailure { _error.value = AccountError.UPDATE_FAILED }
         }
     }
 
     fun setArchived(id: String, archived: Boolean) {
         viewModelScope.launch {
             runCatching { repo.setArchived(id, archived) }
-                .onFailure { e -> _errorMessage.value = e.message ?: "تعذّر تغيير حالة الحساب." }
+                .onFailure { _error.value = AccountError.ARCHIVE_FAILED }
         }
     }
 
-    /**
-     * Delete an account. Throws via the repository if any transactions still reference
-     * it (FK RESTRICT). We catch and surface a user-facing message rather than crash.
-     */
     fun delete(id: String) {
         viewModelScope.launch {
             runCatching { repo.delete(id) }
-                .onFailure { e ->
-                    _errorMessage.value =
-                        "تعذّر حذف الحساب: هناك حركات مرتبطة به. اعتبره مؤرشفًا بدلاً من ذلك."
-                }
+                .onFailure { _error.value = AccountError.DELETE_HAS_TRANSACTIONS }
         }
     }
 
     fun clearError() {
-        _errorMessage.value = null
+        _error.value = null
     }
 
     /** Convenience for the screen — current display currency for default new-account form. */

@@ -43,6 +43,11 @@
     <string name="settings_rescan_action">إعادة فحص ومسح المُعلَّقات</string>
 
     <!-- Backup card -->
+    <string name="settings_backup_export_success">تم حفظ النسخة الاحتياطية.</string>
+    <string name="settings_backup_import_success">تم استرجاع النسخة.</string>
+    <string name="settings_backup_export_failure">تعذّر حفظ النسخة الاحتياطية.</string>
+    <string name="settings_backup_import_failure">كلمة المرور غير صحيحة أو الملف تالف.</string>
+    <string name="settings_backup_unknown_error">خطأ غير معروف</string>
     <string name="settings_backup_title">النسخ الاحتياطي والاسترجاع</string>
     <string name="settings_backup_body">النسخة الاحتياطية ملف مشفّر بكلمة مرور تختارها أنت. لا يمكن استرجاعها بدونها.</string>
     <string name="settings_backup_export">تصدير</string>
@@ -112,6 +117,10 @@
     <string name="settings_about_local">كل بياناتك محفوظة محليًا على جهازك. لا حسابات، لا خوادم، لا تتبع.</string>
 
     <!-- Accounts screen -->
+    <string name="settings_accounts_error_save_failed">تعذّر حفظ الحساب.</string>
+    <string name="settings_accounts_error_update_failed">تعذّر تحديث الحساب.</string>
+    <string name="settings_accounts_error_archive_failed">تعذّر تغيير حالة الحساب.</string>
+    <string name="settings_accounts_error_delete_has_transactions">تعذّر حذف الحساب: هناك حركات مرتبطة به. اعتبره مؤرشفًا بدلاً من ذلك.</string>
     <string name="settings_accounts_overline">الحسابات</string>
     <string name="settings_accounts_net_worth_title">صافي الثروة</string>
     <string name="settings_accounts_net_worth_mixed">بدون تحويل عملات</string>
@@ -148,6 +157,7 @@
     <string name="settings_recurring_run_now">تشغيل الآن</string>
     <string name="settings_recurring_suggestions_title" formatted="true">اقتراحات تلقائية · %1$d</string>
     <string name="settings_recurring_suggestions_body">اكتشفنا هذه الأنماط من حركاتك السابقة. تأكد منها لإنشاء قاعدة تكرار.</string>
+    <string name="settings_recurring_auto_detected_notes" formatted="true">اكتُشف تلقائيًا من %1$d حركات سابقة.</string>
     <string name="settings_recurring_add">+ إضافة قاعدة</string>
     <string name="settings_recurring_hide_form">إخفاء النموذج</string>
     <string name="settings_recurring_empty">لا قواعد بعد. ابدأ بإيجارك أو راتبك أو اشتراك Netflix.</string>

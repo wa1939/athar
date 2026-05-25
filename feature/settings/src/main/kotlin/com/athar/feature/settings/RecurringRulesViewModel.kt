@@ -95,11 +95,10 @@ class RecurringRulesViewModel @Inject constructor(
 
     /**
      * Convert an auto-detected suggestion into an active recurring rule.
-     *
-     * TODO: localize the auto-generated `notes` field below (Arabic only for now;
-     *  acceptable temporary debt when running in English mode).
+     * Notes string is supplied by the caller (resolved at the Composable layer
+     * so it picks up the active locale).
      */
-    fun acceptSuggestion(suggestion: RecurringSuggestion) {
+    fun acceptSuggestion(suggestion: RecurringSuggestion, notes: String?) {
         val now = clock.now()
         val rule = RecurringRule(
             id = UUID.randomUUID().toString(),
@@ -116,7 +115,7 @@ class RecurringRulesViewModel @Inject constructor(
             nextRunDate = suggestion.suggestedNextRun,
             lastRunDate = null,
             isActive = true,
-            notes = "اكتُشف تلقائيًا من ${suggestion.occurrenceCount} حركات سابقة.",
+            notes = notes,
             createdAt = now,
             updatedAt = now,
         )

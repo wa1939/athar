@@ -25,8 +25,10 @@ import javax.inject.Inject
 sealed interface BackupStatus {
     data object Idle : BackupStatus
     data object Working : BackupStatus
-    data class Success(val message: String) : BackupStatus
-    data class Failure(val reason: String) : BackupStatus
+    data object ExportSuccess : BackupStatus
+    data object ImportSuccess : BackupStatus
+    data class ExportFailure(val detail: String?) : BackupStatus
+    data class ImportFailure(val detail: String?) : BackupStatus
 }
 
 sealed interface CsvStatus {
@@ -95,8 +97,6 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { prefs.setAppLocale(tag) }
     }
 
-    // TODO: localize backup status messages emitted from the ViewModel (Arabic only
-    //  for now; acceptable temporary debt when running in English mode).
     fun export(resolver: ContentResolver, uri: Uri, passphrase: String) {
         viewModelScope.launch {
             _status.value = BackupStatus.Working
@@ -105,8 +105,8 @@ class SettingsViewModel @Inject constructor(
                     ?: error("Couldn't open output stream for $uri")
                 backup.export(output, passphrase.toCharArray())
             }
-                .onSuccess { _status.value = BackupStatus.Success("تم حفظ النسخة الاحتياطية.") }
-                .onFailure { _status.value = BackupStatus.Failure(it.message ?: "خطأ غير معروف") }
+                .onSuccess { _status.value = BackupStatus.ExportSuccess }
+                .onFailure { _status.value = BackupStatus.ExportFailure(it.message) }
         }
     }
 
@@ -118,8 +118,8 @@ class SettingsViewModel @Inject constructor(
                     ?: error("Couldn't open input stream for $uri")
                 backup.import(bytes, passphrase.toCharArray())
             }
-                .onSuccess { _status.value = BackupStatus.Success("تم استرجاع النسخة.") }
-                .onFailure { _status.value = BackupStatus.Failure(it.message ?: "كلمة المرور غير صحيحة أو الملف تالف.") }
+                .onSuccess { _status.value = BackupStatus.ImportSuccess }
+                .onFailure { _status.value = BackupStatus.ImportFailure(it.message) }
         }
     }
 

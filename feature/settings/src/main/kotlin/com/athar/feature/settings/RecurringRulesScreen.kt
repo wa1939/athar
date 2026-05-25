@@ -116,9 +116,10 @@ fun RecurringRulesScreen(
                     }
                 }
                 suggestions.forEach { s ->
+                    val notesText = stringResource(R.string.settings_recurring_auto_detected_notes, s.occurrenceCount)
                     SuggestionRow(
                         suggestion = s,
-                        onAccept = { viewModel.acceptSuggestion(s) },
+                        onAccept = { viewModel.acceptSuggestion(s, notesText) },
                     )
                 }
             }

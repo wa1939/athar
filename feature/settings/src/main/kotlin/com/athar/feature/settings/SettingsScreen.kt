@@ -809,14 +809,42 @@ private fun BackupCard(
                     style = theme.typography.caption,
                     color = theme.colors.muted,
                 )
-                is BackupStatus.Success -> {
-                    AtharText(text = status.message, style = theme.typography.caption, color = theme.colors.olive)
+                BackupStatus.ExportSuccess -> {
+                    AtharText(
+                        text = stringResource(R.string.settings_backup_export_success),
+                        style = theme.typography.caption,
+                        color = theme.colors.olive,
+                    )
                     TextButton(onClick = onClearStatus) {
                         AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
                     }
                 }
-                is BackupStatus.Failure -> {
-                    AtharText(text = status.reason, style = theme.typography.caption, color = theme.colors.crimson)
+                BackupStatus.ImportSuccess -> {
+                    AtharText(
+                        text = stringResource(R.string.settings_backup_import_success),
+                        style = theme.typography.caption,
+                        color = theme.colors.olive,
+                    )
+                    TextButton(onClick = onClearStatus) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
+                }
+                is BackupStatus.ExportFailure -> {
+                    AtharText(
+                        text = status.detail ?: stringResource(R.string.settings_backup_export_failure),
+                        style = theme.typography.caption,
+                        color = theme.colors.crimson,
+                    )
+                    TextButton(onClick = onClearStatus) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
+                }
+                is BackupStatus.ImportFailure -> {
+                    AtharText(
+                        text = status.detail ?: stringResource(R.string.settings_backup_import_failure),
+                        style = theme.typography.caption,
+                        color = theme.colors.crimson,
+                    )
                     TextButton(onClick = onClearStatus) {
                         AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
                     }

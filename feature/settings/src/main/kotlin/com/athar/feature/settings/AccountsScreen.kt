@@ -56,7 +56,7 @@ fun AccountsScreen(
     val theme = AtharTheme
     val balances by viewModel.balances.collectAsStateWithLifecycle()
     val netWorth by viewModel.netWorth.collectAsStateWithLifecycle()
-    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
     val displayCurrency = LocalDisplayCurrency.current
 
     var showAdd by remember { mutableStateOf(false) }
@@ -131,11 +131,17 @@ fun AccountsScreen(
                 )
             }
 
-            errorMessage?.let { msg ->
+            error?.let { err ->
+                val errorText = when (err) {
+                    AccountError.SAVE_FAILED -> stringResource(R.string.settings_accounts_error_save_failed)
+                    AccountError.UPDATE_FAILED -> stringResource(R.string.settings_accounts_error_update_failed)
+                    AccountError.ARCHIVE_FAILED -> stringResource(R.string.settings_accounts_error_archive_failed)
+                    AccountError.DELETE_HAS_TRANSACTIONS -> stringResource(R.string.settings_accounts_error_delete_has_transactions)
+                }
                 AtharCard {
                     Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
                         AtharText(
-                            text = msg,
+                            text = errorText,
                             style = theme.typography.body,
                             color = theme.colors.crimson,
                         )
