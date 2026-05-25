@@ -32,6 +32,7 @@ import com.athar.core.designsystem.display.LocalDisplayCurrency
 import com.athar.core.designsystem.theme.AtharTheme
 import com.athar.core.domain.model.Cadence
 import com.athar.core.domain.model.RecurringRule
+import com.athar.core.domain.model.RecurringSuggestion
 import com.athar.core.domain.model.TxType
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
@@ -46,6 +47,7 @@ fun RecurringRulesScreen(
     val theme = AtharTheme
     val rules by viewModel.state.collectAsStateWithLifecycle()
     val materialized by viewModel.lastMaterializeCount.collectAsStateWithLifecycle()
+    val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
     val currency = LocalDisplayCurrency.current
     var showAdd by remember { mutableStateOf(false) }
 
@@ -93,6 +95,29 @@ fun RecurringRulesScreen(
                     PrimaryActionButton(
                         text = "تشغيل الآن",
                         onClick = viewModel::materializeNow,
+                    )
+                }
+            }
+
+            if (suggestions.isNotEmpty()) {
+                AtharCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+                        AtharText(
+                            text = "اقتراحات تلقائية · ${suggestions.size}",
+                            style = theme.typography.headline,
+                            color = theme.colors.ember,
+                        )
+                        AtharText(
+                            text = "اكتشفنا هذه الأنماط من حركاتك السابقة. تأكد منها لإنشاء قاعدة تكرار.",
+                            style = theme.typography.body,
+                            color = theme.colors.muted,
+                        )
+                    }
+                }
+                suggestions.forEach { s ->
+                    SuggestionRow(
+                        suggestion = s,
+                        onAccept = { viewModel.acceptSuggestion(s) },
                     )
                 }
             }
@@ -298,6 +323,41 @@ private fun RuleRow(
                     AtharText(text = "حذف", style = theme.typography.caption, color = theme.colors.crimson)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SuggestionRow(
+    suggestion: RecurringSuggestion,
+    onAccept: () -> Unit,
+) {
+    val theme = AtharTheme
+    AtharCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.padding(end = theme.spacing.s)) {
+                    AtharText(text = suggestion.merchant, style = theme.typography.headline)
+                    AtharText(
+                        text = "${suggestion.occurrenceCount} تكرارات · يوم ${suggestion.typicalDayOfMonth}",
+                        style = theme.typography.caption,
+                        color = theme.colors.muted,
+                    )
+                    AtharText(
+                        text = "آخر مرة: ${suggestion.lastSeen}",
+                        style = theme.typography.caption,
+                        color = theme.colors.muted,
+                    )
+                }
+                AtharNumber(
+                    money = suggestion.amount,
+                    color = if (suggestion.type == TxType.INCOME) theme.colors.olive else theme.colors.ember,
+                )
+            }
+            PrimaryActionButton(
+                text = "إنشاء قاعدة",
+                onClick = onAccept,
+            )
         }
     }
 }

@@ -6,6 +6,7 @@ import com.athar.core.domain.model.InvestmentContribution
 import com.athar.core.domain.model.InvestmentPool
 import com.athar.core.domain.model.PatternType
 import com.athar.core.domain.model.RecurringRule
+import com.athar.core.domain.model.RecurringSuggestion
 import com.athar.core.domain.model.WishlistItem
 import kotlinx.coroutines.flow.Flow
 
@@ -61,4 +62,17 @@ interface RecurringRuleRepository {
      * don't double-create because [RecurringRule.lastRunDate] gates each rule.
      */
     suspend fun materializeDue(today: kotlinx.datetime.LocalDate): Int
+}
+
+/**
+ * Analyzes the user's confirmed transaction history and surfaces pattern-detected
+ * candidates that look like recurring transactions (Netflix charged 60 ر.س on the
+ * 15th of each month for 3+ months, salary deposited on the 25th, etc.).
+ *
+ * Crucially, suggestions are **proposals** — the user always confirms before they
+ * become a [RecurringRule]. Mirrors how SMS-parsed transactions are PENDING until
+ * the user taps confirm.
+ */
+interface RecurringSuggestionRepository {
+    fun observeSuggestions(): Flow<List<RecurringSuggestion>>
 }

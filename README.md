@@ -5,7 +5,8 @@
 <h1 align="center">أثر · Athar</h1>
 
 <p align="center">
-  <strong>Trace every riyal you spend. Quietly. On your device. Without spreadsheets.</strong><br/>
+  <strong>The free, local-first replacement for "The Measure of a Plan" (TMOAP) budget Excel.</strong><br/>
+  <em>Trace every riyal — or dollar, dirham, rupee, pound — you spend. Quietly. On your device. Without spreadsheets.</em><br/>
   <em>تتبع أموالك. بوضوح.</em>
 </p>
 
@@ -30,52 +31,77 @@
 
 ---
 
-> **أثر** is a local-first Android app that reads your bank SMS, parses every transaction, auto-categorizes it against a Saudi merchant dictionary, and replaces a complex Excel budget workbook with three calm screens: **Today** · **Trends** · **Plan**. Arabic-first. SAR-native. Encrypted on-device. No cloud. No ads. No telemetry. Ever.
+> **أثر · Athar** is a local-first Android app — an open-source, privacy-first replacement for the popular **"The Measure of a Plan" (TMOAP) personal finance Excel workbook**. It reads your bank SMS, parses every transaction, auto-categorizes against a 195-entry merchant dictionary, and replaces a complex Excel budget workbook with three calm screens: **Today** · **Trends** · **Plan**. Arabic + English. Multi-currency (18 codes). Encrypted on-device. No cloud. No ads. No telemetry. Ever.
 
-## Why
+## Why · Replacing TMOAP
 
-You spend in two languages, across multiple banks (Al Rajhi first), with bank SMS arriving in mixed Arabic/English within seconds of the transaction. The information is already in your pocket — it just isn't structured.
+**The Measure of a Plan (TMOAP)** is a beloved personal-finance Excel workbook used by thousands worldwide to track monthly cash flow, savings rate, wishlists, and historical comparisons. It is rigorous, beautiful, and entirely manual — every transaction is typed in by hand.
 
-Existing tools force a trade-off:
-- A spreadsheet that knows your categories but requires manual entry for every transaction
-- A finance app like Mint/YNAB that ingests transactions but doesn't speak Saudi banking, Arabic merchant names, or SAR
+Athar carries TMOAP's discipline (monthly cash flow → savings capacity → wishlist gating, historical period-vs-prior comparison, dashboard charts) into a phone that lives in your pocket and reads your bank SMS automatically. You get TMOAP-grade analysis without TMOAP's manual data-entry tax.
 
-**Athar bridges that gap**, locally and quietly.
+**Search keywords:** TMOAP replacement · The Measure of a Plan Excel alternative · open-source budget tracking app · personal finance spreadsheet replacement · monthly cash flow tracker · savings rate calculator · expense tracker without cloud · Excel budget Android · SMS budget app · privacy-first finance · multi-currency budget app · zero-knowledge expense tracker · Arabic budget app · Saudi budget tracker.
+
+Other tools force a trade-off:
+- A spreadsheet (TMOAP, YNAB-on-sheet, custom Google Sheets) that knows your categories but requires manual entry for every transaction
+- A SaaS app (Mint, YNAB, Monarch, Copilot, Money Lover) that ingests transactions but sends your financial graph to a third-party server, runs ads, doesn't speak Saudi/Gulf banking, or doesn't work without a cloud account
+
+**Athar bridges that gap**, locally and quietly. Your data never leaves the device unless you export it yourself.
 
 ## Features
 
 #### Today (اليوم)
 - ✅ One landmark net-flow number with **count-up animation**
+- ✅ **Income + Expense pills** (olive / ember) — see your monthly inflow and outflow at a glance
+- ✅ **Savings-rate caption** (e.g., "معدّل الادخار · 18٪") — the TMOAP discipline, on the home screen
 - ✅ Pending tray for SMS-captured transactions awaiting your confirmation
-- ✅ Swipe right to confirm · swipe left to dismiss
+- ✅ Swipe right to confirm · swipe left to dismiss · **bulk actions** for 5+ pending entries
+- ✅ Auto-confirm transactions when category is already known; auto-dismiss low-confidence noise
 - ✅ FAB to add a manual transaction in seconds
 
-#### Trends (النمط)
-- ✅ Period selector: month · 3 months · year
-- ✅ Top-8 category bar chart with **comparison-to-previous-period delta**
-- ✅ **Tap a bar → 12-month drilldown** for that category
+#### Trends (النمط) — TMOAP-depth analysis
+- ✅ Period selector: **month · 3 months · year · period-vs-prior · custom range**
+- ✅ **Headline numbers card** with delta-vs-prior % and expense-as-%-of-income
+- ✅ **Income · Expenses · Savings** breakdown with savings-rate %
+- ✅ **Monthly Dashboard** — 3 panels (income / expense / savings) over the last 12 months, each with **budget-target line + computed average line** overlays (TMOAP "Income by Month / Expenses by Month / Savings by Month" parity)
+- ✅ **Period-vs-prior comparison bars** for income/expense/savings (TMOAP "Historical Comparison" sheet parity)
+- ✅ **Category comparison table** with delta in money + delta % per category
+- ✅ **Proportional category split** horizontal stacked bar (pie-chart replacement — pies banned per design brief)
+- ✅ **Tap a bar → 12-month drilldown** for that category, with monthly target overlay
+- ✅ Top-8 category bar chart
 - ✅ Hijri date display optional
 
 #### Plan (الخطة)
 - ✅ **Budget targets** per category with variance pills (over/under)
+- ✅ **Editable monthly targets** — tap any row, type the number, save
 - ✅ **Wishlist** with savings-capacity math (NOW / WAIT until YYYY-MM / INFEASIBLE)
-- ✅ **Family investments pool** with proportional share % and return per contributor
+- ✅ **Family investments pool** with **percentage-based return entry**, proportional share %, delete pool/contributor
+- ✅ **Recurring transactions** — define rent / salary / Netflix / utilities once; rules materialize into PENDING transactions on their due date
 
-#### Ingestion + categorization
-- ✅ **Al Rajhi SMS** parser (Arabic + English) — purchase, transfer, deposit, balance alerts
+#### Ingestion + categorization (Saudi-first, universal-ready)
+- ✅ **Al Rajhi SMS** parser (Arabic + English) — purchase, transfer, deposit, profit deposit, loan instalment, credit card payment, declined transactions, transfers between own accounts
+- ✅ **STC Bank · Alinma · D360 · Barq** templates derived from real corpus, with date extraction so historical SMS sit in their correct months
+- ✅ **User-defined templates** — paste a sample SMS from your bank, mark the anchor strings around the amount/merchant, save (W-4)
+- ✅ **Spam-resistant pipeline** — `-AD` suffix block (CITC convention), sender allow-list, ~40 ignore patterns for OTP/promo/marketing (Tasaheal, "Buy X Get Y", "Earn 10,000")
 - ✅ **Notification listener** path for Play-Store-safe distribution
+- ✅ **Multi-currency capture** — foreign-card spend keeps both the original amount and the SAR equivalent
+- ✅ **Self-transfer detection** — moves to your own savings account flagged as "Own account move" (savings), not expense
+- ✅ **Auto-detected recurring patterns** — scans your confirmed history, surfaces "Same merchant, same amount, 3+ distinct months at similar day-of-month" candidates as suggestions you confirm with one tap
 - ✅ **90-day historical SMS backfill** on first install
-- ✅ Rule engine with **45 Saudi merchant seed rules** (Starbucks, Panda, STC, Saudia…)
+- ✅ Rule engine with **195+ merchant seed rules** (Starbucks · Panda · STC · Saudia · McDonald's · Albaik · Herfy · Othaim · Nahdi · Amazon · Netflix · …)
 - ✅ "Always categorize X as Y?" **learn-from-correction** loop
 - ✅ Source of every categorization is **explainable** (rule id, confidence)
 
 #### Settings + ops
+- ✅ **Multi-currency display** — pick from 18 ISO-4217 codes (USD · EUR · GBP · AED · EGP · INR · PKR · TRY · SAR · KWD · QAR · BHD · OMR · JOD · CAD · AUD · CHF · JPY) with Arabic + English currency labels
 - ✅ **AES-256-GCM encrypted backup** (Argon2-equivalent KDF, passphrase-protected)
-- ✅ **CSV import + export** for Excel interop
+- ✅ **CSV import + export** for Excel interop — drop in your TMOAP transaction log to import; export annual data for your accountant
 - ✅ **SQLCipher** database encryption at rest, key wrapped via Android Keystore
 - ✅ **SMS audit log** — every parsed/failed/ignored SMS retained, never deleted
 - ✅ **Activity log** — every transaction edit, with timestamp
+- ✅ **Rescan + clean** button — wipe pending tray, re-run backfill with latest templates
+- ✅ **Own-account list** — register the last-4 of your accounts so internal transfers are flagged as savings moves
 - ✅ **Hijri date toggle**
+- ✅ **Recurring rules management** with "Run now" trigger + auto-detected suggestions
 - ✅ Categories management (rename, archive, reorder, custom adds)
 
 ## Screenshots
@@ -192,28 +218,70 @@ maestro test .maestro/flows/                     # 10 E2E flows
 
 ## Roadmap
 
-**Shipped in v0.1.0-beta** (this build):
+### Shipped in v0.1.0-beta.1 → beta.8 (current)
 
+**Foundations (beta.1):**
 - ✅ Phase 0 foundations · 15 Gradle modules · build-logic convention plugins
 - ✅ Excel parity for manual entry (M-01..M-13)
-- ✅ Al Rajhi SMS parsing + categorization (S-01..S-09)
 - ✅ Pending tray with swipe gestures (S-17..S-19)
 - ✅ Hijri date toggle (P-07)
 - ✅ SQLCipher encryption-at-rest with Keystore-wrapped key (ADR-003)
-- ✅ AES-256-GCM JSON backup + restore
-- ✅ CSV import + export
+- ✅ AES-256-GCM JSON backup + restore · CSV import + export
 - ✅ Wishlist + Family Investments (Phase 4)
 - ✅ Trends drilldown chart (M-07)
 - ✅ SMS audit + Activity log (S-21, S-23, P-08)
+- ✅ Al Rajhi SMS parsing + categorization (S-01..S-09)
 
-**Deferred** (see [ADR-004](docs/adr/ADR-004-mvp-status.md) for why):
+**Bank coverage + sustainability (beta.2 → beta.4):**
+- ✅ Al Rajhi real-corpus templates (12 message types: PoS, online, transfers, deposits, profit, loan)
+- ✅ STC Bank · Alinma · D360 · Barq templates
+- ✅ User-defined SMS templates (W-4) — onboard your bank without code
+- ✅ Spam-resistant ingestion pipeline (ADR-006): sender allow-list + `-AD` block + 40 ignore patterns
+- ✅ Date extraction from SMS body (7 formats) so historical SMS sit in their correct months
+- ✅ Auto-confirm by category · auto-dismiss low confidence · bulk pending actions
+- ✅ Self-transfer / own-account detection
+- ✅ Investment percentage-based returns + delete pool/contributor
+- ✅ TMOAP-seeded private build (gitignored) for the developer's own data — public APK stays clean
 
-- ⏳ XLSX direct import (CSV path covers the migration today)
+**TMOAP-depth analysis (beta.5):**
+- ✅ G-9 — Monthly Income/Expense/Savings bar panels with budget-target + average overlay lines
+- ✅ Period-vs-prior comparison bars (income/expense/savings)
+- ✅ Headline numbers card with savings rate + expense-as-%-of-income
+- ✅ Category comparison table with delta money + delta %
+- ✅ Proportional category split (horizontal stacked bar)
+- ✅ Custom date-range selector on Trends
+
+**Global sprint Tier 1 (beta.6 → beta.8):**
+- ✅ **G-1** — Multi-currency display (18 ISO-4217 codes with Arabic + English labels, currency picker in Settings)
+- ✅ **G-2** — Income visibility (income + expense pills + savings-rate on Today header)
+- ✅ **G-3** — Recurring transactions (rent / salary / Netflix / utilities — manual rules + auto-detected suggestions from history)
+- ✅ G-9 — TMOAP-depth Trends
+
+### In flight / remaining
+
+| ID | Feature | Status | Effort | Notes |
+|---|---|---|---|---|
+| G-4 | Multi-account + net worth view | ⏳ | 3 days | Schema supports multi-account; needs UI (Settings → Accounts) + Today net-worth widget |
+| G-5 | Localization (English baseline + locale picker) | ⏳ | 2 days | Extract ~166 hard-coded Arabic strings → `strings.xml` + `values-en/` |
+| G-6 | Custom date-range on Plan | ⏳ | 1 day | Custom range already on Trends; Plan needs the same picker |
+| G-7 | Bills calendar | ⏳ | 2 days | "Upcoming bills" view + push notifications 2 days before each bill |
+| G-8 | Manual transaction UX upgrades | ⏳ | 2 days | Recent-merchant autocomplete · quick-add chips · voice entry · receipt photo |
+| G-10 | Savings-rate goals + emergency fund | ⏳ | 2 days | Plan → Goals tab with target progress |
+| G-11 | Broader notification handlers | ⏳ | 3 days | Apple Wallet, Google Pay, Revolut, Wise, Chase, Capital One, Mercury (Play-Store flavor) |
+| G-12 | Bank statement / CSV / OFX / QFX import wizard | ⏳ | 3 days | Auto-detect format, column mapping, multi-currency statements |
+| G-13 | Zero-knowledge sync to companion devices | ⏳ | 5 days | E2E-encrypted via Dropbox / Drive / iCloud / WebDAV / S3 — user holds the key |
+| G-14 | Tax-export PDF for accountants | ⏳ | 2 days | Annual category totals + transaction list in user's locale |
+
+Full gap analysis: [`docs/ROADMAP_GLOBAL.md`](docs/ROADMAP_GLOBAL.md).
+
+### Deferred (technical-debt only)
+
 - ⏳ TFLite merchant classifier (rule engine handles ~90% of cases)
-- ⏳ Locale toggle (Arabic-first per brief)
 - ⏳ Paparazzi snapshot baselines (need to record on a real machine)
 - ⏳ Macrobenchmarks (need a device)
 - ⏳ Per-bank account routing (S-20)
+- ⏳ WorkManager auto-trigger for recurring rules (manual "Run now" works today)
+- ⏳ XLSX direct import (CSV path covers the migration today)
 
 ## Privacy
 
@@ -237,7 +305,9 @@ PRs welcome. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the workflow and the s
 
 Developed by **Waleed Alhamed** — [walhamed.com](https://walhamed.com)
 
-Inspired by the [**The Measure of a Plan (TMOAP)**](https://themeasureofaplan.com) budget tracking workbook, whose monthly cash-flow + savings-capacity discipline shaped Athar's Plan screen. Athar carries that spreadsheet's clarity into a phone that lives in your pocket.
+Inspired by [**The Measure of a Plan (TMOAP)**](https://themeasureofaplan.com) budget tracking workbook by Tudor Mihailescu, whose monthly cash-flow + historical-comparison + savings-capacity discipline shaped Athar's Trends and Plan screens. Athar carries that spreadsheet's clarity into a phone that lives in your pocket — and removes the manual data-entry tax that TMOAP, by virtue of being a spreadsheet, can never eliminate.
+
+If you were searching for "TMOAP for mobile", "The Measure of a Plan Android app", "open-source TMOAP", "TMOAP without Excel", "automated budget tracker that replaces my spreadsheet", "privacy-first alternative to YNAB / Mint / Monarch / Copilot", or "Saudi / Gulf / Middle East budget app with SMS reading" — Athar is the project you're looking for.
 
 ---
 

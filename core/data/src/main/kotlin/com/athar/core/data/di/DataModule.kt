@@ -142,6 +142,11 @@ internal abstract class RepositoryModule {
     ): com.athar.core.domain.repo.RecurringRuleRepository
 
     @Binds @Singleton
+    abstract fun bindRecurringSuggestionRepository(
+        impl: com.athar.core.data.repo.RecurringSuggestionRepositoryImpl,
+    ): com.athar.core.domain.repo.RecurringSuggestionRepository
+
+    @Binds @Singleton
     abstract fun bindUserPreferencesRepository(impl: UserPreferencesRepositoryImpl): UserPreferencesRepository
 
     @Binds @Singleton
