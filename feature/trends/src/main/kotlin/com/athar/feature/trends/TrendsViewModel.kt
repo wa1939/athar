@@ -1,5 +1,6 @@
 package com.athar.feature.trends
 
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.athar.core.common.money.Money
@@ -7,6 +8,7 @@ import com.athar.core.common.time.Period
 import com.athar.core.common.time.previous
 import com.athar.core.designsystem.component.AtharBarItem
 import com.athar.core.designsystem.component.AtharMonthlyBar
+import com.athar.core.designsystem.component.AtharSplitSegment
 import com.athar.core.domain.model.Category
 import com.athar.core.domain.model.CategoryKind
 import com.athar.core.domain.model.Transaction
@@ -16,6 +18,7 @@ import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,12 +27,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.YearMonth
 import javax.inject.Inject
 
@@ -38,6 +42,7 @@ data class DrilldownState(
     val categoryLabelAr: String,
     val bars: ImmutableList<AtharMonthlyBar>,
     val total: Money,
+    val monthlyTarget: Money?,
 )
 
 @HiltViewModel
@@ -48,20 +53,25 @@ class TrendsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val selectedKey = MutableStateFlow(PeriodKey.MONTH)
+    private val customRange = MutableStateFlow<Pair<LocalDate, LocalDate>?>(null)
     private val selectedCategoryId = MutableStateFlow<String?>(null)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val state: StateFlow<TrendsState> =
         selectedKey
             .flatMapLatest { key ->
-                val period = period(key)
-                val previous = period.previous()
-                combine(
-                    categories.observeAll(),
-                    transactions.observeByPeriod(period, status = TxStatus.CONFIRMED),
-                    transactions.observeByPeriod(previous, status = TxStatus.CONFIRMED),
-                ) { cats, current, prior ->
-                    derive(key, period, cats, current, prior)
+                customRange.flatMapLatest { range ->
+                    val period = period(key, range)
+                    val previous = period.previous()
+                    val last12 = last12Months()
+                    combine(
+                        categories.observeAll(),
+                        transactions.observeByPeriod(period, status = TxStatus.CONFIRMED),
+                        transactions.observeByPeriod(previous, status = TxStatus.CONFIRMED),
+                        transactions.observeByPeriod(last12, status = TxStatus.CONFIRMED),
+                    ) { cats, current, prior, twelveMonths ->
+                        derive(key, period, range, cats, current, prior, twelveMonths)
+                    }
                 }
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TrendsState.initial())
@@ -81,6 +91,10 @@ class TrendsViewModel @Inject constructor(
     fun onEvent(event: TrendsEvent) {
         when (event) {
             is TrendsEvent.SelectPeriod -> selectedKey.value = event.key
+            is TrendsEvent.SelectCustomRange -> {
+                customRange.value = event.start to event.end
+                selectedKey.value = PeriodKey.CUSTOM
+            }
         }
     }
 
@@ -92,7 +106,7 @@ class TrendsViewModel @Inject constructor(
         selectedCategoryId.value = null
     }
 
-    private fun period(key: PeriodKey): Period {
+    private fun period(key: PeriodKey, custom: Pair<LocalDate, LocalDate>?): Period {
         val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
         val ym = YearMonth.of(now.year, now.monthNumber)
         return when (key) {
@@ -100,6 +114,8 @@ class TrendsViewModel @Inject constructor(
             PeriodKey.MONTHS_3 -> Period.Last(months = 3, endingAt = now.date)
             PeriodKey.YEAR -> Period.Year(now.year)
             PeriodKey.MONTH_VS_PREVIOUS -> Period.Month(ym)
+            PeriodKey.CUSTOM -> custom?.let { (s, e) -> Period.Custom(s, e) }
+                ?: Period.Month(ym)
         }
     }
 
@@ -111,9 +127,11 @@ class TrendsViewModel @Inject constructor(
     private fun derive(
         key: PeriodKey,
         period: Period,
+        custom: Pair<LocalDate, LocalDate>?,
         cats: List<Category>,
         current: List<Transaction>,
         prior: List<Transaction>,
+        twelveMonths: List<Transaction>,
     ): TrendsState {
         val expense = current.filter { it.type == TxType.EXPENSE }
         val income = current.filter { it.type == TxType.INCOME }
@@ -144,7 +162,6 @@ class TrendsViewModel @Inject constructor(
             .take(TOP_N)
             .toImmutableList()
 
-        // Category-delta table — every category that had non-zero spend in EITHER period.
         val allCatIds = (byCategoryId.keys + priorByCategoryId.keys).filterNotNull().toSet()
         val deltas = allCatIds.mapNotNull { catId ->
             val cat = categoryById[catId] ?: return@mapNotNull null
@@ -158,6 +175,24 @@ class TrendsViewModel @Inject constructor(
         }.sortedByDescending { it.currentTotal.amount.max(it.previousTotal.amount) }
             .toImmutableList()
 
+        // Proportional category split for the current period (TMOAP donut → horizontal stacked bar).
+        val split = byCategoryId
+            .mapNotNull { (catId, total) ->
+                val cat = catId?.let { categoryById[it] } ?: return@mapNotNull null
+                AtharSplitSegment(
+                    key = cat.id,
+                    labelAr = cat.nameAr,
+                    labelEn = cat.name,
+                    value = total,
+                    color = colorForCategory(cat),
+                )
+            }
+            .sortedByDescending { it.value.amount }
+            .take(12)
+            .toImmutableList()
+
+        val monthly = buildMonthlySeries(cats, twelveMonths)
+
         return TrendsState(
             periodKey = key,
             period = period,
@@ -169,8 +204,76 @@ class TrendsViewModel @Inject constructor(
             previousSavings = priorIncomeSum - priorExpenseSum,
             categories = bars,
             categoryDeltas = deltas,
+            categorySplit = split,
+            monthly = monthly,
+            customStart = custom?.first,
+            customEnd = custom?.second,
             isLoading = false,
         )
+    }
+
+    private fun buildMonthlySeries(cats: List<Category>, txs: List<Transaction>): MonthlySeries {
+        val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        val nowYm = YearMonth.of(now.year, now.monthNumber)
+        val months: List<YearMonth> = (11 downTo 0).map { o -> nowYm.minusMonths(o.toLong()) }
+        val incomeByMonth = mutableMapOf<YearMonth, Money>().apply { months.forEach { put(it, Money.zero()) } }
+        val expenseByMonth = mutableMapOf<YearMonth, Money>().apply { months.forEach { put(it, Money.zero()) } }
+        txs.forEach { tx ->
+            val ym = YearMonth.of(tx.date.year, tx.date.monthNumber)
+            if (ym !in incomeByMonth) return@forEach
+            when (tx.type) {
+                TxType.INCOME -> incomeByMonth[ym] = incomeByMonth.getValue(ym) + tx.amount
+                TxType.EXPENSE -> expenseByMonth[ym] = expenseByMonth.getValue(ym) + tx.amount
+                else -> Unit
+            }
+        }
+        val incomeBars = months.map { ym -> AtharMonthlyBar(month = ym, amount = incomeByMonth.getValue(ym)) }
+        val expenseBars = months.map { ym -> AtharMonthlyBar(month = ym, amount = expenseByMonth.getValue(ym)) }
+        val savingsBars = months.map { ym ->
+            AtharMonthlyBar(month = ym, amount = incomeByMonth.getValue(ym) - expenseByMonth.getValue(ym))
+        }
+        val n = months.size
+        val avgIncome = average(incomeBars.map { it.amount }, n)
+        val avgExpense = average(expenseBars.map { it.amount }, n)
+        val avgSavings = average(savingsBars.map { it.amount }, n)
+        val targetExpense = cats
+            .filter { it.kind == CategoryKind.EXPENSE && it.monthlyTarget != null }
+            .fold(Money.zero()) { acc, c -> acc + (c.monthlyTarget ?: Money.zero()) }
+        val targetIncome = cats
+            .filter { it.kind == CategoryKind.INCOME && it.monthlyTarget != null }
+            .fold(Money.zero()) { acc, c -> acc + (c.monthlyTarget ?: Money.zero()) }
+        val targetSavings = if (targetIncome.isPositive() && targetExpense.isPositive())
+            targetIncome - targetExpense else null
+
+        return MonthlySeries(
+            income = incomeBars.toImmutableList(),
+            expense = expenseBars.toImmutableList(),
+            savings = savingsBars.toImmutableList(),
+            averageIncome = avgIncome,
+            averageExpense = avgExpense,
+            averageSavings = avgSavings,
+            targetIncome = targetIncome.takeIf { it.isPositive() },
+            targetExpense = targetExpense.takeIf { it.isPositive() },
+            targetSavings = targetSavings,
+        )
+    }
+
+    private fun average(values: List<Money>, n: Int): Money {
+        if (n == 0) return Money.zero()
+        val total = values.fold(Money.zero()) { acc, m -> acc + m }
+        val avg = total.amount.divide(BigDecimal(n), 2, RoundingMode.HALF_EVEN)
+        return Money.of(avg, total.currency)
+    }
+
+    private fun colorForCategory(cat: Category): Color {
+        // Deterministic palette mapped from the category id hash. Saudi-style muted tones.
+        val palette = listOf(
+            Color(0xFFC2541C), Color(0xFF5C6B3A), Color(0xFFB58A2C), Color(0xFF8E1F1F),
+            Color(0xFF6B6B68), Color(0xFF8C4A26), Color(0xFF40583E), Color(0xFF7A5E3E),
+            Color(0xFF933E33), Color(0xFF566373), Color(0xFF704A28), Color(0xFF3E5B3A),
+        )
+        val idx = (cat.id.hashCode() and 0x7FFF_FFFF) % palette.size
+        return palette[idx]
     }
 
     private fun buildDrilldown(
@@ -180,18 +283,12 @@ class TrendsViewModel @Inject constructor(
     ): DrilldownState {
         val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
         val nowYm = YearMonth.of(now.year, now.monthNumber)
-        // 12-month timeline ending at the current month (inclusive).
-        val months: List<YearMonth> = (11 downTo 0).map { offset -> nowYm.minusMonths(offset.toLong()) }
-        val bucketed = mutableMapOf<YearMonth, Money>().apply {
-            months.forEach { put(it, Money.zero()) }
+        val months: List<YearMonth> = (11 downTo 0).map { o -> nowYm.minusMonths(o.toLong()) }
+        val bucketed = mutableMapOf<YearMonth, Money>().apply { months.forEach { put(it, Money.zero()) } }
+        txs.filter { it.categoryId == categoryId }.forEach { tx ->
+            val ym = YearMonth.of(tx.date.year, tx.date.monthNumber)
+            if (ym in bucketed) bucketed[ym] = bucketed.getValue(ym) + tx.amount
         }
-        txs.filter { it.categoryId == categoryId }
-            .forEach { tx ->
-                val ym = YearMonth.of(tx.date.year, tx.date.monthNumber)
-                if (ym in bucketed) {
-                    bucketed[ym] = bucketed.getValue(ym) + tx.amount
-                }
-            }
         val bars = months.map { ym -> AtharMonthlyBar(month = ym, amount = bucketed.getValue(ym)) }
             .toImmutableList()
         val total = bars.fold(Money.zero()) { acc, b -> acc + b.amount }
@@ -201,6 +298,7 @@ class TrendsViewModel @Inject constructor(
             categoryLabelAr = cat?.nameAr.orEmpty(),
             bars = bars,
             total = total,
+            monthlyTarget = cat?.monthlyTarget,
         )
     }
 

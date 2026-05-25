@@ -1,6 +1,7 @@
 package com.athar.feature.trends
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,25 +10,35 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.athar.core.designsystem.component.AtharBarChart
 import com.athar.core.designsystem.component.AtharCard
+import com.athar.core.designsystem.component.AtharComparisonBars
 import com.athar.core.designsystem.component.AtharEmptyState
 import com.athar.core.designsystem.component.AtharMonthlyChart
+import com.athar.core.designsystem.component.AtharMonthlyChartWithLines
 import com.athar.core.designsystem.component.AtharNumber
+import com.athar.core.designsystem.component.AtharProportionBar
 import com.athar.core.designsystem.component.AtharSegment
 import com.athar.core.designsystem.component.AtharSegmentedControl
 import com.athar.core.designsystem.component.AtharText
+import com.athar.core.designsystem.component.AtharTextField
 import com.athar.core.designsystem.theme.AtharTheme
+import kotlinx.datetime.LocalDate
 
 @Composable
 fun TrendsScreen(
@@ -55,6 +66,7 @@ private fun TrendsContent(
     modifier: Modifier = Modifier,
 ) {
     val theme = AtharTheme
+    var showCustomRange by remember { mutableStateOf(false) }
     Box(modifier = modifier
         .fillMaxSize()
         .background(theme.colors.parchment)
@@ -74,15 +86,49 @@ private fun TrendsContent(
                     AtharSegment(PeriodKey.MONTHS_3, "٣ أشهر"),
                     AtharSegment(PeriodKey.YEAR, "سنة"),
                     AtharSegment(PeriodKey.MONTH_VS_PREVIOUS, "مقارنة"),
+                    AtharSegment(PeriodKey.CUSTOM, "مخصص"),
                 ),
                 selected = state.periodKey,
-                onSelect = { onEvent(TrendsEvent.SelectPeriod(it)) },
+                onSelect = {
+                    if (it == PeriodKey.CUSTOM) showCustomRange = true
+                    else onEvent(TrendsEvent.SelectPeriod(it))
+                },
             )
 
-            SummaryCard(state = state)
+            if (state.periodKey == PeriodKey.CUSTOM && state.customStart != null && state.customEnd != null) {
+                CustomRangeBanner(
+                    start = state.customStart,
+                    end = state.customEnd,
+                    onEdit = { showCustomRange = true },
+                )
+            }
+
+            HeadlineNumbersCard(state = state)
             IncomeExpenseSavingsCard(state = state)
-            if (state.periodKey == PeriodKey.MONTH_VS_PREVIOUS && state.categoryDeltas.isNotEmpty()) {
-                CategoryComparisonTable(state = state)
+
+            // Period-vs-prior visual: three paired bars + delta table.
+            if (state.periodKey == PeriodKey.MONTH_VS_PREVIOUS) {
+                PeriodComparisonCard(state = state)
+                if (state.categoryDeltas.isNotEmpty()) {
+                    CategoryComparisonTable(state = state)
+                }
+            }
+
+            // TMOAP Dashboard parity — three monthly bar panels with target + average overlays.
+            if (state.monthly.expense.any { it.amount.amount.signum() > 0 } ||
+                state.monthly.income.any { it.amount.amount.signum() > 0 }
+            ) {
+                MonthlyDashboardCard(state = state)
+            }
+
+            // Category split (horizontal proportional bar — pie replacement).
+            if (state.categorySplit.isNotEmpty()) {
+                AtharCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+                        AtharText(text = "توزيع المصاريف على التصنيفات", style = theme.typography.headline)
+                        AtharProportionBar(segments = state.categorySplit)
+                    }
+                }
             }
 
             if (state.categories.isEmpty() && !state.isLoading) {
@@ -92,25 +138,39 @@ private fun TrendsContent(
                 )
             } else {
                 AtharCard {
-                    AtharText(text = "أعلى التصنيفات", style = theme.typography.headline)
-                    AtharText(
-                        text = "اضغط على بطاقة لرؤية تطور التصنيف خلال آخر ١٢ شهرًا.",
-                        style = theme.typography.caption,
-                        color = theme.colors.muted,
-                    )
-                    AtharBarChart(
-                        items = state.categories,
-                        modifier = Modifier.padding(top = theme.spacing.s),
-                        onItemClick = onBarTapped,
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+                        AtharText(text = "أعلى التصنيفات", style = theme.typography.headline)
+                        AtharText(
+                            text = "اضغط على بطاقة لرؤية تطور التصنيف خلال آخر ١٢ شهرًا.",
+                            style = theme.typography.caption,
+                            color = theme.colors.muted,
+                        )
+                        AtharBarChart(
+                            items = state.categories,
+                            modifier = Modifier.padding(top = theme.spacing.s),
+                            onItemClick = onBarTapped,
+                        )
+                    }
                 }
             }
         }
     }
+
+    if (showCustomRange) {
+        CustomRangePickerSheet(
+            initialStart = state.customStart,
+            initialEnd = state.customEnd,
+            onDismiss = { showCustomRange = false },
+            onConfirm = { s, e ->
+                onEvent(TrendsEvent.SelectCustomRange(s, e))
+                showCustomRange = false
+            },
+        )
+    }
 }
 
 @Composable
-private fun SummaryCard(state: TrendsState) {
+private fun HeadlineNumbersCard(state: TrendsState) {
     val theme = AtharTheme
     AtharCard {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
@@ -134,6 +194,13 @@ private fun SummaryCard(state: TrendsState) {
                     AtharText(text = "$arrow $absPct", style = theme.typography.headline, color = color)
                     AtharText(text = "مقارنة بالفترة السابقة", style = theme.typography.caption, color = theme.colors.muted)
                 }
+            }
+            state.expensePercentOfIncome?.let { pct ->
+                AtharText(
+                    text = "تشكّل المصاريف ${"%.1f".format(pct)}٪ من الدخل",
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
             }
         }
     }
@@ -172,6 +239,150 @@ private fun IncomeExpenseSavingsCard(state: TrendsState) {
 }
 
 @Composable
+private fun PeriodComparisonCard(state: TrendsState) {
+    val theme = AtharTheme
+    AtharCard {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = "مقارنة الفترتين", style = theme.typography.headline)
+            AtharText(
+                text = "الأعمدة الملوّنة = هذه الفترة. الأعمدة الرماديّة = الفترة السابقة.",
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+            AtharComparisonBars(
+                currentIncome = state.totalIncome,
+                previousIncome = state.previousIncome,
+                currentExpense = state.totalExpense,
+                previousExpense = state.previousExpense,
+                currentSavings = state.savings,
+                previousSavings = state.previousSavings,
+            )
+            DeltaRow(label = "دلتا الدخل", value = state.incomeDelta, theme = theme, positiveIsGood = true)
+            DeltaRow(label = "دلتا المصاريف", value = state.expenseDelta, theme = theme, positiveIsGood = false)
+            DeltaRow(label = "دلتا الادخار", value = state.savingsDelta, theme = theme, positiveIsGood = true)
+            val curRate = state.savingsRate
+            val prevRate = state.previousSavingsRate
+            if (curRate != null && prevRate != null) {
+                AtharText(
+                    text = "نسبة الادخار: ${"%.1f".format(curRate)}٪ مقابل ${"%.1f".format(prevRate)}٪",
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DeltaRow(
+    label: String,
+    value: com.athar.core.common.money.Money?,
+    theme: Any, // unused — kept for signature compatibility, recomputed inline below
+    positiveIsGood: Boolean,
+) {
+    val t = AtharTheme
+    if (value == null) return
+    val isPositive = value.isPositive()
+    val isGood = (isPositive && positiveIsGood) || (!isPositive && !positiveIsGood)
+    val color = when {
+        value.isZero() -> t.colors.muted
+        isGood -> t.colors.olive
+        else -> t.colors.ember
+    }
+    val sign = when {
+        value.isZero() -> "·"
+        value.isPositive() -> "+"
+        else -> "−"
+    }
+    val absValue = if (value.isNegative()) -value else value
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(t.spacing.xs)) {
+        AtharText(text = label, style = t.typography.caption, color = t.colors.muted, modifier = Modifier.weight(1f))
+        AtharText(text = sign, style = t.typography.caption, color = color)
+        AtharNumber(money = absValue, color = color)
+    }
+}
+
+@Composable
+private fun MonthlyDashboardCard(state: TrendsState) {
+    val theme = AtharTheme
+    val m = state.monthly
+    AtharCard {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.l)) {
+            AtharText(text = "آخر ١٢ شهرًا", style = theme.typography.headline)
+            // Income panel
+            MonthlyPanel(
+                title = "الدخل الشهري",
+                bars = m.income,
+                color = theme.colors.olive,
+                target = m.targetIncome,
+                average = m.averageIncome,
+            )
+            // Expense panel
+            MonthlyPanel(
+                title = "المصاريف الشهرية",
+                bars = m.expense,
+                color = theme.colors.ember,
+                target = m.targetExpense,
+                average = m.averageExpense,
+            )
+            // Savings panel
+            MonthlyPanel(
+                title = "الادخار الشهري",
+                bars = m.savings,
+                color = theme.colors.ink,
+                target = m.targetSavings,
+                average = m.averageSavings,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MonthlyPanel(
+    title: String,
+    bars: List<com.athar.core.designsystem.component.AtharMonthlyBar>,
+    color: androidx.compose.ui.graphics.Color,
+    target: com.athar.core.common.money.Money?,
+    average: com.athar.core.common.money.Money,
+) {
+    val theme = AtharTheme
+    Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+        AtharText(text = title, style = theme.typography.body)
+        AtharMonthlyChartWithLines(
+            bars = bars,
+            barColor = color,
+            targetLine = target,
+            averageLine = average,
+        )
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Column {
+                AtharText(text = "المتوسط الشهري", style = theme.typography.caption, color = theme.colors.muted)
+                AtharNumber(money = average)
+            }
+            target?.let {
+                Column(horizontalAlignment = Alignment.End) {
+                    AtharText(text = "الهدف", style = theme.typography.caption, color = theme.colors.muted)
+                    AtharNumber(money = it, color = theme.colors.muted)
+                    val variance = average - it
+                    val sign = if (variance.isPositive()) "+" else if (variance.isNegative()) "−" else "·"
+                    val abs = if (variance.isNegative()) -variance else variance
+                    val varColor = when {
+                        variance.isZero() -> theme.colors.muted
+                        // For expenses: spending more than target = ember; for income/savings: less than target = ember
+                        title == "المصاريف الشهرية" -> if (variance.isPositive()) theme.colors.ember else theme.colors.olive
+                        else -> if (variance.isPositive()) theme.colors.olive else theme.colors.ember
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        AtharText(text = "فرق $sign", style = theme.typography.caption, color = varColor)
+                        AtharNumber(money = abs, color = varColor)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun CategoryComparisonTable(state: TrendsState) {
     val theme = AtharTheme
     AtharCard {
@@ -182,7 +393,7 @@ private fun CategoryComparisonTable(state: TrendsState) {
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
-            state.categoryDeltas.take(15).forEach { row ->
+            state.categoryDeltas.take(20).forEach { row ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -217,6 +428,88 @@ private fun CategoryComparisonTable(state: TrendsState) {
     }
 }
 
+@Composable
+private fun CustomRangeBanner(start: LocalDate, end: LocalDate, onEdit: () -> Unit) {
+    val theme = AtharTheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(theme.colors.surface)
+            .clickable(onClick = onEdit)
+            .padding(theme.spacing.s),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AtharText(
+            text = "النطاق المخصص: $start → $end",
+            style = theme.typography.caption,
+            color = theme.colors.muted,
+            modifier = Modifier.weight(1f),
+        )
+        AtharText(text = "تعديل", style = theme.typography.caption, color = theme.colors.ember)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CustomRangePickerSheet(
+    initialStart: LocalDate?,
+    initialEnd: LocalDate?,
+    onDismiss: () -> Unit,
+    onConfirm: (LocalDate, LocalDate) -> Unit,
+) {
+    val theme = AtharTheme
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var startText by remember { mutableStateOf(initialStart?.toString().orEmpty()) }
+    var endText by remember { mutableStateOf(initialEnd?.toString().orEmpty()) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = theme.colors.parchment,
+        contentColor = theme.colors.ink,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(theme.spacing.m),
+            verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
+        ) {
+            AtharText(text = "نطاق مخصص", style = theme.typography.headline)
+            AtharText(
+                text = "اكتب التاريخين بصيغة YYYY-MM-DD. مثلاً: 2025-08-25 و 2025-09-30.",
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+            AtharTextField(value = startText, onValueChange = { startText = it; error = null },
+                label = "من", modifier = Modifier.fillMaxWidth())
+            AtharTextField(value = endText, onValueChange = { endText = it; error = null },
+                label = "إلى", modifier = Modifier.fillMaxWidth())
+            error?.let {
+                AtharText(text = it, style = theme.typography.caption, color = theme.colors.ember)
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(theme.spacing.s))
+                    .background(theme.colors.ember)
+                    .clickable {
+                        val s = runCatching { LocalDate.parse(startText.trim()) }.getOrNull()
+                        val e = runCatching { LocalDate.parse(endText.trim()) }.getOrNull()
+                        when {
+                            s == null || e == null -> error = "تاريخ غير صالح"
+                            !(s < e) -> error = "تاريخ البداية يجب أن يكون قبل النهاية"
+                            else -> onConfirm(s, e)
+                        }
+                    }
+                    .padding(theme.spacing.m),
+                contentAlignment = Alignment.Center,
+            ) {
+                AtharText(text = "تطبيق", style = theme.typography.headline, color = theme.colors.parchment)
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DrilldownSheet(
@@ -232,15 +525,37 @@ private fun DrilldownSheet(
         contentColor = theme.colors.ink,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(theme.spacing.m),
+            modifier = Modifier.fillMaxWidth().padding(theme.spacing.m),
             verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
         ) {
             AtharText(text = state.categoryLabelAr, style = theme.typography.title)
             AtharText(text = "خلال آخر ١٢ شهرًا", style = theme.typography.caption, color = theme.colors.muted)
             AtharNumber(money = state.total, landmark = true)
-            AtharMonthlyChart(bars = state.bars)
+            // Show the chart with the monthly target overlay (TMOAP shows the budget line on drilldowns too)
+            AtharMonthlyChartWithLines(
+                bars = state.bars,
+                barColor = theme.colors.ember,
+                targetLine = state.monthlyTarget,
+                averageLine = null,
+            )
+            state.monthlyTarget?.let { target ->
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column {
+                        AtharText(text = "الهدف الشهري", style = theme.typography.caption, color = theme.colors.muted)
+                        AtharNumber(money = target)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        AtharText(text = "المتوسط (١٢ شهرًا)", style = theme.typography.caption, color = theme.colors.muted)
+                        val avg = state.bars.fold(com.athar.core.common.money.Money.zero()) { acc, b -> acc + b.amount }
+                        val n = state.bars.size.coerceAtLeast(1)
+                        val avgMoney = com.athar.core.common.money.Money.of(
+                            avg.amount.divide(java.math.BigDecimal(n), 2, java.math.RoundingMode.HALF_EVEN),
+                            avg.currency,
+                        )
+                        AtharNumber(money = avgMoney)
+                    }
+                }
+            }
         }
     }
 }
