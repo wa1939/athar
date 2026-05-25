@@ -84,6 +84,51 @@ internal class TransactionRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun clearPending(): Int {
+        val count = dao.clearPending()
+        if (count > 0) {
+            activityLog.record(
+                ActivityLogEntry(
+                    id = UUID.randomUUID().toString(),
+                    timestamp = clock.now(),
+                    action = ActivityAction.DELETE,
+                    entityType = ENTITY_TX,
+                    entityId = "pending-tray",
+                    summary = "Cleared $count pending entries",
+                ),
+            )
+        }
+        return count
+    }
+
+    override suspend fun confirmAllConfident(minConfidence: Float): Int =
+        dao.confirmAllConfident(minConfidence, clock.now()).also {
+            if (it > 0) logBulk(ActivityAction.CONFIRM, "Bulk-confirmed $it (≥${minConfidence})")
+        }
+
+    override suspend fun dismissAllLowConfidence(maxConfidence: Float): Int =
+        dao.dismissAllLowConfidence(maxConfidence, clock.now()).also {
+            if (it > 0) logBulk(ActivityAction.DISMISS, "Bulk-dismissed $it (<${maxConfidence})")
+        }
+
+    override suspend fun dismissAllPending(): Int =
+        dao.dismissAllPending(clock.now()).also {
+            if (it > 0) logBulk(ActivityAction.DISMISS, "Dismissed all $it pending")
+        }
+
+    private suspend fun logBulk(action: ActivityAction, summary: String) {
+        activityLog.record(
+            ActivityLogEntry(
+                id = UUID.randomUUID().toString(),
+                timestamp = clock.now(),
+                action = action,
+                entityType = ENTITY_TX,
+                entityId = "pending-tray",
+                summary = summary,
+            ),
+        )
+    }
+
     private companion object {
         const val ENTITY_TX = "TRANSACTION"
     }

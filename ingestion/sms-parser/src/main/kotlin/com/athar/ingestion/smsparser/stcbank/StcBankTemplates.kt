@@ -6,6 +6,7 @@ import com.athar.ingestion.smsparser.BankTemplate
 import com.athar.ingestion.smsparser.Normalize
 import com.athar.ingestion.smsparser.ParseResult
 import com.athar.ingestion.smsparser.SenderMatcher
+import com.athar.ingestion.smsparser.parseSmsDate
 import kotlinx.datetime.Instant
 import java.math.BigDecimal
 
@@ -48,7 +49,7 @@ class StcBankIncomingTransferTemplate : BankTemplate {
             merchant = from,
             counterparty = from,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = if (from != null) 0.95f else 0.75f,
             templateId = id,
         )
@@ -75,7 +76,7 @@ class StcBankOutgoingTransferTemplate : BankTemplate {
             merchant = null,
             counterparty = to,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = if (to != null) 0.95f else 0.75f,
             templateId = id,
         )
@@ -103,7 +104,7 @@ class StcBankSarieOutwardTemplate : BankTemplate {
             merchant = null,
             counterparty = to,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = 0.88f,
             templateId = id,
         )
@@ -131,7 +132,7 @@ class StcBankOnlinePurchaseTemplate : BankTemplate {
             merchant = merchant,
             counterparty = null,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = if (merchant != null) 0.93f else 0.7f,
             templateId = id,
         )
@@ -159,7 +160,7 @@ class StcBankPayQattahTemplate : BankTemplate {
             merchant = null,
             counterparty = to,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = 0.90f,
             templateId = id,
         )

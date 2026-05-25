@@ -40,6 +40,14 @@ class InvestmentsViewModel @Inject constructor(
                         amount = event.amount,
                     ),
                 )
+                is InvestmentsEvent.DeletePool -> investments.deletePool(event.id)
+                is InvestmentsEvent.DeleteContribution -> investments.deleteContribution(event.id)
+                is InvestmentsEvent.UpdatePoolReturnPercent -> {
+                    val row = state.value.pools.firstOrNull { it.pool.id == event.poolId } ?: return@launch
+                    val pct = BigDecimal.valueOf(event.percent / 100.0)
+                    val newReturn = row.totalCorpus.amount.multiply(pct).setScale(2, RoundingMode.HALF_EVEN)
+                    investments.upsertPool(row.pool.copy(totalReturn = Money.of(newReturn, row.pool.totalReturn.currency)))
+                }
             }
         }
     }

@@ -78,6 +78,8 @@ fun SettingsScreen(
     var pendingImportUri by remember { mutableStateOf<android.net.Uri?>(null) }
     val csvStatus by viewModel.csvStatus.collectAsStateWithLifecycle()
     val hijriEnabled by viewModel.hijriEnabled.collectAsStateWithLifecycle()
+    val rescanStatus by viewModel.rescanStatus.collectAsStateWithLifecycle()
+    val ownAccounts by viewModel.ownAccountNumbers.collectAsStateWithLifecycle()
 
     val exportLauncher = rememberLauncherForActivityResult(CreateDocument("application/octet-stream")) { uri ->
         if (uri != null) pendingExportUri = uri
@@ -118,6 +120,12 @@ fun SettingsScreen(
                 )
             }
 
+            RescanAndCleanCard(
+                status = rescanStatus,
+                onRescan = viewModel::rescanAndClean,
+                onClearStatus = viewModel::clearRescanStatus,
+            )
+
             BackupCard(
                 status = status,
                 onExport = { exportLauncher.launch(DEFAULT_BACKUP_NAME) },
@@ -135,6 +143,11 @@ fun SettingsScreen(
             HijriToggleCard(
                 enabled = hijriEnabled,
                 onToggle = viewModel::setHijriEnabled,
+            )
+
+            OwnAccountsCard(
+                accounts = ownAccounts,
+                onSave = viewModel::setOwnAccountNumbers,
             )
 
             SmsAuditEntryCard(onOpen = onOpenSmsAudit)
@@ -390,6 +403,83 @@ private fun AboutCard() {
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
+        }
+    }
+}
+
+@Composable
+private fun OwnAccountsCard(accounts: List<String>, onSave: (String) -> Unit) {
+    val theme = AtharTheme
+    var draft by remember(accounts) { mutableStateOf(accounts.joinToString(", ")) }
+    AtharCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = "حساباتك الخاصة", style = theme.typography.headline)
+            AtharText(
+                text = "اكتب آخر ٤ أرقام لكل حساب تملكه (مفصولة بفواصل، مثلاً: 0930, 4268). أي تحويل إلى أحد هذه الأرقام يُعتبر «تحويل داخلي · ادخار محتمل» بدلاً من مصروف.",
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
+            AtharTextField(
+                value = draft,
+                onValueChange = { draft = it },
+                label = "أرقام حساباتك",
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(theme.spacing.s))
+                    .background(theme.colors.ember)
+                    .clickable { onSave(draft) }
+                    .padding(theme.spacing.m),
+                contentAlignment = Alignment.Center,
+            ) {
+                AtharText(text = "حفظ الحسابات", style = theme.typography.headline, color = theme.colors.parchment)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RescanAndCleanCard(
+    status: RescanStatus,
+    onRescan: () -> Unit,
+    onClearStatus: () -> Unit,
+) {
+    val theme = AtharTheme
+    AtharCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = "إعادة فحص الرسائل", style = theme.typography.headline)
+            AtharText(
+                text = "يحذف كل الحركات قيد التأكيد ويعيد قراءة سجل الرسائل بأحدث القوالب. حركاتك المؤكدة لن تتأثر. مفيد بعد التحديث لتنظيف الإعلانات والإشعارات التي دخلت بالخطأ.",
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
+            val statusText = when (status) {
+                RescanStatus.Idle -> null
+                RescanStatus.Working -> "جاري إعادة الفحص…"
+                is RescanStatus.Done -> "تم حذف ${status.clearedPending} عنصرًا من قائمة الانتظار، وأُعيد فحص السجل."
+            }
+            statusText?.let {
+                AtharText(text = it, style = theme.typography.caption, color = theme.colors.muted)
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(theme.spacing.s))
+                    .background(theme.colors.ember)
+                    .clickable(enabled = status != RescanStatus.Working) {
+                        if (status is RescanStatus.Done) onClearStatus() else onRescan()
+                    }
+                    .padding(theme.spacing.m),
+                contentAlignment = Alignment.Center,
+            ) {
+                val buttonText = when (status) {
+                    is RescanStatus.Done -> "تم"
+                    else -> "إعادة فحص ومسح المُعلَّقات"
+                }
+                AtharText(text = buttonText, style = theme.typography.headline, color = theme.colors.parchment)
+            }
         }
     }
 }

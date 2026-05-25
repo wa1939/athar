@@ -99,6 +99,7 @@ class TrendsViewModel @Inject constructor(
             PeriodKey.MONTH -> Period.Month(ym)
             PeriodKey.MONTHS_3 -> Period.Last(months = 3, endingAt = now.date)
             PeriodKey.YEAR -> Period.Year(now.year)
+            PeriodKey.MONTH_VS_PREVIOUS -> Period.Month(ym)
         }
     }
 
@@ -118,10 +119,14 @@ class TrendsViewModel @Inject constructor(
         val income = current.filter { it.type == TxType.INCOME }
         val expenseSum = expense.fold(Money.zero()) { acc, tx -> acc + tx.amount }
         val incomeSum = income.fold(Money.zero()) { acc, tx -> acc + tx.amount }
-        val priorExpenseSum = prior.filter { it.type == TxType.EXPENSE }
-            .fold(Money.zero()) { acc, tx -> acc + tx.amount }
+        val priorExpense = prior.filter { it.type == TxType.EXPENSE }
+        val priorIncome = prior.filter { it.type == TxType.INCOME }
+        val priorExpenseSum = priorExpense.fold(Money.zero()) { acc, tx -> acc + tx.amount }
+        val priorIncomeSum = priorIncome.fold(Money.zero()) { acc, tx -> acc + tx.amount }
 
         val byCategoryId = expense.groupBy { it.categoryId }
+            .mapValues { (_, list) -> list.fold(Money.zero()) { acc, tx -> acc + tx.amount } }
+        val priorByCategoryId = priorExpense.groupBy { it.categoryId }
             .mapValues { (_, list) -> list.fold(Money.zero()) { acc, tx -> acc + tx.amount } }
 
         val categoryById = cats.associateBy { it.id }
@@ -139,13 +144,31 @@ class TrendsViewModel @Inject constructor(
             .take(TOP_N)
             .toImmutableList()
 
+        // Category-delta table — every category that had non-zero spend in EITHER period.
+        val allCatIds = (byCategoryId.keys + priorByCategoryId.keys).filterNotNull().toSet()
+        val deltas = allCatIds.mapNotNull { catId ->
+            val cat = categoryById[catId] ?: return@mapNotNull null
+            CategoryDeltaRow(
+                categoryId = catId,
+                labelAr = cat.nameAr,
+                labelEn = cat.name,
+                currentTotal = byCategoryId[catId] ?: Money.zero(),
+                previousTotal = priorByCategoryId[catId] ?: Money.zero(),
+            )
+        }.sortedByDescending { it.currentTotal.amount.max(it.previousTotal.amount) }
+            .toImmutableList()
+
         return TrendsState(
             periodKey = key,
             period = period,
             totalExpense = expenseSum,
             totalIncome = incomeSum,
             previousExpense = priorExpenseSum,
+            previousIncome = priorIncomeSum,
+            savings = incomeSum - expenseSum,
+            previousSavings = priorIncomeSum - priorExpenseSum,
             categories = bars,
+            categoryDeltas = deltas,
             isLoading = false,
         )
     }

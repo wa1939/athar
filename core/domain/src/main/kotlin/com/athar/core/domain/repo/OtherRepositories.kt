@@ -36,4 +36,6 @@ interface InvestmentRepository {
     fun observePoolsWithContributions(): Flow<Map<InvestmentPool, List<InvestmentContribution>>>
     suspend fun upsertPool(pool: InvestmentPool)
     suspend fun upsertContribution(contribution: InvestmentContribution)
+    suspend fun deletePool(id: String)
+    suspend fun deleteContribution(id: String)
 }

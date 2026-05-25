@@ -61,7 +61,13 @@ fun InvestmentsContent(viewModel: InvestmentsViewModel = hiltViewModel()) {
             )
         } else {
             state.pools.forEach { row ->
-                PoolCard(row = row, onAddContributor = { addContributorTo = row })
+                PoolCard(
+                    row = row,
+                    onAddContributor = { addContributorTo = row },
+                    onDeletePool = { viewModel.onEvent(InvestmentsEvent.DeletePool(row.pool.id)) },
+                    onDeleteContributor = { id -> viewModel.onEvent(InvestmentsEvent.DeleteContribution(id)) },
+                    onUpdatePercent = { pct -> viewModel.onEvent(InvestmentsEvent.UpdatePoolReturnPercent(row.pool.id, pct)) },
+                )
             }
         }
     }
@@ -85,11 +91,31 @@ fun InvestmentsContent(viewModel: InvestmentsViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun PoolCard(row: PoolRow, onAddContributor: () -> Unit) {
+private fun PoolCard(
+    row: PoolRow,
+    onAddContributor: () -> Unit,
+    onDeletePool: () -> Unit,
+    onDeleteContributor: (String) -> Unit,
+    onUpdatePercent: (Double) -> Unit,
+) {
     val theme = AtharTheme
+    var editingReturnPct by remember(row.pool.id) { mutableStateOf(false) }
+    var confirmingDelete by remember(row.pool.id) { mutableStateOf(false) }
+    val pctOfCorpus: Double = if (row.totalCorpus.amount.signum() == 0) 0.0
+        else row.pool.totalReturn.amount.toDouble() / row.totalCorpus.amount.toDouble() * 100.0
     AtharCard {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
-            AtharText(text = row.pool.name, style = theme.typography.headline)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AtharText(text = row.pool.name, style = theme.typography.headline, modifier = Modifier.weight(1f))
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(theme.spacing.s))
+                        .clickable { confirmingDelete = true }
+                        .padding(theme.spacing.xs),
+                ) {
+                    AtharText(text = "حذف المجموعة", style = theme.typography.caption, color = theme.colors.crimson)
+                }
+            }
             AtharText(
                 text = "الفترة · ${row.pool.period}",
                 style = theme.typography.caption,
@@ -99,20 +125,52 @@ private fun PoolCard(row: PoolRow, onAddContributor: () -> Unit) {
                 AtharNumber(money = row.totalCorpus)
                 AtharText(text = "إجمالي رأس المال", style = theme.typography.caption, color = theme.colors.muted)
             }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { editingReturnPct = true },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+            ) {
                 AtharNumber(money = row.pool.totalReturn, color = theme.colors.olive)
-                AtharText(text = "إجمالي العائد", style = theme.typography.caption, color = theme.colors.muted)
+                AtharText(
+                    text = "إجمالي العائد · ${"%.2f".format(pctOfCorpus)}٪ (اضغط للتعديل)",
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
             }
             row.contributors.forEach { c ->
-                ContributorRowView(contributor = c)
+                ContributorRowView(contributor = c, onDelete = { onDeleteContributor(c.id) })
             }
             PrimaryButton(text = "إضافة مساهم", onClick = onAddContributor)
         }
     }
+
+    if (editingReturnPct) {
+        ReturnPercentEditor(
+            currentPercent = pctOfCorpus,
+            onDismiss = { editingReturnPct = false },
+            onSave = { pct ->
+                onUpdatePercent(pct)
+                editingReturnPct = false
+            },
+        )
+    }
+    if (confirmingDelete) {
+        DeleteConfirmDialog(
+            title = "حذف ${row.pool.name}؟",
+            body = "كل المساهمات والعوائد المرتبطة بهذه المجموعة ستحذف. لا يمكن التراجع.",
+            onConfirm = {
+                confirmingDelete = false
+                onDeletePool()
+            },
+            onDismiss = { confirmingDelete = false },
+        )
+    }
 }
 
 @Composable
-private fun ContributorRowView(contributor: ContributorRow) {
+private fun ContributorRowView(contributor: ContributorRow, onDelete: () -> Unit) {
     val theme = AtharTheme
     Row(
         modifier = Modifier
@@ -136,7 +194,79 @@ private fun ContributorRowView(contributor: ContributorRow) {
                 AtharNumber(money = contributor.shareReturn, color = theme.colors.olive)
             }
         }
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(theme.spacing.s))
+                .clickable(onClick = onDelete)
+                .padding(start = theme.spacing.s, top = theme.spacing.xs, bottom = theme.spacing.xs),
+        ) {
+            AtharText(text = "✕", style = theme.typography.caption, color = theme.colors.crimson)
+        }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReturnPercentEditor(
+    currentPercent: Double,
+    onDismiss: () -> Unit,
+    onSave: (Double) -> Unit,
+) {
+    val theme = AtharTheme
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var pctText by remember { mutableStateOf("%.2f".format(currentPercent)) }
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = theme.colors.parchment,
+        contentColor = theme.colors.ink,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(theme.spacing.m),
+            verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
+        ) {
+            AtharText(text = "نسبة العائد", style = theme.typography.headline)
+            AtharText(
+                text = "اكتب النسبة المئوية بدلاً من المبلغ. مثلاً 6.5 يعني ٦٫٥٪ من رأس المال.",
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+            AtharTextField(pctText, { pctText = it }, label = "النسبة المئوية", modifier = Modifier.fillMaxWidth())
+            PrimaryButton(
+                text = "حفظ",
+                onClick = {
+                    val pct = pctText.replace(",", ".").toDoubleOrNull()
+                    if (pct != null) onSave(pct)
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun DeleteConfirmDialog(
+    title: String,
+    body: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val theme = AtharTheme
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { AtharText(text = title, style = theme.typography.headline) },
+        text = { AtharText(text = body, style = theme.typography.body, color = theme.colors.muted) },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = onConfirm) {
+                AtharText(text = "حذف", style = theme.typography.headline, color = theme.colors.crimson)
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                AtharText(text = "إلغاء", style = theme.typography.headline, color = theme.colors.muted)
+            }
+        },
+        containerColor = theme.colors.parchment,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

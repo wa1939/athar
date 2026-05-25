@@ -11,6 +11,7 @@ import com.athar.core.domain.repo.CsvExportTrigger
 import com.athar.core.domain.repo.CsvImportResult
 import com.athar.core.domain.repo.CsvImportTrigger
 import com.athar.core.domain.repo.SmsBackfillTrigger
+import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +37,12 @@ sealed interface CsvStatus {
     data class Failed(val reason: String) : CsvStatus
 }
 
+sealed interface RescanStatus {
+    data object Idle : RescanStatus
+    data object Working : RescanStatus
+    data class Done(val clearedPending: Int) : RescanStatus
+}
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val backup: BackupRepository,
@@ -43,7 +50,11 @@ class SettingsViewModel @Inject constructor(
     private val csvImporter: CsvImportTrigger,
     private val csvExporter: CsvExportTrigger,
     private val prefs: UserPreferencesRepository,
+    private val transactions: TransactionRepository,
 ) : ViewModel() {
+
+    private val _rescan = MutableStateFlow<RescanStatus>(RescanStatus.Idle)
+    val rescanStatus: StateFlow<RescanStatus> = _rescan.asStateFlow()
 
     private val _status = MutableStateFlow<BackupStatus>(BackupStatus.Idle)
     val status: StateFlow<BackupStatus> = _status.asStateFlow()
@@ -56,8 +67,18 @@ class SettingsViewModel @Inject constructor(
     val hijriEnabled: StateFlow<Boolean> = prefs.hijriEnabled()
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
+    val ownAccountNumbers: StateFlow<List<String>> = prefs.ownAccountNumbers()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     fun setHijriEnabled(enabled: Boolean) {
         viewModelScope.launch { prefs.setHijriEnabled(enabled) }
+    }
+
+    fun setOwnAccountNumbers(csv: String) {
+        viewModelScope.launch {
+            val list = csv.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+            prefs.setOwnAccountNumbers(list)
+        }
     }
 
     fun export(resolver: ContentResolver, uri: Uri, passphrase: String) {
@@ -118,6 +139,25 @@ class SettingsViewModel @Inject constructor(
 
     fun runBackfill() {
         viewModelScope.launch { backfillTrigger.backfill() }
+    }
+
+    /**
+     * Wipes the pending tray (transactions never confirmed by the user) and triggers
+     * a full SMS backfill so the audit log gets re-parsed with the latest templates.
+     * Used to recover from earlier beta builds that ingested ads as transactions.
+     * Confirmed transactions are untouched.
+     */
+    fun rescanAndClean() {
+        viewModelScope.launch {
+            _rescan.value = RescanStatus.Working
+            val cleared = transactions.clearPending()
+            backfillTrigger.backfill()
+            _rescan.value = RescanStatus.Done(cleared)
+        }
+    }
+
+    fun clearRescanStatus() {
+        _rescan.value = RescanStatus.Idle
     }
 
     fun clearStatus() {

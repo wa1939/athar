@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Nothing yet.
 
+## [0.1.0-beta.4] — 2026-05-25
+
+The "no more 618-pending-entries" release. Six tightly-coupled fixes addressing the headaches a user with hundreds of historical SMS hits on day one.
+
+### Added
+
+- **Auto-confirm when the category is known.** The ingestion pipeline no longer puts every parsed transaction in the pending tray. If the categorizer assigned a category (i.e. Athar already knows McDonald's is a restaurant), the transaction goes straight to CONFIRMED. Low-confidence parses (< 0.50) are auto-DISMISSED. Self-transfers always go to PENDING so the user labels them as savings vs regular. No more triaging 600 obvious entries.
+- **Bulk actions in the pending tray.** When the tray has ≥ 5 items, three buttons appear on Today: «تأكيد المؤكدة» (confirm all with confidence ≥ 0.85), «تجاهل المشكوك فيه» (dismiss everything < 0.70), «تجاهل الكل» (nuke the tray). Backed by new repository methods `confirmAllConfident`, `dismissAllLowConfidence`, `dismissAllPending`.
+- **Real dates from SMS bodies.** Every bank's `Date:` / `On:` / `at:` line is now parsed (`DateExtraction.parseSmsDate`) — supports all seven shapes in the corpus (`YYYY-MM-DD HH:MM`, `DD-MM-YYYY HH:MM`, `YY-MM-DD HH:MM`, `DD/MM/YYYY HH:MM`, `DD/MM/YY HH:MM`, `YY-M-D`, `D\M\YY HH:MM`). Historical SMS now get historical dates instead of all landing as "today" — Today screen totals are real again.
+- **Self-transfer detection (savings moves).** Settings → "حساباتك الخاصة" lets the user list their own account-number tails (`0930, 4268`). Any parsed transfer touching one of those numbers is tagged "تحويل داخلي · ادخار محتمل" with a confirm-this-is-savings prompt in the pending tray, instead of being filed as a generic outgoing payment that skews the budget.
+- **Editable budget targets on Plan.** Tap any budget row → bottom sheet → enter monthly target → save. The infrastructure was already wired; the row click now opens the editor.
+- **Investment delete + percentage-based return.** Each pool has a «حذف المجموعة» button with confirmation; each contributor row has a `✕` to remove. Tapping the total-return line opens a bottom sheet to enter return as a percentage of corpus instead of an absolute SAR amount (Athar computes `corpus × pct/100`).
+- **Trends — TMOAP-equivalent analysis.** New `IncomeExpenseSavingsCard` shows income/expenses/savings side-by-side with a savings-rate %; new `CategoryComparisonTable` (visible when the user selects «مقارنة») lists every category with this-period vs last-period totals plus the SAR delta and % change, mirroring TMOAP's Historical Comparison sheet. Added a 4th period segment «مقارنة».
+- **Settings → "إعادة فحص الرسائل" / "Re-scan messages"** — one-tap recovery from polluted pending trays. Wipes every PENDING transaction and re-runs the SMS backfill with the latest templates. Confirmed transactions are untouched.
+
 ## [0.1.0-beta.3] — 2026-05-25
 
 ### Fixed

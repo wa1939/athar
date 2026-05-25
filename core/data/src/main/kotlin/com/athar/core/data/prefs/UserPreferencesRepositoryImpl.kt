@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.athar.core.domain.repo.UserPreferencesRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -22,6 +23,7 @@ internal class UserPreferencesRepositoryImpl @Inject constructor(
     private val onboardingKey = booleanPreferencesKey("onboarding_complete")
     private val lastBackfillKey = longPreferencesKey("last_sms_backfill_epoch_seconds")
     private val hijriKey = booleanPreferencesKey("hijri_display_enabled")
+    private val ownAccountsKey = stringPreferencesKey("own_account_numbers_csv")
 
     override fun onboardingComplete(): Flow<Boolean> =
         context.userPrefs.data.map { it[onboardingKey] ?: false }
@@ -42,5 +44,14 @@ internal class UserPreferencesRepositoryImpl @Inject constructor(
 
     override suspend fun setHijriEnabled(enabled: Boolean) {
         context.userPrefs.edit { it[hijriKey] = enabled }
+    }
+
+    override fun ownAccountNumbers(): Flow<List<String>> =
+        context.userPrefs.data.map { p ->
+            p[ownAccountsKey].orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() }
+        }
+
+    override suspend fun setOwnAccountNumbers(numbers: List<String>) {
+        context.userPrefs.edit { it[ownAccountsKey] = numbers.joinToString(",") { it.trim() } }
     }
 }

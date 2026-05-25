@@ -37,4 +37,12 @@ data class ContributorRow(
 sealed interface InvestmentsEvent {
     data class SavePool(val pool: InvestmentPool) : InvestmentsEvent
     data class SaveContribution(val poolId: String, val owner: String, val amount: Money) : InvestmentsEvent
+    data class DeletePool(val id: String) : InvestmentsEvent
+    data class DeleteContribution(val id: String) : InvestmentsEvent
+    /**
+     * Updates a pool's total return given as a percentage of the corpus, instead of an
+     * absolute SAR amount. The ViewModel computes `corpus × pct/100` and writes the
+     * resulting absolute return back to the pool.
+     */
+    data class UpdatePoolReturnPercent(val poolId: String, val percent: Double) : InvestmentsEvent
 }

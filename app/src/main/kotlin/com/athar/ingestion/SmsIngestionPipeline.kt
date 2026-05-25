@@ -12,6 +12,8 @@ import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.repo.CategoryRuleRepository
 import com.athar.core.domain.repo.SmsAuditRepository
 import com.athar.core.domain.repo.TransactionRepository
+import com.athar.core.domain.repo.UserPreferencesRepository
+import kotlinx.coroutines.flow.first
 import com.athar.ingestion.smsparser.ParseResult
 import com.athar.ingestion.smsparser.SmsParser
 import kotlinx.datetime.Clock
@@ -43,6 +45,7 @@ class SmsIngestionPipeline @Inject constructor(
     private val transactions: TransactionRepository,
     private val rules: CategoryRuleRepository,
     private val audit: SmsAuditRepository,
+    private val prefs: UserPreferencesRepository,
     private val clock: Clock,
 ) {
 
@@ -75,12 +78,43 @@ class SmsIngestionPipeline @Inject constructor(
     }
 
     private suspend fun persist(event: RawIngestEvent, parsed: ParseResult.Success): String {
-        val merchantNormalized = (parsed.merchant ?: parsed.counterparty ?: event.sender).lowercase().trim()
+        // Self-transfer detection: if the parsed transfer's body or counterparty mentions
+        // one of the user's own account-number snippets (e.g. "0930", "4268"), tag the
+        // merchant as a self-move so it shows up as a "Possible savings — confirm" item
+        // rather than getting filed away as a generic outgoing transfer.
+        val ownAccounts = runCatching { prefs.ownAccountNumbers().first() }.getOrDefault(emptyList())
+        val isSelfTransfer = parsed.type.name == "TRANSFER" && ownAccounts.isNotEmpty() && (
+            ownAccounts.any { acct ->
+                acct.isNotBlank() && (
+                    parsed.counterparty?.contains(acct, ignoreCase = true) == true ||
+                    event.body.contains(acct, ignoreCase = true)
+                )
+            }
+        )
+
+        val effectiveMerchant = when {
+            isSelfTransfer -> "تحويل داخلي · ادخار محتمل"
+            else -> parsed.merchant ?: parsed.counterparty ?: event.sender
+        }
+        val merchantNormalized = effectiveMerchant.lowercase().trim()
         val suggestion = categorize(merchantNormalized)
         val now = clock.now()
         val occurredAt = parsed.occurredAt ?: event.receivedAt
         val date = occurredAt.toLocalDateTime(TimeZone.currentSystemDefault()).date
         val txId = UUID.randomUUID().toString()
+
+        // Auto-confirm rule: if the categorizer assigned a category, we know what this
+        // spending is — don't ask the user. They can re-categorize later if needed.
+        // No category? It still lands as PENDING unless confidence is so low it's
+        // probably noise (< 0.50). Self-transfers always go to PENDING so the user
+        // can label them as savings vs regular outgoing.
+        val confidence = suggestion.confidence
+        val initialStatus = when {
+            isSelfTransfer -> TxStatus.PENDING
+            suggestion.categoryId != null -> TxStatus.CONFIRMED
+            confidence < AUTO_DISMISS_THRESHOLD -> TxStatus.DISMISSED
+            else -> TxStatus.PENDING
+        }
 
         val tx = Transaction(
             id = txId,
@@ -89,14 +123,14 @@ class SmsIngestionPipeline @Inject constructor(
             amount = parsed.amount,
             date = date,
             occurredAt = occurredAt,
-            merchant = parsed.merchant ?: parsed.counterparty ?: event.sender,
+            merchant = effectiveMerchant,
             merchantNormalized = merchantNormalized,
             categoryId = suggestion.categoryId,
-            notes = null,
+            notes = if (isSelfTransfer) "تحويل بين حساباتك — أكِّد ما إذا كان ادخارًا" else null,
             source = if (event.source == IngestSource.NOTIFICATION) IngestSource.NOTIFICATION else IngestSource.SMS,
             sourceRefId = event.rawId,
-            status = TxStatus.PENDING,
-            confidence = suggestion.confidence,
+            status = initialStatus,
+            confidence = confidence,
             createdAt = now,
             updatedAt = now,
         )
@@ -128,5 +162,10 @@ class SmsIngestionPipeline @Inject constructor(
             PatternType.REGEX -> CategorySource.RULE_REGEX
         }
         return CategorySuggestion(best.categoryId, confidence, sourceTier, best.id)
+    }
+
+    private companion object {
+        /** Parses below this confidence go directly to DISMISSED (kept in DB only via audit log). */
+        const val AUTO_DISMISS_THRESHOLD = 0.50f
     }
 }

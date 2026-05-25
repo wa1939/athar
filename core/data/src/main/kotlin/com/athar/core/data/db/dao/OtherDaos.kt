@@ -91,6 +91,12 @@ internal interface InvestmentDao {
 
     @Query("DELETE FROM investment_contribution")
     suspend fun clearContributions()
+
+    @Query("DELETE FROM investment_pool WHERE id = :id")
+    suspend fun deletePool(id: String)
+
+    @Query("DELETE FROM investment_contribution WHERE id = :id")
+    suspend fun deleteContribution(id: String)
 }
 
 @Dao

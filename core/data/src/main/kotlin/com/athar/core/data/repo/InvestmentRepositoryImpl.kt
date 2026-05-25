@@ -29,4 +29,8 @@ internal class InvestmentRepositoryImpl @Inject constructor(
 
     override suspend fun upsertContribution(contribution: InvestmentContribution) =
         dao.upsertContribution(contribution.toEntity())
+
+    override suspend fun deletePool(id: String) = dao.deletePool(id)
+
+    override suspend fun deleteContribution(id: String) = dao.deleteContribution(id)
 }

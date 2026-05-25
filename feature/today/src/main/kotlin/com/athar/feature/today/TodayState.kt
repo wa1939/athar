@@ -35,4 +35,10 @@ sealed interface TodayEvent {
     data class DismissPending(val id: String) : TodayEvent
     data class OpenTransaction(val id: String) : TodayEvent
     data object AddManual : TodayEvent
+    /** Bulk-confirm every PENDING transaction with confidence ≥ 0.85 (heavily auto-classified). */
+    data object BulkConfirmConfident : TodayEvent
+    /** Bulk-dismiss every PENDING transaction with confidence < 0.70. */
+    data object BulkDismissLowConfidence : TodayEvent
+    /** Wipe every PENDING entry — the user has decided to start clean. */
+    data object BulkDismissAll : TodayEvent
 }

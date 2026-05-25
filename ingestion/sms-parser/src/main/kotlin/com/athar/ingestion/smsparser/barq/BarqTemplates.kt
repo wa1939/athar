@@ -6,6 +6,7 @@ import com.athar.ingestion.smsparser.BankTemplate
 import com.athar.ingestion.smsparser.Normalize
 import com.athar.ingestion.smsparser.ParseResult
 import com.athar.ingestion.smsparser.SenderMatcher
+import com.athar.ingestion.smsparser.parseSmsDate
 import kotlinx.datetime.Instant
 import java.math.BigDecimal
 
@@ -55,7 +56,7 @@ class BarqOnlinePurchaseTemplate : BankTemplate {
             merchant = merchant,
             counterparty = null,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = if (merchant != null) 0.94f else 0.7f,
             templateId = id,
         )
@@ -85,7 +86,7 @@ class BarqPosInternationalTemplate : BankTemplate {
             merchant = combined,
             counterparty = null,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = if (merchant != null) 0.93f else 0.7f,
             templateId = id,
         )
@@ -112,7 +113,7 @@ class BarqAtmWithdrawalTemplate : BankTemplate {
             merchant = "ATM: $location",
             counterparty = null,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = 0.92f,
             templateId = id,
         )
@@ -139,7 +140,7 @@ class BarqDebitTransferTemplate : BankTemplate {
             merchant = null,
             counterparty = to,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = if (to != null) 0.93f else 0.75f,
             templateId = id,
         )
@@ -166,7 +167,7 @@ class BarqCreditTransferTemplate : BankTemplate {
             merchant = from,
             counterparty = from,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = if (from != null) 0.93f else 0.75f,
             templateId = id,
         )

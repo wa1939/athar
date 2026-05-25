@@ -58,6 +58,15 @@ class TodayViewModel @Inject constructor(
                 transactions.setStatus(event.id, TxStatus.DISMISSED)
             }
             is TodayEvent.OpenTransaction, TodayEvent.AddManual -> Unit // UI-owned
+            TodayEvent.BulkConfirmConfident -> viewModelScope.launch {
+                transactions.confirmAllConfident(minConfidence = 0.85f)
+            }
+            TodayEvent.BulkDismissLowConfidence -> viewModelScope.launch {
+                transactions.dismissAllLowConfidence(maxConfidence = 0.70f)
+            }
+            TodayEvent.BulkDismissAll -> viewModelScope.launch {
+                transactions.dismissAllPending()
+            }
         }
     }
 

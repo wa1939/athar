@@ -73,12 +73,17 @@ private fun TrendsContent(
                     AtharSegment(PeriodKey.MONTH, "شهر"),
                     AtharSegment(PeriodKey.MONTHS_3, "٣ أشهر"),
                     AtharSegment(PeriodKey.YEAR, "سنة"),
+                    AtharSegment(PeriodKey.MONTH_VS_PREVIOUS, "مقارنة"),
                 ),
                 selected = state.periodKey,
                 onSelect = { onEvent(TrendsEvent.SelectPeriod(it)) },
             )
 
             SummaryCard(state = state)
+            IncomeExpenseSavingsCard(state = state)
+            if (state.periodKey == PeriodKey.MONTH_VS_PREVIOUS && state.categoryDeltas.isNotEmpty()) {
+                CategoryComparisonTable(state = state)
+            }
 
             if (state.categories.isEmpty() && !state.isLoading) {
                 AtharEmptyState(
@@ -128,6 +133,84 @@ private fun SummaryCard(state: TrendsState) {
                     val absPct = String.format("%.0f%%", kotlin.math.abs(pct))
                     AtharText(text = "$arrow $absPct", style = theme.typography.headline, color = color)
                     AtharText(text = "مقارنة بالفترة السابقة", style = theme.typography.caption, color = theme.colors.muted)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun IncomeExpenseSavingsCard(state: TrendsState) {
+    val theme = AtharTheme
+    AtharCard {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = "الدخل · المصاريف · الادخار", style = theme.typography.headline)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(horizontalAlignment = Alignment.Start) {
+                    AtharText(text = "الدخل", style = theme.typography.caption, color = theme.colors.muted)
+                    AtharNumber(money = state.totalIncome, color = theme.colors.olive)
+                }
+                Column(horizontalAlignment = Alignment.Start) {
+                    AtharText(text = "المصاريف", style = theme.typography.caption, color = theme.colors.muted)
+                    AtharNumber(money = state.totalExpense, color = theme.colors.ember)
+                }
+                Column(horizontalAlignment = Alignment.Start) {
+                    AtharText(text = "الادخار", style = theme.typography.caption, color = theme.colors.muted)
+                    val savingsColor = if (state.savings.isNegative()) theme.colors.ember else theme.colors.olive
+                    AtharNumber(money = state.savings, color = savingsColor)
+                }
+            }
+            state.savingsRate?.let { rate ->
+                AtharText(
+                    text = "نسبة الادخار: ${"%.1f".format(rate)}٪",
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryComparisonTable(state: TrendsState) {
+    val theme = AtharTheme
+    AtharCard {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = "مقارنة شهرية · بالتصنيف", style = theme.typography.headline)
+            AtharText(
+                text = "هذا الشهر مقابل الشهر السابق. الزيادة بالأحمر، الانخفاض بالزيتي.",
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+            state.categoryDeltas.take(15).forEach { row ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        AtharText(text = row.labelAr, style = theme.typography.body)
+                        AtharText(text = row.labelEn, style = theme.typography.caption, color = theme.colors.muted)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        AtharNumber(money = row.currentTotal)
+                        val delta = row.deltaAmount
+                        val deltaColor = when {
+                            delta.isPositive() -> theme.colors.ember
+                            delta.isNegative() -> theme.colors.olive
+                            else -> theme.colors.muted
+                        }
+                        val sign = if (delta.isPositive()) "+" else if (delta.isNegative()) "−" else "·"
+                        val absDelta = if (delta.isNegative()) -delta else delta
+                        val pctText = row.deltaPercent?.let { String.format(" (%+.0f%%)", it) }.orEmpty()
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            AtharText(text = sign, style = theme.typography.caption, color = deltaColor)
+                            AtharNumber(money = absDelta, color = deltaColor)
+                            if (pctText.isNotEmpty()) {
+                                AtharText(text = pctText, style = theme.typography.caption, color = deltaColor)
+                            }
+                        }
+                    }
                 }
             }
         }

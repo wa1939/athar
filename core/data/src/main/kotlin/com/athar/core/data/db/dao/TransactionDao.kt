@@ -36,6 +36,18 @@ internal interface TransactionDao {
     @Query("DELETE FROM transactions")
     suspend fun clear()
 
+    @Query("DELETE FROM transactions WHERE status = 'PENDING'")
+    suspend fun clearPending(): Int
+
+    @Query("UPDATE transactions SET status = 'CONFIRMED', updatedAt = :now WHERE status = 'PENDING' AND confidence >= :minConfidence")
+    suspend fun confirmAllConfident(minConfidence: Float, now: kotlinx.datetime.Instant): Int
+
+    @Query("UPDATE transactions SET status = 'DISMISSED', updatedAt = :now WHERE status = 'PENDING' AND confidence < :maxConfidence")
+    suspend fun dismissAllLowConfidence(maxConfidence: Float, now: kotlinx.datetime.Instant): Int
+
+    @Query("UPDATE transactions SET status = 'DISMISSED', updatedAt = :now WHERE status = 'PENDING'")
+    suspend fun dismissAllPending(now: kotlinx.datetime.Instant): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: TransactionEntity)
 

@@ -6,6 +6,7 @@ import com.athar.ingestion.smsparser.BankTemplate
 import com.athar.ingestion.smsparser.Normalize
 import com.athar.ingestion.smsparser.ParseResult
 import com.athar.ingestion.smsparser.SenderMatcher
+import com.athar.ingestion.smsparser.parseSmsDate
 import kotlinx.datetime.Instant
 import java.math.BigDecimal
 
@@ -75,7 +76,7 @@ class AlRajhiOnlinePurchaseRealTemplate : BankTemplate {
             merchant = merchant,
             counterparty = card?.let { "Card $it" },
             balanceAfter = balance?.let { Money.of(it) },
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = if (merchant != null) 0.95f else 0.75f,
             templateId = id,
         )
@@ -112,7 +113,7 @@ class AlRajhiPosPurchaseRealTemplate : BankTemplate {
             merchant = merchant,
             counterparty = card?.let { "Card $it" },
             balanceAfter = balance?.let { Money.of(it) },
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = if (merchant != null) 0.95f else 0.75f,
             templateId = id,
         )
@@ -143,7 +144,7 @@ class AlRajhiReverseTemplate : BankTemplate {
             merchant = merchant,
             counterparty = null,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = 0.90f,
             templateId = id,
         )
@@ -175,7 +176,7 @@ class AlRajhiDebitInternalTransferTemplate : BankTemplate {
             merchant = null,
             counterparty = to,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = 0.92f,
             templateId = id,
         )
@@ -206,7 +207,7 @@ class AlRajhiDebitLocalTransferTemplate : BankTemplate {
             merchant = null,
             counterparty = to,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = 0.92f,
             templateId = id,
         )
@@ -238,7 +239,7 @@ class AlRajhiCreditLocalTransferTemplate : BankTemplate {
             merchant = from,
             counterparty = from,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = 0.92f,
             templateId = id,
         )
@@ -269,7 +270,7 @@ class AlRajhiBillPaymentTemplate : BankTemplate {
             merchant = service,
             counterparty = null,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = if (service != null) 0.94f else 0.7f,
             templateId = id,
         )
@@ -299,7 +300,7 @@ class AlRajhiDepositRealTemplate : BankTemplate {
             merchant = depositType,
             counterparty = null,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = 0.90f,
             templateId = id,
         )
@@ -329,7 +330,7 @@ class AlRajhiCreditCardPaymentTemplate : BankTemplate {
             merchant = "Credit Card Payment",
             counterparty = null,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = 0.88f,
             templateId = id,
         )
@@ -358,7 +359,7 @@ class AlRajhiLoanInstalmentTemplate : BankTemplate {
             merchant = "Loan Instalment",
             counterparty = null,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = 0.93f,
             templateId = id,
         )
@@ -387,7 +388,7 @@ class AlRajhiTransferBetweenOwnTemplate : BankTemplate {
             merchant = "Own account transfer",
             counterparty = null,
             balanceAfter = null,
-            occurredAt = receivedAt,
+            occurredAt = parseSmsDate(body) ?: receivedAt,
             confidence = 0.85f,
             templateId = id,
         )

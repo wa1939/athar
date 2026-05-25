@@ -1,14 +1,20 @@
 package com.athar.feature.today
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -146,11 +152,16 @@ private fun PendingTray(
             style = theme.typography.headline,
         )
         AtharText(
-            text = "اسحب للتأكيد أو التجاهل",
+            text = "اسحب للتأكيد أو التجاهل. أو استخدم الإجراءات الجماعية أدناه.",
             style = theme.typography.caption,
             color = theme.colors.muted,
         )
-        state.pending.forEach { tx ->
+
+        if (state.pending.size >= 5) {
+            BulkActionsBar(onEvent = onEvent)
+        }
+
+        state.pending.take(MAX_PENDING_VISIBLE).forEach { tx ->
             AtharSwipeRow(
                 onConfirm = { onEvent(TodayEvent.ConfirmPending(tx.id)) },
                 onDismiss = { onEvent(TodayEvent.DismissPending(tx.id)) },
@@ -163,8 +174,67 @@ private fun PendingTray(
                 )
             }
         }
+        if (state.pending.size > MAX_PENDING_VISIBLE) {
+            AtharText(
+                text = "+${state.pending.size - MAX_PENDING_VISIBLE} حركة أخرى. استخدم الإجراءات الجماعية لمعالجتها دفعة واحدة.",
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+        }
     }
 }
+
+@Composable
+private fun BulkActionsBar(onEvent: (TodayEvent) -> Unit) {
+    val theme = AtharTheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = theme.spacing.xs),
+        horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+    ) {
+        BulkButton(
+            text = "تأكيد المؤكدة",
+            background = theme.colors.olive,
+            onClick = { onEvent(TodayEvent.BulkConfirmConfident) },
+            modifier = Modifier.weight(1f),
+        )
+        BulkButton(
+            text = "تجاهل المشكوك فيه",
+            background = theme.colors.dust,
+            onClick = { onEvent(TodayEvent.BulkDismissLowConfidence) },
+            modifier = Modifier.weight(1f),
+        )
+        BulkButton(
+            text = "تجاهل الكل",
+            background = theme.colors.crimson,
+            onClick = { onEvent(TodayEvent.BulkDismissAll) },
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun androidx.compose.foundation.layout.RowScope.BulkButton(
+    text: String,
+    background: Color,
+    onClick: () -> Unit,
+    modifier: Modifier,
+) {
+    val theme = AtharTheme
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(background)
+            .clickable(onClick = onClick)
+            .padding(theme.spacing.s),
+        contentAlignment = Alignment.Center,
+    ) {
+        AtharText(text = text, style = theme.typography.caption, color = theme.colors.parchment)
+    }
+}
+
+private const val MAX_PENDING_VISIBLE = 12
 
 @Composable
 private fun RecentList(

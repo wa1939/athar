@@ -19,4 +19,20 @@ interface TransactionRepository {
     suspend fun upsert(transaction: Transaction)
     suspend fun delete(id: String)
     suspend fun setStatus(id: String, status: TxStatus)
+
+    /**
+     * Bulk delete every transaction with status = PENDING. Used by Settings → "Re-scan"
+     * to wipe the polluted tray accumulated before stricter spam-filter rules landed.
+     * Confirmed transactions are untouched.
+     */
+    suspend fun clearPending(): Int
+
+    /** Confirm every PENDING transaction whose confidence is >= [minConfidence]. */
+    suspend fun confirmAllConfident(minConfidence: Float): Int
+
+    /** Dismiss every PENDING transaction whose confidence is < [maxConfidence]. */
+    suspend fun dismissAllLowConfidence(maxConfidence: Float): Int
+
+    /** Dismiss every PENDING transaction outright. */
+    suspend fun dismissAllPending(): Int
 }
