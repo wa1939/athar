@@ -25,6 +25,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.athar.core.common.money.Money
 import com.athar.core.designsystem.component.AtharAmountField
+import com.athar.core.designsystem.component.AtharTextField
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.athar.core.designsystem.component.AtharCard
@@ -34,6 +35,7 @@ import com.athar.core.designsystem.component.AtharSegment
 import com.athar.core.designsystem.component.AtharSegmentedControl
 import com.athar.core.designsystem.component.AtharText
 import com.athar.core.designsystem.theme.AtharTheme
+import kotlinx.datetime.LocalDate
 import java.math.BigDecimal
 
 enum class PlanTab { BUDGET, WISHLIST, INVESTMENTS }
@@ -71,7 +73,11 @@ fun PlanScreen(
                 onSelect = { tab = it },
             )
             when (tab) {
-                PlanTab.BUDGET -> BudgetContent(state = state, onClickRow = { editing = it })
+                PlanTab.BUDGET -> BudgetContent(
+                    state = state,
+                    onClickRow = { editing = it },
+                    onEvent = viewModel::onEvent,
+                )
                 PlanTab.WISHLIST -> WishlistContent()
                 PlanTab.INVESTMENTS -> InvestmentsContent()
             }
@@ -94,10 +100,40 @@ fun PlanScreen(
 private fun BudgetContent(
     state: PlanState,
     onClickRow: (BudgetRow) -> Unit,
+    onEvent: (PlanEvent) -> Unit,
 ) {
     val theme = AtharTheme
+    var showCustomRange by remember { mutableStateOf(false) }
+
     Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.l)) {
         Header(state = state)
+        AtharSegmentedControl(
+            segments = listOf(
+                AtharSegment(PlanPeriodKey.MONTH, "شهر"),
+                AtharSegment(PlanPeriodKey.MONTHS_3, "٣ أشهر"),
+                AtharSegment(PlanPeriodKey.YEAR, "سنة"),
+                AtharSegment(PlanPeriodKey.CUSTOM, "مخصص"),
+            ),
+            selected = state.periodKey,
+            onSelect = {
+                if (it == PlanPeriodKey.CUSTOM) showCustomRange = true
+                else onEvent(PlanEvent.SelectPeriod(it))
+            },
+        )
+        if (state.periodKey == PlanPeriodKey.CUSTOM && state.customStart != null && state.customEnd != null) {
+            CustomRangeBanner(
+                start = state.customStart,
+                end = state.customEnd,
+                onEdit = { showCustomRange = true },
+            )
+        }
+        if (state.periodKey != PlanPeriodKey.MONTH) {
+            AtharText(
+                text = "الأهداف مُعدَّلة على طول النطاق (×${"%.1f".format(state.targetMultiplier)}). الفعلي مجموع الحركات المؤكدة في هذا النطاق.",
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+        }
         LimitWarningStrip(state = state)
         if (state.rows.isEmpty() && !state.isLoading) {
             AtharEmptyState(
@@ -107,6 +143,108 @@ private fun BudgetContent(
         } else {
             state.rows.forEach { row ->
                 BudgetRowView(row = row, onClick = { onClickRow(row) })
+            }
+        }
+    }
+
+    if (showCustomRange) {
+        CustomRangePickerSheet(
+            initialStart = state.customStart,
+            initialEnd = state.customEnd,
+            onDismiss = { showCustomRange = false },
+            onConfirm = { s, e ->
+                onEvent(PlanEvent.SelectCustomRange(s, e))
+                showCustomRange = false
+            },
+        )
+    }
+}
+
+@Composable
+private fun CustomRangeBanner(start: LocalDate, end: LocalDate, onEdit: () -> Unit) {
+    val theme = AtharTheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(theme.colors.surface)
+            .clickable(onClick = onEdit)
+            .padding(theme.spacing.s),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AtharText(
+            text = "النطاق المخصص: $start → $end",
+            style = theme.typography.caption,
+            color = theme.colors.muted,
+            modifier = Modifier.weight(1f),
+        )
+        AtharText(text = "تعديل", style = theme.typography.caption, color = theme.colors.ember)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CustomRangePickerSheet(
+    initialStart: LocalDate?,
+    initialEnd: LocalDate?,
+    onDismiss: () -> Unit,
+    onConfirm: (LocalDate, LocalDate) -> Unit,
+) {
+    val theme = AtharTheme
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var startText by remember { mutableStateOf(initialStart?.toString().orEmpty()) }
+    var endText by remember { mutableStateOf(initialEnd?.toString().orEmpty()) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = theme.colors.parchment,
+        contentColor = theme.colors.ink,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(theme.spacing.m),
+            verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
+        ) {
+            AtharText(text = "نطاق مخصص", style = theme.typography.headline)
+            AtharText(
+                text = "اكتب التاريخين بصيغة YYYY-MM-DD. مثلاً: 2025-08-25 و 2025-09-30.",
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+            AtharTextField(
+                value = startText,
+                onValueChange = { startText = it; error = null },
+                label = "من",
+                modifier = Modifier.fillMaxWidth(),
+            )
+            AtharTextField(
+                value = endText,
+                onValueChange = { endText = it; error = null },
+                label = "إلى",
+                modifier = Modifier.fillMaxWidth(),
+            )
+            error?.let {
+                AtharText(text = it, style = theme.typography.caption, color = theme.colors.ember)
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(theme.spacing.s))
+                    .background(theme.colors.ember)
+                    .clickable {
+                        val s = runCatching { LocalDate.parse(startText.trim()) }.getOrNull()
+                        val e = runCatching { LocalDate.parse(endText.trim()) }.getOrNull()
+                        when {
+                            s == null || e == null -> error = "تاريخ غير صالح"
+                            !(s <= e) -> error = "تاريخ البداية يجب ألا يتجاوز النهاية"
+                            else -> onConfirm(s, e)
+                        }
+                    }
+                    .padding(theme.spacing.m),
+                contentAlignment = Alignment.Center,
+            ) {
+                AtharText(text = "تطبيق", style = theme.typography.headline, color = theme.colors.parchment)
             }
         }
     }
@@ -146,11 +284,20 @@ private fun Header(state: PlanState) {
             AtharNumber(money = state.totalTarget, color = theme.colors.muted)
         }
         AtharText(
-            text = "${state.month.year}/${state.month.monthValue}",
+            text = periodLabel(state),
             style = theme.typography.caption,
             color = theme.colors.muted,
         )
     }
+}
+
+private fun periodLabel(state: PlanState): String = when (state.periodKey) {
+    PlanPeriodKey.MONTH -> "${state.month.year}/${state.month.monthValue}"
+    PlanPeriodKey.MONTHS_3 -> "آخر ٣ أشهر"
+    PlanPeriodKey.YEAR -> "${state.month.year}"
+    PlanPeriodKey.CUSTOM -> if (state.customStart != null && state.customEnd != null)
+        "${state.customStart} → ${state.customEnd}"
+    else "نطاق مخصص"
 }
 
 @Composable
