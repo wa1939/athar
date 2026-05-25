@@ -48,9 +48,10 @@ class TodayViewModel @Inject constructor(
                     combine(
                         transactions.observeByPeriod(period, status = TxStatus.CONFIRMED),
                         transactions.observePending(),
+                        transactions.observeByPeriod(period, status = TxStatus.DISMISSED),
                         accounts.observeNetWorth(currency),
-                    ) { confirmed, pending, netWorth ->
-                        deriveState(m, confirmed, pending, currency, netWorth)
+                    ) { confirmed, pending, dismissed, netWorth ->
+                        deriveState(m, confirmed, pending, dismissed, currency, netWorth)
                     }
                 }
             }
@@ -101,6 +102,7 @@ class TodayViewModel @Inject constructor(
         month: YearMonth,
         confirmed: List<Transaction>,
         pending: List<Transaction>,
+        dismissed: List<Transaction>,
         currency: String,
         netWorth: com.athar.core.domain.model.NetWorth,
     ): TodayState {
@@ -112,6 +114,7 @@ class TodayViewModel @Inject constructor(
         val (todayIncome, todayExpense) = todayTxns.partition { it.type == TxType.INCOME }
         val todayNet = Money.sumAmounts(todayIncome.map { it.amount }, currency) -
             Money.sumAmounts(todayExpense.map { it.amount }, currency)
+        val dismissedToday = dismissed.filter { it.date == today }
         return TodayState(
             month = month,
             netFlow = incomeSum - expenseSum,
@@ -123,6 +126,7 @@ class TodayViewModel @Inject constructor(
             today = todayTxns.toImmutableList(),
             recent = monthTxns.take(10).toImmutableList(),
             pending = pending.toImmutableList(),
+            dismissedToday = dismissedToday.toImmutableList(),
             isLoading = false,
         )
     }

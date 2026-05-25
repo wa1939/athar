@@ -50,6 +50,10 @@
     <string name="today_pending_banner" formatted="true">%1$d transactions awaiting review</string>
     <string name="today_pending_banner_cta">Tap to review →</string>
 
+    <!-- Dismissed-today banner (parser auto-discarded — user may want to recover) -->
+    <string name="today_dismissed_banner" formatted="true">%1$d messages dismissed today — review them</string>
+    <string name="today_dismissed_banner_cta">Tap to review →</string>
+
     <!-- Pending tray -->
     <string name="today_pending_title" formatted="true">Pending · %1$d</string>
     <string name="today_pending_subtle">Swipe to confirm or dismiss. Or use the bulk actions below.</string>

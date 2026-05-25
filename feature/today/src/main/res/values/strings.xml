@@ -50,6 +50,10 @@
     <string name="today_pending_banner" formatted="true">%1$d حركة بانتظار المراجعة</string>
     <string name="today_pending_banner_cta">انقر للمراجعة ←</string>
 
+    <!-- Dismissed-today banner (parser auto-discarded — user may want to recover) -->
+    <string name="today_dismissed_banner" formatted="true">%1$d رسالة تم تجاهلها اليوم — راجعها</string>
+    <string name="today_dismissed_banner_cta">انقر للمراجعة ←</string>
+
     <!-- Pending tray -->
     <string name="today_pending_title" formatted="true">بانتظار التأكيد · %1$d</string>
     <string name="today_pending_subtle">اسحب للتأكيد أو التجاهل. أو استخدم الإجراءات الجماعية أدناه.</string>

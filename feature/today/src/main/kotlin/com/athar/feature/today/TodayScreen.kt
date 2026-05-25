@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -71,18 +72,20 @@ fun TodayScreen(
     }
 
     editing?.let { tx ->
-        EditTransactionSheet(
-            transaction = tx,
-            onDismiss = { editing = null },
-            onSave = { updated, learnRule ->
-                viewModel.updateTransaction(updated, learnRule)
-                editing = null
-            },
-            onDelete = { id ->
-                viewModel.deleteTransaction(id)
-                editing = null
-            },
-        )
+        key(tx.id) {
+            EditTransactionSheet(
+                transaction = tx,
+                onDismiss = { editing = null },
+                onSave = { updated, learnRule ->
+                    viewModel.updateTransaction(updated, learnRule)
+                    editing = null
+                },
+                onDelete = { id ->
+                    viewModel.deleteTransaction(id)
+                    editing = null
+                },
+            )
+        }
     }
 }
 
@@ -107,6 +110,12 @@ internal fun TodayContent(
             if (state.pending.isNotEmpty()) {
                 PendingAttentionBanner(
                     count = state.pending.size,
+                    onClick = { onEvent(TodayEvent.OpenHistory) },
+                )
+            }
+            if (state.dismissedToday.isNotEmpty()) {
+                DismissedAttentionBanner(
+                    count = state.dismissedToday.size,
                     onClick = { onEvent(TodayEvent.OpenHistory) },
                 )
             }
@@ -147,6 +156,33 @@ private fun PendingAttentionBanner(count: Int, onClick: () -> Unit) {
         )
         AtharText(
             text = stringResource(R.string.today_pending_banner_cta),
+            style = theme.typography.caption,
+            color = theme.colors.parchment,
+        )
+    }
+}
+
+@Composable
+private fun DismissedAttentionBanner(count: Int, onClick: () -> Unit) {
+    val theme = AtharTheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(theme.colors.dust)
+            .clickable(onClick = onClick)
+            .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+    ) {
+        AtharText(
+            text = stringResource(R.string.today_dismissed_banner, count),
+            style = theme.typography.body,
+            color = theme.colors.parchment,
+            modifier = Modifier.weight(1f),
+        )
+        AtharText(
+            text = stringResource(R.string.today_dismissed_banner_cta),
             style = theme.typography.caption,
             color = theme.colors.parchment,
         )

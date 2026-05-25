@@ -19,6 +19,7 @@ data class TodayState(
     val today: ImmutableList<Transaction>,
     val recent: ImmutableList<Transaction>,
     val pending: ImmutableList<Transaction>,
+    val dismissedToday: ImmutableList<Transaction>,
     val isLoading: Boolean,
 ) {
     /** Percentage of income that became savings this month, or null if no income yet. */
@@ -38,6 +39,7 @@ data class TodayState(
             today = persistentListOf(),
             recent = persistentListOf(),
             pending = persistentListOf(),
+            dismissedToday = persistentListOf(),
             isLoading = true,
         )
     }

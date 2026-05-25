@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -126,18 +127,20 @@ fun HistoryScreen(
     }
 
     editing?.let { tx ->
-        EditTransactionSheet(
-            transaction = tx,
-            onDismiss = { editing = null },
-            onSave = { updated, learnRule ->
-                viewModel.updateTransaction(updated, learnRule)
-                editing = null
-            },
-            onDelete = { id ->
-                viewModel.deleteTransaction(id)
-                editing = null
-            },
-        )
+        key(tx.id) {
+            EditTransactionSheet(
+                transaction = tx,
+                onDismiss = { editing = null },
+                onSave = { updated, learnRule ->
+                    viewModel.updateTransaction(updated, learnRule)
+                    editing = null
+                },
+                onDelete = { id ->
+                    viewModel.deleteTransaction(id)
+                    editing = null
+                },
+            )
+        }
     }
 }
 

@@ -84,24 +84,33 @@ class EditTransactionViewModel @Inject constructor(
     private val _state = MutableStateFlow<EditTransactionState?>(null)
     val state: StateFlow<EditTransactionState?> = _state.asStateFlow()
 
+    private var loadJob: kotlinx.coroutines.Job? = null
+
+    /**
+     * Hydrate the editor with [tx]'s data. Called from a LaunchedEffect keyed on tx.id.
+     *
+     * Cancels any in-flight load so re-entering the sheet for a different transaction
+     * doesn't race with the previous tx's category-stream collector. Resets _state
+     * synchronously so the first frame after open shows the correct row instead of
+     * the previously-edited one (regression #stale-edit-sheet).
+     */
     fun load(tx: Transaction) {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        _state.value = EditTransactionState(
+            original = tx,
+            amount = tx.amount.amount.toPlainString(),
+            merchant = tx.merchant,
+            notes = tx.notes.orEmpty(),
+            type = tx.type,
+            selectedCategoryId = tx.categoryId,
+            expenseCategories = kotlinx.collections.immutable.persistentListOf(),
+            incomeCategories = kotlinx.collections.immutable.persistentListOf(),
+        )
+        loadJob = viewModelScope.launch {
             categories.observeAll().collect { all ->
                 val expense = all.filter { it.kind == CategoryKind.EXPENSE }.toImmutableList()
                 val income = all.filter { it.kind == CategoryKind.INCOME }.toImmutableList()
-                _state.update { existing ->
-                    existing?.copy(expenseCategories = expense, incomeCategories = income)
-                        ?: EditTransactionState(
-                            original = tx,
-                            amount = tx.amount.amount.toPlainString(),
-                            merchant = tx.merchant,
-                            notes = tx.notes.orEmpty(),
-                            type = tx.type,
-                            selectedCategoryId = tx.categoryId,
-                            expenseCategories = expense,
-                            incomeCategories = income,
-                        )
-                }
+                _state.update { it?.copy(expenseCategories = expense, incomeCategories = income) }
             }
         }
     }
