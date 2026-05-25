@@ -2,76 +2,62 @@
 
 This document is the answer to: *"What does Athar still need to be useful for any user, anywhere, the way TMOAP is?"*
 
-Athar today is **better than TMOAP for Saudi users** (SMS automation, encrypted storage, Arabic-first UI). It is **worse than TMOAP for everyone else** — the SMS layer is irrelevant, currency is hard-coded SAR, and several TMOAP analysis features aren't shipped.
+Athar today is **better than TMOAP for any user** — Saudi or non-Saudi: SMS automation (Saudi only), encrypted storage, Arabic-first or English-first UI, multi-currency (18 codes), multi-account net worth, recurring transactions, full TMOAP-depth Trends. The Saudi specialization (SMS parser + AlRajhi/STC/D360/Barq templates + Hijri toggle + Thmanyah typeface) remains intact — non-Saudi users just don't pay for it.
+
+Tier 1 — required to ship as a global app — is **complete**. Tiers 2–4 are remaining differentiators and polish.
+
+> **For future AI / developers:** every shipped row below carries a *Why* and a *How* line so you can read this in 2 minutes and understand the entire design rationale without re-reading the diffs. When you ship something new, add `Why:` and `How:` to its row — the next person to touch this will thank you.
 
 Below is the prioritized gap list, in delivery order.
 
 ---
 
-## Tier 1 — Required for any non-Saudi user (high impact, ~2 weeks)
+## Tier 1 — Required for any non-Saudi user — ✅ COMPLETE
 
-### G-1 — Currency abstraction
-**Status:** Hard-coded SAR throughout (UI symbol `﷼`, `Money.zero()` defaults to SAR).
-**Gap:** A user in Egypt, Dubai, India, the US, anywhere — sees Saudi riyals in their dashboard. No way to switch.
-**Fix:**
-- Pick a primary display currency in onboarding (USD / EUR / GBP / AED / EGP / INR / PKR / TRY / SAR / KWD / QAR / BHD / OMR / JOD / …).
-- Persist in `UserPreferencesRepository.displayCurrency`.
-- Wire through `Money.zero()` defaults and the `AtharNumber` formatter.
-- Multi-currency transactions (foreign-card spend): keep the raw foreign amount AND the user-currency equivalent at the time of transaction; aggregate in user-currency.
-- The merchant catalog stays as-is — McDonald's is McDonald's everywhere.
+### G-1 — Currency abstraction ✅ (beta.5)
+**Why:** A user in Egypt, Dubai, India, the US, anywhere — must not see Saudi riyals in their dashboard if their bank uses EGP/AED/INR/USD. Without this, ~95% of potential users are blocked at first launch.
+**How:** 18 ISO-4217 codes wired through `CurrencyFormat` lookup (Arabic + English labels per currency). User picks display currency in Settings → persisted via `UserPreferencesRepository.displayCurrency` (DataStore). `Money.zero()` default removed in favor of explicit currency at every construction site. `AtharNumber` formatter reads `LocalDisplayCurrency` CompositionLocal so every monetary value renders in the user's chosen unit. Multi-currency transactions keep their original currency stored — Money.sumAmounts(items, intoCurrency) handles 1:1 projection (no FX conversion in v1; the brief is explicit that we don't lie about exchange rates).
+**Saudi merchant catalog stays:** the brief explicitly says "McDonald's is McDonald's everywhere" — no localization of merchant names.
 
-### G-2 — Income tracker as a first-class screen
-**Status:** Income exists as `TxType.INCOME` but there's no dedicated UI. Users can confirm income from SMS but can't add it manually with any ergonomics.
-**Gap:** TMOAP has a 5000-row Income sheet alongside Expenses. Many users (especially salaried) need to see their income separately and compare against expenses to compute savings rate.
-**Fix:**
-- New `feature/income/` module OR a tab on Today.
-- Manual income entry sheet (similar to AddTransactionSheet but with income categories: Salary, Side income, Investments, Other).
-- "Recurring income" (salary every 25th).
-- Income breakdown on Trends (we currently have only expense breakdown).
+### G-2 — Income tracker ✅ (beta.6)
+**Why:** TMOAP has a 5000-row Income sheet alongside Expenses. Salaried users must see income vs expenses with a savings-rate at a glance to feel the app reflects their life. Without it, expense-only tracking is depressing and incomplete.
+**How:** Rather than building a separate `feature/income/` module (over-engineered), we surfaced income as a first-class pill on the Today header alongside Expenses and Net Worth. Manual income entry uses the same `AddTransactionSheet` with an Expense/Income segmented control. `TodayState` now exposes `totalIncome`, `totalExpense`, and a computed `savingsRate` — rendered with olive (positive) / ember (negative) color tint. Income breakdown on Trends uses the same `MonthlyBars` component as expenses.
 
-### G-3 — Recurring transactions
-**Status:** Not supported.
-**Gap:** Rent every 1st, salary every 25th, Netflix every 15th, Spotify family every 3rd. Users do this manually today. TMOAP doesn't either, but every modern budgeting app does.
-**Fix:**
-- New `recurring_transaction` Room table: `template_tx` + `schedule` (monthly / yearly / weekly / cron-like).
-- WorkManager job runs daily, materializes upcoming recurring → PENDING transactions for tomorrow.
-- "Next 30 days" projection on Plan: actual + recurring = realistic month-end forecast.
+### G-3 — Recurring transactions ✅ (beta.7–beta.8)
+**Why:** Rent on the 1st, salary on the 25th, Netflix on the 15th. Without this, the user re-types the same 6–10 transactions every month. Every modern budgeting app has it. TMOAP doesn't, so this is one place we exceed it.
+**How:** New `recurring_rule` Room table with `(merchant, amount, type, cadence, dayOfMonth, dayOfWeek, monthOfYear, nextRunDate, lastRunDate)`. Cadence enum: MONTHLY / WEEKLY / YEARLY. WorkManager `RecurringMaterializationWorker` runs daily, calls `materializeDue(today)` which creates PENDING transactions for any rule whose `nextRunDate <= today`, then advances `nextRunDate` to the next occurrence. Pending transactions land in the Today pending-tray; user confirms with one tap (per the brief's "never auto-confirm" rule). **Beta.8 addition:** auto-detection — `RecurringDetector` scans the user's last 6 months of confirmed transactions, groups by merchant+amount, and emits `RecurringSuggestion`s for any pattern that repeats ≥3 times. User confirms → `acceptSuggestion()` upserts as a real rule.
 
-### G-4 — Net worth + accounts view
-**Status:** `Account` exists in the data model but is single-default ("MANUAL_ACCOUNT_ID"). No UI for multi-account.
-**Gap:** TMOAP users track checking + savings + credit card + investments separately. A user wants to see: "My net worth is X across these accounts."
-**Fix:**
-- Settings → Accounts screen: add / rename / archive accounts (checking, savings, credit, cash).
-- Each account has a starting balance + a current balance derived from transactions.
-- Net Worth widget on Today: sum of all positive accounts minus credit-card balances.
+### G-4 — Multi-account + net worth ✅ (beta.9)
+**Why:** TMOAP users track checking + savings + credit card + investments separately. Without multi-account, the app's net-worth number is a single black box and credit-card debt is invisible. A user wants: "my net worth is X across these specific accounts."
+**How:** Room v4→v5 migration adds 6 columns to the existing `account` table — `openingBalanceMinor`, `openingBalanceCurrency`, `notes`, `sortOrder`, `archivedAt`, `updatedAt`. Legacy `DEBIT/CREDIT` enum values remapped to `CHECKING/SAVINGS/CREDIT_CARD/CASH/INVESTMENT/OTHER` via a SQL `UPDATE` in the migration. New `AccountRepositoryImpl.observeNetWorth(displayCurrency)` flat-maps the account list with `TransactionDao.observeBalancesByAccount()` and returns a `NetWorth(total, byCurrency, accounts)` flow. The Today header now shows a third pill ("Net Worth · 8,709.68 SAR") with an `ink` accent. New Settings → Accounts CRUD screen lets the user add, rename, edit opening balance, archive, or delete (with FK-RESTRICT protection — accounts with transactions can't be deleted, they can only be archived). The MANUAL_ACCOUNT_ID seed cash account is non-deletable but renameable. Mixed-currency net worth shows a caption noting the limitation (no FX projection in v1).
 
-### G-5 — Localization to English (and French, Hindi, Urdu, Turkish later)
-**Status:** Strings are Arabic literals in Compose code. No `strings.xml`. The `localePicker` doesn't exist.
-**Gap:** Non-Arabic-readers can't use the app at all.
-**Fix:**
-- Extract all UI strings into `res/values/strings.xml` + `res/values-en/strings.xml`.
-- `LocalLayoutDirection` already switches RTL/LTR — bind to locale.
-- Default to system language with Arabic fallback for Gulf locales.
-- A "Language" toggle in Settings.
+### G-5 — Localization (English + Arabic) ✅ (beta.9–beta.10)
+**Why:** A non-Arabic reader literally cannot use the app — every label is `AtharText(text = "حسنًا")` in code. Even Arabic readers in tri-script environments (Saudi diaspora in the US, for example) often prefer English UI. This is the single highest-impact change for global reach.
+**How:** Five-layer fix, each addressing a different gap that surfaced during implementation:
+1. **Locale picker + persistence** — Settings card with 3 options (Follow system / Arabic / English). Persisted in DataStore (`appLocale`) and mirrored in SharedPreferences so `LocaleHelper.wrap()` can read it synchronously from `attachBaseContext` before any Composable mounts.
+2. **Configuration override** — `LocaleHelper.wrap()` creates a configuration context with `setLocale(locale)` + explicit `setLayoutDirection(locale)` and returns it from `MainActivity.attachBaseContext`. The explicit `setLayoutDirection` matters: API 28+ does not propagate layoutDirection from a programmatic `setLocale` alone.
+3. **Compose LocalLayoutDirection** — even with the Configuration override applied, Compose reads layoutDirection from a `CompositionLocal`, not the wrapped Configuration. We wrap the entire `AtharApp` in `CompositionLocalProvider(LocalLayoutDirection provides if (Locale.getDefault().language == "ar") Rtl else Ltr)`. Without this, English text renders correctly but RTL stays glued — dots on the right, FAB on the left, etc.
+4. **String extraction** — ~300 strings across `app/`, `core/design-system/`, `feature/today/`, `feature/trends/`, `feature/plan/`, `feature/settings/`. Each module owns its own `res/values/strings.xml` (Arabic default) + `res/values-en/strings.xml`. Helper functions called from `@Composable` scopes (`accountTypeLabel`, `cadenceLabel`, `typeLabel`, `categoryLabel`) became `@Composable` so they can call `stringResource()`.
+5. **ViewModel-emitted strings** — ViewModels must stay Context-free for testability. So instead of `errorMessage: StateFlow<String?>` we emit `error: StateFlow<AccountError?>` (sealed enum) and the Composable does the `when()` to resolve. Backup status moved from `Success(message)`/`Failure(reason)` to typed variants (`ExportSuccess`, `ImportSuccess`, `ExportFailure(detail?)`, `ImportFailure(detail?)`). For auto-detected recurring rules' notes field (which gets stored in DB), the `acceptSuggestion(suggestion, notes: String?)` signature now takes the resolved string from the call site.
+
+**Residual debt (acceptable):** seed account name "النقدي" and SMS self-transfer merchant string get persisted to DB at write-time, so existing users keep their old language for old records. New records would need `@ApplicationContext` injection into `SmsIngestionPipeline` or a sentinel-resolve-at-render pattern. Both are minor and deferred. See `docs/adr/ADR-007-localization.md` for the full rationale.
 
 ---
 
 ## Tier 2 — Significantly improves UX for everyone (high value, ~2 weeks)
 
-### G-6 — Custom date-range selector on Trends and Plan
-**Status:** Trends has fixed segments (month / 3 months / year / comparison). Plan is locked to current month.
-**Gap:** TMOAP lets users pick any start + end date for analysis. "Show me April 2024 → June 2024."
-**Fix:**
-- Custom-range bottom sheet on Trends and Plan: start date + end date pickers.
-- Save recent ranges as quick-picks (last quarter / YTD / last 6 months).
+### G-6 — Custom date-range selector on Trends and Plan ✅ (beta.9)
+**Why:** TMOAP lets users pick any start+end date. "Show me April 2024 → June 2024." Locking Plan to the current calendar month makes it useless for anyone reviewing quarterly or YTD spending.
+**How:** Plan now mirrors Trends's segmented control (Month / 3 months / Year / Custom). Selecting Custom opens a bottom-sheet date-range picker with validation (start ≤ end, both within a sensible window). When the range isn't a multiple of one month, monthly category targets scale by `daysInRange / 30.4375` so budget-vs-actual stays apples-to-apples (e.g., 3-month range → target × 2.92, with a caption "× 2.9 multiplier" so the user understands what they're seeing). State holders: `PlanPeriodKey { MONTH, MONTHS_3, YEAR, CUSTOM }` + two MutableStateFlows (`selectedKey`, `customRange`) flat-mapped through the budget calculator.
 
 ### G-7 — Bills calendar
 **Status:** Not in app.
 **Gap:** A user wants to see "What bills are due this week?" without searching transactions.
-**Fix:**
-- Plan → Bills tab: lists upcoming recurring transactions in date order.
-- Visual calendar view (month grid with dots on bill days).
-- Push notifications 2 days before each bill, on the bill day, and if missed.
+**Why:** Recurring rules already exist (G-3), but the user has to mentally chain "Netflix on the 15th, rent on the 1st, gym on the 5th" to know what week is going to be expensive. A calendar view collapses that mental work into one glance.
+**How (planned):**
+- Plan → Bills tab: lists upcoming recurring transactions in date order, plus uncategorized pending (which often are bills the user hasn't tagged yet).
+- Visual calendar view (month grid with ember dots on bill days).
+- Push notifications 2 days before each bill, on the bill day, and once if missed (per brief: no guilt-trip nags — single reminder, no streak shaming).
 
 ### G-8 — Manual transaction UX improvements
 **Status:** AddTransactionSheet exists but is barebones.
@@ -82,13 +68,9 @@ Below is the prioritized gap list, in delivery order.
 - Receipt photo attachment (local-only, encrypted).
 - Voice entry ("Spent 50 on lunch at McDonalds").
 
-### G-9 — Better Trends — drill-down + monthly bars + pie charts
-**Status:** Top-categories bar chart + 12-month drill-down sheet. No pie charts (banned in brief).
-**Gap:** TMOAP has monthly bars for income / expenses / savings + per-category drill-down with monthly bars.
-**Fix:**
-- Monthly Income / Expenses / Savings bar chart (12 months) on Trends — TMOAP's "Income by Month" / "Expenses by Month" / "Savings by Month" equivalent.
-- Per-category trend line / mini-chart inline in the comparison table.
-- "Top 5 merchants" within a category drill-down.
+### G-9 — Better Trends — drill-down + monthly bars ✅ (beta.6)
+**Why:** TMOAP's killer feature is the monthly bars: "Income by Month / Expenses by Month / Savings by Month." Without those three charts, a user has no sense of trajectory. Adding per-category drill-down lets the user answer "is my coffee habit creeping up?" without scrolling raw transactions.
+**How:** Three vertically-stacked `AtharMonthlyChartWithLines` instances on Trends — one each for income (olive bars), expenses (ember bars), and savings (ink bars). Each shows last-12-months with a dashed average line and (for expenses) a solid target line if the user has set one in Plan. Per-category drill-down on tap: opens a sheet with a 12-month bar mini-chart for that category alone + top-5 merchants. Pie charts remain banned per Master Brief §2.4 — `AtharProportionBar` is the categorical-breakdown component (horizontal stacked bar with segment labels).
 
 ### G-10 — Savings rate goals + emergency fund
 **Status:** Wishlist exists. No "savings rate" goal, no "emergency fund" goal.
@@ -158,19 +140,33 @@ Below is the prioritized gap list, in delivery order.
 
 ---
 
-## Suggested next sprint (the "global" sprint)
+## Tier 1 retrospective — what we shipped
 
-**One sprint to ship Athar as a global app:**
+The global sprint Tier 1 is complete (G-1 currency, G-2 income, G-3 recurring + auto-detect, G-4 net worth, G-5 localization, G-6 custom date ranges, G-9 monthly bars). Total elapsed: ~5 sessions. The original 14-day estimate was reasonable for a senior engineer working alone; with parallel sub-agents most steps ran in 2–3× wall-clock concurrency.
 
-| # | Feature | Effort |
-|---|---|---|
-| 1 | G-1 currency abstraction | 3 days |
-| 2 | G-5 localization (en + ar baseline) | 2 days |
-| 3 | G-2 income tracker | 2 days |
-| 4 | G-3 recurring transactions | 3 days |
-| 5 | G-4 multi-account + net worth | 3 days |
-| 6 | G-6 custom date ranges | 1 day |
+**Verified end-to-end on emulator** in both Arabic (RTL) and English (LTR) locales — see `docs/screenshots/`.
 
-Total: ~14 person-days. Result: Athar usable by any user worldwide, in either Arabic or English, with their own currency and multiple accounts and recurring bills.
+The current Saudi-specialized features (SMS parser, AlRajhi/STC/D360/Barq templates, merchant catalog, Hijri toggle, Thmanyah typeface) remain intact — they're now "best-in-class for Saudi users, available to anyone."
 
-The current Saudi-specialized features (SMS parser, AlRajhi/STC/D360/Barq templates, merchant catalog, Hijri toggle, Thmanyah typeface) remain intact — they just become "best-in-class for Saudi users, available to anyone."
+## Suggested next sprint (the "polish + reach" sprint)
+
+| # | Feature | Effort | Why |
+|---|---|---|---|
+| 1 | G-7 bills calendar | 2 days | Recurring rules already exist; calendar view unlocks the value |
+| 2 | G-8 manual transaction UX | 2 days | Friction for non-Saudi users (no SMS) — autocomplete, quick-add chips |
+| 3 | G-10 savings-rate goals | 2 days | TMOAP doesn't have it — clear differentiator + matches FIRE/financial-independence crowd |
+| 4 | G-11 broader notification handlers | 3 days | Play-Store eligibility for non-Saudi (Wise, Revolut, Chase, Mercury, etc.) |
+| 5 | G-5b residual seed/SMS strings | 0.5 day | Inject `@ApplicationContext` into `SmsIngestionPipeline` for new self-transfer transactions; convert seed account name to a sentinel resolved at render |
+
+Total: ~9.5 person-days.
+
+## How to continue this work (for any AI or developer)
+
+1. **Read `Athar_Master_Brief.md` first.** It's the single source of truth. The brief explicitly says: "When the brief and reality disagree, edit the brief first, then the code."
+2. **Read this file** to see what shipped and why.
+3. **Check `Athar_Backlog.md`** for ticket-by-ticket execution order on remaining items.
+4. **Before writing Kotlin/Compose/Gradle code:** invoke the matching skill from `.claude/skills/` (`kotlin-project-feature-implementation`, `kotlin-project-state-management`, etc.). The routing table is in `CLAUDE.md` at the repo root.
+5. **Spec-first workflow:** write `docs/specs/{ID}-{slug}.md` (200–500 words) before coding. Acceptance criteria, edge cases, where the code lives, what tests cover it.
+6. **Build commands:** see `CLAUDE.md` § "Build & test commands". The `personalFullSms` flavor has SMS permissions (sideload only); `storeSafe` flavor is for Play Store (no SMS).
+7. **Local-first stays.** No backend. No telemetry. No cloud. Master Brief §2.2 is non-negotiable.
+8. **When in doubt, ask before writing.** The brief is opinionated and the design tokens are tight (8 sizes, 8 spacings, 1 accent color). Don't introduce new tokens without updating the brief.
