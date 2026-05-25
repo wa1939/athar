@@ -10,6 +10,7 @@ import com.athar.core.data.db.dao.ActivityLogDao
 import com.athar.core.data.db.dao.CategoryDao
 import com.athar.core.data.db.dao.CategoryRuleDao
 import com.athar.core.data.db.dao.InvestmentDao
+import com.athar.core.data.db.dao.RecurringRuleDao
 import com.athar.core.data.db.dao.SmsMessageDao
 import com.athar.core.data.db.dao.TransactionDao
 import com.athar.core.data.db.dao.UserTemplateDao
@@ -20,13 +21,14 @@ import com.athar.core.data.db.entity.CategoryEntity
 import com.athar.core.data.db.entity.CategoryRuleEntity
 import com.athar.core.data.db.entity.InvestmentContributionEntity
 import com.athar.core.data.db.entity.InvestmentPoolEntity
+import com.athar.core.data.db.entity.RecurringRuleEntity
 import com.athar.core.data.db.entity.SmsMessageEntity
 import com.athar.core.data.db.entity.TransactionEntity
 import com.athar.core.data.db.entity.UserTemplateEntity
 import com.athar.core.data.db.entity.WishlistEntity
 
 @Database(
-    version = 3,
+    version = 4,
     exportSchema = true,
     entities = [
         AccountEntity::class,
@@ -39,6 +41,7 @@ import com.athar.core.data.db.entity.WishlistEntity
         SmsMessageEntity::class,
         ActivityLogEntity::class,
         UserTemplateEntity::class,
+        RecurringRuleEntity::class,
     ],
 )
 @TypeConverters(Converters::class)
@@ -52,6 +55,7 @@ internal abstract class AtharDatabase : RoomDatabase() {
     abstract fun smsMessageDao(): SmsMessageDao
     abstract fun activityLogDao(): ActivityLogDao
     abstract fun userTemplateDao(): UserTemplateDao
+    abstract fun recurringRuleDao(): RecurringRuleDao
 
     companion object {
         internal const val NAME: String = "athar.db"
@@ -102,6 +106,42 @@ internal abstract class AtharDatabase : RoomDatabase() {
                     """.trimIndent(),
                 )
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_user_template_sender ON user_template(sender)")
+            }
+        }
+
+        /**
+         * v3 → v4: adds the `recurring_rule` table (G-3). Stores user-defined
+         * recurring transactions (rent, salary, subscriptions) that materialize
+         * into PENDING transactions on their next-run date.
+         */
+        internal val MIGRATION_3_4: Migration = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS recurring_rule (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        displayName TEXT NOT NULL,
+                        merchant TEXT NOT NULL,
+                        amountMinor INTEGER NOT NULL,
+                        amountCurrency TEXT NOT NULL,
+                        type TEXT NOT NULL,
+                        accountId TEXT NOT NULL,
+                        categoryId TEXT,
+                        cadence TEXT NOT NULL,
+                        dayOfMonth INTEGER,
+                        dayOfWeek INTEGER,
+                        monthOfYear INTEGER,
+                        nextRunDate TEXT NOT NULL,
+                        lastRunDate TEXT,
+                        isActive INTEGER NOT NULL,
+                        notes TEXT,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_recurring_rule_nextRunDate ON recurring_rule(nextRunDate)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_recurring_rule_isActive ON recurring_rule(isActive)")
             }
         }
     }

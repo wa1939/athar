@@ -4,7 +4,7 @@ package com.athar.core.domain.model
 enum class TxType { EXPENSE, INCOME, TRANSFER }
 
 /** Master Brief §4.5 — Transaction.source. */
-enum class IngestSource { MANUAL, SMS, NOTIFICATION, SHARE, IMPORT }
+enum class IngestSource { MANUAL, SMS, NOTIFICATION, SHARE, IMPORT, RECURRING }
 
 /** Master Brief §4.5 — Transaction.status. */
 enum class TxStatus { PENDING, CONFIRMED, DISMISSED }

@@ -80,7 +80,11 @@ internal object DatabaseModule {
             val factory = SupportOpenHelperFactory(key)
             Room.databaseBuilder(context, AtharDatabase::class.java, AtharDatabase.NAME)
                 .openHelperFactory(factory)
-                .addMigrations(AtharDatabase.MIGRATION_1_2, AtharDatabase.MIGRATION_2_3)
+                .addMigrations(
+                    AtharDatabase.MIGRATION_1_2,
+                    AtharDatabase.MIGRATION_2_3,
+                    AtharDatabase.MIGRATION_3_4,
+                )
                 .fallbackToDestructiveMigrationOnDowngrade()
                 .build()
         }.onFailure { t ->
@@ -105,6 +109,7 @@ internal object DatabaseModule {
     @Provides fun provideInvestmentDao(db: AtharDatabase): InvestmentDao = db.investmentDao()
     @Provides fun provideSmsMessageDao(db: AtharDatabase): SmsMessageDao = db.smsMessageDao()
     @Provides fun provideActivityLogDao(db: AtharDatabase): ActivityLogDao = db.activityLogDao()
+    @Provides fun provideRecurringRuleDao(db: AtharDatabase): com.athar.core.data.db.dao.RecurringRuleDao = db.recurringRuleDao()
 
     @Provides @Singleton fun provideClock(): Clock = Clock.System
 }
@@ -130,6 +135,11 @@ internal abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindInvestmentRepository(impl: InvestmentRepositoryImpl): InvestmentRepository
+
+    @Binds @Singleton
+    abstract fun bindRecurringRuleRepository(
+        impl: com.athar.core.data.repo.RecurringRuleRepositoryImpl,
+    ): com.athar.core.domain.repo.RecurringRuleRepository
 
     @Binds @Singleton
     abstract fun bindUserPreferencesRepository(impl: UserPreferencesRepositoryImpl): UserPreferencesRepository

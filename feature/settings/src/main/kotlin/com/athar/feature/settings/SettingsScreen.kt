@@ -51,6 +51,7 @@ fun SettingsScreen(
     onOpenSmsAudit: () -> Unit = {},
     onOpenActivityLog: () -> Unit = {},
     onOpenUserTemplates: () -> Unit = {},
+    onOpenRecurringRules: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -156,6 +157,8 @@ fun SettingsScreen(
                 accounts = ownAccounts,
                 onSave = viewModel::setOwnAccountNumbers,
             )
+
+            RecurringRulesEntryCard(onOpen = onOpenRecurringRules)
 
             SmsAuditEntryCard(onOpen = onOpenSmsAudit)
 
@@ -559,6 +562,24 @@ private fun RescanAndCleanCard(
                 }
                 AtharText(text = buttonText, style = theme.typography.headline, color = theme.colors.parchment)
             }
+        }
+    }
+}
+
+@Composable
+private fun RecurringRulesEntryCard(onOpen: () -> Unit) {
+    val theme = AtharTheme
+    AtharCard(modifier = Modifier
+        .fillMaxWidth()
+        .clickable(onClick = onOpen)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = "الحركات المتكررة", style = theme.typography.headline)
+            AtharText(
+                text = "أنشئ قواعد للحركات المتكررة شهريًا أو أسبوعيًا أو سنويًا — الإيجار، الراتب، Netflix. تُولِّد حركات معلّقة في «اليوم» عند استحقاقها.",
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
         }
     }
 }

@@ -8,6 +8,7 @@ import com.athar.core.data.db.entity.AccountEntity
 import com.athar.core.data.db.entity.CategoryRuleEntity
 import com.athar.core.data.db.entity.InvestmentContributionEntity
 import com.athar.core.data.db.entity.InvestmentPoolEntity
+import com.athar.core.data.db.entity.RecurringRuleEntity
 import com.athar.core.data.db.entity.SmsMessageEntity
 import com.athar.core.data.db.entity.WishlistEntity
 import kotlinx.coroutines.flow.Flow
@@ -120,5 +121,32 @@ internal interface SmsMessageDao {
     suspend fun updateParse(id: String, status: String, txId: String?, error: String?)
 
     @Query("DELETE FROM sms_message")
+    suspend fun clear()
+}
+
+@Dao
+internal interface RecurringRuleDao {
+    @Query("SELECT * FROM recurring_rule ORDER BY isActive DESC, nextRunDate ASC")
+    fun observeAll(): Flow<List<RecurringRuleEntity>>
+
+    @Query("SELECT * FROM recurring_rule WHERE isActive = 1 ORDER BY nextRunDate ASC")
+    fun observeActive(): Flow<List<RecurringRuleEntity>>
+
+    @Query("SELECT * FROM recurring_rule WHERE id = :id")
+    suspend fun get(id: String): RecurringRuleEntity?
+
+    @Query("SELECT * FROM recurring_rule WHERE isActive = 1 AND nextRunDate <= :today")
+    suspend fun dueOn(today: String): List<RecurringRuleEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(entity: RecurringRuleEntity)
+
+    @Query("UPDATE recurring_rule SET isActive = :active, updatedAt = :ts WHERE id = :id")
+    suspend fun setActive(id: String, active: Boolean, ts: Long)
+
+    @Query("DELETE FROM recurring_rule WHERE id = :id")
+    suspend fun delete(id: String)
+
+    @Query("DELETE FROM recurring_rule")
     suspend fun clear()
 }

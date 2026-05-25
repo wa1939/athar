@@ -5,14 +5,20 @@ import com.athar.core.data.db.entity.AccountEntity
 import com.athar.core.data.db.entity.CategoryRuleEntity
 import com.athar.core.data.db.entity.InvestmentContributionEntity
 import com.athar.core.data.db.entity.InvestmentPoolEntity
+import com.athar.core.data.db.entity.RecurringRuleEntity
 import com.athar.core.data.db.entity.WishlistEntity
 import com.athar.core.domain.model.Account
 import com.athar.core.domain.model.AccountType
 import com.athar.core.domain.model.CategoryRule
 import com.athar.core.domain.model.InvestmentContribution
 import com.athar.core.domain.model.InvestmentPool
+import com.athar.core.domain.model.Cadence
 import com.athar.core.domain.model.PatternType
+import com.athar.core.domain.model.RecurringRule
+import com.athar.core.domain.model.TxType
 import com.athar.core.domain.model.WishlistItem
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
@@ -111,4 +117,45 @@ internal fun InvestmentContribution.toEntity(): InvestmentContributionEntity = I
     ownerName = ownerName,
     amountMinor = amount.toMinor(),
     currency = amount.currency,
+)
+
+internal fun RecurringRuleEntity.toDomain(): RecurringRule = RecurringRule(
+    id = id,
+    displayName = displayName,
+    merchant = merchant,
+    amount = Money.ofMinor(amountMinor, amountCurrency),
+    type = TxType.valueOf(type),
+    accountId = accountId,
+    categoryId = categoryId,
+    cadence = Cadence.valueOf(cadence),
+    dayOfMonth = dayOfMonth,
+    dayOfWeek = dayOfWeek,
+    monthOfYear = monthOfYear,
+    nextRunDate = LocalDate.parse(nextRunDate),
+    lastRunDate = lastRunDate?.let { LocalDate.parse(it) },
+    isActive = isActive,
+    notes = notes,
+    createdAt = Instant.fromEpochMilliseconds(createdAt),
+    updatedAt = Instant.fromEpochMilliseconds(updatedAt),
+)
+
+internal fun RecurringRule.toEntity(): RecurringRuleEntity = RecurringRuleEntity(
+    id = id,
+    displayName = displayName,
+    merchant = merchant,
+    amountMinor = amount.toMinor(),
+    amountCurrency = amount.currency,
+    type = type.name,
+    accountId = accountId,
+    categoryId = categoryId,
+    cadence = cadence.name,
+    dayOfMonth = dayOfMonth,
+    dayOfWeek = dayOfWeek,
+    monthOfYear = monthOfYear,
+    nextRunDate = nextRunDate.toString(),
+    lastRunDate = lastRunDate?.toString(),
+    isActive = isActive,
+    notes = notes,
+    createdAt = createdAt.toEpochMilliseconds(),
+    updatedAt = updatedAt.toEpochMilliseconds(),
 )
