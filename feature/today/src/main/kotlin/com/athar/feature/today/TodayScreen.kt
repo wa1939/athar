@@ -38,6 +38,7 @@ import com.athar.core.designsystem.theme.AtharTheme
 
 @Composable
 fun TodayScreen(
+    onOpenHistory: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: TodayViewModel = hiltViewModel(),
 ) {
@@ -50,6 +51,7 @@ fun TodayScreen(
         onEvent = { event ->
             when (event) {
                 is TodayEvent.AddManual -> showAddSheet = true
+                is TodayEvent.OpenHistory -> onOpenHistory()
                 is TodayEvent.OpenTransaction -> {
                     editing = state.today.firstOrNull { it.id == event.id }
                         ?: state.recent.firstOrNull { it.id == event.id }
@@ -102,6 +104,12 @@ internal fun TodayContent(
                 .padding(theme.spacing.m),
             verticalArrangement = Arrangement.spacedBy(theme.spacing.l),
         ) {
+            if (state.pending.isNotEmpty()) {
+                PendingAttentionBanner(
+                    count = state.pending.size,
+                    onClick = { onEvent(TodayEvent.OpenHistory) },
+                )
+            }
             Header(state = state)
             if (state.pending.isNotEmpty()) {
                 PendingTray(state = state, onEvent = onEvent)
@@ -114,6 +122,33 @@ internal fun TodayContent(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(theme.spacing.l),
+        )
+    }
+}
+
+@Composable
+private fun PendingAttentionBanner(count: Int, onClick: () -> Unit) {
+    val theme = AtharTheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(theme.colors.ember)
+            .clickable(onClick = onClick)
+            .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+    ) {
+        AtharText(
+            text = stringResource(R.string.today_pending_banner, count),
+            style = theme.typography.headline,
+            color = theme.colors.parchment,
+            modifier = Modifier.weight(1f),
+        )
+        AtharText(
+            text = stringResource(R.string.today_pending_banner_cta),
+            style = theme.typography.caption,
+            color = theme.colors.parchment,
         )
     }
 }

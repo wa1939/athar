@@ -138,7 +138,9 @@ fun AtharApp() {
                         },
                     )
                 }
-                composable<Routes.Today> { TodayScreen() }
+                composable<Routes.Today> {
+                    TodayScreen(onOpenHistory = { navController.navigate(Routes.History) })
+                }
                 composable<Routes.Trends> { TrendsScreen() }
                 composable<Routes.Plan> { PlanScreen() }
                 composable<Routes.Settings> {

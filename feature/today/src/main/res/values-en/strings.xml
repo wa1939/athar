@@ -46,6 +46,10 @@
     <string name="history_count" formatted="true">%1$d transactions</string>
     <string name="history_empty">No transactions match this filter.</string>
 
+    <!-- Pending attention banner -->
+    <string name="today_pending_banner" formatted="true">%1$d transactions awaiting review</string>
+    <string name="today_pending_banner_cta">Tap to review →</string>
+
     <!-- Pending tray -->
     <string name="today_pending_title" formatted="true">Pending · %1$d</string>
     <string name="today_pending_subtle">Swipe to confirm or dismiss. Or use the bulk actions below.</string>

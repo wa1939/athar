@@ -46,6 +46,10 @@
     <string name="history_count" formatted="true">%1$d حركة</string>
     <string name="history_empty">لا حركات تطابق هذا البحث.</string>
 
+    <!-- Pending attention banner -->
+    <string name="today_pending_banner" formatted="true">%1$d حركة بانتظار المراجعة</string>
+    <string name="today_pending_banner_cta">انقر للمراجعة ←</string>
+
     <!-- Pending tray -->
     <string name="today_pending_title" formatted="true">بانتظار التأكيد · %1$d</string>
     <string name="today_pending_subtle">اسحب للتأكيد أو التجاهل. أو استخدم الإجراءات الجماعية أدناه.</string>
