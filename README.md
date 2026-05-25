@@ -255,15 +255,18 @@ maestro test .maestro/flows/                     # 10 E2E flows
 - ✅ **G-1** — Multi-currency display (18 ISO-4217 codes with Arabic + English labels, currency picker in Settings)
 - ✅ **G-2** — Income visibility (income + expense pills + savings-rate on Today header)
 - ✅ **G-3** — Recurring transactions (rent / salary / Netflix / utilities — manual rules + auto-detected suggestions from history)
-- ✅ G-9 — TMOAP-depth Trends
+- ✅ **G-9** — TMOAP-depth Trends
+
+**Global sprint Tier 1 continued (beta.9):**
+- ✅ **G-4** — Multi-account + net worth view: Room v4→v5 migration adds 6 columns to the account table (openingBalance, sortOrder, archivedAt, notes, updatedAt); legacy `DEBIT/CREDIT` enum remapped to `CHECKING/SAVINGS/CREDIT_CARD/CASH/INVESTMENT/OTHER`. New `AccountRepositoryImpl.observeNetWorth()` aggregates `openingBalance + Σ(CONFIRMED transactions)` per account, returns the live net-worth flow used by the Today header pill and the new Accounts screen (CRUD + archive + edit + per-currency breakdown). Manual seed account is now a first-class CASH account, non-deletable but renameable/archivable.
+- ✅ **G-6** — Custom date-range selector on Plan: Plan now has the same period picker as Trends (month / 3-month / year / custom). Monthly targets scale by average month-length of the selected range, with a caption (×N multiplier) so budget-vs-actual stays apples-to-apples.
+- ⚠️ **G-5** — Localization (partial): the locale picker UI, DataStore persistence, English `values-en/strings.xml` baseline, and `MainActivity.attachBaseContext` Configuration override are all in place. User can pick System / Arabic / English from Settings and the choice persists across launches. **Caveat:** ~99% of user-facing copy is still hardcoded Arabic in Compose `AtharText(text = "…")` calls — switching to English persists correctly and the activity recreates, but the visible UI keeps Arabic until those strings migrate to `stringResource()`. The migration is mechanical (no architecture change needed); G-5 follow-up will batch-extract feature-by-feature.
 
 ### In flight / remaining
 
 | ID | Feature | Status | Effort | Notes |
 |---|---|---|---|---|
-| G-4 | Multi-account + net worth view | ⏳ | 3 days | Schema supports multi-account; needs UI (Settings → Accounts) + Today net-worth widget |
-| G-5 | Localization (English baseline + locale picker) | ⏳ | 2 days | Extract ~166 hard-coded Arabic strings → `strings.xml` + `values-en/` |
-| G-6 | Custom date-range on Plan | ⏳ | 1 day | Custom range already on Trends; Plan needs the same picker |
+| G-5 | Localization — full string extraction | ⏳ | 2 days | Infrastructure shipped; remaining work is mechanical extraction of ~166 hardcoded Arabic strings → `stringResource()` + matching `values-en/` entries, feature module by feature module |
 | G-7 | Bills calendar | ⏳ | 2 days | "Upcoming bills" view + push notifications 2 days before each bill |
 | G-8 | Manual transaction UX upgrades | ⏳ | 2 days | Recent-merchant autocomplete · quick-add chips · voice entry · receipt photo |
 | G-10 | Savings-rate goals + emergency fund | ⏳ | 2 days | Plan → Goals tab with target progress |
