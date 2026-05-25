@@ -16,6 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
+import com.athar.core.designsystem.R
+import java.util.Locale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -116,14 +119,14 @@ fun AtharMonthlyChartWithLines(
             ) {
                 if (averageLine != null) {
                     AtharText(
-                        text = "— — متوسط",
+                        text = stringResource(R.string.chart_legend_average),
                         style = theme.typography.caption,
                         color = theme.colors.ink,
                     )
                 }
                 if (targetLine != null) {
                     AtharText(
-                        text = "──── الهدف",
+                        text = stringResource(R.string.chart_legend_target),
                         style = theme.typography.caption,
                         color = theme.colors.muted,
                     )
@@ -162,13 +165,13 @@ fun AtharComparisonBars(
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(theme.spacing.m),
         ) {
-            PairBar(label = "الدخل", current = currentIncome, previous = previousIncome,
+            PairBar(label = stringResource(R.string.chart_pair_income), current = currentIncome, previous = previousIncome,
                 currentColor = theme.colors.olive, previousColor = theme.colors.muted, max = max,
                 modifier = Modifier.weight(1f))
-            PairBar(label = "المصاريف", current = currentExpense, previous = previousExpense,
+            PairBar(label = stringResource(R.string.chart_pair_expense), current = currentExpense, previous = previousExpense,
                 currentColor = theme.colors.ember, previousColor = theme.colors.muted, max = max,
                 modifier = Modifier.weight(1f))
-            PairBar(label = "الادخار", current = currentSavings, previous = previousSavings,
+            PairBar(label = stringResource(R.string.chart_pair_savings), current = currentSavings, previous = previousSavings,
                 currentColor = theme.colors.ink, previousColor = theme.colors.muted, max = max,
                 modifier = Modifier.weight(1f))
         }
@@ -278,8 +281,11 @@ fun AtharProportionBar(
                             Box(modifier = Modifier.padding(horizontal = 6.dp)) {}
                         }
                     }
+                    val isArabic = Locale.getDefault().language == "ar"
+                    val segLabel = if (isArabic) seg.labelAr else seg.labelEn
+                    val pctChar = if (isArabic) "٪" else "%"
                     AtharText(
-                        text = "${seg.labelAr} · ${"%.1f".format(pct)}٪",
+                        text = "$segLabel · ${"%.1f".format(pct)}$pctChar",
                         style = theme.typography.caption,
                         color = theme.colors.ink,
                         modifier = Modifier.weight(1f),

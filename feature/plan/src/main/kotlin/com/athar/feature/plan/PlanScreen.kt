@@ -270,14 +270,17 @@ private fun LimitWarningStrip(state: PlanState) {
     val tight = state.rows.filter { it.limit == LimitState.Tight }
     val over = state.rows.filter { it.limit == LimitState.Over }
     if (tight.isEmpty() && over.isEmpty()) return
+    val isArabic = java.util.Locale.getDefault().language == "ar"
+    val separator = if (isArabic) "، " else ", "
+    fun categoryLabel(row: BudgetRow): String = if (isArabic) row.category.nameAr else row.category.name
     val (message, color) = when {
         over.isNotEmpty() -> {
-            val names = over.take(3).joinToString("، ") { it.category.nameAr }
+            val names = over.take(3).joinToString(separator) { categoryLabel(it) }
             val extra = if (over.size > 3) " (+${over.size - 3})" else ""
             "$names$extra${stringResource(R.string.plan_limit_warning_over_suffix)}" to theme.colors.ember
         }
         else -> {
-            val names = tight.take(3).joinToString("، ") { it.category.nameAr }
+            val names = tight.take(3).joinToString(separator) { categoryLabel(it) }
             val extra = if (tight.size > 3) " (+${tight.size - 3})" else ""
             "$names$extra${stringResource(R.string.plan_limit_warning_tight_suffix)}" to theme.colors.dust
         }

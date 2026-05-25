@@ -13,6 +13,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.athar.core.designsystem.R
 import com.athar.core.designsystem.theme.AtharTheme
 
 /**
@@ -57,9 +59,11 @@ fun AtharSwipeRow(
         enableDismissFromStartToEnd = true,
         enableDismissFromEndToStart = true,
         backgroundContent = {
+            val confirmLabel = stringResource(R.string.swipe_action_confirm)
+            val dismissLabel = stringResource(R.string.swipe_action_dismiss)
             val (color, label, align) = when (state.dismissDirection) {
-                SwipeToDismissBoxValue.StartToEnd -> Triple(theme.colors.ember, "تأكيد", Alignment.CenterStart)
-                SwipeToDismissBoxValue.EndToStart -> Triple(theme.colors.crimson, "تجاهل", Alignment.CenterEnd)
+                SwipeToDismissBoxValue.StartToEnd -> Triple(theme.colors.ember, confirmLabel, Alignment.CenterStart)
+                SwipeToDismissBoxValue.EndToStart -> Triple(theme.colors.crimson, dismissLabel, Alignment.CenterEnd)
                 SwipeToDismissBoxValue.Settled -> Triple(theme.colors.parchment, "", Alignment.Center)
             }
             Box(

@@ -6,7 +6,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import com.athar.core.designsystem.R
 import com.athar.core.designsystem.theme.AtharTheme
 
 /**
@@ -59,14 +61,14 @@ fun AtharAmountField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "المبلغ",
+    label: String? = null,
     isError: Boolean = false,
     supportingText: String? = null,
 ) {
     AtharTextField(
         value = value,
         onValueChange = onValueChange,
-        label = label,
+        label = label ?: stringResource(R.string.amount_field_label),
         modifier = modifier,
         keyboardType = KeyboardType.Decimal,
         isError = isError,

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chart_legend_average">— — متوسط</string>
+    <string name="chart_legend_target">──── الهدف</string>
+    <string name="chart_pair_income">الدخل</string>
+    <string name="chart_pair_expense">المصاريف</string>
+    <string name="chart_pair_savings">الادخار</string>
+    <string name="swipe_action_confirm">تأكيد</string>
+    <string name="swipe_action_dismiss">تجاهل</string>
+    <string name="category_picker_search_label">بحث</string>
+    <string name="category_picker_search_placeholder">اكتب للبحث في التصنيفات</string>
+    <string name="amount_field_label">المبلغ</string>
+</resources>

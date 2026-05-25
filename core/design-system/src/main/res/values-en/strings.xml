@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chart_legend_average">— — Average</string>
+    <string name="chart_legend_target">──── Target</string>
+    <string name="chart_pair_income">Income</string>
+    <string name="chart_pair_expense">Expenses</string>
+    <string name="chart_pair_savings">Savings</string>
+    <string name="swipe_action_confirm">Confirm</string>
+    <string name="swipe_action_dismiss">Dismiss</string>
+    <string name="category_picker_search_label">Search</string>
+    <string name="category_picker_search_placeholder">Type to search categories</string>
+    <string name="amount_field_label">Amount</string>
+</resources>

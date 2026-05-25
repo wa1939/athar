@@ -22,8 +22,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.athar.core.designsystem.R
 import com.athar.core.designsystem.theme.AtharTheme
 import com.athar.core.designsystem.theme.MinTouchTarget
 
@@ -63,8 +65,8 @@ fun AtharCategoryPicker(
         AtharTextField(
             value = query,
             onValueChange = { query = it },
-            label = "بحث",
-            placeholder = "اكتب للبحث في التصنيفات",
+            label = stringResource(R.string.category_picker_search_label),
+            placeholder = stringResource(R.string.category_picker_search_placeholder),
             modifier = Modifier.fillMaxWidth(),
             keyboardType = KeyboardType.Text,
         )
