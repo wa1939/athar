@@ -26,13 +26,18 @@ internal class RuleSeed @Inject constructor(
 ) {
 
     suspend fun seedIfEmpty() {
-        val existing = dao.all()
-        if (existing.any { !it.learnedFromUser }) {
-            Timber.d("System rules already seeded — skipping.")
-            return
-        }
         val raw = context.assets.open("seed_rules.json").bufferedReader().use { it.readText() }
         val payload = Json { ignoreUnknownKeys = true }.decodeFromString<SeedPayload>(raw)
+        val expected = payload.rules.size
+        val current = dao.countSystemRules()
+        if (current == expected) {
+            Timber.d("System rules up-to-date ($current) — skipping seed.")
+            return
+        }
+        if (current > 0) {
+            Timber.i("Refreshing system rules: $current → $expected")
+            dao.clearSystemRules()
+        }
         val now = clock.now()
         val entities = payload.rules.map { dto ->
             CategoryRuleEntity(

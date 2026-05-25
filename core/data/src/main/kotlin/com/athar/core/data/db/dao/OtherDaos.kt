@@ -60,6 +60,12 @@ internal interface CategoryRuleDao {
 
     @Query("DELETE FROM category_rule")
     suspend fun clear()
+
+    @Query("DELETE FROM category_rule WHERE learnedFromUser = 0")
+    suspend fun clearSystemRules()
+
+    @Query("SELECT COUNT(*) FROM category_rule WHERE learnedFromUser = 0")
+    suspend fun countSystemRules(): Int
 }
 
 @Dao

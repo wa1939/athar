@@ -75,6 +75,19 @@ hs_err_pid*
 /error.jpg
 /error*.jpg
 
+# E2E test artifacts (ad-hoc emulator dumps — never PR-able)
+/test-screens/
+/t[0-9]*.png
+/qa_*.png
+/g5*.png
+/scripts/test_sms.sh
+/scripts/_sms_insert.sql
+
+# PII: this folder contains the user's own SMS exports and their friend's,
+# plus the full AI triage outputs (which embed raw SMS bodies). Keep local only.
+"/AI template and output Categorization/"
+/AI template and output Categorization/
+
 # Personal SMS exports — these are PII and must never be committed.
 # The folder is used as input for `docs/sms-corpus-analysis.md` and the
 # merchant catalog, both of which are derived (no personal data leaks).

@@ -8,6 +8,7 @@ import com.athar.core.domain.model.MANUAL_ACCOUNT_ID
 import com.athar.core.domain.model.RecurringRule
 import com.athar.core.domain.model.RecurringSuggestion
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.RecurringRuleRepository
 import com.athar.core.domain.repo.RecurringSuggestionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,6 +30,7 @@ import javax.inject.Inject
 class RecurringRulesViewModel @Inject constructor(
     private val rules: RecurringRuleRepository,
     private val suggestionRepo: RecurringSuggestionRepository,
+    private val categoryRepo: CategoryRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -38,6 +40,10 @@ class RecurringRulesViewModel @Inject constructor(
 
     val suggestions: StateFlow<List<RecurringSuggestion>> =
         suggestionRepo.observeSuggestions()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val categories: StateFlow<List<com.athar.core.domain.model.Category>> =
+        categoryRepo.observeAll()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _materializeStatus = MutableStateFlow(0)
@@ -103,7 +109,17 @@ class RecurringRulesViewModel @Inject constructor(
      * Notes string is supplied by the caller (resolved at the Composable layer
      * so it picks up the active locale).
      */
-    fun acceptSuggestion(suggestion: RecurringSuggestion, notes: String?) {
+    /**
+     * Create a rule from a suggestion using user-confirmed overrides from the confirm sheet.
+     * Falls back to auto-detected values when the user accepts the defaults.
+     */
+    fun acceptSuggestion(
+        suggestion: RecurringSuggestion,
+        notes: String?,
+        cadence: Cadence,
+        dayOfMonth: Int?,
+        categoryId: String?,
+    ) {
         val now = clock.now()
         val rule = RecurringRule(
             id = UUID.randomUUID().toString(),
@@ -112,9 +128,9 @@ class RecurringRulesViewModel @Inject constructor(
             amount = suggestion.amount,
             type = suggestion.type,
             accountId = MANUAL_ACCOUNT_ID,
-            categoryId = null,
-            cadence = com.athar.core.domain.model.Cadence.MONTHLY,
-            dayOfMonth = suggestion.typicalDayOfMonth,
+            categoryId = categoryId,
+            cadence = cadence,
+            dayOfMonth = if (cadence == Cadence.MONTHLY) dayOfMonth else null,
             dayOfWeek = null,
             monthOfYear = null,
             nextRunDate = suggestion.suggestedNextRun,

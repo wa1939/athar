@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.athar.core.common.money.Money
@@ -40,6 +42,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun RecurringRulesScreen(
     onBack: () -> Unit,
@@ -50,6 +53,7 @@ fun RecurringRulesScreen(
     val rules by viewModel.state.collectAsStateWithLifecycle()
     val materialized by viewModel.lastMaterializeCount.collectAsStateWithLifecycle()
     val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
+    val categoriesAll by viewModel.categories.collectAsStateWithLifecycle()
     val lastAccepted by viewModel.lastAccepted.collectAsStateWithLifecycle()
     LaunchedEffect(lastAccepted) {
         if (lastAccepted != null) {
@@ -59,6 +63,7 @@ fun RecurringRulesScreen(
     }
     val currency = LocalDisplayCurrency.current
     var showAdd by remember { mutableStateOf(false) }
+    var confirming by remember { mutableStateOf<RecurringSuggestion?>(null) }
 
     Box(
         modifier = modifier
@@ -137,10 +142,9 @@ fun RecurringRulesScreen(
                     }
                 }
                 suggestions.forEach { s ->
-                    val notesText = stringResource(R.string.settings_recurring_auto_detected_notes, s.occurrenceCount)
                     SuggestionRow(
                         suggestion = s,
-                        onAccept = { viewModel.acceptSuggestion(s, notesText) },
+                        onAccept = { confirming = s },
                     )
                 }
             }
@@ -188,14 +192,56 @@ fun RecurringRulesScreen(
                     )
                 }
             } else {
-                rules.forEach { rule ->
-                    RuleRow(
-                        rule = rule,
-                        onToggle = { viewModel.toggle(rule.id, !rule.isActive) },
-                        onDelete = { viewModel.delete(rule.id) },
+                val (active, paused) = rules.partition { it.isActive }
+                if (active.isNotEmpty()) {
+                    val monthlyTotal = active
+                        .filter { it.type == TxType.EXPENSE && it.cadence == Cadence.MONTHLY }
+                        .fold(Money.zero(currency)) { acc, r ->
+                            val sameCurrency = r.amount.currency == currency
+                            if (sameCurrency) acc + r.amount else acc
+                        }
+                    SubscriptionsHeader(activeCount = active.size, monthlyTotal = monthlyTotal)
+                    AtharText(
+                        text = stringResource(R.string.settings_recurring_active_section),
+                        style = theme.typography.overline,
+                        color = theme.colors.muted,
                     )
+                    active.forEach { rule ->
+                        RuleRow(
+                            rule = rule,
+                            onToggle = { viewModel.toggle(rule.id, !rule.isActive) },
+                            onDelete = { viewModel.delete(rule.id) },
+                        )
+                    }
+                }
+                if (paused.isNotEmpty()) {
+                    AtharText(
+                        text = stringResource(R.string.settings_recurring_paused_section, paused.size),
+                        style = theme.typography.overline,
+                        color = theme.colors.muted,
+                    )
+                    paused.forEach { rule ->
+                        RuleRow(
+                            rule = rule,
+                            onToggle = { viewModel.toggle(rule.id, !rule.isActive) },
+                            onDelete = { viewModel.delete(rule.id) },
+                        )
+                    }
                 }
             }
+        }
+
+        confirming?.let { suggestion ->
+            val notesText = stringResource(R.string.settings_recurring_auto_detected_notes, suggestion.occurrenceCount)
+            ConfirmSuggestionSheet(
+                suggestion = suggestion,
+                categories = categoriesAll,
+                onDismiss = { confirming = null },
+                onConfirm = { cadence, dayOfMonth, categoryId ->
+                    viewModel.acceptSuggestion(suggestion, notesText, cadence, dayOfMonth, categoryId)
+                    confirming = null
+                },
+            )
         }
     }
 }
@@ -417,5 +463,177 @@ private fun PrimaryActionButton(text: String, onClick: () -> Unit, modifier: Mod
         contentAlignment = Alignment.Center,
     ) {
         AtharText(text = text, style = theme.typography.headline, color = theme.colors.parchment)
+    }
+}
+
+@Composable
+private fun SubscriptionsHeader(activeCount: Int, monthlyTotal: Money) {
+    val theme = AtharTheme
+    AtharCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+            AtharText(
+                text = stringResource(R.string.settings_recurring_active_count, activeCount),
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+                AtharText(
+                    text = stringResource(R.string.settings_recurring_monthly_total_label),
+                    style = theme.typography.body,
+                    color = theme.colors.muted,
+                )
+                AtharNumber(money = monthlyTotal, color = theme.colors.ember)
+            }
+        }
+    }
+}
+
+@androidx.compose.material3.ExperimentalMaterial3Api
+@Composable
+private fun ConfirmSuggestionSheet(
+    suggestion: RecurringSuggestion,
+    categories: List<com.athar.core.domain.model.Category>,
+    onDismiss: () -> Unit,
+    onConfirm: (Cadence, Int?, String?) -> Unit,
+) {
+    val theme = AtharTheme
+    val sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var cadence by remember { mutableStateOf(Cadence.MONTHLY) }
+    var dayOfMonth by remember { mutableStateOf(suggestion.typicalDayOfMonth.toString()) }
+    var selectedCategoryId by remember { mutableStateOf<String?>(null) }
+    val expectedKind = if (suggestion.type == TxType.INCOME) {
+        com.athar.core.domain.model.CategoryKind.INCOME
+    } else {
+        com.athar.core.domain.model.CategoryKind.EXPENSE
+    }
+    val pickable = categories.filter { it.kind == expectedKind && !it.archived }
+    androidx.compose.material3.ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = theme.colors.parchment,
+        contentColor = theme.colors.ink,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(theme.spacing.m),
+            verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
+        ) {
+            AtharText(
+                text = stringResource(R.string.settings_recurring_confirm_title),
+                style = theme.typography.headline,
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+                AtharText(text = suggestion.merchant, style = theme.typography.title)
+                AtharText(
+                    text = stringResource(
+                        R.string.settings_recurring_suggestion_counts,
+                        suggestion.occurrenceCount,
+                        suggestion.typicalDayOfMonth.toString(),
+                    ),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+                AtharNumber(
+                    money = suggestion.amount,
+                    color = if (suggestion.type == TxType.INCOME) theme.colors.olive else theme.colors.ember,
+                )
+            }
+
+            AtharText(
+                text = stringResource(R.string.settings_recurring_confirm_cadence),
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+                Cadence.entries.forEach { c ->
+                    CadenceChip(
+                        text = cadenceLabel(c),
+                        selected = c == cadence,
+                        onClick = { cadence = c },
+                    )
+                }
+            }
+
+            if (cadence == Cadence.MONTHLY) {
+                AtharTextField(
+                    value = dayOfMonth,
+                    onValueChange = { dayOfMonth = it.filter { ch -> ch.isDigit() }.take(2) },
+                    label = stringResource(R.string.settings_recurring_field_day_of_month),
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardType = KeyboardType.Number,
+                )
+            }
+
+            AtharText(
+                text = stringResource(R.string.settings_recurring_confirm_category),
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+            com.athar.core.designsystem.component.AtharCategoryPicker(
+                items = pickable.map {
+                    com.athar.core.designsystem.component.AtharPickerItem(key = it.id, labelEn = it.name, labelAr = it.nameAr)
+                },
+                selectedKey = selectedCategoryId,
+                onSelect = { selectedCategoryId = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 160.dp, max = 240.dp),
+            )
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(theme.spacing.s))
+                        .background(theme.colors.divider)
+                        .clickable(onClick = onDismiss)
+                        .padding(theme.spacing.m),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    AtharText(
+                        text = stringResource(R.string.settings_action_cancel),
+                        style = theme.typography.headline,
+                        color = theme.colors.ink,
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(2f)
+                        .clip(RoundedCornerShape(theme.spacing.s))
+                        .background(theme.colors.ember)
+                        .clickable {
+                            val dom = dayOfMonth.toIntOrNull()?.coerceIn(1, 31)
+                            onConfirm(cadence, dom, selectedCategoryId)
+                        }
+                        .padding(theme.spacing.m),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    AtharText(
+                        text = stringResource(R.string.settings_recurring_confirm_create),
+                        style = theme.typography.headline,
+                        color = theme.colors.parchment,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CadenceChip(text: String, selected: Boolean, onClick: () -> Unit) {
+    val theme = AtharTheme
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(if (selected) theme.colors.ember else theme.colors.surface)
+            .clickable(onClick = onClick)
+            .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
+    ) {
+        AtharText(
+            text = text,
+            style = theme.typography.body,
+            color = if (selected) theme.colors.parchment else theme.colors.ink,
+        )
     }
 }

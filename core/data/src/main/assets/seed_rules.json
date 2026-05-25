@@ -1,55 +1,2759 @@
 {
   "rules": [
-    { "pattern": "starbucks",   "categoryId": "cat-coffee",     "priority": 100 },
-    { "pattern": "ستاربكس",     "categoryId": "cat-coffee",     "priority": 100 },
-    { "pattern": "barn's",      "categoryId": "cat-coffee",     "priority": 100 },
-    { "pattern": "barns",       "categoryId": "cat-coffee",     "priority": 100 },
-    { "pattern": "dunkin",      "categoryId": "cat-coffee",     "priority": 100 },
-    { "pattern": "% arabica",   "categoryId": "cat-coffee",     "priority": 100 },
-    { "pattern": "costa",       "categoryId": "cat-coffee",     "priority": 100 },
-
-    { "pattern": "mcdonald",    "categoryId": "cat-restaurant", "priority": 100 },
-    { "pattern": "kfc",         "categoryId": "cat-restaurant", "priority": 100 },
-    { "pattern": "hardees",     "categoryId": "cat-restaurant", "priority": 100 },
-    { "pattern": "subway",      "categoryId": "cat-restaurant", "priority": 100 },
-    { "pattern": "domino",      "categoryId": "cat-restaurant", "priority": 100 },
-    { "pattern": "jollibee",    "categoryId": "cat-restaurant", "priority": 100 },
-    { "pattern": "keeta",       "categoryId": "cat-restaurant", "priority": 100 },
-    { "pattern": "hungerstation","categoryId": "cat-restaurant", "priority": 100 },
-    { "pattern": "talabat",     "categoryId": "cat-restaurant", "priority": 100 },
-    { "pattern": "jahez",       "categoryId": "cat-restaurant", "priority": 100 },
-
-    { "pattern": "panda",       "categoryId": "cat-groceries",  "priority": 100 },
-    { "pattern": "tamimi",      "categoryId": "cat-groceries",  "priority": 100 },
-    { "pattern": "carrefour",   "categoryId": "cat-groceries",  "priority": 100 },
-    { "pattern": "lulu",        "categoryId": "cat-groceries",  "priority": 100 },
-    { "pattern": "danube",      "categoryId": "cat-groceries",  "priority": 100 },
-    { "pattern": "othaim",      "categoryId": "cat-groceries",  "priority": 100 },
-    { "pattern": "nahdi",       "categoryId": "cat-medical",    "priority": 100 },
-    { "pattern": "dawaa",       "categoryId": "cat-medical",    "priority": 100 },
-
-    { "pattern": "jarir",       "categoryId": "cat-electronics","priority": 100 },
-    { "pattern": "extra",       "categoryId": "cat-electronics","priority": 90  },
-    { "pattern": "ikea",        "categoryId": "cat-home-maintenance","priority": 100 },
-    { "pattern": "amazon",      "categoryId": "cat-other-expense","priority": 50 },
-    { "pattern": "noon",        "categoryId": "cat-other-expense","priority": 50 },
-
-    { "pattern": "stc",         "categoryId": "cat-telecom",    "priority": 100 },
-    { "pattern": "mobily",      "categoryId": "cat-telecom",    "priority": 100 },
-    { "pattern": "zain",        "categoryId": "cat-telecom",    "priority": 100 },
-    { "pattern": "etisalat",    "categoryId": "cat-telecom",    "priority": 100 },
-
-    { "pattern": "uber",        "categoryId": "cat-public-transport","priority": 100 },
-    { "pattern": "careem",      "categoryId": "cat-public-transport","priority": 100 },
-    { "pattern": "jeeny",       "categoryId": "cat-public-transport","priority": 100 },
-
-    { "pattern": "saudia",      "categoryId": "cat-travel",     "priority": 100 },
-    { "pattern": "flynas",      "categoryId": "cat-travel",     "priority": 100 },
-    { "pattern": "flyadeal",    "categoryId": "cat-travel",     "priority": 100 },
-    { "pattern": "booking",     "categoryId": "cat-travel",     "priority": 100 },
-
-    { "pattern": "salary",      "categoryId": "cat-salary",     "priority": 100 },
-    { "pattern": "راتب",        "categoryId": "cat-salary",     "priority": 100 },
-    { "pattern": "elm",         "categoryId": "cat-salary",     "priority": 90  }
+    {
+      "pattern": "starbucks",
+      "categoryId": "cat-coffee",
+      "priority": 100
+    },
+    {
+      "pattern": "ستاربكس",
+      "categoryId": "cat-coffee",
+      "priority": 100
+    },
+    {
+      "pattern": "barn's",
+      "categoryId": "cat-coffee",
+      "priority": 100
+    },
+    {
+      "pattern": "barns",
+      "categoryId": "cat-coffee",
+      "priority": 100
+    },
+    {
+      "pattern": "dunkin",
+      "categoryId": "cat-coffee",
+      "priority": 100
+    },
+    {
+      "pattern": "% arabica",
+      "categoryId": "cat-coffee",
+      "priority": 100
+    },
+    {
+      "pattern": "costa",
+      "categoryId": "cat-coffee",
+      "priority": 100
+    },
+    {
+      "pattern": "mcdonald",
+      "categoryId": "cat-restaurant",
+      "priority": 100
+    },
+    {
+      "pattern": "kfc",
+      "categoryId": "cat-restaurant",
+      "priority": 100
+    },
+    {
+      "pattern": "hardees",
+      "categoryId": "cat-restaurant",
+      "priority": 100
+    },
+    {
+      "pattern": "subway",
+      "categoryId": "cat-restaurant",
+      "priority": 100
+    },
+    {
+      "pattern": "domino",
+      "categoryId": "cat-restaurant",
+      "priority": 100
+    },
+    {
+      "pattern": "jollibee",
+      "categoryId": "cat-restaurant",
+      "priority": 100
+    },
+    {
+      "pattern": "keeta",
+      "categoryId": "cat-restaurant",
+      "priority": 100
+    },
+    {
+      "pattern": "hungerstation",
+      "categoryId": "cat-restaurant",
+      "priority": 100
+    },
+    {
+      "pattern": "talabat",
+      "categoryId": "cat-restaurant",
+      "priority": 100
+    },
+    {
+      "pattern": "jahez",
+      "categoryId": "cat-restaurant",
+      "priority": 100
+    },
+    {
+      "pattern": "panda",
+      "categoryId": "cat-groceries",
+      "priority": 100
+    },
+    {
+      "pattern": "tamimi",
+      "categoryId": "cat-groceries",
+      "priority": 100
+    },
+    {
+      "pattern": "carrefour",
+      "categoryId": "cat-groceries",
+      "priority": 100
+    },
+    {
+      "pattern": "lulu",
+      "categoryId": "cat-groceries",
+      "priority": 100
+    },
+    {
+      "pattern": "danube",
+      "categoryId": "cat-groceries",
+      "priority": 100
+    },
+    {
+      "pattern": "othaim",
+      "categoryId": "cat-groceries",
+      "priority": 100
+    },
+    {
+      "pattern": "nahdi",
+      "categoryId": "cat-medical",
+      "priority": 100
+    },
+    {
+      "pattern": "dawaa",
+      "categoryId": "cat-medical",
+      "priority": 100
+    },
+    {
+      "pattern": "jarir",
+      "categoryId": "cat-electronics",
+      "priority": 100
+    },
+    {
+      "pattern": "extra",
+      "categoryId": "cat-electronics",
+      "priority": 90
+    },
+    {
+      "pattern": "ikea",
+      "categoryId": "cat-home-maintenance",
+      "priority": 100
+    },
+    {
+      "pattern": "amazon",
+      "categoryId": "cat-other-expense",
+      "priority": 50
+    },
+    {
+      "pattern": "noon",
+      "categoryId": "cat-other-expense",
+      "priority": 50
+    },
+    {
+      "pattern": "stc",
+      "categoryId": "cat-telecom",
+      "priority": 100
+    },
+    {
+      "pattern": "mobily",
+      "categoryId": "cat-telecom",
+      "priority": 100
+    },
+    {
+      "pattern": "zain",
+      "categoryId": "cat-telecom",
+      "priority": 100
+    },
+    {
+      "pattern": "etisalat",
+      "categoryId": "cat-telecom",
+      "priority": 100
+    },
+    {
+      "pattern": "uber",
+      "categoryId": "cat-public-transport",
+      "priority": 100
+    },
+    {
+      "pattern": "careem",
+      "categoryId": "cat-public-transport",
+      "priority": 100
+    },
+    {
+      "pattern": "jeeny",
+      "categoryId": "cat-public-transport",
+      "priority": 100
+    },
+    {
+      "pattern": "saudia",
+      "categoryId": "cat-travel",
+      "priority": 100
+    },
+    {
+      "pattern": "flynas",
+      "categoryId": "cat-travel",
+      "priority": 100
+    },
+    {
+      "pattern": "flyadeal",
+      "categoryId": "cat-travel",
+      "priority": 100
+    },
+    {
+      "pattern": "booking",
+      "categoryId": "cat-travel",
+      "priority": 100
+    },
+    {
+      "pattern": "salary",
+      "categoryId": "cat-salary",
+      "priority": 100
+    },
+    {
+      "pattern": "راتب",
+      "categoryId": "cat-salary",
+      "priority": 100
+    },
+    {
+      "pattern": "elm",
+      "categoryId": "cat-salary",
+      "priority": 90
+    },
+    {
+      "pattern": "absher",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "absher 2",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "airbnb  h",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "airbnb *",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "al drees",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "al drees 9",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "al jabr l",
+      "categoryId": "cat-home-maintenance",
+      "priority": 80
+    },
+    {
+      "pattern": "al manhal",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "al mosafe",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "al nahdi",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "al nahdi m",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "al nahdi p",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "al nahdi1",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "al othaim",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "al qrafi sea",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "al rafada",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "al watan i",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "al-habeer for",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "al-jari t",
+      "categoryId": "cat-car-maintenance",
+      "priority": 80
+    },
+    {
+      "pattern": "albaik",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "albon alm",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "aldawaa p",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "aldrees 1",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "aldrees 5",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "aldrees 6",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "aldrees 8",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "aldrees 9",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "aldrees p",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "aldrees14",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "alfa algr",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "alhejra p",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "aliexp",
+      "categoryId": "cat-electronics",
+      "priority": 80
+    },
+    {
+      "pattern": "aliexpress.com",
+      "categoryId": "cat-electronics",
+      "priority": 80
+    },
+    {
+      "pattern": "all antico vinaio",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "almosafer",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "alnahdi 1",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "alnahdi c",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "alnahdi m",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "alnahdi p",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "alothaim -",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "alp chengdu metro",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "alp chengdugongjiaoji",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "alp didi taxi",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "alp hellobike",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "alp hong qi store",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "alp luckin coffee",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "alp manner coffee",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "alp metro fastpass",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "alp starbucks",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "alp uniqlo",
+      "categoryId": "cat-clothing",
+      "priority": 80
+    },
+    {
+      "pattern": "alp zhongguotieluchen",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "alrafada",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "alrafada c",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "alrafadh",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "alreef mi",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "alromansi",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "alsagr cooperation insurance co.",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "alsalama g",
+      "categoryId": "cat-telecom",
+      "priority": 80
+    },
+    {
+      "pattern": "amazon al",
+      "categoryId": "cat-electronics",
+      "priority": 80
+    },
+    {
+      "pattern": "ana ninja",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "anani",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "andalusia",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "anwoara 2 srl",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "aroya cru",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "arsa s.r.l",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "asmak alb",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "aswaq dee",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "aswaq kha",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "aswaq ree",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "aswaq rnd",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "atac tap go",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "atac tap&",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "atac tap&go",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "autogrill 7017",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "autolinee",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "autolinee toscane",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "avis",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "awafi gri",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "baladi dukkan",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "bar san michele di corti",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "barnies",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "barnies c",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "barns ajd",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "barns aly",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "barns amk",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "barns jdh",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "barns jed",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "barns mk",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "barns mkh",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "barns tai",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "barns-ajd",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "barns1021",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "bier alro",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "bigliette",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "bill payment",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "bin dawoo",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "bkg*hotel",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "bon cafe",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "bottega del tartufo",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "br-sasco z",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "brave",
+      "categoryId": "cat-subscriptions",
+      "priority": 80
+    },
+    {
+      "pattern": "buffet firenze s m n",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "buffet firenze s.m.n",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "buffet roma termini",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "buffet roma tiburtina",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "buns from home - picc",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "caffe gilli 1733",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "caffe maioli",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "caffe nero regent st",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "camel ren",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "camel ste",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "car pals c",
+      "categoryId": "cat-car-maintenance",
+      "priority": 80
+    },
+    {
+      "pattern": "careem ri",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "claude.ai",
+      "categoryId": "cat-subscriptions",
+      "priority": 80
+    },
+    {
+      "pattern": "cloudflar",
+      "categoryId": "cat-subscriptions",
+      "priority": 80
+    },
+    {
+      "pattern": "coffee ad",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "coffee cu",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "coffee ma",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "coffee ti",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "company al musafir almabashir for travel",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "conad",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "conad supermercato conad",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "consortiu",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "contabo",
+      "categoryId": "cat-subscriptions",
+      "priority": 80
+    },
+    {
+      "pattern": "coopc",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "coronas caffe",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "country f",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "credit card payment visa 2106",
+      "categoryId": "cat-debt",
+      "priority": 80
+    },
+    {
+      "pattern": "credit card payment visa 2909",
+      "categoryId": "cat-debt",
+      "priority": 80
+    },
+    {
+      "pattern": "credit card payment visa 8588",
+      "categoryId": "cat-debt",
+      "priority": 80
+    },
+    {
+      "pattern": "dallah ho",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "danube -",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "danube 16",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "danube co",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "danube fo",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "danube ma",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "danube-(d",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "debit: loan instalment",
+      "categoryId": "cat-debt",
+      "priority": 80
+    },
+    {
+      "pattern": "dhamen",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "dms pantheon",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "dr cafe",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "dr max statuto",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "dr solima",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "dukan 101",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "dukan 106",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "dukkan al wadi",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "dunkin 10",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "dunkin 6",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "dunkin do",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "efaa",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "elettronica expert",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "elisa tiburtina",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "elm company saudi joint stock compa",
+      "categoryId": "cat-salary",
+      "priority": 80
+    },
+    {
+      "pattern": "express f",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "falafel j",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "farmacia comunale n 13",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "farmacia esquilino dei d",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "farmacia longo",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "farn noor",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "fata morgana",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "feltrinelli cafe edit",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "fetafit a",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "five guys",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "five guys napoli",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "flat iron covent garden",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "flighttok",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "flynas co",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "flywire payments corporation",
+      "categoryId": "cat-education",
+      "priority": 80
+    },
+    {
+      "pattern": "fool al t",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "foul alta",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "from host",
+      "categoryId": "cat-subscriptions",
+      "priority": 80
+    },
+    {
+      "pattern": "ginger srl",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "gonsure",
+      "categoryId": "cat-insurance",
+      "priority": 80
+    },
+    {
+      "pattern": "google *s",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "gran.caffe gambrinus srl",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "grocery a",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "grocery sahm",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "gulf spec",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "half mill",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "hamsa lab",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "harvard b",
+      "categoryId": "cat-education",
+      "priority": 80
+    },
+    {
+      "pattern": "hashem re",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "hemah",
+      "categoryId": "cat-home-maintenance",
+      "priority": 80
+    },
+    {
+      "pattern": "hemmah",
+      "categoryId": "cat-home-maintenance",
+      "priority": 80
+    },
+    {
+      "pattern": "herfy1319",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "hudson news franzese",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "hyper mar",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "iherb ihe",
+      "categoryId": "cat-subscriptions",
+      "priority": 80
+    },
+    {
+      "pattern": "il gelato mennella",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "intl ride",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "ionos inc",
+      "categoryId": "cat-subscriptions",
+      "priority": 80
+    },
+    {
+      "pattern": "joe the j",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "kaiian rehlah",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "kamal ahm",
+      "categoryId": "cat-clothing",
+      "priority": 80
+    },
+    {
+      "pattern": "kayan reh",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "keemart",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "kfc spoon",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "kfc spoon direct 2 srl r",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "khalid ibrahim albabtain trading co",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "kian samn",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "kiko milano",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "kipps delicatessen",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "la casa del caffe' tazza",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "la licata paola",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "laesse roma tomacelli",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "lama shoe",
+      "categoryId": "cat-clothing",
+      "priority": 80
+    },
+    {
+      "pattern": "lantica pizzeria da m",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "little ca",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "longchamp regent steet",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "lovable",
+      "categoryId": "cat-subscriptions",
+      "priority": 80
+    },
+    {
+      "pattern": "lulu comp",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "lulu hype",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "lulu saud",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "maddina f",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "maf carre",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "mahal kas",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "maharah h",
+      "categoryId": "cat-home-maintenance",
+      "priority": 80
+    },
+    {
+      "pattern": "mandy shabwa",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "marks and",
+      "categoryId": "cat-clothing",
+      "priority": 80
+    },
+    {
+      "pattern": "max 60099",
+      "categoryId": "cat-clothing",
+      "priority": 80
+    },
+    {
+      "pattern": "mazaya f",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "mc donald s",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "mcd napoli",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "mcd tiburtina",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "mcdonalds",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "meed 1192",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "meed 3039",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "meed exi",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "meed riya",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "meed vend",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "menchi g di menchi mari",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "mhtat aos",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "mhtt myaa",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "mille bolle",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "mini mark",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "mkhabz ip",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "moroccan t",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "mtajer al",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "muath hijazi",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "naft serv",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "nahdi care clinic",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "nahdionli",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "namshi",
+      "categoryId": "cat-clothing",
+      "priority": 80
+    },
+    {
+      "pattern": "national p",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "new bon c",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "niche foo",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "nmc2023",
+      "categoryId": "cat-medical",
+      "priority": 80
+    },
+    {
+      "pattern": "nya lava cda srl",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "oas stati",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "onmap bev",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "pam - n91",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "panda 225",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "panda 257",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "panda 707",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "panificio roscioli",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "pasticceria lauri angelo",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "penny market s r l",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "penny market s.r.l",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "petrofast",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "petroly c",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "pizza forum",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "playstati",
+      "categoryId": "cat-entertainment",
+      "priority": 80
+    },
+    {
+      "pattern": "prassede srl",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "pret a manger",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "primark 687",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "primark r",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "puer in",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "pure in",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "rabi rest",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "rafadah",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "real debrid",
+      "categoryId": "cat-subscriptions",
+      "priority": 80
+    },
+    {
+      "pattern": "regoli dal 1916",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "rentsmart",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "resend",
+      "categoryId": "cat-subscriptions",
+      "priority": 80
+    },
+    {
+      "pattern": "restauran",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "roasting h",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "saam stat",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "saba rest",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "salam abd",
+      "categoryId": "cat-telecom",
+      "priority": 80
+    },
+    {
+      "pattern": "salam gha",
+      "categoryId": "cat-telecom",
+      "priority": 80
+    },
+    {
+      "pattern": "salama cooperative insurance compan",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "saleh ahm",
+      "categoryId": "cat-clothing",
+      "priority": 80
+    },
+    {
+      "pattern": "salla app",
+      "categoryId": "cat-subscriptions",
+      "priority": 80
+    },
+    {
+      "pattern": "saqr groc",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "sasco",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "sasco al-",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "sasco als",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "sasco fue",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "sasco pal",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "sasco sta",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "saudi air",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "saudi electric company",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "saudi fransi capital company",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "saudi oil",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "saudi passports - renew passport",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "saving account monthly profit",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "scissors a",
+      "categoryId": "cat-home-maintenance",
+      "priority": 80
+    },
+    {
+      "pattern": "scissors and half salon",
+      "categoryId": "cat-home-maintenance",
+      "priority": 80
+    },
+    {
+      "pattern": "sea food p",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "seaven ma",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "sfizio pizza",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "shabwa rest",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "shiwayat d",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "shooz",
+      "categoryId": "cat-clothing",
+      "priority": 80
+    },
+    {
+      "pattern": "shrimp na",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "sigma lnd ltd",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "siren coffee srl",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "smart per",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "social development bank",
+      "categoryId": "cat-debt",
+      "priority": 80
+    },
+    {
+      "pattern": "stc bill",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "stc pay",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "stcc ttr",
+      "categoryId": "cat-telecom",
+      "priority": 80
+    },
+    {
+      "pattern": "stcc ttr -",
+      "categoryId": "cat-telecom",
+      "priority": 80
+    },
+    {
+      "pattern": "stcc ttr-",
+      "categoryId": "cat-telecom",
+      "priority": 80
+    },
+    {
+      "pattern": "sultan ce",
+      "categoryId": "cat-clothing",
+      "priority": 80
+    },
+    {
+      "pattern": "sumup excel - compass u",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "sumup taxi mxmq3xjf",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "supermercato stelac srl",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "surplus account",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "tagine zhor",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "tameeni",
+      "categoryId": "cat-insurance",
+      "priority": 80
+    },
+    {
+      "pattern": "tamimi ma",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "tap*gonsu",
+      "categoryId": "cat-insurance",
+      "priority": 80
+    },
+    {
+      "pattern": "tawuniya",
+      "categoryId": "cat-insurance",
+      "priority": 80
+    },
+    {
+      "pattern": "terra gel",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "tesco stores 4850",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "tfl travel charge",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "the roast",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "thobe ala",
+      "categoryId": "cat-clothing",
+      "priority": 80
+    },
+    {
+      "pattern": "tiger italia 1 rl",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "tigre amico",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "toilets n",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "toilets napoli c",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "trattoria zaza'",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "travelers",
+      "categoryId": "cat-coffee",
+      "priority": 80
+    },
+    {
+      "pattern": "travelodge gb0783",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "trendyol",
+      "categoryId": "cat-clothing",
+      "priority": 80
+    },
+    {
+      "pattern": "trip.com",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "tutto 99 fil 1",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "ubr pend",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "unicocampania",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "union fru",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "uniqlo uk0045",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "uniqlo vi",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "uniqlo via del corso",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "universit",
+      "categoryId": "cat-education",
+      "priority": 80
+    },
+    {
+      "pattern": "victoria food nisa loc",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "walaa cooperative ins co",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "walk mart",
+      "categoryId": "cat-groceries",
+      "priority": 80
+    },
+    {
+      "pattern": "webook.co",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "wego",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "wego ksa",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "well petr",
+      "categoryId": "cat-gas",
+      "priority": 80
+    },
+    {
+      "pattern": "wingstop",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "www conta",
+      "categoryId": "cat-subscriptions",
+      "priority": 80
+    },
+    {
+      "pattern": "www.tawun",
+      "categoryId": "cat-insurance",
+      "priority": 80
+    },
+    {
+      "pattern": "www.wego.",
+      "categoryId": "cat-travel",
+      "priority": 80
+    },
+    {
+      "pattern": "yaqoot",
+      "categoryId": "cat-telecom",
+      "priority": 80
+    },
+    {
+      "pattern": "yaqoot 01",
+      "categoryId": "cat-telecom",
+      "priority": 80
+    },
+    {
+      "pattern": "yaqoot 02",
+      "categoryId": "cat-telecom",
+      "priority": 80
+    },
+    {
+      "pattern": "yemeni vi",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "zad mart",
+      "categoryId": "cat-restaurant",
+      "priority": 80
+    },
+    {
+      "pattern": "zara riya",
+      "categoryId": "cat-clothing",
+      "priority": 80
+    },
+    {
+      "pattern": "zettle chestnut baker",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "zettle food unit comp",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "zhu wen",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "zuiki",
+      "categoryId": "cat-public-transport",
+      "priority": 80
+    },
+    {
+      "pattern": "ابراهيم حامدالغامدي",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "احسان احمد عبدالله الغامدي",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "احمد الغامدى",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "احمد محمد احمد نسيب",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "اعادة اصدار لوحة المركبة",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "اليكترون",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "ايجار",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "بطاقة ائتمانية:سداد",
+      "categoryId": "cat-debt",
+      "priority": 80
+    },
+    {
+      "pattern": "تأشيرة خروج و عودة-مفرد",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "تجديد رخصة القيادة",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "تجديد رخصة سير المركبة",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "تركي الشرابي",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "حاتم الغادمدي",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "حامد بن علي بن محمد الغامدى",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "حسن منصور عمر",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "حليمه علي محمد الغامدي",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "حمدالنيل عبدالله",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "حنان الاحمدي",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "خالد الحربي",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "رسوم طباعة كشف الحساب",
+      "categoryId": "cat-other-expense",
+      "priority": 80
+    },
+    {
+      "pattern": "سداد المخالفات المرورية",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "سداد فاتورة",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "سعيد الغامدي",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "سلطان حسن محمد شوباص",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "شركة الثقة النادرة للتجارة",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "شركة المياه الوطنية",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "شركة تكامل لخدمات الأعمال شركة مساه",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "شركه علم شركة مساهمة سعودية",
+      "categoryId": "cat-salary",
+      "priority": 80
+    },
+    {
+      "pattern": "عبدالعزيز عبدالله حيدر المغربي",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "عبدالله الشهري",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "عبدالمجيد عبدالخالق",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "فاطمه الغامدي",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "فيصل العويضي",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "كاش باك بطاقة ائتمانية",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "كامل السلمي",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "محمد الغامدى",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "محمد الغامدي",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "محمد محمد",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "مدفوعات وزارة الداخلية",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "مسبقة الدفع )سوا(",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "منصة ايجار",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "مهارة",
+      "categoryId": "cat-home-maintenance",
+      "priority": 80
+    },
+    {
+      "pattern": "ناصر عثمان عبدالله ال عويره الكربي",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "نايف محمد فيصل سعد",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "نقل الملكية",
+      "categoryId": "cat-utilities",
+      "priority": 80
+    },
+    {
+      "pattern": "هاني الغامدى",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "همة",
+      "categoryId": "cat-home-maintenance",
+      "priority": 80
+    },
+    {
+      "pattern": "همه",
+      "categoryId": "cat-home-maintenance",
+      "priority": 80
+    },
+    {
+      "pattern": "هناء الغامدي",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "وزارة المالية",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "وضاح الغامدى",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "وليد الغامدى",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "يورباي",
+      "categoryId": "cat-side-income",
+      "priority": 80
+    },
+    {
+      "pattern": "8 portion",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "abdulelah alhazmi",
+      "categoryId": "cat-side-income",
+      "priority": 60
+    },
+    {
+      "pattern": "abdullah faris",
+      "categoryId": "cat-side-income",
+      "priority": 60
+    },
+    {
+      "pattern": "abdulrahman alghamdi",
+      "categoryId": "cat-side-income",
+      "priority": 60
+    },
+    {
+      "pattern": "ahmed aljeaidan",
+      "categoryId": "cat-side-income",
+      "priority": 60
+    },
+    {
+      "pattern": "aklat aln",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "alhatabt c",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "alp bakeries",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "alp fastfood",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "alp maxim caterers",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "alp personalservices",
+      "categoryId": "cat-other-expense",
+      "priority": 60
+    },
+    {
+      "pattern": "alp restaurants",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "alp*personalservices",
+      "categoryId": "cat-other-expense",
+      "priority": 60
+    },
+    {
+      "pattern": "amana jui",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "anab grou",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "aroya cruises limited",
+      "categoryId": "cat-side-income",
+      "priority": 60
+    },
+    {
+      "pattern": "asdaa",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "aws alghamdi",
+      "categoryId": "cat-side-income",
+      "priority": 60
+    },
+    {
+      "pattern": "badria mo",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "basmt alo",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "bor jus",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "buonarroti 47",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "cany",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "canyin",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "chef douh",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "chefs",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "cucina di",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "daily",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "daily foo",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "delicacie",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "diriyah g",
+      "categoryId": "cat-entertainment",
+      "priority": 60
+    },
+    {
+      "pattern": "etan rest",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "fahad aldrsony",
+      "categoryId": "cat-side-income",
+      "priority": 60
+    },
+    {
+      "pattern": "farm vittorio emanuele",
+      "categoryId": "cat-medical",
+      "priority": 60
+    },
+    {
+      "pattern": "fawal shumukh alafrah",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "fire gril",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "floward.c",
+      "categoryId": "cat-gifts",
+      "priority": 60
+    },
+    {
+      "pattern": "food maker",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "food truc",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "glovo 01a",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "hala",
+      "categoryId": "cat-public-transport",
+      "priority": 60
+    },
+    {
+      "pattern": "hala mark",
+      "categoryId": "cat-public-transport",
+      "priority": 60
+    },
+    {
+      "pattern": "halaqat a",
+      "categoryId": "cat-public-transport",
+      "priority": 60
+    },
+    {
+      "pattern": "hamed alghamdi",
+      "categoryId": "cat-side-income",
+      "priority": 60
+    },
+    {
+      "pattern": "hana alghamdi",
+      "categoryId": "cat-side-income",
+      "priority": 60
+    },
+    {
+      "pattern": "herfy1248",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "house of c",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "hungersta",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "kayan aljawhrt",
+      "categoryId": "cat-home-maintenance",
+      "priority": 60
+    },
+    {
+      "pattern": "khalid alsalem",
+      "categoryId": "cat-side-income",
+      "priority": 60
+    },
+    {
+      "pattern": "khlooud tobigi",
+      "categoryId": "cat-side-income",
+      "priority": 60
+    },
+    {
+      "pattern": "kims",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "lemon co",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "lfah sghe",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "luxury range of cars",
+      "categoryId": "cat-other-expense",
+      "priority": 60
+    },
+    {
+      "pattern": "makkah me",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "malik kha",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "maqloba c",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "mc donald",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "mtam mshw",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "new taiz b",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "nmc7819",
+      "categoryId": "cat-medical",
+      "priority": 60
+    },
+    {
+      "pattern": "qeod alma",
+      "categoryId": "cat-subscriptions",
+      "priority": 60
+    },
+    {
+      "pattern": "raghad alghamdi",
+      "categoryId": "cat-side-income",
+      "priority": 60
+    },
+    {
+      "pattern": "riyadh pa",
+      "categoryId": "cat-entertainment",
+      "priority": 60
+    },
+    {
+      "pattern": "roba kaba",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "sandwichw",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "sbarro",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "seoal avd",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "seoul adb",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "shadi shah",
+      "categoryId": "cat-side-income",
+      "priority": 60
+    },
+    {
+      "pattern": "shawarma e",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "shawarmer",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "shawerma h",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "shawerma house restaurant",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "somked ch",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "spl",
+      "categoryId": "cat-other-expense",
+      "priority": 60
+    },
+    {
+      "pattern": "trankila",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "transit",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "turkey sw",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "venchi fi calimaruzza",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "waleed alghamdi",
+      "categoryId": "cat-side-income",
+      "priority": 60
+    },
+    {
+      "pattern": "waleed hamed",
+      "categoryId": "cat-side-income",
+      "priority": 60
+    },
+    {
+      "pattern": "waleed hamed ali alghamdi",
+      "categoryId": "cat-side-income",
+      "priority": 60
+    },
+    {
+      "pattern": "whop",
+      "categoryId": "cat-subscriptions",
+      "priority": 60
+    },
+    {
+      "pattern": "zad jedda",
+      "categoryId": "cat-restaurant",
+      "priority": 60
+    },
+    {
+      "pattern": "حامد بن علي الغامدى",
+      "categoryId": "cat-side-income",
+      "priority": 60
+    }
   ]
 }

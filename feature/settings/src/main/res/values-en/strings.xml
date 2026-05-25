@@ -169,6 +169,18 @@
     <string name="settings_recurring_suggestions_body">We spotted these patterns in your history. Confirm any to create a recurring rule.</string>
     <string name="settings_recurring_auto_detected_notes" formatted="true">Auto-detected from %1$d previous transactions.</string>
     <string name="settings_recurring_accepted_toast" formatted="true">Rule created for %1$s · it now appears below in Active subscriptions. Tap "Active" to deactivate it later.</string>
+
+    <!-- R-03 Confirmation sheet -->
+    <string name="settings_recurring_confirm_title">Confirm subscription</string>
+    <string name="settings_recurring_confirm_cadence">Cadence</string>
+    <string name="settings_recurring_confirm_category">Category</string>
+    <string name="settings_recurring_confirm_create">Create subscription</string>
+
+    <!-- R-04 Subscriptions framing -->
+    <string name="settings_recurring_active_section">Active</string>
+    <string name="settings_recurring_paused_section" formatted="true">Paused · %1$d</string>
+    <string name="settings_recurring_active_count" formatted="true">%1$d active subscription(s)</string>
+    <string name="settings_recurring_monthly_total_label">Monthly total ·</string>
     <string name="settings_recurring_add">+ Add rule</string>
     <string name="settings_recurring_hide_form">Hide form</string>
     <string name="settings_recurring_empty">No rules yet. Start with your rent, your salary, or your Netflix subscription.</string>

@@ -169,6 +169,18 @@
     <string name="settings_recurring_suggestions_body">اكتشفنا هذه الأنماط من حركاتك السابقة. تأكد منها لإنشاء قاعدة تكرار.</string>
     <string name="settings_recurring_auto_detected_notes" formatted="true">اكتُشف تلقائيًا من %1$d حركات سابقة.</string>
     <string name="settings_recurring_accepted_toast" formatted="true">تم إنشاء قاعدة لـ %1$s · ستظهر في الأسفل ضمن الاشتراكات النشطة. اضغط «نشطة» لإيقافها لاحقًا.</string>
+
+    <!-- R-03 Confirmation sheet -->
+    <string name="settings_recurring_confirm_title">تأكيد القاعدة</string>
+    <string name="settings_recurring_confirm_cadence">التكرار</string>
+    <string name="settings_recurring_confirm_category">التصنيف</string>
+    <string name="settings_recurring_confirm_create">إنشاء القاعدة</string>
+
+    <!-- R-04 Subscriptions framing -->
+    <string name="settings_recurring_active_section">النشطة الآن</string>
+    <string name="settings_recurring_paused_section" formatted="true">المُوقَفة · %1$d</string>
+    <string name="settings_recurring_active_count" formatted="true">%1$d اشتراك نشط</string>
+    <string name="settings_recurring_monthly_total_label">المجموع الشهري ·</string>
     <string name="settings_recurring_add">+ إضافة قاعدة</string>
     <string name="settings_recurring_hide_form">إخفاء النموذج</string>
     <string name="settings_recurring_empty">لا قواعد بعد. ابدأ بإيجارك أو راتبك أو اشتراك Netflix.</string>
