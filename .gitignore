@@ -73,6 +73,13 @@ hs_err_pid*
 # GitHub Releases is the canonical distribution surface for public APKs.
 /release-artifacts/
 /error.jpg
+/error*.jpg
+
+# Personal SMS exports — these are PII and must never be committed.
+# The folder is used as input for `docs/sms-corpus-analysis.md` and the
+# merchant catalog, both of which are derived (no personal data leaks).
+"/messages sample/"
+/messages sample/
 
 # .claude scratch dir (private session state)
 .claude/

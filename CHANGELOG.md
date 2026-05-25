@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Nothing yet.
 
+## [0.1.0-beta.3] — 2026-05-25
+
+### Fixed
+
+- **Promotional SMS from unknown senders were being ingested as transactions.** The earlier `UniversalAmountTemplate` matched ANY sender via `Regex(".+")`, so a marketing shortcode shouting "Earn 10,000 SAR cashback!" became a pending transaction. The universal template is now restricted to `KnownBankSenders.builtIn`. Any sender ending in the Saudi-CITC `-AD` suffix (`AlRajhiB-AD`, `eXtra-AD`, `JARIR-AD`, …) is hard-blocked because that suffix is reserved for advertising channels by the regulator. Loyalty programs (`mokafaa`), OTP-only senders (`FoodicsOTP`), and prize-contest senders (`stcplay-AD`) are explicitly in `hardBlocked`.
+
+### Added
+
+- **Real-format bank templates from a 1,000-message corpus.** Rewrote the Al Rajhi / STC Bank / D360 / Barq parsers against actual SMS exports (`docs/sms-corpus-analysis.md`, `docs/all-senders-analysis.md`). New templates: `Online Purchase`, `PoS purchase`, `Reverse Transaction` (refund), `Debit Internal Transfer`, `Debit Transfer Local` (SARIE), `Credit Transfer Local` (salary inbound), `Bill Payment`, `Deposit: Saving Account Monthly Profit`, `Credit Card:Payment`, `Loan Instalment`, `Transfer Between Your Accounts` for Al Rajhi; `Internal incoming/outward transfer`, `Outward transfer (SARIE)`, `Online Purchase Transaction`, `Pay qattah` for STC Bank; `Online Purchase`, `International Purchase`, local `Purchase`, `Account Funding`, `Incoming Transfer`, `International transfer` for D360; `Online Purchases`, `POS International Purchase`, `ATM Withdrawal`, `Debit Transfer Internal`, `Credit transfer Local` for Barq. Multi-currency handled correctly — the SAR-in-parens value wins.
+- **GlobalBankIgnoreTemplate.** Cross-bank content filter for OTP codes, beneficiary additions/activations, scheduled maintenance, card-activation notices, marketing language (`Tasaheal`, `Buy X Get Y`, `Shukrans`, `Earn X cashback`, prize draws, Arabic `جوائز`/`موافقة فورية`/`نقاط مكافأة`/`تطبق الشروط`/`تقسيط`). Anything that matches a pattern returns `Ignored` *before* template parsing runs, so wasted regex work is skipped and the audit log stays clean.
+- **Default merchant catalog (`seed_merchant_catalog.json`).** ~200 substring→category mappings covering McDonald's / KFC / Albaik / Herfy / Kudu / Shawarmer / Pizza Hut / Starbucks / Dunkin / Tim Hortons / Roasting House / Barn's / %Arabica / Carrefour / Lulu / Othaim / Tamimi / Panda / Bindawood / Danube / Sarawat / Nahdi / Aldrees / Saso / Petromin / STC / Mobily / Zain / Uber / Careem / DiDi / TfL / Jarir / Extra / Saco / IKEA / Amazon / Noon / Shein / Zara / Uniqlo / H&M / Netflix / Spotify / Apple / iCloud / OpenAI / Anthropic / GitHub / Shahid / Starzplay / Airbnb / Booking.com / Agoda / Flynas / Saudia / Emirates / Saudi Electric / National Water / Tesco / Conad / Penny Market / and ~140 more. Each entry has a confidence so the user sees which auto-classifications are guesses vs certain.
+- **ADR-006 (`docs/adr/ADR-006-spam-resistant-ingestion.md`).** Documents the layered filter pipeline (sender allow-list → `-AD` suffix block → content patterns → bank templates → user templates → universal fallback) and the sustainability guarantees for future users so this class of bug doesn't return.
+- **Test suite expansion.** 39 new corpus-pinned tests in `SmsCorpusTest.kt` plus 6 sustainability tests (`-AD` suffix blocking, `mokafaa` blocked, OTP-only sender blocked, Tasaheal pitch ignored, Arabic financing offer ignored, prize contest ignored). Total parser tests: 59.
+
 ## [0.1.0-beta.2] — 2026-05-25
 
 ### Added

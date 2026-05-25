@@ -3,6 +3,7 @@ package com.athar.ingestion.smsparser.universal
 import com.athar.core.common.money.Money
 import com.athar.core.domain.model.TxType
 import com.athar.ingestion.smsparser.BankTemplate
+import com.athar.ingestion.smsparser.KnownBankSenders
 import com.athar.ingestion.smsparser.Normalize
 import com.athar.ingestion.smsparser.ParseResult
 import com.athar.ingestion.smsparser.SenderMatcher
@@ -10,9 +11,14 @@ import kotlinx.datetime.Instant
 import java.math.BigDecimal
 
 /**
- * Currency-and-language-agnostic last-resort parser.
+ * Currency-and-language-agnostic last-resort parser — restricted to KNOWN bank senders.
  *
- * Activates for ANY sender that wasn't matched by a more specific bank template.
+ * The earlier any-sender behaviour was a bug: a promotional SMS from an unrelated
+ * shortcode ("Earn SAR 10,000 today!") would get treated as a transaction because
+ * it contained a currency-amount substring. The fix is structural: this template
+ * only runs when the sender is in [KnownBankSenders.builtIn], so messages from
+ * marketing senders, OTP shortcodes, etc. never reach it.
+ *
  * Detects:
  *   - amount: decimal with optional thousands separators
  *   - currency: 3-letter ISO codes (SAR, AED, USD, EUR, GBP, INR, …) OR symbols ($, €, £, ﷼, ₹)
@@ -21,15 +27,10 @@ import java.math.BigDecimal
  * Always returns Success with low confidence (≤0.55) so the user is forced to
  * confirm/correct in the pending tray. This is the bridge layer until the
  * on-device ML classifier ships (see ADR-005).
- *
- * Why a separate sender matcher? `SenderMatcher.Regex(".*")` lets ANY sender pass
- * the registry filter; the parser logic then either yields a Success (transaction
- * detected) or Failed (no monetary signal found). Templates above this one short-
- * circuit known-bank parsing so this only fires when nothing else matched.
  */
 class UniversalAmountTemplate : BankTemplate {
     override val id: String = "universal-amount"
-    override val senderMatcher: SenderMatcher = SenderMatcher.Regex(Regex(".+"))
+    override val senderMatcher: SenderMatcher = SenderMatcher.AnyOf(KnownBankSenders.builtIn)
 
     // (currency-symbol|ISO-code)?  amount  (ISO-code)?  — covers `$200`, `200 SAR`, `SAR 200`, `₹500`.
     private val amountWithCurrency = Regex(

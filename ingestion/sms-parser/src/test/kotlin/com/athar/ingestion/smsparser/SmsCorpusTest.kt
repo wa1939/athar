@@ -1,0 +1,552 @@
+package com.athar.ingestion.smsparser
+
+import com.athar.core.domain.model.IngestSource
+import com.athar.core.domain.model.RawIngestEvent
+import com.athar.core.domain.model.TxType
+import com.athar.ingestion.smsparser.alrajhi.AlRajhiBalanceAlertTemplate
+import com.athar.ingestion.smsparser.alrajhi.AlRajhiBillPaymentTemplate
+import com.athar.ingestion.smsparser.alrajhi.AlRajhiCreditCardPaymentTemplate
+import com.athar.ingestion.smsparser.alrajhi.AlRajhiCreditLocalTransferTemplate
+import com.athar.ingestion.smsparser.alrajhi.AlRajhiDebitInternalTransferTemplate
+import com.athar.ingestion.smsparser.alrajhi.AlRajhiDebitLocalTransferTemplate
+import com.athar.ingestion.smsparser.alrajhi.AlRajhiDeclinedTemplate
+import com.athar.ingestion.smsparser.alrajhi.AlRajhiDepositRealTemplate
+import com.athar.ingestion.smsparser.alrajhi.AlRajhiLoanInstalmentTemplate
+import com.athar.ingestion.smsparser.alrajhi.AlRajhiOnlinePurchaseRealTemplate
+import com.athar.ingestion.smsparser.alrajhi.AlRajhiPosPurchaseRealTemplate
+import com.athar.ingestion.smsparser.alrajhi.AlRajhiReverseTemplate
+import com.athar.ingestion.smsparser.alrajhi.AlRajhiTransferBetweenOwnTemplate
+import com.athar.ingestion.smsparser.barq.BarqAtmWithdrawalTemplate
+import com.athar.ingestion.smsparser.barq.BarqCreditTransferTemplate
+import com.athar.ingestion.smsparser.barq.BarqDebitTransferTemplate
+import com.athar.ingestion.smsparser.barq.BarqOnlinePurchaseTemplate
+import com.athar.ingestion.smsparser.barq.BarqPosInternationalTemplate
+import com.athar.ingestion.smsparser.barq.BarqRejectedTemplate
+import com.athar.ingestion.smsparser.d360.D360AccountFundingTemplate
+import com.athar.ingestion.smsparser.d360.D360DeclinedTemplate
+import com.athar.ingestion.smsparser.d360.D360IncomingTransferTemplate
+import com.athar.ingestion.smsparser.d360.D360InternationalPurchaseTemplate
+import com.athar.ingestion.smsparser.d360.D360InternationalTransferTemplate
+import com.athar.ingestion.smsparser.d360.D360LocalPurchaseTemplate
+import com.athar.ingestion.smsparser.d360.D360OnlinePurchaseTemplate
+import com.athar.ingestion.smsparser.stcbank.StcBankIncomingTransferTemplate
+import com.athar.ingestion.smsparser.stcbank.StcBankOnlinePurchaseTemplate
+import com.athar.ingestion.smsparser.stcbank.StcBankOutgoingTransferTemplate
+import com.athar.ingestion.smsparser.stcbank.StcBankPayQattahTemplate
+import com.athar.ingestion.smsparser.stcbank.StcBankSarieOutwardTemplate
+import com.athar.ingestion.smsparser.universal.UniversalAmountTemplate
+import com.google.common.truth.Truth.assertThat
+import kotlinx.datetime.Instant
+import org.junit.jupiter.api.Test
+import java.math.BigDecimal
+
+/**
+ * Pins parsing of REAL message shapes from the user's 1,000+ message export
+ * (docs/sms-corpus-analysis.md). One test per shape; samples are anonymized but
+ * structurally identical to the corpus.
+ */
+class SmsCorpusTest {
+
+    private val at = Instant.parse("2026-01-01T12:00:00Z")
+
+    private fun parser() = TemplateBasedSmsParser(
+        listOf(
+            GlobalBankIgnoreTemplate(),
+            AlRajhiDeclinedTemplate(),
+            AlRajhiBalanceAlertTemplate(),
+            AlRajhiOnlinePurchaseRealTemplate(),
+            AlRajhiPosPurchaseRealTemplate(),
+            AlRajhiReverseTemplate(),
+            AlRajhiBillPaymentTemplate(),
+            AlRajhiLoanInstalmentTemplate(),
+            AlRajhiCreditCardPaymentTemplate(),
+            AlRajhiCreditLocalTransferTemplate(),
+            AlRajhiDebitLocalTransferTemplate(),
+            AlRajhiDebitInternalTransferTemplate(),
+            AlRajhiTransferBetweenOwnTemplate(),
+            AlRajhiDepositRealTemplate(),
+            StcBankIncomingTransferTemplate(),
+            StcBankOutgoingTransferTemplate(),
+            StcBankSarieOutwardTemplate(),
+            StcBankOnlinePurchaseTemplate(),
+            StcBankPayQattahTemplate(),
+            D360DeclinedTemplate(),
+            D360OnlinePurchaseTemplate(),
+            D360InternationalPurchaseTemplate(),
+            D360LocalPurchaseTemplate(),
+            D360AccountFundingTemplate(),
+            D360IncomingTransferTemplate(),
+            D360InternationalTransferTemplate(),
+            BarqRejectedTemplate(),
+            BarqOnlinePurchaseTemplate(),
+            BarqPosInternationalTemplate(),
+            BarqAtmWithdrawalTemplate(),
+            BarqDebitTransferTemplate(),
+            BarqCreditTransferTemplate(),
+            UniversalAmountTemplate(),
+        ),
+    )
+
+    private fun event(sender: String, body: String) = RawIngestEvent(
+        id = "x", source = IngestSource.SMS, sender = sender, body = body, receivedAt = at, rawId = "1",
+    )
+
+    // ─── AlRajhi ──────────────────────────────────────────────────────────
+
+    @Test fun `AlRajhi Online Purchase SAR`() {
+        val body = """
+            Online Purchase
+            By:5916 ;Visa
+            Amount:56.35 SAR
+            At:Amazon SA
+            Balance:2270.94 SAR
+            Date:27-12-2025 23:04
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("56.35"))
+        assertThat(r.merchant).isEqualTo("Amazon SA")
+        assertThat(r.type).isEqualTo(TxType.EXPENSE)
+    }
+
+    @Test fun `AlRajhi Online Purchase multi-currency captures SAR-in-parens`() {
+        val body = """
+            Online Purchase
+            Card:5916 ;Visa
+            Amount:16.25USD(60.96 SAR)
+            At: HARVARD B
+            Fee &VAT: 1.40 SAR
+            Exchange rate~ 3.751385
+            Total due amount:62.36 SAR
+            Country:USA
+            Balance:2973.79 SAR
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("60.96"))
+        assertThat(r.merchant).isEqualTo("HARVARD B")
+    }
+
+    @Test fun `AlRajhi PoS purchase`() {
+        val body = """
+            PoS purchase
+            Card:5916 ;Visa-Samsung Pay
+            At: Hamad Alm
+            Amount:249 SAR
+            Balance: 1922.81 SAR
+            Date:31-12-2025 20:43
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("249"))
+        assertThat(r.merchant).isEqualTo("Hamad Alm")
+    }
+
+    @Test fun `AlRajhi Reverse Transaction = INCOME refund`() {
+        val body = """
+            Reverse Transaction
+            By:5916;Visa-Samsung Pay
+            Amount:SAR 40
+            At:ROBA KABA
+            Balance:SAR 3383.01
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.INCOME)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("40"))
+        assertThat(r.merchant).isEqualTo("ROBA KABA")
+    }
+
+    @Test fun `AlRajhi Debit Internal Transfer captures recipient name not account number`() {
+        val body = """
+            Debit Internal Transfer
+            From:0930
+            Amount:SAR 3000
+            To:HAMED ALGHAMDI
+            To:4186
+            Date:25-12-27 20:10
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("3000"))
+        assertThat(r.counterparty).isEqualTo("HAMED ALGHAMDI")
+        assertThat(r.type).isEqualTo(TxType.TRANSFER)
+    }
+
+    @Test fun `AlRajhi Debit Transfer Local`() {
+        val body = """
+            Debit Transfer Local
+            Bank:SNB
+            From:0930
+            Amount:SAR 1400
+            To:عبدالرحمن محمد عبدالله الغامدي
+            To:5308
+            26-1-6 10:53
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("1400"))
+        assertThat(r.counterparty).contains("عبدالرحمن")
+    }
+
+    @Test fun `AlRajhi Credit Transfer Local salary inbound`() {
+        val body = """
+            Credit Transfer Local
+            Via:NATIONAL COMMERCIAL BANK, THE
+            Amount:SAR 23597.21
+            To:0930
+            From:شركه علم شركة مساهمة سعودية
+            From:0203
+            26/1/25 09:04
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.INCOME)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("23597.21"))
+        assertThat(r.counterparty).contains("شركه علم")
+    }
+
+    @Test fun `AlRajhi Bill Payment captures service as merchant`() {
+        val body = """
+            Bill Payment
+            From:4268
+            Amount:SAR 443
+            Biller:002
+            Service:SAUDI ELECTRIC COMPANY
+            Bill:30017473123
+            26-1-6 19:46
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("443"))
+        assertThat(r.merchant).isEqualTo("SAUDI ELECTRIC COMPANY")
+    }
+
+    @Test fun `AlRajhi Deposit Saving Monthly Profit = INCOME`() {
+        val body = """
+            Deposit:Saving Account Monthly Profit
+            Amount:SAR 92.80
+            To:4268
+            Date:26-1-1 04:32
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.INCOME)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("92.80"))
+    }
+
+    @Test fun `AlRajhi Loan Instalment`() {
+        val body = """
+            Debit: Loan Instalment
+            Instalment: SAR 7166.67
+            From: 0930
+            Remaining Amount: SAR 358333.50
+            25/1/26 20:26
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("7166.67"))
+        assertThat(r.merchant).isEqualTo("Loan Instalment")
+    }
+
+    @Test fun `AlRajhi Declined Transaction is Ignored`() {
+        val body = """
+            Notification : Declined due to insufficient fund
+            Transaction : Online Purchase
+            Card: 2909
+            Amount : SAR 78.35
+            Merchant : Amazon SA
+            Date : 03-01-2026 01:59
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body))
+        assertThat(r).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `AlRajhi OTP message is Ignored`() {
+        val body = """
+            OTP Code:2232
+            Reason:Rajhi Transfer - Mobile App
+            Amount:3,000.00 SAR
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body))
+        assertThat(r).isEqualTo(ParseResult.Ignored)
+    }
+
+    // ─── STC Bank ──────────────────────────────────────────────────────────
+
+    @Test fun `STC Bank Internal incoming transfer`() {
+        val body = """
+            Internal incoming transfer
+            Amount:218.00SAR
+            From:AWS ALGHAMDI
+            Acc:0847*
+            At:22/11/25 01:16
+        """.trimIndent()
+        val r = parser().parse(event("STC Bank", body)) as ParseResult.Success
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("218.00"))
+        assertThat(r.counterparty).isEqualTo("AWS ALGHAMDI")
+        assertThat(r.type).isEqualTo(TxType.INCOME)
+    }
+
+    @Test fun `STC Bank Internal outward transfer`() {
+        val body = """
+            Internal outward transfer
+            Amount:137.27SAR
+            To:ABDULAZIZ ALFAYYADH
+            Acc:0004*
+            At:22/11/25 01:18
+        """.trimIndent()
+        val r = parser().parse(event("STC Bank", body)) as ParseResult.Success
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("137.27"))
+        assertThat(r.counterparty).isEqualTo("ABDULAZIZ ALFAYYADH")
+    }
+
+    @Test fun `STC Bank OTP is Ignored`() {
+        val body = """
+            0530 is your OTP
+            For: Add Beneficiary
+            *Do not share the code
+        """.trimIndent()
+        val r = parser().parse(event("STC Bank", body))
+        assertThat(r).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `STC Bank Beneficiary added is Ignored`() {
+        val r = parser().parse(event("STC Bank", "Beneficiary: عبدالعزيز الفياض has been added."))
+        assertThat(r).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `STC Bank Online Purchase`() {
+        val body = """
+            Online Purchase Transaction Amount 93.10
+            From: Nahdi Care Clinic
+            Card: *******3279
+            Date 19/02/2026
+        """.trimIndent()
+        val r = parser().parse(event("STC Bank", body)) as ParseResult.Success
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("93.10"))
+        assertThat(r.merchant).isEqualTo("Nahdi Care Clinic")
+    }
+
+    // ─── D360 ──────────────────────────────────────────────────────────
+
+    @Test fun `D360 Online Purchase multi-currency CNY`() {
+        val body = """
+            Online Purchase
+            Amount: CNY 1.80 (SAR 0.94)
+            Card: *6169 - VISA (Ecommerce)
+            At: ALP*HelloBike
+            On: 2025-07-11 11:35
+        """.trimIndent()
+        val r = parser().parse(event("D360 Bank", body)) as ParseResult.Success
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("0.94"))
+        assertThat(r.merchant).isEqualTo("ALP*HelloBike")
+    }
+
+    @Test fun `D360 International Purchase GBP`() {
+        val body = """
+            International Purchase
+            Amount: GBP 18.39 (SAR 93.22)
+            Card: *6169 - VISA (Card)
+            At: TESCO STORES 4850
+            Country: United Kingdom
+            On: 2025-10-03 18:17
+        """.trimIndent()
+        val r = parser().parse(event("D360 Bank", body)) as ParseResult.Success
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("93.22"))
+        assertThat(r.merchant).contains("TESCO STORES")
+        assertThat(r.merchant).contains("United Kingdom")
+    }
+
+    @Test fun `D360 Local Purchase SAR`() {
+        val body = """
+            Purchase
+            Amount: SAR 25.00
+            Card: *6169 - mada (Samsung Pay)
+            At: Abdullah Dhafer Ali AlShe
+            On: 2026-02-20 17:50
+        """.trimIndent()
+        val r = parser().parse(event("D360 Bank", body)) as ParseResult.Success
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("25.00"))
+        assertThat(r.merchant).isEqualTo("Abdullah Dhafer Ali AlShe")
+    }
+
+    @Test fun `D360 Account Funding`() {
+        val body = """
+            Account Funding Amount: SAR 5000.00
+            Card: *5916 - Visa
+            To: *0424
+            On: 22/08/2025 03:19:04
+        """.trimIndent()
+        val r = parser().parse(event("D360 Bank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.INCOME)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("5000.00"))
+    }
+
+    @Test fun `D360 Incoming Transfer from another bank`() {
+        val body = """
+            Incoming Transfer: AlRajhi Bank
+            Amount: SAR 6,300.00
+            From: WALEED HAMED****
+            IBAN: ****0424
+            at: 2025-08-22 03:24
+        """.trimIndent()
+        val r = parser().parse(event("D360 Bank", body)) as ParseResult.Success
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("6300.00"))
+        assertThat(r.counterparty).contains("WALEED HAMED")
+    }
+
+    @Test fun `D360 Declined Transaction is Ignored`() {
+        val body = """
+            Transaction Declined: Insufficient balance
+            Amount: GBP 103.29 (SAR 520.21)
+            Card: *6169 - Visa
+            At: BURGER & LOBSTER
+            On: 2025-10-10 14:48:55
+        """.trimIndent()
+        assertThat(parser().parse(event("D360 Bank", body))).isEqualTo(ParseResult.Ignored)
+    }
+
+    // ─── Barq ──────────────────────────────────────────────────────────
+
+    @Test fun `Barq Online Purchase multi-currency captures SAR in parens`() {
+        val body = """
+            Online Purchases:
+            Visa card: **9803
+            Amount: 6 CNY (3.14 SAR)
+            Wallet Balance: 2496.86
+            At: ZUOMENDUNCANYIN
+            On: 2025-07-11 03:24
+        """.trimIndent()
+        val r = parser().parse(event("barq app", body)) as ParseResult.Success
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("3.14"))
+        assertThat(r.merchant).isEqualTo("ZUOMENDUNCANYIN")
+    }
+
+    @Test fun `Barq POS International Purchase EUR`() {
+        val body = """
+            POS International Purchase
+            Visa card: **9803
+            Amount: 8.3 EUR (36.25 SAR) FX 4.3675
+            Wallet balance: 1955.55
+            At: REGOLI DAL 1916
+            Country: Italy
+            2026-03-26 12:42
+        """.trimIndent()
+        val r = parser().parse(event("barq app", body)) as ParseResult.Success
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("36.25"))
+        assertThat(r.merchant).contains("REGOLI")
+    }
+
+    @Test fun `Barq Debit Transfer Internal`() {
+        val body = """
+            Debit Transfer Internal
+            Amount: 240.00 SAR
+            To: VAHID AHMA**
+            Beneficiary A/C:**4445
+            2025-10-02 00:29
+        """.trimIndent()
+        val r = parser().parse(event("barq app", body)) as ParseResult.Success
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("240.00"))
+        assertThat(r.counterparty).contains("VAHID")
+    }
+
+    @Test fun `Barq Credit Transfer Local`() {
+        val body = """
+            Credit transfer Local
+            Amount: 2500.00 SAR
+            From: WALEED ALGHAMDI
+            a/c: **4268
+            Bank: RAJHI BANK
+            2025-10-02 01:25
+        """.trimIndent()
+        val r = parser().parse(event("barq app", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.INCOME)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("2500.00"))
+    }
+
+    @Test fun `Barq OTP is Ignored`() {
+        val body = """
+            One time password:
+            OTP: 493626
+            Amount: 618.0
+            Currency: CNY
+            At: Alipay
+        """.trimIndent()
+        assertThat(parser().parse(event("barq app", body))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `Barq beneficiary activated is Ignored`() {
+        val body = "New benefeciary activated: Waleed Hamed Alghamdi"
+        assertThat(parser().parse(event("barq app", body))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `Barq Rejected Transaction is Ignored`() {
+        val body = """
+            Rejected transaction: Insufficient balance
+            Card: **9803
+            Amount: 4115.88 CNY (2151.15 SAR)
+            At: ALP zhangjiajieruidel
+        """.trimIndent()
+        assertThat(parser().parse(event("barq app", body))).isEqualTo(ParseResult.Ignored)
+    }
+
+    // ─── Cross-cutting: unknown sender ────────────────────────────────────
+
+    @Test fun `unknown sender with money figure is Ignored — NOT a transaction`() {
+        // The exact bug the user reported: random promo "Earn SAR 10,000 today!"
+        // from a marketing shortcode used to slip through UniversalAmountTemplate.
+        val body = "Congratulations! You can earn up to SAR 10,000 today. Apply now."
+        val r = parser().parse(event("PROMO-9999", body))
+        assertThat(r).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `unknown sender even with bank-like message is Ignored`() {
+        val body = """
+            Online Purchase
+            Amount: SAR 50
+            At: McDonalds
+        """.trimIndent()
+        // Sender is clearly not a bank — refuse to parse.
+        val r = parser().parse(event("RANDOM-SENDER", body))
+        assertThat(r).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `known sender with marketing message is Ignored`() {
+        // Banks sometimes send marketing themselves; the GlobalBankIgnoreTemplate catches it.
+        val body = "Your financing is ready! No salary transfer required, with instant approval and deposit. Apply now."
+        val r = parser().parse(event("AlRajhiBank", body))
+        assertThat(r).isEqualTo(ParseResult.Ignored)
+    }
+
+    // ─── Sustainability guarantees ─────────────────────────────────────────
+    // These pin behaviours future users depend on. The Saudi CITC '-AD' suffix
+    // is the convention for marketing channels and must never reach the parser.
+
+    @Test fun `any sender ending in -AD is ignored regardless of body`() {
+        // AlRajhiB-AD is the Al Rajhi *marketing* channel — looks bank-ish but isn't transactions.
+        val cashbackPromo = """
+            Earn 10% cashback up to SAR 250 on international spends above SAR 8000
+            using credit card. Offer valid till 15 Jan 2026.
+        """.trimIndent()
+        assertThat(parser().parse(event("AlRajhiB-AD", cashbackPromo))).isEqualTo(ParseResult.Ignored)
+
+        val travelPromo = "Use your Infinite Credit Card while travelling abroad and earn 100% cashback up to SAR 50"
+        assertThat(parser().parse(event("eXtra-AD", travelPromo))).isEqualTo(ParseResult.Ignored)
+        assertThat(parser().parse(event("JARIR-AD", travelPromo))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `mokafaa loyalty program is blocked even though it talks about money`() {
+        val body = "Save your Platinum Rewards! You are 4 Purchases away from earning 5X Shukrans on your purchases!"
+        assertThat(parser().parse(event("mokafaa", body))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `FoodicsOTP and similar OTP-only senders are blocked`() {
+        assertThat(parser().parse(event("FoodicsOTP", "Your verification code is 179996"))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `Tasaheal installment marketing from real bank sender is ignored`() {
+        val body = "Hello, Pay your credit card transactions over 24 months with Tasaheal fixed monthly installments plan."
+        assertThat(parser().parse(event("AlRajhiBank", body))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `prize contest with monetary value is ignored`() {
+        val body = "جوائز ما تتفوّت بقيمة 7,000 ريال وأكثر. سجّل الآن لفرصة الفوز بايفون 15"
+        assertThat(parser().parse(event("AlRajhiBank", body))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `Arabic personal financing offer is ignored`() {
+        val body = "مرحبا وليد، تمويلك الشخصي بمبلغ يوصل لـ 432000 وفوقه 50,000 نقطة مكافأة. تطبق الشروط."
+        assertThat(parser().parse(event("AlRajhiBank", body))).isEqualTo(ParseResult.Ignored)
+    }
+}
