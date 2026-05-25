@@ -30,6 +30,22 @@
     <string name="today_empty_subtle">أضف حركة بالـ + أو فعّل قراءة الرسائل من الإعدادات.</string>
     <string name="today_no_today_transactions">لا حركات اليوم بعد.</string>
 
+    <!-- History (all transactions) screen -->
+    <string name="history_overline">السجل · كل الحركات</string>
+    <string name="history_back">رجوع</string>
+    <string name="history_search_label">بحث</string>
+    <string name="history_search_placeholder">اكتب اسم تاجر أو ملاحظة</string>
+    <string name="history_filter_all">الكل</string>
+    <string name="history_filter_confirmed">مؤكدة</string>
+    <string name="history_filter_pending">معلّقة</string>
+    <string name="history_filter_dismissed">متجاهَلة</string>
+    <string name="history_type_all">كل الأنواع</string>
+    <string name="history_type_expense">مصاريف</string>
+    <string name="history_type_income">دخل</string>
+    <string name="history_type_transfer">تحويلات</string>
+    <string name="history_count" formatted="true">%1$d حركة</string>
+    <string name="history_empty">لا حركات تطابق هذا البحث.</string>
+
     <!-- Pending tray -->
     <string name="today_pending_title" formatted="true">بانتظار التأكيد · %1$d</string>
     <string name="today_pending_subtle">اسحب للتأكيد أو التجاهل. أو استخدم الإجراءات الجماعية أدناه.</string>

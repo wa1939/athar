@@ -54,6 +54,7 @@ fun SettingsScreen(
     onOpenUserTemplates: () -> Unit = {},
     onOpenRecurringRules: () -> Unit = {},
     onOpenAccounts: () -> Unit = {},
+    onOpenHistory: () -> Unit = {},
     onApplyLocale: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
@@ -169,6 +170,8 @@ fun SettingsScreen(
                 accounts = ownAccounts,
                 onSave = viewModel::setOwnAccountNumbers,
             )
+
+            HistoryEntryCard(onOpen = onOpenHistory)
 
             AccountsEntryCard(onOpen = onOpenAccounts)
 
@@ -652,6 +655,24 @@ private fun LanguageCard(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun HistoryEntryCard(onOpen: () -> Unit) {
+    val theme = AtharTheme
+    AtharCard(modifier = Modifier
+        .fillMaxWidth()
+        .clickable(onClick = onOpen)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = stringResource(R.string.settings_entry_history_title), style = theme.typography.headline)
+            AtharText(
+                text = stringResource(R.string.settings_entry_history_body),
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
         }
     }
 }

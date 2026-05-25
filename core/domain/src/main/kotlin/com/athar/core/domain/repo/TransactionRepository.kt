@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.Flow
 interface TransactionRepository {
     fun observeByPeriod(period: Period, status: TxStatus? = null): Flow<List<Transaction>>
     fun observePending(): Flow<List<Transaction>>
+    /** Every transaction in the DB, newest first. Used by the All-Transactions history view. */
+    fun observeAll(): Flow<List<Transaction>>
     suspend fun get(id: String): Transaction?
     suspend fun upsert(transaction: Transaction)
     suspend fun delete(id: String)

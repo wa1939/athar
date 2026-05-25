@@ -96,6 +96,8 @@
     <string name="settings_own_accounts_save">حفظ الحسابات</string>
 
     <!-- Entry cards (links to sub-screens) -->
+    <string name="settings_entry_history_title">سجل كل الحركات</string>
+    <string name="settings_entry_history_body">شاهد كل حركاتك (المؤكدة والمعلّقة والمتجاهَلة) في قائمة واحدة قابلة للبحث. انقر أي حركة لتغيير تصنيفها أو حذفها.</string>
     <string name="settings_entry_accounts_title">الحسابات</string>
     <string name="settings_entry_accounts_body">أضف حسابات الجاري، الادخار، البطاقات الائتمانية، والاستثمار. صافي ثروتك = مجموع الأرصدة الحالية.</string>
     <string name="settings_entry_recurring_title">الحركات المتكررة</string>

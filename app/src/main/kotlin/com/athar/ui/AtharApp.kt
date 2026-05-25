@@ -48,6 +48,7 @@ import com.athar.feature.settings.RecurringRulesScreen
 import com.athar.feature.settings.SettingsScreen
 import com.athar.feature.settings.SmsAuditScreen
 import com.athar.feature.settings.UserTemplatesScreen
+import com.athar.feature.today.HistoryScreen
 import com.athar.feature.today.TodayScreen
 import com.athar.feature.trends.TrendsScreen
 import com.athar.ui.onboarding.OnboardingScreen
@@ -74,7 +75,8 @@ fun AtharApp() {
         routeName.endsWith("ActivityLog") ||
         routeName.endsWith("UserTemplates") ||
         routeName.endsWith("RecurringRules") ||
-        routeName.endsWith("Accounts")
+        routeName.endsWith("Accounts") ||
+        routeName.endsWith("History")
     val theme = AtharTheme
 
     val layoutDirection = if (Locale.getDefault().language == "ar") LayoutDirection.Rtl else LayoutDirection.Ltr
@@ -147,6 +149,7 @@ fun AtharApp() {
                         onOpenUserTemplates = { navController.navigate(Routes.UserTemplates) },
                         onOpenRecurringRules = { navController.navigate(Routes.RecurringRules) },
                         onOpenAccounts = { navController.navigate(Routes.Accounts) },
+                        onOpenHistory = { navController.navigate(Routes.History) },
                         onApplyLocale = { tag ->
                             LocaleHelper.persist(context, tag)
                             activity?.recreate()
@@ -161,6 +164,9 @@ fun AtharApp() {
                 }
                 composable<Routes.Accounts> {
                     AccountsScreen(onBack = { navController.popBackStack() })
+                }
+                composable<Routes.History> {
+                    HistoryScreen(onBack = { navController.popBackStack() })
                 }
                 composable<Routes.Categories> {
                     CategoriesScreen(onBack = { navController.popBackStack() })

@@ -31,6 +31,9 @@ internal class TransactionRepositoryImpl @Inject constructor(
     override fun observePending(): Flow<List<Transaction>> =
         dao.observePending().map { list -> list.map { it.toDomain() } }
 
+    override fun observeAll(): Flow<List<Transaction>> =
+        dao.observeAll().map { list -> list.map { it.toDomain() } }
+
     override suspend fun get(id: String): Transaction? = dao.get(id)?.toDomain()
 
     override suspend fun upsert(transaction: Transaction) {

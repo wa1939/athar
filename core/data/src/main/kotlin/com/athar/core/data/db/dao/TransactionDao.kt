@@ -31,6 +31,9 @@ internal interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY date DESC, createdAt DESC")
     suspend fun all(): List<TransactionEntity>
 
+    @Query("SELECT * FROM transactions ORDER BY date DESC, createdAt DESC")
+    fun observeAll(): Flow<List<TransactionEntity>>
+
     @Query("SELECT * FROM transactions WHERE status = 'CONFIRMED' AND date >= :since ORDER BY date DESC")
     fun observeConfirmedSince(since: LocalDate): Flow<List<TransactionEntity>>
 

@@ -96,6 +96,8 @@
     <string name="settings_own_accounts_save">Save accounts</string>
 
     <!-- Entry cards (links to sub-screens) -->
+    <string name="settings_entry_history_title">All transactions</string>
+    <string name="settings_entry_history_body">Browse every transaction (confirmed, pending, dismissed) in one searchable list. Tap any row to change its category or delete it.</string>
     <string name="settings_entry_accounts_title">Accounts</string>
     <string name="settings_entry_accounts_body">Add checking, savings, credit card, and investment accounts. Your net worth = sum of current balances.</string>
     <string name="settings_entry_recurring_title">Recurring transactions</string>
