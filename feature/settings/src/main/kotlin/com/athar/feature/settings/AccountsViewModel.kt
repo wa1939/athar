@@ -9,6 +9,7 @@ import com.athar.core.domain.model.AccountType
 import com.athar.core.domain.model.NetWorth
 import com.athar.core.domain.repo.AccountRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
+import android.util.Log
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,6 +70,14 @@ class AccountsViewModel @Inject constructor(
     private val _error = MutableStateFlow<AccountError?>(null)
     val error: StateFlow<AccountError?> = _error.asStateFlow()
 
+    /**
+     * Detail string captured from the last failed mutation (exception message). Surfaced under
+     * the generic error label so the user (and we) can actually tell *why* save/update/archive
+     * failed instead of staring at "تعذّر تحديث الحساب" with no recourse.
+     */
+    private val _errorDetail = MutableStateFlow<String?>(null)
+    val errorDetail: StateFlow<String?> = _errorDetail.asStateFlow()
+
     fun add(
         name: String,
         type: AccountType,
@@ -98,33 +107,40 @@ class AccountsViewModel @Inject constructor(
                 updatedAt = now,
             )
             runCatching { repo.upsert(account) }
-                .onFailure { _error.value = AccountError.SAVE_FAILED }
+                .onFailure { reportFailure(AccountError.SAVE_FAILED, "add(${account.name})", it) }
         }
     }
 
     fun update(account: Account) {
         viewModelScope.launch {
             runCatching { repo.upsert(account) }
-                .onFailure { _error.value = AccountError.UPDATE_FAILED }
+                .onFailure { reportFailure(AccountError.UPDATE_FAILED, "update(${account.id})", it) }
         }
     }
 
     fun setArchived(id: String, archived: Boolean) {
         viewModelScope.launch {
             runCatching { repo.setArchived(id, archived) }
-                .onFailure { _error.value = AccountError.ARCHIVE_FAILED }
+                .onFailure { reportFailure(AccountError.ARCHIVE_FAILED, "setArchived($id, $archived)", it) }
         }
     }
 
     fun delete(id: String) {
         viewModelScope.launch {
             runCatching { repo.delete(id) }
-                .onFailure { _error.value = AccountError.DELETE_HAS_TRANSACTIONS }
+                .onFailure { reportFailure(AccountError.DELETE_HAS_TRANSACTIONS, "delete($id)", it) }
         }
     }
 
     fun clearError() {
         _error.value = null
+        _errorDetail.value = null
+    }
+
+    private fun reportFailure(kind: AccountError, op: String, t: Throwable) {
+        Log.e("AccountsViewModel", "$op failed", t)
+        _error.value = kind
+        _errorDetail.value = t.message?.take(280) ?: t::class.simpleName
     }
 
     /** Convenience for the screen — current display currency for default new-account form. */

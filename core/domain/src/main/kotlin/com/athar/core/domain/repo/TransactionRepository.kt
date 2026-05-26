@@ -44,4 +44,15 @@ interface TransactionRepository {
      * the user may have lost real spending records that way.
      */
     suspend fun recoverDismissedToPending(): Int
+
+    /**
+     * Retroactively apply [categoryId] to every PENDING or DISMISSED transaction whose
+     * `merchantNormalized` contains [pattern]. Matching rows are confirmed (status → CONFIRMED).
+     * Used by the "Always categorize X as Y" learning flow so that picking a category for
+     * one Hemmah charge fixes every other dismissed Hemmah row in the same action.
+     *
+     * Returns the number of rows updated. CONFIRMED rows are untouched on purpose — the user
+     * may have chosen a different category for some of them.
+     */
+    suspend fun applyCategoryToMatching(pattern: String, categoryId: String): Int
 }

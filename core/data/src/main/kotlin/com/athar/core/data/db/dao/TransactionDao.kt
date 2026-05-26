@@ -58,6 +58,28 @@ internal interface TransactionDao {
     @Query("UPDATE transactions SET status = 'PENDING', updatedAt = :now WHERE status = 'DISMISSED'")
     suspend fun recoverDismissedToPending(now: kotlinx.datetime.Instant): Int
 
+    /**
+     * Apply [categoryId] to every transaction whose merchantNormalized contains [pattern]
+     * (case-insensitive LIKE) AND whose current status is PENDING or DISMISSED — those are
+     * the rows the user hasn't explicitly approved yet. Status is moved to CONFIRMED because
+     * the user has just *just* explicitly chosen this category for this merchant; any future
+     * matches would auto-confirm under the same rule.
+     *
+     * CONFIRMED rows are NOT touched — the user may have intentionally chosen a different
+     * category for some of them earlier (e.g., a Hemmah charge that was actually a gift).
+     */
+    @Query(
+        """
+        UPDATE transactions
+        SET categoryId = :categoryId,
+            status = 'CONFIRMED',
+            updatedAt = :now
+        WHERE status IN ('PENDING', 'DISMISSED')
+          AND merchantNormalized LIKE '%' || :pattern || '%'
+        """,
+    )
+    suspend fun applyCategoryToMatching(pattern: String, categoryId: String, now: kotlinx.datetime.Instant): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: TransactionEntity)
 

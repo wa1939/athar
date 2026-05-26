@@ -103,6 +103,13 @@ fun SettingsScreen(
     val csvExportLauncher = rememberLauncherForActivityResult(CreateDocument("text/csv")) { uri ->
         if (uri != null) viewModel.exportCsv(context.contentResolver, uri)
     }
+    val bulkExportLauncher = rememberLauncherForActivityResult(CreateDocument("text/csv")) { uri ->
+        if (uri != null) viewModel.exportUncategorized(context.contentResolver, uri)
+    }
+    val bulkImportLauncher = rememberLauncherForActivityResult(OpenDocument()) { uri ->
+        if (uri != null) viewModel.importCategorizations(context.contentResolver, uri)
+    }
+    val bulkStatus by viewModel.bulkCategorizeStatus.collectAsStateWithLifecycle()
 
     Box(
         modifier = modifier
@@ -162,6 +169,13 @@ fun SettingsScreen(
                 onImport = { csvLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "*/*")) },
                 onExport = { csvExportLauncher.launch("athar-transactions.csv") },
                 onClear = viewModel::clearCsvStatus,
+            )
+
+            BulkCategorizeCard(
+                status = bulkStatus,
+                onExport = { bulkExportLauncher.launch("athar-uncategorized.csv") },
+                onImport = { bulkImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "*/*")) },
+                onClear = viewModel::clearBulkCategorizeStatus,
             )
 
             DisplayCurrencyCard(
@@ -300,6 +314,102 @@ private fun HijriToggleCard(
                     style = theme.typography.caption,
                     color = if (enabled) theme.colors.parchment else theme.colors.ink,
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BulkCategorizeCard(
+    status: BulkCategorizeStatus,
+    onExport: () -> Unit,
+    onImport: () -> Unit,
+    onClear: () -> Unit,
+) {
+    val theme = AtharTheme
+    AtharCard {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = stringResource(R.string.settings_bulk_cat_title), style = theme.typography.headline)
+            AtharText(
+                text = stringResource(R.string.settings_bulk_cat_body),
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
+            when (val s = status) {
+                BulkCategorizeStatus.Idle -> Unit
+                BulkCategorizeStatus.Working -> AtharText(
+                    text = stringResource(R.string.settings_status_working),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+                is BulkCategorizeStatus.Exported -> {
+                    AtharText(
+                        text = stringResource(R.string.settings_bulk_cat_exported, s.rows),
+                        style = theme.typography.caption,
+                        color = theme.colors.olive,
+                    )
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
+                }
+                is BulkCategorizeStatus.Imported -> {
+                    AtharText(
+                        text = stringResource(
+                            R.string.settings_bulk_cat_imported,
+                            s.updated,
+                            s.rulesAdded,
+                            s.skipped,
+                        ),
+                        style = theme.typography.caption,
+                        color = theme.colors.olive,
+                    )
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
+                }
+                is BulkCategorizeStatus.Failed -> {
+                    AtharText(text = s.reason, style = theme.typography.caption, color = theme.colors.crimson)
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
+                }
+            }
+            val isWorking = status is BulkCategorizeStatus.Working
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    PrimaryButton(
+                        text = if (isWorking) {
+                            stringResource(R.string.settings_status_in_progress)
+                        } else {
+                            stringResource(R.string.settings_bulk_cat_action_export)
+                        },
+                        onClick = { if (!isWorking) onExport() },
+                    )
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(theme.spacing.s))
+                            .background(theme.colors.divider)
+                            .clickable(enabled = !isWorking) { onImport() }
+                            .padding(theme.spacing.m),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        AtharText(
+                            text = if (isWorking) {
+                                stringResource(R.string.settings_status_in_progress)
+                            } else {
+                                stringResource(R.string.settings_bulk_cat_action_import)
+                            },
+                            style = theme.typography.headline,
+                            color = theme.colors.ink,
+                        )
+                    }
+                }
             }
         }
     }

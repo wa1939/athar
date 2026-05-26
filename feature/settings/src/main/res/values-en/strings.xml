@@ -74,6 +74,14 @@
     <string name="settings_csv_action_import">Import</string>
     <string name="settings_csv_action_export">Export</string>
 
+    <!-- Bulk-categorize via AI (Issue #5a) -->
+    <string name="settings_bulk_cat_title">Bulk categorize with AI</string>
+    <string name="settings_bulk_cat_body">Export every uncategorized transaction to CSV, run it through ChatGPT/Claude with the triage prompt, then import the filled file. Each row updates the transaction AND records a merchant→category rule so future SMS auto-categorize.</string>
+    <string name="settings_bulk_cat_exported" formatted="true">Exported %1$d uncategorized transactions.</string>
+    <string name="settings_bulk_cat_imported" formatted="true">Updated %1$d · added %2$d rules · skipped %3$d.</string>
+    <string name="settings_bulk_cat_action_export">Export uncategorized</string>
+    <string name="settings_bulk_cat_action_import">Import categorized</string>
+
     <!-- Display currency card -->
     <string name="settings_currency_title">Display currency</string>
     <string name="settings_currency_body">Choose the display currency. Transactions imported from SMS keep their original currency, but your manual entries will use this one. No automatic conversion.</string>

@@ -10,6 +10,9 @@
     <string name="today_header_title">Today</string>
     <string name="today_caption_net_flow_month" formatted="true">This month · %1$s</string>
     <string name="today_caption_net_flow_month_hijri" formatted="true">This month · %1$s · %2$s AH</string>
+    <string name="today_caption_landmark_today">Today\'s net</string>
+    <string name="today_caption_landmark_today_hijri" formatted="true">Today\'s net · %1$s AH</string>
+    <string name="today_caption_landmark_month_pill" formatted="true">This month %1$s · %2$s</string>
 
     <!-- Summary pills -->
     <string name="today_pill_income">Income</string>

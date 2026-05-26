@@ -201,23 +201,37 @@ private fun Header(state: TodayState) {
             style = theme.typography.overline,
             color = theme.colors.muted,
         )
-        AtharNumber(money = state.netFlow, landmark = true)
+        // Landmark is *today's* net so the "اليوم" header isn't misleading. The month total
+        // moves to a sub-row below alongside Gregorian/Hijri month label.
+        AtharNumber(money = state.todayNet, landmark = true)
         val hijriOn = LocalHijriEnabled.current
         val gregorian = "${state.month.year}/${state.month.monthValue}"
-        val captionText = if (hijriOn) {
+        val landmarkCaption = if (hijriOn) {
             stringResource(
-                R.string.today_caption_net_flow_month_hijri,
-                gregorian,
+                R.string.today_caption_landmark_today_hijri,
                 HijriDate.formatYearMonth(state.month.year, state.month.monthValue),
             )
         } else {
-            stringResource(R.string.today_caption_net_flow_month, gregorian)
+            stringResource(R.string.today_caption_landmark_today)
         }
         AtharText(
-            text = captionText,
+            text = landmarkCaption,
             style = theme.typography.caption,
             color = theme.colors.muted,
         )
+        // Secondary row: month-net summary (what the landmark used to be).
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+        ) {
+            AtharText(
+                text = stringResource(R.string.today_caption_net_flow_month, gregorian),
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+            AtharNumber(money = state.netFlow, color = theme.colors.muted)
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()

@@ -10,6 +10,10 @@
     <string name="today_header_title">اليوم</string>
     <string name="today_caption_net_flow_month" formatted="true">صافي الشهر · %1$s</string>
     <string name="today_caption_net_flow_month_hijri" formatted="true">صافي الشهر · %1$s · %2$s هـ</string>
+    <!-- Landmark caption when the big number is today's net (not the month's). -->
+    <string name="today_caption_landmark_today">صافي حركات اليوم</string>
+    <string name="today_caption_landmark_today_hijri" formatted="true">صافي حركات اليوم · %1$s هـ</string>
+    <string name="today_caption_landmark_month_pill" formatted="true">الشهر %1$s · %2$s</string>
 
     <!-- Summary pills -->
     <string name="today_pill_income">الدخل</string>

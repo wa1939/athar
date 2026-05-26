@@ -71,6 +71,12 @@ class HistoryViewModel @Inject constructor(
     fun setStatus(s: HistoryStatusFilter) { _status.value = s }
     fun setType(t: HistoryTypeFilter) { _type.value = t }
 
+    private val _lastBackfill = MutableStateFlow<BackfillEvent?>(null)
+    /** Emits the count of dismissed/pending rows auto-recategorized by "Always categorize…". */
+    val lastBackfill: StateFlow<BackfillEvent?> = _lastBackfill.asStateFlow()
+
+    fun clearBackfill() { _lastBackfill.value = null }
+
     fun updateTransaction(tx: Transaction, learnRule: Boolean) {
         viewModelScope.launch {
             val now = clock.now()
@@ -83,6 +89,14 @@ class HistoryViewModel @Inject constructor(
                     categoryId = categoryId,
                     patternType = PatternType.SUBSTRING,
                 )
+                val backfilled = transactions.applyCategoryToMatching(
+                    pattern = confirmed.merchantNormalized,
+                    categoryId = categoryId,
+                )
+                _lastBackfill.value = BackfillEvent(
+                    pattern = confirmed.merchant.ifBlank { confirmed.merchantNormalized },
+                    count = backfilled,
+                )
             }
         }
     }
@@ -90,4 +104,6 @@ class HistoryViewModel @Inject constructor(
     fun deleteTransaction(id: String) {
         viewModelScope.launch { transactions.delete(id) }
     }
+
+    data class BackfillEvent(val pattern: String, val count: Int)
 }

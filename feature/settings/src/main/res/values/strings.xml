@@ -74,6 +74,14 @@
     <string name="settings_csv_action_import">استيراد</string>
     <string name="settings_csv_action_export">تصدير</string>
 
+    <!-- Bulk-categorize via AI (Issue #5a) -->
+    <string name="settings_bulk_cat_title">تصنيف بالذكاء الاصطناعي · مجمّع</string>
+    <string name="settings_bulk_cat_body">صدّر كل الحركات غير المصنّفة كملف CSV، اعطه لـ ChatGPT/Claude مع موجّه التصنيف، ثم استورد الملف المعبّأ. كل تصنيف يُحدّث الحركة ويضيف قاعدة تربط التاجر بالفئة حتى تستفيد الحركات القادمة تلقائياً.</string>
+    <string name="settings_bulk_cat_exported" formatted="true">تم تصدير %1$d حركة غير مصنّفة.</string>
+    <string name="settings_bulk_cat_imported" formatted="true">تم تحديث %1$d حركة · أُضيفت %2$d قاعدة · تم تخطّي %3$d.</string>
+    <string name="settings_bulk_cat_action_export">تصدير غير المصنّف</string>
+    <string name="settings_bulk_cat_action_import">استيراد المصنّف</string>
+
     <!-- Display currency card -->
     <string name="settings_currency_title">العملة المعروضة</string>
     <string name="settings_currency_body">اختر عملة العرض. الحركات المستوردة من الرسائل تحتفظ بعملتها الأصلية، لكن إدخالاتك اليدوية ستستخدم هذه العملة. لا يوجد تحويل تلقائي.</string>

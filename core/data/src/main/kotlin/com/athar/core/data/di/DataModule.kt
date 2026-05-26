@@ -16,6 +16,8 @@ import com.athar.core.data.db.dao.WishlistDao
 import com.athar.core.data.backup.BackupService
 import com.athar.core.data.csv.CsvExporter
 import com.athar.core.data.csv.CsvImporter
+import com.athar.core.data.csv.MerchantBulkExporter
+import com.athar.core.data.csv.MerchantBulkImporter
 import com.athar.core.data.repo.AccountRepositoryImpl
 import com.athar.core.data.repo.ActivityLogRepositoryImpl
 import com.athar.core.data.repo.CategoryRepositoryImpl
@@ -33,6 +35,8 @@ import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.CategoryRuleRepository
 import com.athar.core.domain.repo.CsvExportTrigger
 import com.athar.core.domain.repo.CsvImportTrigger
+import com.athar.core.domain.repo.MerchantBulkExportTrigger
+import com.athar.core.domain.repo.MerchantBulkImportTrigger
 import com.athar.core.domain.repo.InvestmentRepository
 import com.athar.core.domain.repo.SmsAuditRepository
 import com.athar.core.domain.repo.TransactionRepository
@@ -163,6 +167,12 @@ internal abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindCsvExportTrigger(impl: CsvExporter): CsvExportTrigger
+
+    @Binds @Singleton
+    abstract fun bindMerchantBulkExportTrigger(impl: MerchantBulkExporter): MerchantBulkExportTrigger
+
+    @Binds @Singleton
+    abstract fun bindMerchantBulkImportTrigger(impl: MerchantBulkImporter): MerchantBulkImportTrigger
 
     @Binds @Singleton
     abstract fun bindActivityLogRepository(impl: ActivityLogRepositoryImpl): ActivityLogRepository

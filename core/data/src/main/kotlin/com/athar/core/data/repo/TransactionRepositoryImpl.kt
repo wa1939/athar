@@ -124,6 +124,14 @@ internal class TransactionRepositoryImpl @Inject constructor(
             if (it > 0) logBulk(ActivityAction.UPDATE, "Recovered $it dismissed → pending")
         }
 
+    override suspend fun applyCategoryToMatching(pattern: String, categoryId: String): Int =
+        dao.applyCategoryToMatching(pattern.lowercase().trim(), categoryId, clock.now()).also {
+            if (it > 0) logBulk(
+                ActivityAction.UPDATE,
+                "Applied category '$categoryId' to $it transactions matching '$pattern'",
+            )
+        }
+
     private suspend fun logBulk(action: ActivityAction, summary: String) {
         activityLog.record(
             ActivityLogEntry(

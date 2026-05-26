@@ -10,6 +10,10 @@ import com.athar.core.domain.repo.CsvExportResult
 import com.athar.core.domain.repo.CsvExportTrigger
 import com.athar.core.domain.repo.CsvImportResult
 import com.athar.core.domain.repo.CsvImportTrigger
+import com.athar.core.domain.repo.MerchantBulkExportResult
+import com.athar.core.domain.repo.MerchantBulkExportTrigger
+import com.athar.core.domain.repo.MerchantBulkImportResult
+import com.athar.core.domain.repo.MerchantBulkImportTrigger
 import com.athar.core.domain.repo.SmsBackfillTrigger
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
@@ -51,12 +55,28 @@ sealed interface RecoverStatus {
     data class Done(val recovered: Int) : RecoverStatus
 }
 
+/**
+ * Status of the bulk-categorize-via-AI flow (Issue #5a). Export writes a CSV of every
+ * uncategorized transaction; the user feeds it to ChatGPT/Claude with the AI triage
+ * prompt and imports the filled CSV. Each row's `category_id` becomes the transaction's
+ * new category AND seeds a `CategoryRule` so future ingests benefit too.
+ */
+sealed interface BulkCategorizeStatus {
+    data object Idle : BulkCategorizeStatus
+    data object Working : BulkCategorizeStatus
+    data class Exported(val rows: Int) : BulkCategorizeStatus
+    data class Imported(val updated: Int, val rulesAdded: Int, val skipped: Int) : BulkCategorizeStatus
+    data class Failed(val reason: String) : BulkCategorizeStatus
+}
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val backup: BackupRepository,
     private val backfillTrigger: SmsBackfillTrigger,
     private val csvImporter: CsvImportTrigger,
     private val csvExporter: CsvExportTrigger,
+    private val bulkExporter: MerchantBulkExportTrigger,
+    private val bulkImporter: MerchantBulkImportTrigger,
     private val prefs: UserPreferencesRepository,
     private val transactions: TransactionRepository,
 ) : ViewModel() {
@@ -72,6 +92,9 @@ class SettingsViewModel @Inject constructor(
 
     private val _csv = MutableStateFlow<CsvStatus>(CsvStatus.Idle)
     val csvStatus: StateFlow<CsvStatus> = _csv.asStateFlow()
+
+    private val _bulkCategorize = MutableStateFlow<BulkCategorizeStatus>(BulkCategorizeStatus.Idle)
+    val bulkCategorizeStatus: StateFlow<BulkCategorizeStatus> = _bulkCategorize.asStateFlow()
 
     val backfillProgress: StateFlow<BackfillProgress> = backfillTrigger.progress
 
@@ -209,5 +232,49 @@ class SettingsViewModel @Inject constructor(
 
     fun clearCsvStatus() {
         _csv.value = CsvStatus.Idle
+    }
+
+    /**
+     * Bulk-categorize export: writes a CSV of every PENDING/DISMISSED/uncategorized
+     * transaction so the user can run them through an AI and import the filled file back.
+     */
+    fun exportUncategorized(resolver: ContentResolver, uri: Uri) {
+        viewModelScope.launch {
+            _bulkCategorize.value = BulkCategorizeStatus.Working
+            val out = resolver.openOutputStream(uri)
+            if (out == null) {
+                _bulkCategorize.value = BulkCategorizeStatus.Failed("Couldn't open CSV destination.")
+                return@launch
+            }
+            _bulkCategorize.value = when (val r = bulkExporter.exportUncategorized(out)) {
+                is MerchantBulkExportResult.Done -> BulkCategorizeStatus.Exported(r.rows)
+                is MerchantBulkExportResult.Failed -> BulkCategorizeStatus.Failed(r.reason)
+            }
+        }
+    }
+
+    /**
+     * Bulk-categorize import: each row whose `category_id` is set updates the matching
+     * transaction (→ CONFIRMED) AND records a learned `CategoryRule` so future ingests
+     * of the same merchant auto-categorize.
+     */
+    fun importCategorizations(resolver: ContentResolver, uri: Uri) {
+        viewModelScope.launch {
+            _bulkCategorize.value = BulkCategorizeStatus.Working
+            val input = resolver.openInputStream(uri)
+            if (input == null) {
+                _bulkCategorize.value = BulkCategorizeStatus.Failed("Couldn't open CSV file.")
+                return@launch
+            }
+            _bulkCategorize.value = when (val r = bulkImporter.importCategorizations(input)) {
+                is MerchantBulkImportResult.Done ->
+                    BulkCategorizeStatus.Imported(r.updated, r.rulesAdded, r.skipped)
+                is MerchantBulkImportResult.Failed -> BulkCategorizeStatus.Failed(r.reason)
+            }
+        }
+    }
+
+    fun clearBulkCategorizeStatus() {
+        _bulkCategorize.value = BulkCategorizeStatus.Idle
     }
 }

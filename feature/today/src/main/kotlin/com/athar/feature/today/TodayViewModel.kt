@@ -90,9 +90,32 @@ class TodayViewModel @Inject constructor(
                     categoryId = categoryId,
                     patternType = PatternType.SUBSTRING,
                 )
+                // Backfill: apply the same category to every other PENDING/DISMISSED
+                // row whose merchant matches. Otherwise picking "Always categorize Hemmah
+                // as Home maintenance" would only fix the one row the user just edited,
+                // leaving every other Hemmah charge stranded in the dismissed tray.
+                val backfilled = transactions.applyCategoryToMatching(
+                    pattern = confirmed.merchantNormalized,
+                    categoryId = categoryId,
+                )
+                _lastBackfill.value = BackfillEvent(
+                    pattern = confirmed.merchant.ifBlank { confirmed.merchantNormalized },
+                    count = backfilled,
+                )
             }
         }
     }
+
+    private val _lastBackfill = MutableStateFlow<BackfillEvent?>(null)
+    /**
+     * Emits the last "Always categorize X as Y" backfill result so the UI can show
+     * a transient toast ("Applied to N other Hemmah charges"). Cleared by [clearBackfill].
+     */
+    val lastBackfill: StateFlow<BackfillEvent?> = _lastBackfill
+
+    fun clearBackfill() { _lastBackfill.value = null }
+
+    data class BackfillEvent(val pattern: String, val count: Int)
 
     fun deleteTransaction(id: String) {
         viewModelScope.launch { transactions.delete(id) }

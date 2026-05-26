@@ -57,6 +57,7 @@ fun AccountsScreen(
     val balances by viewModel.balances.collectAsStateWithLifecycle()
     val netWorth by viewModel.netWorth.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val errorDetail by viewModel.errorDetail.collectAsStateWithLifecycle()
     val displayCurrency = LocalDisplayCurrency.current
 
     var showAdd by remember { mutableStateOf(false) }
@@ -145,6 +146,13 @@ fun AccountsScreen(
                             style = theme.typography.body,
                             color = theme.colors.crimson,
                         )
+                        errorDetail?.let { detail ->
+                            AtharText(
+                                text = detail,
+                                style = theme.typography.caption,
+                                color = theme.colors.muted,
+                            )
+                        }
                         TextButton(onClick = viewModel::clearError) {
                             AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
                         }
