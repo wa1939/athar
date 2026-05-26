@@ -9,6 +9,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Nothing yet.
 
+## [0.1.0-beta.18] — 2026-05-26
+
+The "stop misleading me, AI-assist the unknowns" release. Five user-reported issues, all fixed in one wave:
+
+### Fixed
+
+- **#1 · Today landmark was lying.** The big number under "اليوم / Today" was rendering the *month* net (`netFlow = incomeSum − expenseSum`), not today's. If you spent 1,000 SAR today, the landmark would still read 903 (month) and you'd have to read the small caption to find `صافي اليوم · −1,000` below the pills. Landmark now renders `state.todayNet`; the month total demoted to a secondary `Row` underneath with a `today_caption_landmark_today` overline. Master Brief §3 explicitly calls for today's net flow as the landmark — this was a regression.
+- **#2 · "تعذّر تحديث الحساب" with no detail.** Editing the cash account silently failed with a one-line generic error, no logcat output, no way to diagnose. `AccountsViewModel` now wraps each repo call in a `reportFailure(kind, op, throwable)` helper that:
+   - calls `Log.e("AccountsViewModel", "$op failed", t)` so the stack trace lands in logcat,
+   - captures `t.message?.take(280)` into a new `errorDetail: StateFlow<String?>`,
+   - renders the detail string in the Accounts error card directly under the human-readable label.
+  The user (and we) can now actually see what failed without rebuilding the app.
+- **#4 · "Always categorize X as Y" was forward-only.** Picking "Always" on one Hemmah charge previously added a `CategoryRule` that would catch *future* SMS only — every dismissed Hemmah row stayed stranded with no category. Both `TodayViewModel.updateTransaction` and `HistoryViewModel.updateTransaction` now call `TransactionRepository.applyCategoryToMatching(pattern, categoryId)` immediately after `learnFromCorrection`. The DAO query:
+  ```sql
+  UPDATE transactions
+  SET categoryId = :categoryId, status = 'CONFIRMED', updatedAt = :now
+  WHERE status IN ('PENDING','DISMISSED')
+    AND merchantNormalized LIKE '%' || :pattern || '%'
+  ```
+  CONFIRMED rows are deliberately untouched (the user may have intentionally chosen a different category for some). The backfill count is exposed via a new `lastBackfill: StateFlow<BackfillEvent?>` so the UI can toast "Applied to N other Hemmah charges".
+
+### Added
+
+- **#5a · Bulk-categorize via external AI.** New Settings card **"تصنيف بالذكاء الاصطناعي · مجمّع" / "Bulk categorize with AI"** with the three-tap pipeline:
+  1. **Export uncategorized** — writes a CSV with columns `id,merchant,merchant_normalized,amount,currency,type,status,date,raw_body,category_id` for every transaction that is PENDING, DISMISSED, or CONFIRMED-without-category. `category_id` is left blank for the user (or AI) to fill.
+  2. **External AI pass** — user opens the CSV in ChatGPT / Claude / Z.ai with the existing prompt at `docs/AI_SMS_TRIAGE_PROMPT.md` and saves the filled file.
+  3. **Import categorized** — for every row with a non-blank `category_id`:
+       - the transaction is updated (`categoryId` set + `status → CONFIRMED`),
+       - a learned `CategoryRule` is recorded per unique `(merchant_normalized → category_id)` pair so future SMS for the same merchant auto-categorize.
+
+  Why CSV instead of an in-app API call: no API keys to manage, no cloud round-trip, no surprise costs. Users already paying for ChatGPT/Claude get full leverage; the prompt has been honed against the user's own corpus already. Result: 829 dismissed rows from a 1,000-message backfill can be categorized in under a minute by pasting the CSV into a chat, then re-imported as actionable rules. Files:
+    - `core/domain/repo/MerchantBulkCsv.kt` — domain interfaces + result types.
+    - `core/data/csv/MerchantBulkExporter.kt` — write filter.
+    - `core/data/csv/MerchantBulkImporter.kt` — RFC-4180 row parser, category resolution by id / English name / Arabic name, dedupe of merchant→category pairs into `learnFromCorrection` calls.
+    - Hilt binding in `DataModule.kt`; new `BulkCategorizeStatus` sealed state in `SettingsViewModel`; new `BulkCategorizeCard` in `SettingsScreen.kt`; AR + EN strings.
+
+### Carried forward
+
+- **#3 · Backup-file analysis is gated on the user's passphrase.** The `messages sample/athar-backup.athar` file is AES-256-GCM encrypted; without the passphrase we can't decrypt it. Two paths offered to the user: (a) share the passphrase off-band, or (b) export an unencrypted CSV via Settings → CSV exchange → Export. Carried into the next session.
+
 ## [0.1.0-beta.17] — 2026-05-26
 
 The "Subscriptions + 12× more merchants known" release. Splits R-03 (confirm before create) and R-04 (Subscriptions framing) — the two missing pieces between *suggest a rule* and *actually use the rule list to manage your recurring spend* — and ships an AI-derived merchant-rule expansion that boosts categorization coverage by ~12×.
@@ -125,7 +165,8 @@ See [ADR-004](docs/adr/ADR-004-mvp-status.md). Notably:
 - Paparazzi snapshot baselines need a first record run.
 - Macrobenchmarks need a real device.
 
-[Unreleased]: https://github.com/wa1939/athar/compare/v0.1.0-beta.17...HEAD
+[Unreleased]: https://github.com/wa1939/athar/compare/v0.1.0-beta.18...HEAD
+[0.1.0-beta.18]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.18
 [0.1.0-beta.17]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.17
 [0.1.0-beta.1]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.1
 [0.1.0-beta]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta

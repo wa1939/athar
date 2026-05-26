@@ -91,7 +91,7 @@ Other tools force a trade-off:
 - ✅ **Auto-detected recurring patterns** — scans your confirmed history, surfaces "Same merchant, same amount, 3+ distinct months at similar day-of-month" candidates as suggestions you confirm with one tap
 - ✅ **90-day historical SMS backfill** on first install
 - ✅ Rule engine with **551 merchant seed rules** across 22 categories (beta.17 — expanded from 44 curated rules with 507 high-confidence AI-categorized patterns extracted from a 1,000-message real-world AlRajhi corpus + a friend's SMS history; rules auto-refresh on app upgrade)
-- ✅ "Always categorize X as Y?" **learn-from-correction** loop
+- ✅ "Always categorize X as Y?" **learn-from-correction** loop — **as of beta.18 the learned rule is backfilled to every existing PENDING + DISMISSED row** matching the merchant pattern, not just future SMS. Picking "Always" for one Hemmah charge fixes every stranded Hemmah in one tap
 - ✅ Source of every categorization is **explainable** (rule id, confidence)
 
 #### Settings + ops
@@ -110,6 +110,7 @@ Other tools force a trade-off:
 - ✅ **Hijri date toggle**
 - ✅ **Subscriptions screen (R-04, beta.17)** — recurring rules reframed as subscriptions with Active / Paused sections, monthly-total card, one-tap Active↔Paused toggle
 - ✅ **Confirm-before-create sheet (R-03, beta.17)** — tapping a recurring suggestion opens a sheet to edit cadence (Monthly/Weekly/Yearly), day-of-month, and category before saving the rule
+- ✅ **Bulk categorize with AI (beta.18)** — export every PENDING/DISMISSED/uncategorized transaction to CSV, run it through ChatGPT/Claude with the AI triage prompt, import the filled file back. Each row updates its transaction *and* records a merchant→category rule so future SMS auto-categorize. No API keys, no cloud round-trip — your personal merchant library grows permanently
 - ✅ **Recurring rules management** with "Run now" trigger + auto-detected suggestions
 - ✅ Categories management (rename, archive, reorder, custom adds)
 
