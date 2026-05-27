@@ -159,6 +159,18 @@
     <string name="settings_accounts_action_unarchive">Reactivate</string>
     <string name="settings_accounts_archived_badge">Archived</string>
 
+    <!-- Reconcile (Match my bank balance) — beta.19 -->
+    <string name="settings_accounts_action_reconcile">Reconcile</string>
+    <string name="settings_accounts_reconcile_title">Match bank balance</string>
+    <string name="settings_accounts_reconcile_current">Currently displayed balance</string>
+    <string name="settings_accounts_reconcile_target_label" formatted="true">Actual balance from bank (%1$s)</string>
+    <string name="settings_accounts_reconcile_note_hint">Note (optional)</string>
+    <string name="settings_accounts_reconcile_default_merchant">Manual adjustment</string>
+    <string name="settings_accounts_reconcile_body" formatted="true">A single transaction labelled \"%1$s\" will be added so the running balance matches. Existing transactions are untouched.</string>
+    <string name="settings_accounts_reconcile_confirm">Apply</string>
+    <string name="settings_accounts_reconcile_done" formatted="true">Done · added an adjustment of %1$s</string>
+    <string name="settings_accounts_reconcile_nochange">Balance already matches the bank · no transaction added</string>
+
     <!-- Account types -->
     <string name="settings_account_type_checking">Checking</string>
     <string name="settings_account_type_savings">Savings</string>

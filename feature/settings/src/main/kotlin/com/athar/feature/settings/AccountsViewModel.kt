@@ -8,6 +8,7 @@ import com.athar.core.domain.model.AccountBalance
 import com.athar.core.domain.model.AccountType
 import com.athar.core.domain.model.NetWorth
 import com.athar.core.domain.repo.AccountRepository
+import com.athar.core.domain.repo.ReconcileResult
 import com.athar.core.domain.repo.UserPreferencesRepository
 import android.util.Log
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,6 +31,17 @@ enum class AccountError {
     UPDATE_FAILED,
     ARCHIVE_FAILED,
     DELETE_HAS_TRANSACTIONS,
+}
+
+/**
+ * Outcome of a reconcile call surfaced to the UI for a 3-second olive toast.
+ * `delta` is the signed minor-unit adjustment (positive when income was added, negative
+ * when expense was added). `currency` is the account's currency so the UI can format.
+ */
+sealed interface ReconcileEvent {
+    data class Done(val deltaMinor: Long, val currency: String) : ReconcileEvent
+    data class NoChange(val accountId: String) : ReconcileEvent
+    data class Failed(val reason: String) : ReconcileEvent
 }
 
 /**
@@ -129,6 +141,40 @@ class AccountsViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching { repo.delete(id) }
                 .onFailure { reportFailure(AccountError.DELETE_HAS_TRANSACTIONS, "delete($id)", it) }
+        }
+    }
+
+    private val _reconcileEvent = MutableStateFlow<ReconcileEvent?>(null)
+    val reconcileEvent: StateFlow<ReconcileEvent?> = _reconcileEvent.asStateFlow()
+    fun clearReconcileEvent() { _reconcileEvent.value = null }
+
+    /**
+     * "Match my bank balance" entry point. Caller passes the [label] string already
+     * resolved to the active locale ("تسوية يدوية" / "Manual adjustment") so the VM
+     * stays Context-free. Empty target string → ignored.
+     */
+    fun reconcile(accountId: String, targetText: String, note: String?, label: String) {
+        val account = balances.value.firstOrNull { it.account.id == accountId }?.account ?: return
+        val parsed = runCatching {
+            Money.of(BigDecimal(targetText.trim().replace(",", "")), account.currency)
+        }.getOrNull() ?: run {
+            _reconcileEvent.value = ReconcileEvent.Failed(reason = "Couldn't parse '$targetText' as a number.")
+            return
+        }
+        viewModelScope.launch {
+            when (val r = repo.reconcile(accountId, parsed, label, note?.takeIf { it.isNotBlank() })) {
+                is ReconcileResult.Done -> {
+                    _reconcileEvent.value = if (r.adjustmentMinor == 0L) {
+                        ReconcileEvent.NoChange(accountId)
+                    } else {
+                        ReconcileEvent.Done(r.adjustmentMinor, account.currency)
+                    }
+                }
+                is ReconcileResult.Failed -> {
+                    Log.w("AccountsViewModel", "reconcile($accountId) failed: ${r.reason}")
+                    _reconcileEvent.value = ReconcileEvent.Failed(r.reason)
+                }
+            }
         }
     }
 

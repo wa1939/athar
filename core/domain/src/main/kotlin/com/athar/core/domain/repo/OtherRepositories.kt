@@ -1,5 +1,6 @@
 package com.athar.core.domain.repo
 
+import com.athar.core.common.money.Money
 import com.athar.core.domain.model.Account
 import com.athar.core.domain.model.AccountBalance
 import com.athar.core.domain.model.CategoryRule
@@ -32,6 +33,30 @@ interface AccountRepository {
      * Use for the Accounts screen list rows.
      */
     fun observeBalances(): Flow<List<AccountBalance>>
+
+    /**
+     * "Match my bank balance" — instead of letting the user edit the opening balance
+     * (which silently rewrites history and is fragile across currency changes), this
+     * inserts one manual adjustment transaction so the computed running balance equals
+     * [target]. delta = target − current; INCOME if positive, EXPENSE if negative.
+     *
+     * @param label  the merchant label, localized by the caller (e.g., "تسوية يدوية" / "Manual adjustment").
+     * @param note   optional free-text reason the user typed in the sheet.
+     * @return [ReconcileResult.Done] with the adjustment amount in minor units + new tx id,
+     *         or [ReconcileResult.Failed] with a human-readable reason.
+     */
+    suspend fun reconcile(
+        accountId: String,
+        target: Money,
+        label: String,
+        note: String?,
+    ): ReconcileResult
+}
+
+/** Outcome of [AccountRepository.reconcile]. */
+sealed interface ReconcileResult {
+    data class Done(val adjustmentMinor: Long, val txId: String) : ReconcileResult
+    data class Failed(val reason: String) : ReconcileResult
 }
 
 interface CategoryRuleRepository {

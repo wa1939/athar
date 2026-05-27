@@ -159,6 +159,18 @@
     <string name="settings_accounts_action_unarchive">إعادة تفعيل</string>
     <string name="settings_accounts_archived_badge">مؤرشف</string>
 
+    <!-- Reconcile (Match my bank balance) — beta.19 -->
+    <string name="settings_accounts_action_reconcile">تسوية</string>
+    <string name="settings_accounts_reconcile_title">تطابق الرصيد مع البنك</string>
+    <string name="settings_accounts_reconcile_current">الرصيد الحالي</string>
+    <string name="settings_accounts_reconcile_target_label" formatted="true">الرصيد الفعلي من البنك (%1$s)</string>
+    <string name="settings_accounts_reconcile_note_hint">ملاحظة (اختياري)</string>
+    <string name="settings_accounts_reconcile_default_merchant">تسوية يدوية</string>
+    <string name="settings_accounts_reconcile_body" formatted="true">سيُضاف لها حركة بعنوان «%1$s» تطابق الرصيد. التاريخ والحركات السابقة لا تتغير.</string>
+    <string name="settings_accounts_reconcile_confirm">تطبيق</string>
+    <string name="settings_accounts_reconcile_done" formatted="true">تمت التسوية · أضيفت حركة %1$s</string>
+    <string name="settings_accounts_reconcile_nochange">الرصيد يطابق البنك بالفعل · لم تُضَف حركة</string>
+
     <!-- Account types -->
     <string name="settings_account_type_checking">جاري</string>
     <string name="settings_account_type_savings">ادخار</string>

@@ -12,8 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +51,7 @@ import java.math.BigDecimal
  * Visual language mirrors RecurringRulesScreen — single ember accent, AtharCard
  * surfaces, no shadows, RTL-first.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountsScreen(
     onBack: () -> Unit,
@@ -58,10 +63,20 @@ fun AccountsScreen(
     val netWorth by viewModel.netWorth.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val errorDetail by viewModel.errorDetail.collectAsStateWithLifecycle()
+    val reconcileEvent by viewModel.reconcileEvent.collectAsStateWithLifecycle()
     val displayCurrency = LocalDisplayCurrency.current
 
     var showAdd by remember { mutableStateOf(false) }
     var editingId by remember { mutableStateOf<String?>(null) }
+    var reconcilingId by remember { mutableStateOf<String?>(null) }
+
+    // Auto-clear the reconcile toast after 4 seconds.
+    LaunchedEffect(reconcileEvent) {
+        if (reconcileEvent != null) {
+            kotlinx.coroutines.delay(4_000)
+            viewModel.clearReconcileEvent()
+        }
+    }
 
     // Active first, archived (faded) at the bottom. Within each, original sortOrder is preserved.
     val sortedBalances = remember(balances) {
@@ -160,6 +175,11 @@ fun AccountsScreen(
                 }
             }
 
+            // Reconcile toast — olive on success, crimson on failure. Stays for ~4 sec.
+            reconcileEvent?.let { ev ->
+                ReconcileToast(event = ev, onDismiss = viewModel::clearReconcileEvent)
+            }
+
             if (sortedBalances.isEmpty()) {
                 AtharCard {
                     AtharText(
@@ -185,8 +205,130 @@ fun AccountsScreen(
                             viewModel.setArchived(balance.account.id, archived)
                         },
                         onDelete = { viewModel.delete(balance.account.id) },
+                        onReconcile = { reconcilingId = balance.account.id },
                     )
                 }
+            }
+        }
+    }
+
+    reconcilingId?.let { id ->
+        val balance = sortedBalances.firstOrNull { it.account.id == id }
+        if (balance == null) {
+            reconcilingId = null
+        } else {
+            val defaultLabel = stringResource(R.string.settings_accounts_reconcile_default_merchant)
+            ReconcileBalanceSheet(
+                balance = balance,
+                defaultLabel = defaultLabel,
+                onDismiss = { reconcilingId = null },
+                onConfirm = { targetText, note ->
+                    viewModel.reconcile(id, targetText, note, defaultLabel)
+                    reconcilingId = null
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReconcileToast(event: ReconcileEvent, onDismiss: () -> Unit) {
+    val theme = AtharTheme
+    val (text, color) = when (event) {
+        is ReconcileEvent.Done -> {
+            val signed = Money.ofMinor(kotlin.math.abs(event.deltaMinor), event.currency)
+            val sign = if (event.deltaMinor > 0) "+" else "−"
+            val body = stringResource(
+                R.string.settings_accounts_reconcile_done,
+                "$sign ${signed.amount.toPlainString()} ${event.currency}",
+            )
+            body to theme.colors.olive
+        }
+        is ReconcileEvent.NoChange ->
+            stringResource(R.string.settings_accounts_reconcile_nochange) to theme.colors.muted
+        is ReconcileEvent.Failed -> event.reason to theme.colors.crimson
+    }
+    AtharCard(modifier = Modifier.fillMaxWidth().clickable(onClick = onDismiss)) {
+        AtharText(text = text, style = theme.typography.body, color = color)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReconcileBalanceSheet(
+    balance: AccountBalance,
+    defaultLabel: String,
+    onDismiss: () -> Unit,
+    onConfirm: (targetText: String, note: String?) -> Unit,
+) {
+    val theme = AtharTheme
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var target by remember(balance.account.id) {
+        mutableStateOf(balance.current.amount.toPlainString())
+    }
+    var note by remember(balance.account.id) { mutableStateOf("") }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = theme.colors.parchment,
+        contentColor = theme.colors.ink,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(theme.spacing.m),
+            verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
+        ) {
+            AtharText(
+                text = stringResource(R.string.settings_accounts_reconcile_title),
+                style = theme.typography.headline,
+            )
+            AtharText(text = balance.account.name, style = theme.typography.body)
+            Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+                AtharText(
+                    text = stringResource(R.string.settings_accounts_reconcile_current),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+                AtharNumber(money = balance.current)
+            }
+            AtharTextField(
+                value = target,
+                onValueChange = { target = it },
+                label = stringResource(
+                    R.string.settings_accounts_reconcile_target_label,
+                    balance.account.currency,
+                ),
+                modifier = Modifier.fillMaxWidth(),
+                keyboardType = KeyboardType.Decimal,
+            )
+            AtharTextField(
+                value = note,
+                onValueChange = { note = it },
+                label = stringResource(R.string.settings_accounts_reconcile_note_hint),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = false,
+            )
+            AtharText(
+                text = stringResource(R.string.settings_accounts_reconcile_body, defaultLabel),
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+            ) {
+                NeutralButton(
+                    text = stringResource(R.string.settings_action_cancel),
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                )
+                EmberButton(
+                    text = stringResource(R.string.settings_accounts_reconcile_confirm),
+                    onClick = { onConfirm(target.trim(), note.trim().ifBlank { null }) },
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }
@@ -315,6 +457,7 @@ private fun AccountRow(
     onSaveEdit: (Account) -> Unit,
     onSetArchived: (Boolean) -> Unit,
     onDelete: () -> Unit,
+    onReconcile: () -> Unit,
 ) {
     val theme = AtharTheme
     val account = balance.account
@@ -360,6 +503,10 @@ private fun AccountRow(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+                NeutralChip(
+                    label = stringResource(R.string.settings_accounts_action_reconcile),
+                    onClick = onReconcile,
+                )
                 NeutralChip(
                     label = if (isEditing) {
                         stringResource(R.string.settings_accounts_action_close)
