@@ -1,0 +1,56 @@
+name: Community rules submission
+description: Share merchant→category rules you tagged "Always categorize X" in Athar so they ship in the next release for everyone.
+labels: [community-rules, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for contributing rules! See `docs/COMMUNITY_RULES_WORKFLOW.md` for the full flow.
+
+        **Privacy reminder:** Only `(pattern, categoryId, confidence)` tuples are shared. No transactions, balances, raw SMS bodies, or account references — Athar's exporter guarantees this.
+
+  - type: input
+    id: version
+    attributes:
+      label: Athar version
+      placeholder: "0.1.0-beta.20"
+    validations:
+      required: true
+
+  - type: textarea
+    id: payload
+    attributes:
+      label: Shared rules JSON
+      description: |
+        Paste the entire contents of `athar-shared-rules.json` (from Settings → Help others · share your rules → Export my rules).
+        Or attach the file as a comment after creating the issue.
+      render: json
+      placeholder: |
+        {
+          "athar_version": "0.1.0-beta.20",
+          "submitted_at": "2026-05-27T12:00:00Z",
+          "rules": [
+            { "pattern": "hemmah", "categoryId": "cat-home-maintenance", "confidence": 0.9 }
+          ]
+        }
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes for the maintainer
+      description: Anything noteworthy — region these merchants apply to, ambiguous cases, etc.
+      placeholder: "All Saudi-local merchants. The 'Hemmah' rule covers both spellings."
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I confirm the JSON contains only `(pattern, categoryId, confidence)` tuples — no PII.
+          required: true
+        - label: Every pattern is one I personally created via "Always categorize X" — none are bulk-imported.
+          required: true
+        - label: I understand that submitted rules become part of the public Athar repository and ship to all users in subsequent releases.
+          required: true

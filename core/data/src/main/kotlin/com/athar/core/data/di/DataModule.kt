@@ -14,6 +14,7 @@ import com.athar.core.data.db.dao.TransactionDao
 import com.athar.core.data.db.dao.UserTemplateDao
 import com.athar.core.data.db.dao.WishlistDao
 import com.athar.core.data.backup.BackupService
+import com.athar.core.data.csv.CommunityRulesShareExporter
 import com.athar.core.data.csv.CsvExporter
 import com.athar.core.data.csv.CsvImporter
 import com.athar.core.data.csv.MerchantBulkExporter
@@ -33,6 +34,7 @@ import com.athar.core.domain.repo.ActivityLogRepository
 import com.athar.core.domain.repo.BackupRepository
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.CategoryRuleRepository
+import com.athar.core.domain.repo.CommunityRulesShareTrigger
 import com.athar.core.domain.repo.CsvExportTrigger
 import com.athar.core.domain.repo.CsvImportTrigger
 import com.athar.core.domain.repo.MerchantBulkExportTrigger
@@ -173,6 +175,9 @@ internal abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindMerchantBulkImportTrigger(impl: MerchantBulkImporter): MerchantBulkImportTrigger
+
+    @Binds @Singleton
+    abstract fun bindCommunityRulesShareTrigger(impl: CommunityRulesShareExporter): CommunityRulesShareTrigger
 
     @Binds @Singleton
     abstract fun bindActivityLogRepository(impl: ActivityLogRepositoryImpl): ActivityLogRepository

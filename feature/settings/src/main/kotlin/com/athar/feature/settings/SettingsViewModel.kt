@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.athar.core.domain.repo.BackfillProgress
 import com.athar.core.domain.repo.BackupRepository
+import com.athar.core.domain.repo.CommunityRulesShareResult
+import com.athar.core.domain.repo.CommunityRulesShareTrigger
 import com.athar.core.domain.repo.CsvExportResult
 import com.athar.core.domain.repo.CsvExportTrigger
 import com.athar.core.domain.repo.CsvImportResult
@@ -69,6 +71,19 @@ sealed interface BulkCategorizeStatus {
     data class Failed(val reason: String) : BulkCategorizeStatus
 }
 
+/**
+ * Status of the community-rule sharing flow (beta.20). User exports their
+ * `learnedFromUser=true` rules to a JSON file, then submits it as a GitHub issue.
+ * Pure local-only — no upload, no backend. See `docs/COMMUNITY_RULES_WORKFLOW.md`.
+ */
+sealed interface CommunityShareStatus {
+    data object Idle : CommunityShareStatus
+    data object Working : CommunityShareStatus
+    data class Exported(val rows: Int, val fileUri: Uri) : CommunityShareStatus
+    data object Empty : CommunityShareStatus
+    data class Failed(val reason: String) : CommunityShareStatus
+}
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val backup: BackupRepository,
@@ -77,6 +92,7 @@ class SettingsViewModel @Inject constructor(
     private val csvExporter: CsvExportTrigger,
     private val bulkExporter: MerchantBulkExportTrigger,
     private val bulkImporter: MerchantBulkImportTrigger,
+    private val communityShare: CommunityRulesShareTrigger,
     private val prefs: UserPreferencesRepository,
     private val transactions: TransactionRepository,
 ) : ViewModel() {
@@ -95,6 +111,9 @@ class SettingsViewModel @Inject constructor(
 
     private val _bulkCategorize = MutableStateFlow<BulkCategorizeStatus>(BulkCategorizeStatus.Idle)
     val bulkCategorizeStatus: StateFlow<BulkCategorizeStatus> = _bulkCategorize.asStateFlow()
+
+    private val _communityShare = MutableStateFlow<CommunityShareStatus>(CommunityShareStatus.Idle)
+    val communityShareStatus: StateFlow<CommunityShareStatus> = _communityShare.asStateFlow()
 
     val backfillProgress: StateFlow<BackfillProgress> = backfillTrigger.progress
 
@@ -276,5 +295,31 @@ class SettingsViewModel @Inject constructor(
 
     fun clearBulkCategorizeStatus() {
         _bulkCategorize.value = BulkCategorizeStatus.Idle
+    }
+
+    /**
+     * Export the user's `learnedFromUser=true` rules as JSON for submission to the
+     * public Athar GitHub repository (beta.20). Privacy: ONLY (pattern, categoryId)
+     * tuples — no transaction data of any kind. Caller passes the destination URI
+     * picked via `CreateDocument("application/json")`.
+     */
+    fun exportLearnedRules(resolver: ContentResolver, uri: Uri) {
+        viewModelScope.launch {
+            _communityShare.value = CommunityShareStatus.Working
+            val out = resolver.openOutputStream(uri)
+            if (out == null) {
+                _communityShare.value = CommunityShareStatus.Failed("Couldn't open JSON destination.")
+                return@launch
+            }
+            _communityShare.value = when (val r = communityShare.exportLearnedRules(out)) {
+                is CommunityRulesShareResult.Done -> CommunityShareStatus.Exported(r.rows, uri)
+                CommunityRulesShareResult.Empty -> CommunityShareStatus.Empty
+                is CommunityRulesShareResult.Failed -> CommunityShareStatus.Failed(r.reason)
+            }
+        }
+    }
+
+    fun clearCommunityShareStatus() {
+        _communityShare.value = CommunityShareStatus.Idle
     }
 }

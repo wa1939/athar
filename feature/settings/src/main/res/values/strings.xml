@@ -74,6 +74,14 @@
     <string name="settings_csv_action_import">استيراد</string>
     <string name="settings_csv_action_export">تصدير</string>
 
+    <!-- Community rules sharing (beta.20) -->
+    <string name="settings_community_title">ساعد المجتمع · شارك القواعد</string>
+    <string name="settings_community_body">صدّر قواعد التصنيف الشخصية التي أنشأتها بنفسك (التاجر ← الفئة) كملف JSON واحد، ثم أرسلها كاقتراح على GitHub. تُراجَع وتُدمج في الإصدار القادم ليستفيد منها كل المستخدمين الجدد. لا تُرسَل أي حركة أو رصيد أو نص رسالة — فقط ما اخترته أنت بـ«اعتبره دائماً كذا».</string>
+    <string name="settings_community_exported" formatted="true">تم تصدير %1$d قاعدة. الخطوة التالية: افتح صفحة GitHub وأرفق الملف.</string>
+    <string name="settings_community_empty">لا توجد قواعد شخصية لمشاركتها بعد. كل ما تختاره من «اعتبره دائماً X» سيظهر هنا.</string>
+    <string name="settings_community_action_export">تصدير قواعدي</string>
+    <string name="settings_community_action_open_issue">افتح صفحة GitHub</string>
+
     <!-- Bulk-categorize via AI (Issue #5a) -->
     <string name="settings_bulk_cat_title">تصنيف بالذكاء الاصطناعي · مجمّع</string>
     <string name="settings_bulk_cat_body">صدّر كل الحركات غير المصنّفة كملف CSV، اعطه لـ ChatGPT/Claude مع موجّه التصنيف، ثم استورد الملف المعبّأ. كل تصنيف يُحدّث الحركة ويضيف قاعدة تربط التاجر بالفئة حتى تستفيد الحركات القادمة تلقائياً.</string>

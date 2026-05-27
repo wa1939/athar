@@ -110,6 +110,10 @@ fun SettingsScreen(
         if (uri != null) viewModel.importCategorizations(context.contentResolver, uri)
     }
     val bulkStatus by viewModel.bulkCategorizeStatus.collectAsStateWithLifecycle()
+    val communityShareLauncher = rememberLauncherForActivityResult(CreateDocument("application/json")) { uri ->
+        if (uri != null) viewModel.exportLearnedRules(context.contentResolver, uri)
+    }
+    val communityShareStatus by viewModel.communityShareStatus.collectAsStateWithLifecycle()
 
     Box(
         modifier = modifier
@@ -176,6 +180,28 @@ fun SettingsScreen(
                 onExport = { bulkExportLauncher.launch("athar-uncategorized.csv") },
                 onImport = { bulkImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "*/*")) },
                 onClear = viewModel::clearBulkCategorizeStatus,
+            )
+
+            CommunityRulesShareCard(
+                status = communityShareStatus,
+                onExport = { communityShareLauncher.launch("athar-shared-rules.json") },
+                onOpenIssue = {
+                    val rows = (communityShareStatus as? CommunityShareStatus.Exported)?.rows ?: 0
+                    val url = buildGitHubIssueUrl(rows)
+                    try {
+                        context.startActivity(
+                            android.content.Intent(
+                                android.content.Intent.ACTION_VIEW,
+                                android.net.Uri.parse(url),
+                            ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+                        )
+                    } catch (e: Exception) {
+                        // Fall back to clipboard
+                        val clip = context.getSystemService(android.content.ClipboardManager::class.java)
+                        clip?.setPrimaryClip(android.content.ClipData.newPlainText("Athar GitHub URL", url))
+                    }
+                },
+                onClear = viewModel::clearCommunityShareStatus,
             )
 
             DisplayCurrencyCard(
@@ -317,6 +343,108 @@ private fun HijriToggleCard(
             }
         }
     }
+}
+
+@Composable
+private fun CommunityRulesShareCard(
+    status: CommunityShareStatus,
+    onExport: () -> Unit,
+    onOpenIssue: () -> Unit,
+    onClear: () -> Unit,
+) {
+    val theme = AtharTheme
+    AtharCard {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = stringResource(R.string.settings_community_title), style = theme.typography.headline)
+            AtharText(
+                text = stringResource(R.string.settings_community_body),
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
+            when (val s = status) {
+                CommunityShareStatus.Idle -> Unit
+                CommunityShareStatus.Working -> AtharText(
+                    text = stringResource(R.string.settings_status_working),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+                is CommunityShareStatus.Exported -> {
+                    AtharText(
+                        text = stringResource(R.string.settings_community_exported, s.rows),
+                        style = theme.typography.caption,
+                        color = theme.colors.olive,
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            PrimaryButton(
+                                text = stringResource(R.string.settings_community_action_open_issue),
+                                onClick = onOpenIssue,
+                            )
+                        }
+                        TextButton(onClick = onClear) {
+                            AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                        }
+                    }
+                }
+                CommunityShareStatus.Empty -> {
+                    AtharText(
+                        text = stringResource(R.string.settings_community_empty),
+                        style = theme.typography.caption,
+                        color = theme.colors.muted,
+                    )
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
+                }
+                is CommunityShareStatus.Failed -> {
+                    AtharText(text = s.reason, style = theme.typography.caption, color = theme.colors.crimson)
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
+                }
+            }
+            val isWorking = status is CommunityShareStatus.Working
+            val isExported = status is CommunityShareStatus.Exported
+            if (!isExported) {
+                PrimaryButton(
+                    text = if (isWorking) {
+                        stringResource(R.string.settings_status_in_progress)
+                    } else {
+                        stringResource(R.string.settings_community_action_export)
+                    },
+                    onClick = { if (!isWorking) onExport() },
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Returns a GitHub "new issue" URL pre-filled with the community-rules issue
+ * template name and a body describing the submission. The user attaches the JSON
+ * file manually since GitHub doesn't accept file attachments via URL params.
+ */
+private fun buildGitHubIssueUrl(ruleCount: Int): String {
+    val title = java.net.URLEncoder.encode(
+        "Community rules · $ruleCount rules from Athar export",
+        "UTF-8",
+    )
+    val body = java.net.URLEncoder.encode(
+        """
+        I'm submitting $ruleCount learned rules from my local Athar database for review.
+
+        Per `docs/COMMUNITY_RULES_WORKFLOW.md`:
+        - All entries are merchant→category mappings I explicitly created via "Always categorize X as Y".
+        - The JSON file (`athar-shared-rules.json`) contains only (pattern, categoryId, confidence) — no transaction data, no PII.
+
+        I will attach the JSON file in a comment after creating this issue (GitHub doesn't accept file attachments in URL parameters).
+        """.trimIndent(),
+        "UTF-8",
+    )
+    return "https://github.com/wa1939/athar/issues/new?title=$title&body=$body&labels=community-rules"
 }
 
 @Composable

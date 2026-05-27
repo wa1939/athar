@@ -74,6 +74,14 @@
     <string name="settings_csv_action_import">Import</string>
     <string name="settings_csv_action_export">Export</string>
 
+    <!-- Community rules sharing (beta.20) -->
+    <string name="settings_community_title">Help others · share your rules</string>
+    <string name="settings_community_body">Export the personal categorization rules you created yourself (merchant → category) as a single JSON file, then submit it as a GitHub proposal. Reviewed and merged rules ship in the next release so every new user benefits. No transactions, balances, or SMS bodies leave your device — only the (merchant → category) tuples you tagged "Always categorize X".</string>
+    <string name="settings_community_exported" formatted="true">Exported %1$d rules. Next: open GitHub and attach the file.</string>
+    <string name="settings_community_empty">No personal rules to share yet. Every "Always categorize X" pick lands here.</string>
+    <string name="settings_community_action_export">Export my rules</string>
+    <string name="settings_community_action_open_issue">Open GitHub issue</string>
+
     <!-- Bulk-categorize via AI (Issue #5a) -->
     <string name="settings_bulk_cat_title">Bulk categorize with AI</string>
     <string name="settings_bulk_cat_body">Export every uncategorized transaction to CSV, run it through ChatGPT/Claude with the triage prompt, then import the filled file. Each row updates the transaction AND records a merchant→category rule so future SMS auto-categorize.</string>
