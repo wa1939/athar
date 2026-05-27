@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_loading">…</string>
+
+    <string name="widget_monthly_label">Athar · Month</string>
+    <string name="widget_monthly_description">Net flow, income, expenses, and net worth at a glance.</string>
+
+    <string name="widget_today_label">Athar · Today</string>
+    <string name="widget_today_description">Today\'s net and how many transactions await confirmation.</string>
+
+    <string name="widget_pending_label">Athar · Pending</string>
+    <string name="widget_pending_description">Latest SMS-detected transactions awaiting your review. Tap to open.</string>
+</resources>

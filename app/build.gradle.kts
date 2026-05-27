@@ -95,6 +95,7 @@ dependencies {
     implementation(project(":feature:trends"))
     implementation(project(":feature:plan"))
     implementation(project(":feature:settings"))
+    implementation(project(":feature:widgets"))
 
     implementation(project(":ml:categorizer"))
     // Parser is pure Kotlin and used by both flavors (storeSafe parses bank-app notifications

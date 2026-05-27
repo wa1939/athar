@@ -37,6 +37,7 @@ include(":feature:today")
 include(":feature:trends")
 include(":feature:plan")
 include(":feature:settings")
+include(":feature:widgets")
 
 include(":ingestion:sms-parser")
 include(":ingestion:sms-listener")

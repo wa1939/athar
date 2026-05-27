@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_loading">…</string>
+
+    <string name="widget_monthly_label">أثر · ملخّص الشهر</string>
+    <string name="widget_monthly_description">صافي الشهر، الدخل، المصاريف، صافي الثروة في لمحة واحدة.</string>
+
+    <string name="widget_today_label">أثر · اليوم</string>
+    <string name="widget_today_description">صافي حركاتك اليوم وعدد البنود بانتظار التأكيد.</string>
+
+    <string name="widget_pending_label">أثر · بانتظار التأكيد</string>
+    <string name="widget_pending_description">آخر الحركات المُكتشفة من الرسائل وتنتظر مراجعتك. اضغط لفتح التطبيق.</string>
+</resources>

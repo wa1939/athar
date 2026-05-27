@@ -49,6 +49,9 @@ timber = "5.0.1"
 tink-android = "1.21.0"
 argon2-kt = "1.5.0"
 
+# Widgets — Glance for home-screen widgets (beta.21)
+glance = "1.1.1"
+
 # Testing
 junit5 = "5.11.3"
 truth = "1.4.4"
@@ -97,6 +100,10 @@ hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref
 hilt-android-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hilt-navigation-compose" }
 hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hilt-navigation-compose" }
+
+# Glance widgets
+androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
+androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }
 hilt-compiler-androidx = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hilt-navigation-compose" }
 
 # Room

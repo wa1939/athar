@@ -1,0 +1,45 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+
+        <!-- Monthly summary widget — landmark net + income/expense/net-worth pills. -->
+        <receiver
+            android:name="com.athar.feature.widgets.monthly.MonthlyWidgetReceiver"
+            android:label="@string/widget_monthly_label"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_monthly_info" />
+        </receiver>
+
+        <!-- Today snapshot widget — today's net + pending count. -->
+        <receiver
+            android:name="com.athar.feature.widgets.today.TodayWidgetReceiver"
+            android:label="@string/widget_today_label"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_today_info" />
+        </receiver>
+
+        <!-- Pending list widget — top pending transactions. -->
+        <receiver
+            android:name="com.athar.feature.widgets.pending.PendingWidgetReceiver"
+            android:label="@string/widget_pending_label"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_pending_info" />
+        </receiver>
+
+    </application>
+</manifest>
