@@ -7,7 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Nothing yet.
+- In-place Confirm / Dismiss / Categorize buttons on the Pending widget (currently a tap opens the app). Needs HiltWorker + WorkManager+Hilt wiring.
+- App-triggered widget refresh (`updateAll(context)`) after in-app Confirm/Dismiss so the widget syncs within seconds instead of the system's 30-minute cadence.
+
+## [0.1.0-beta.21] — 2026-05-27
+
+The "home-screen widgets" release. Three Glance widgets ship in a new `feature:widgets` module:
+
+### Added
+
+- **Athar · Month** widget (3×2 cells) — landmark net-this-month + Income / Expense / Net-worth pills. Reads the live month period from `TransactionRepository.observeByPeriod` + `AccountRepository.observeNetWorth` via Hilt EntryPoint.
+- **Athar · Today** widget (2×1 cells) — today's net flow as the landmark, plus a "N pending" ember caption when the pending tray is non-empty. Hides the caption if zero.
+- **Athar · Pending** widget (3×3 cells) — top 3 pending transactions with merchant + amount; "+N more" footer when there are extras.
+- All three render Athar's parchment + ember palette via a small `WidgetColors` constants file (the Compose `AtharTheme` is unavailable in Glance's separate composition tree — the constants mirror it 1:1).
+- Tapping any widget opens the app via `actionStartActivity(componentName)` resolved flavor-agnostically through `PackageManager.getLaunchIntentForPackage()`.
+- New Gradle module `feature/widgets/` registered in `settings.gradle.kts`; app picks it up via one new `implementation(project(":feature:widgets"))` line.
+- New `WidgetDataLoader` exposes three one-shot suspend funcs (`loadMonthlySnapshot`, `loadTodaySnapshot`, `loadPendingHead`) backed by a Hilt `@EntryPoint` — needed because Glance widgets have no lifecycle owner and can't use `@Inject`.
+- New deps in `gradle/libs.versions.toml`: `glance = "1.1.1"` + `androidx-glance-appwidget` + `androidx-glance-material3`.
+
+### Deferred to next release
+
+In-place Confirm / Dismiss / Categorize action buttons on the Pending widget require a HiltWorker + Hilt-WorkManager setup that doubled the change footprint. Pending widget currently opens the app on tap; the action buttons will land in a follow-up release.
+
+## [0.1.0-beta.20] — 2026-05-27
+
+The "share your rules, not your data" release. The privacy-preserving alternative to a centralized merchant categorization database.
+
+### Added
+
+- **"Help others · share your rules" Settings card.** Tap *Export my rules* → Athar writes a JSON file containing only `(pattern, categoryId, confidence)` tuples for every rule the user explicitly created via "Always categorize X as Y" (`learnedFromUser=true`). Tap *Open GitHub issue* → device browser opens to `github.com/wa1939/athar/issues/new` with a pre-filled title + body. User attaches the JSON manually as a comment.
+- **Maintainer review path.** New `.github/ISSUE_TEMPLATE/community-rules.yml` issue template with explicit privacy checkboxes ("I confirm no PII is included"). Accepted rules get merged into `core/data/src/main/assets/seed_rules.json` at priority 60 or 80; next release ships the expanded seed to every user via the `RuleSeed.seedIfEmpty()` refresh mechanism added in beta.17.
+- **`docs/COMMUNITY_RULES_WORKFLOW.md`** — user guide + maintainer review checklist + a comparison table showing why this beats a centralized backend on every dimension that matters (privacy, abuse vector, cost, audit trail, failure mode).
+- Plumbing: new `CommunityRulesShareTrigger` interface in `core/domain`, `CommunityRulesShareExporter` impl in `core/data/csv` (uses `kotlinx.serialization` for the JSON output, deduped by `(pattern, categoryId)`), `CommunityShareStatus` sealed state machine in `SettingsViewModel`.
+
+### Privacy contract (reaffirms Master Brief §2.2)
+
+The exported JSON contains ONLY merchant pattern + categoryId + confidence. **No transaction amounts, no dates, no raw SMS bodies, no account IDs, no PII.** The file never leaves the device until the user explicitly taps *Open GitHub issue* and attaches it. No backend, no API, no upload, no telemetry. Same end result as a centralized database (first-time users get a growing curated seed), zero data collection.
+
+## [0.1.0-beta.19] — 2026-05-27
+
+The "match my bank balance" release. Replaces opening-balance editing (which silently rewrote history and was throwing opaque errors) with the reconciliation flow every modern budgeting tool uses.
+
+### Added
+
+- **Per-account "تسوية" / "Reconcile" chip in Settings → Accounts.** Tap → sheet shows the currently displayed balance + an editable target. On Apply, Athar inserts one manual transaction so the running balance equals the target. INCOME if you're adding, EXPENSE if you're removing. The merchant label is "تسوية يدوية" / "Manual adjustment"; the transaction is visible in standard History and tagged in the Activity Log.
+- **A 4-second toast** shows the signed delta on success (`+1,234 ر.س added` or `−500 ر.س added`), a muted "balance already matches" note if zero, or the actual error string if the operation failed (using the `errorDetail` StateFlow added in beta.18).
+- Plumbing: new `AccountRepository.reconcile(accountId, target, label, note)` method + `ReconcileResult` sealed (Done/Failed) in `core/domain`. Impl in `AccountRepositoryImpl` reads current balance via `observeBalances().first()`, computes `delta = target − current`, validates currency match, and calls `TransactionRepository.upsert` (which records an Activity Log entry).
+- New ViewModel: `AccountsViewModel.reconcile` + `ReconcileEvent` sealed (Done/NoChange/Failed) + `reconcileEvent: StateFlow<ReconcileEvent?>` for the toast.
+- New strings (AR + EN): `settings_accounts_action_reconcile`, `_reconcile_title`, `_reconcile_current`, `_reconcile_target_label`, `_reconcile_note_hint`, `_reconcile_default_merchant`, `_reconcile_body`, `_reconcile_confirm`, `_reconcile_done`, `_reconcile_nochange`.
+
+### Rationale — why this, not opening-balance editing
+
+The opening balance is the user's starting state when an account was first added to Athar. Letting users edit it after-the-fact silently rewrites the ledger — every transaction's "running balance" shifts retroactively without an audit trail. Reconciliation is the better abstraction: explicit, dated, reversible, visible in transaction history. The Edit form is intentionally left in place as a secondary path (e.g., correcting a typo during first setup); beta.18's `errorDetail` will surface its real exception the next time you hit it and we'll fix the root cause inline.
 
 ## [0.1.0-beta.18] — 2026-05-26
 
@@ -165,7 +216,10 @@ See [ADR-004](docs/adr/ADR-004-mvp-status.md). Notably:
 - Paparazzi snapshot baselines need a first record run.
 - Macrobenchmarks need a real device.
 
-[Unreleased]: https://github.com/wa1939/athar/compare/v0.1.0-beta.18...HEAD
+[Unreleased]: https://github.com/wa1939/athar/compare/v0.1.0-beta.21...HEAD
+[0.1.0-beta.21]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.21
+[0.1.0-beta.20]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.20
+[0.1.0-beta.19]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.19
 [0.1.0-beta.18]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.18
 [0.1.0-beta.17]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.17
 [0.1.0-beta.1]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.1

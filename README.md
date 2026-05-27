@@ -111,6 +111,9 @@ Other tools force a trade-off:
 - ✅ **Subscriptions screen (R-04, beta.17)** — recurring rules reframed as subscriptions with Active / Paused sections, monthly-total card, one-tap Active↔Paused toggle
 - ✅ **Confirm-before-create sheet (R-03, beta.17)** — tapping a recurring suggestion opens a sheet to edit cadence (Monthly/Weekly/Yearly), day-of-month, and category before saving the rule
 - ✅ **Bulk categorize with AI (beta.18)** — export every PENDING/DISMISSED/uncategorized transaction to CSV, run it through ChatGPT/Claude with the AI triage prompt, import the filled file back. Each row updates its transaction *and* records a merchant→category rule so future SMS auto-categorize. No API keys, no cloud round-trip — your personal merchant library grows permanently
+- ✅ **Reconcile to bank balance (beta.19)** — per-account "تسوية / Reconcile" chip. Enter your bank's actual balance; Athar inserts one manual adjustment transaction so the running balance matches. No silent history rewrite, full audit trail
+- ✅ **Share your rules with the community (beta.20)** — Settings → "Help others · share your rules" exports only your "Always categorize X" merchant→category mappings as JSON, then opens a pre-filled GitHub issue. Maintainer reviews; accepted rules ship in the next release's seed for every user. Zero transaction data leaves your device
+- ✅ **Home-screen widgets (beta.21)** — three Glance widgets: Month summary (net + Income/Expense/Net-worth pills), Today snapshot (today's net + pending count), and Pending list (top-3 pending transactions). Long-press home screen → Widgets → Athar
 - ✅ **Recurring rules management** with "Run now" trigger + auto-detected suggestions
 - ✅ Categories management (rename, archive, reorder, custom adds)
 
