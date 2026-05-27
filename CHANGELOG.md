@@ -9,7 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - In-place Confirm / Dismiss / Categorize buttons on the Pending widget (currently a tap opens the app). Needs HiltWorker + WorkManager+Hilt wiring.
 - App-triggered widget refresh (`updateAll(context)`) after in-app Confirm/Dismiss so the widget syncs within seconds instead of the system's 30-minute cadence.
-- In-app update-availability nudge (Obtainium delegation; no INTERNET permission).
+
+## [0.1.0-beta.23] — 2026-05-27
+
+The "tell users a new release exists, without the internet" release.
+
+### Added
+
+- **Settings → "تابع التحديثات / Stay up to date" card.** Athar has no `INTERNET` permission (Master Brief §2.2 — local-first, offline-only), so it cannot poll GitHub for new releases. Instead the new card delegates update-tracking to [Obtainium](https://obtainium.imranr.dev), the sideload manager users already trust. One tap on **"Add to Obtainium"** opens the deep link `obtainium://app/{percent-encoded-config}` which pre-fills Athar's GitHub URL in Obtainium's "Add app" flow. From then on, Obtainium polls the releases page on the user's behalf and notifies them when a new build ships. No permissions added, no background work in Athar.
+- **Fallback chain.** If Obtainium isn't installed (deep link has no handler), Athar catches the `ActivityNotFoundException`, shows a toast (`"Obtainium isn't installed — opening its site so you can grab it"`), and opens `obtainium.imranr.dev` in the default browser. Secondary buttons: **"Install Obtainium"** (same target, manual) and **"Releases page"** (opens `github.com/wa1939/athar/releases` for power users).
+- New strings (AR + EN): `settings_updates_title`, `_body`, `_action_obtainium`, `_action_install_obtainium`, `_action_releases`, `_obtainium_missing`.
+
+### Why delegation, not in-app polling
+
+In-app polling would require `android.permission.INTERNET`, which broadens the trust surface and contradicts the offline-first product positioning that's a feature, not an oversight. Obtainium already polls release feeds in a process the user has explicitly trusted; tying into that path means update-checking responsibility lives in the sideload manager forever — no backend, no API rate limits, no GitHub-token leakage, no extra binary in the Athar process.
 
 ## [0.1.0-beta.22] — 2026-05-27
 

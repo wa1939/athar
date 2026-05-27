@@ -74,6 +74,14 @@
     <string name="settings_csv_action_import">Import</string>
     <string name="settings_csv_action_export">Export</string>
 
+    <!-- Updates via Obtainium (beta.22) -->
+    <string name="settings_updates_title">Stay up to date</string>
+    <string name="settings_updates_body">Athar is fully offline — it can\'t check for updates on its own. Add Athar to Obtainium and it will watch the GitHub releases page for you and notify you whenever a new build ships.</string>
+    <string name="settings_updates_action_obtainium">Add to Obtainium</string>
+    <string name="settings_updates_action_install_obtainium">Install Obtainium</string>
+    <string name="settings_updates_action_releases">Releases page</string>
+    <string name="settings_updates_obtainium_missing">Obtainium isn\'t installed — opening its site so you can grab it.</string>
+
     <!-- Community rules sharing (beta.20) -->
     <string name="settings_community_title">Help others · share your rules</string>
     <string name="settings_community_body">Export the personal categorization rules you created yourself (merchant → category) as a single JSON file, then submit it as a GitHub proposal. Reviewed and merged rules ship in the next release so every new user benefits. No transactions, balances, or SMS bodies leave your device — only the (merchant → category) tuples you tagged "Always categorize X".</string>

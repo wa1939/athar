@@ -219,6 +219,8 @@ fun SettingsScreen(
                 onSave = viewModel::setOwnAccountNumbers,
             )
 
+            UpdatesCard()
+
             HistoryEntryCard(onOpen = onOpenHistory)
 
             AccountsEntryCard(onOpen = onOpenAccounts)
@@ -668,6 +670,93 @@ private fun SmsAuditEntryCard(onOpen: () -> Unit) {
             )
         }
     }
+}
+
+/**
+ * Update-availability nudge (beta.22). Athar has no INTERNET permission, so it
+ * cannot poll GitHub itself. Instead we delegate to Obtainium — the sideload
+ * manager users already trust — via a deep link that pre-fills Athar's repo
+ * URL in Obtainium's "Add app" flow. Obtainium then watches releases on the
+ * user's behalf and notifies them when a new build ships.
+ *
+ * Fallback chain: if Obtainium isn't installed (deep link has no handler),
+ * we catch the ActivityNotFound and open the Obtainium install page instead.
+ */
+@Composable
+private fun UpdatesCard() {
+    val theme = AtharTheme
+    val context = LocalContext.current
+    val obtainiumMissing = stringResource(R.string.settings_updates_obtainium_missing)
+    AtharCard {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(theme.spacing.s),
+        ) {
+            AtharText(
+                text = stringResource(R.string.settings_updates_title),
+                style = theme.typography.headline,
+            )
+            AtharText(
+                text = stringResource(R.string.settings_updates_body),
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
+            PrimaryButton(
+                text = stringResource(R.string.settings_updates_action_obtainium),
+                onClick = {
+                    val ok = launchUrl(context, OBTAINIUM_DEEP_LINK)
+                    if (!ok) {
+                        android.widget.Toast
+                            .makeText(context, obtainiumMissing, android.widget.Toast.LENGTH_LONG)
+                            .show()
+                        launchUrl(context, OBTAINIUM_INSTALL_URL)
+                    }
+                },
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    SecondaryButton(
+                        text = stringResource(R.string.settings_updates_action_install_obtainium),
+                        onClick = { launchUrl(context, OBTAINIUM_INSTALL_URL) },
+                    )
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    SecondaryButton(
+                        text = stringResource(R.string.settings_updates_action_releases),
+                        onClick = { launchUrl(context, ATHAR_RELEASES_URL) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Returns true if the URI was handed off; false if no activity could handle it. */
+private fun launchUrl(context: Context, url: String): Boolean = runCatching {
+    context.startActivity(
+        android.content.Intent(
+            android.content.Intent.ACTION_VIEW,
+            android.net.Uri.parse(url),
+        ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+    )
+    true
+}.getOrElse { false }
+
+private const val ATHAR_RELEASES_URL = "https://github.com/wa1939/athar/releases"
+private const val OBTAINIUM_INSTALL_URL = "https://obtainium.imranr.dev"
+
+/**
+ * Obtainium accepts an `obtainium://app/{percent-encoded-json}` deep link that
+ * pre-fills its "Add app" form. The JSON below points Obtainium at Athar's
+ * GitHub releases (source: GitHub) so it can poll the tag list and notify on
+ * new releases. preferredApkIndex 0 picks `app-personalFullSms-release.apk`.
+ */
+private val OBTAINIUM_DEEP_LINK: String by lazy {
+    val json = """{"id":"com.athar.personal","url":"https://github.com/wa1939/athar","author":"wa1939","name":"Athar","preferredApkIndex":0,"additionalSettings":"{}"}"""
+    "obtainium://app/" + java.net.URLEncoder.encode(json, "UTF-8")
 }
 
 @Composable

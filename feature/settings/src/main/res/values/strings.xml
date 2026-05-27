@@ -74,6 +74,14 @@
     <string name="settings_csv_action_import">استيراد</string>
     <string name="settings_csv_action_export">تصدير</string>
 
+    <!-- Updates via Obtainium (beta.22) -->
+    <string name="settings_updates_title">تابع التحديثات</string>
+    <string name="settings_updates_body">أثر يعمل دون اتصال — لا يستطيع التحقق من التحديثات بنفسه. أَضِف أثر إلى تطبيق Obtainium وسيراقب صفحة الإصدارات على GitHub نيابةً عنك، ويُنبّهك عند صدور إصدار جديد.</string>
+    <string name="settings_updates_action_obtainium">إضافة إلى Obtainium</string>
+    <string name="settings_updates_action_install_obtainium">تثبيت Obtainium</string>
+    <string name="settings_updates_action_releases">صفحة الإصدارات</string>
+    <string name="settings_updates_obtainium_missing">Obtainium غير مثبّت — افتح موقعه لتثبيته.</string>
+
     <!-- Community rules sharing (beta.20) -->
     <string name="settings_community_title">ساعد المجتمع · شارك القواعد</string>
     <string name="settings_community_body">صدّر قواعد التصنيف الشخصية التي أنشأتها بنفسك (التاجر ← الفئة) كملف JSON واحد، ثم أرسلها كاقتراح على GitHub. تُراجَع وتُدمج في الإصدار القادم ليستفيد منها كل المستخدمين الجدد. لا تُرسَل أي حركة أو رصيد أو نص رسالة — فقط ما اخترته أنت بـ«اعتبره دائماً كذا».</string>
