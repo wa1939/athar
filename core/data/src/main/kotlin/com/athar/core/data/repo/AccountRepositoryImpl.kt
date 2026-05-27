@@ -11,6 +11,7 @@ import com.athar.core.domain.model.AccountBalance
 import com.athar.core.domain.model.IngestSource
 import com.athar.core.domain.model.MANUAL_ACCOUNT_ID
 import com.athar.core.domain.model.NetWorth
+import com.athar.core.domain.model.RECONCILE_REF_PREFIX
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
@@ -127,7 +128,7 @@ internal class AccountRepositoryImpl @Inject constructor(
             categoryId = null,
             notes = note?.takeIf { it.isNotBlank() },
             source = IngestSource.MANUAL,
-            sourceRefId = "reconcile-${UUID.randomUUID()}",
+            sourceRefId = "$RECONCILE_REF_PREFIX${UUID.randomUUID()}",
             status = TxStatus.CONFIRMED,
             confidence = 1.0f,
             createdAt = now,

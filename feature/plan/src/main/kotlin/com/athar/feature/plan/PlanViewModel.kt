@@ -9,6 +9,7 @@ import com.athar.core.domain.model.CategoryKind
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.model.isReconciliation
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
@@ -104,6 +105,7 @@ class PlanViewModel @Inject constructor(
         currency: String,
     ): PlanState {
         val byCategory = txs
+            .filterNot { it.isReconciliation() }
             .filter { it.type == TxType.EXPENSE }
             .groupBy { it.categoryId }
             .mapValues { (_, list) -> Money.sumAmounts(list.map { it.amount }, currency) }

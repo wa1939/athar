@@ -8,6 +8,7 @@ import com.athar.core.domain.model.PatternType
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.model.isReconciliation
 import com.athar.core.domain.repo.AccountRepository
 import com.athar.core.domain.repo.CategoryRuleRepository
 import com.athar.core.domain.repo.TransactionRepository
@@ -129,12 +130,15 @@ class TodayViewModel @Inject constructor(
         currency: String,
         netWorth: com.athar.core.domain.model.NetWorth,
     ): TodayState {
-        val (income, expense) = confirmed.partition { it.type == TxType.INCOME }
+        // Reconciliation adjustments only affect net worth; never count them as income/expense.
+        val operating = confirmed.filterNot { it.isReconciliation() }
+        val (income, expense) = operating.partition { it.type == TxType.INCOME }
         val incomeSum = Money.sumAmounts(income.map { it.amount }, currency)
         val expenseSum = Money.sumAmounts(expense.map { it.amount }, currency)
         val today = clock.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
         val (todayTxns, monthTxns) = confirmed.partition { it.date == today }
-        val (todayIncome, todayExpense) = todayTxns.partition { it.type == TxType.INCOME }
+        val todayOperating = todayTxns.filterNot { it.isReconciliation() }
+        val (todayIncome, todayExpense) = todayOperating.partition { it.type == TxType.INCOME }
         val todayNet = Money.sumAmounts(todayIncome.map { it.amount }, currency) -
             Money.sumAmounts(todayExpense.map { it.amount }, currency)
         val dismissedToday = dismissed.filter { it.date == today }

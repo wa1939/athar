@@ -14,6 +14,7 @@ import com.athar.core.domain.model.CategoryKind
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.model.isReconciliation
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
@@ -145,12 +146,15 @@ class TrendsViewModel @Inject constructor(
         twelveMonths: List<Transaction>,
         currency: String,
     ): TrendsState {
-        val expense = current.filter { it.type == TxType.EXPENSE }
-        val income = current.filter { it.type == TxType.INCOME }
+        // Reconciliation adjustments never appear in trends — they're balance fixes, not spend.
+        val currentOp = current.filterNot { it.isReconciliation() }
+        val priorOp = prior.filterNot { it.isReconciliation() }
+        val expense = currentOp.filter { it.type == TxType.EXPENSE }
+        val income = currentOp.filter { it.type == TxType.INCOME }
         val expenseSum = Money.sumAmounts(expense.map { it.amount }, currency)
         val incomeSum = Money.sumAmounts(income.map { it.amount }, currency)
-        val priorExpense = prior.filter { it.type == TxType.EXPENSE }
-        val priorIncome = prior.filter { it.type == TxType.INCOME }
+        val priorExpense = priorOp.filter { it.type == TxType.EXPENSE }
+        val priorIncome = priorOp.filter { it.type == TxType.INCOME }
         val priorExpenseSum = Money.sumAmounts(priorExpense.map { it.amount }, currency)
         val priorIncomeSum = Money.sumAmounts(priorIncome.map { it.amount }, currency)
 
@@ -230,7 +234,7 @@ class TrendsViewModel @Inject constructor(
         val months: List<YearMonth> = (11 downTo 0).map { o -> nowYm.minusMonths(o.toLong()) }
         val incomeByMonthAmt = mutableMapOf<YearMonth, BigDecimal>().apply { months.forEach { put(it, BigDecimal.ZERO) } }
         val expenseByMonthAmt = mutableMapOf<YearMonth, BigDecimal>().apply { months.forEach { put(it, BigDecimal.ZERO) } }
-        txs.forEach { tx ->
+        txs.filterNot { it.isReconciliation() }.forEach { tx ->
             val ym = YearMonth.of(tx.date.year, tx.date.monthNumber)
             if (ym !in incomeByMonthAmt) return@forEach
             when (tx.type) {

@@ -22,3 +22,15 @@ data class Transaction(
     val createdAt: Instant,
     val updatedAt: Instant,
 )
+
+const val RECONCILE_REF_PREFIX = "reconcile-"
+
+/**
+ * Reconciliation adjustments inserted by AccountRepository.reconcile() are signed
+ * transactions whose only job is to make the running balance match the bank. They
+ * MUST NOT count as real income/expense in monthly totals, trends, or plan actuals —
+ * they would inflate "spent this month" by the balance gap (often tens of thousands).
+ * They still affect account balance + net worth (that's the whole point).
+ */
+fun Transaction.isReconciliation(): Boolean =
+    source == IngestSource.MANUAL && sourceRefId?.startsWith(RECONCILE_REF_PREFIX) == true

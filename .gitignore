@@ -108,3 +108,4 @@ memory/
 # the local gh OAuth token doesn't carry the `workflow` scope. Once you've run
 # `gh auth refresh -s workflow`, remove this block and commit the workflows.
 /.github/workflows/
+test-screens-*/

@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - In-place Confirm / Dismiss / Categorize buttons on the Pending widget (currently a tap opens the app). Needs HiltWorker + WorkManager+Hilt wiring.
 - App-triggered widget refresh (`updateAll(context)`) after in-app Confirm/Dismiss so the widget syncs within seconds instead of the system's 30-minute cadence.
+- In-app update-availability nudge (Obtainium delegation; no INTERNET permission).
+
+## [0.1.0-beta.22] — 2026-05-27
+
+The "reconciliation no longer inflates expenses" hotfix.
+
+### Fixed
+
+- **Manual reconciliation adjustments (`تسوية يدوية`) no longer count toward monthly expense / income totals.** A user reconciling a 50k+ SAR balance gap was seeing the gap appear as a single 50k expense, inflating the displayed `المصروفات` to misleading numbers (e.g. −260,287 SAR). Reconciliation transactions still affect account balance + net worth (that's the entire purpose) but are now filtered out of every spend/income aggregation: Today landmark + month totals, Trends current/prior + 12-month series, Plan per-category actuals, and the Monthly/Today widgets.
+- Detection is via a new `Transaction.isReconciliation()` extension that matches `source = MANUAL` + `sourceRefId` starting with the `reconcile-` sentinel that `AccountRepository.reconcile()` already sets. No schema migration; the existing field carries the signal.
+- History list and per-account balance ledger continue to show reconciliation transactions — they are auditable, just non-operating.
 
 ## [0.1.0-beta.21] — 2026-05-27
 

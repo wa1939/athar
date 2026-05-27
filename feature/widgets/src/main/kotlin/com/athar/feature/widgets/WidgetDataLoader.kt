@@ -7,6 +7,7 @@ import com.athar.core.domain.model.NetWorth
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.model.isReconciliation
 import com.athar.core.domain.repo.AccountRepository
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
@@ -58,7 +59,9 @@ object WidgetDataLoader {
         val period = Period.Month(month)
         val confirmed = e.transactions()
             .observeByPeriod(period, status = TxStatus.CONFIRMED).first()
-        val (income, expense) = confirmed.partition { it.type == TxType.INCOME }
+        // Reconciliations only move net worth; never count them as income/expense.
+        val operating = confirmed.filterNot { it.isReconciliation() }
+        val (income, expense) = operating.partition { it.type == TxType.INCOME }
         val incomeSum = Money.sumAmounts(income.map { it.amount }, currency)
         val expenseSum = Money.sumAmounts(expense.map { it.amount }, currency)
         val netWorth: NetWorth = e.accounts().observeNetWorth(currency).first()
@@ -79,7 +82,9 @@ object WidgetDataLoader {
         val period = Period.Month(month)
         val confirmed = e.transactions()
             .observeByPeriod(period, status = TxStatus.CONFIRMED).first()
-        val todayTxns = confirmed.filter { it.date == today }
+        val todayTxns = confirmed
+            .filter { it.date == today }
+            .filterNot { it.isReconciliation() }
         val (todayIncome, todayExpense) = todayTxns.partition { it.type == TxType.INCOME }
         val todayNet = Money.sumAmounts(todayIncome.map { it.amount }, currency) -
             Money.sumAmounts(todayExpense.map { it.amount }, currency)
