@@ -83,6 +83,10 @@ hs_err_pid*
 /scripts/test_sms.sh
 /scripts/_sms_insert.sql
 
+# Claude Code session exports — these can contain conversation transcripts with
+# user PII or credentials. Saved locally only.
+/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-*.txt
+
 # PII: this folder contains the user's own SMS exports and their friend's,
 # plus the full AI triage outputs (which embed raw SMS bodies). Keep local only.
 "/AI template and output Categorization/"
