@@ -18,7 +18,9 @@ Companion docs:
 
 ## Current repo state
 
-This is a **greenfield repo**. No Gradle project, no `app/`, no source code yet. The folder contains only specs, fonts, the legacy workbook, and `.claude/` configuration. Phase 0 in the backlog (F-01..F-10) is the first work to do.
+Current version: **0.1.0-beta.23** (see `gradle.properties`). Tier 1 (G-1..G-14 from `docs/ROADMAP_GLOBAL.md`) is complete; the post-Tier-1 patch series (beta.11 → beta.23) is documented in the same roadmap and in `CHANGELOG.md`. Full multi-module Gradle project + signed APKs in GitHub releases.
+
+Update delivery: Athar has no `INTERNET` permission and never will (Master Brief §2.2). New releases are tagged on `main` via `gh release create`; users are notified via **Obtainium**, which they subscribe to once from Settings → "تابع التحديثات / Stay up to date" (shipped beta.23). When working on update-related logic, never reach for HTTP polling — extend the Obtainium delegation pattern instead.
 
 ## MANDATORY: load a KMP skill before writing code
 
@@ -140,7 +142,7 @@ Permissions in v1 sideload: `RECEIVE_SMS`, `READ_SMS`, `POST_NOTIFICATIONS`, `FO
 
 ## Build & test commands
 
-The Gradle project does not exist yet — these are the commands to use **once Phase 0 / F-01 lands** (Master Brief §5.1, §6.5):
+Standard commands (the Gradle project + version catalog have been in place since Phase 0; verify task names against `./gradlew tasks --all` if you suspect drift):
 
 | Purpose | Command |
 |---|---|
@@ -158,7 +160,21 @@ The Gradle project does not exist yet — these are the commands to use **once P
 | Install debug APK on emulator | `./gradlew installPersonalFullSmsDebug` (or `installStoreSafeDebug`) |
 | Send test SMS to emulator | `adb emu sms send AlRajhiBank "شراء بمبلغ 200.00 ر.س ..."` |
 
-Do not invent additional Gradle tasks — when Phase 0 lands, verify these names against the actual `build.gradle.kts` and update this file.
+Do not invent additional Gradle tasks — verify against the actual `build.gradle.kts` files before adding to this table.
+
+### Release process
+
+Established and used through beta.11 → beta.23. Each user-visible release:
+
+1. Bump `athar.version` in `gradle.properties`.
+2. Update `CHANGELOG.md` (new `## [0.1.0-beta.NN] — YYYY-MM-DD` section), `README.md` (bullet in the "What's working today" list), and `docs/ROADMAP_GLOBAL.md` (new row in the post-Tier-1 patches table with rationale).
+3. `./gradlew :app:assemblePersonalFullSmsDebug :app:assemblePersonalFullSmsRelease`.
+4. Copy the debug APK to `releases/athar-beta.NN-seeded.apk` for local archive.
+5. Commit on `main` with a Conventional Commits message (`feat:`, `fix:`, `docs:` …).
+6. `git tag -a v0.1.0-beta.NN -m "…" && git push origin main v0.1.0-beta.NN`.
+7. `gh release create v0.1.0-beta.NN <release-apk> --title "…" --notes "…"`.
+
+Users subscribed via Obtainium (Settings → "Stay up to date") get the new release automatically.
 
 ## Testing strategy (Master Brief §6.5)
 
