@@ -1,4 +1,5 @@
 import java.util.Properties
+import org.gradle.api.tasks.testing.Test
 
 plugins {
     alias(libs.plugins.athar.android.application)
@@ -83,6 +84,10 @@ android {
             assets.srcDir("src/seeded/assets")
         }
     }
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
 }
 
 dependencies {
