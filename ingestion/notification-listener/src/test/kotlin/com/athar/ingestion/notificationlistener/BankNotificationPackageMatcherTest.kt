@@ -23,6 +23,12 @@ class BankNotificationPackageMatcherTest {
         assertThat(BankNotificationPackageMatcher.isBankPackage("com.usbank.mobilebanking")).isTrue()
         assertThat(BankNotificationPackageMatcher.isBankPackage("com.pnc.ecommerce.mobile")).isTrue()
         assertThat(BankNotificationPackageMatcher.isBankPackage("com.sofi.mobile")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.transferwise.android")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.payoneer.android")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.remitly.androidapp")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.bunq.android")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.nu.production.nubank")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.bbva.bbvacontigo")).isTrue()
     }
 
     @Test

@@ -21,7 +21,7 @@ class GenericBankNotificationTemplate : BankTemplate {
     override val senderMatcher: SenderMatcher = SenderMatcher.Regex(BankPackagePattern)
 
     private val amountWithCurrency = Regex(
-        """(?:(?<lead>CA\$|C\$|AU\$|A\$|[\$€£﷼₹¥₺]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY)\s*)?(?<num>${Normalize.LOCALIZED_AMOUNT_PATTERN})(?:\s*(?<trail>CA\$|C\$|AU\$|A\$|[\$€£﷼₹¥₺]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|ر\.?\s*س|د\.?\s*إ))?""",
+        """(?:(?<lead>CA\$|C\$|AU\$|A\$|[\$€£﷼₹¥₺]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|CNY|HKD|SGD|SEK|NOK|DKK|ZAR|BRL|MXN|THB|IDR|MYR|PHP|VND|KRW)\s*)?(?<num>${Normalize.LOCALIZED_AMOUNT_PATTERN})(?:\s*(?<trail>CA\$|C\$|AU\$|A\$|[\$€£﷼₹¥₺]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|CNY|HKD|SGD|SEK|NOK|DKK|ZAR|BRL|MXN|THB|IDR|MYR|PHP|VND|KRW|ر\.?\s*س|د\.?\s*إ))?""",
         RegexOption.IGNORE_CASE,
     )
     private val expenseWords = Regex(
@@ -29,7 +29,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val expensePhrases = Regex(
-        """\b(?:card\s+(?:ending\s+\d{2,4}\s+)?(?:was\s+)?used|card\s+payment|debit\s+card\s+transaction|direct\s+debit|payment\s+to|transaction\s+at|transaction\s+with)\b""",
+        """\b(?:card\s+(?:ending\s+\d{2,4}\s+)?(?:was\s+)?used|card\s+payment|card\s+transaction|card\s+charge|debit\s+card\s+transaction|direct\s+debit|payment\s+to|transaction\s+at|transaction\s+with|purchase\s+from|charged\s+(?:your\s+card|you))\b""",
         RegexOption.IGNORE_CASE,
     )
     private val incomeWords = Regex(
@@ -45,7 +45,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val statementWords = Regex(
-        """\b(?:statement\s+(?:is\s+)?(?:ready|available)|minimum\s+payment|payment\s+due|due\s+date)\b""",
+        """\b(?:statement\s+(?:is\s+)?(?:ready|available)|minimum\s+payment|payment\s+due|due\s+date|bill\s+(?:is\s+)?due|invoice\s+(?:is\s+)?due)\b""",
         RegexOption.IGNORE_CASE,
     )
     private val limitWords = Regex(
@@ -58,6 +58,10 @@ class GenericBankNotificationTemplate : BankTemplate {
     )
     private val requestWords = Regex(
         """\b(?:requested|requesting|requests?|payment\s+request|money\s+request)\b""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val scheduledWords = Regex(
+        """\b(?:scheduled\s+(?:payment|transfer|autopay|bill)|payment\s+(?:is\s+)?scheduled|transfer\s+(?:is\s+)?scheduled|autopay\s+(?:is\s+)?scheduled|upcoming\s+payment)\b""",
         RegexOption.IGNORE_CASE,
     )
     private val securityWords = Regex(
@@ -99,6 +103,7 @@ class GenericBankNotificationTemplate : BankTemplate {
 
         if (declinedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (statementWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (scheduledWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (limitWords.containsMatchIn(normalized) && !hasExpenseAction(normalized) && !hasIncomeAction(normalized)) {
             return ParseResult.Ignored
         }
@@ -186,10 +191,12 @@ class GenericBankNotificationTemplate : BankTemplate {
             .trim()
         val patterns = listOf(
             Regex("""\b(?:you\s+)?paid\s+(.+)$""", RegexOption.IGNORE_CASE),
+            Regex("""^(?!your\s+card\b)(.+?)\s+charged(?:\s+(?:your\s+card|you|card))?$""", RegexOption.IGNORE_CASE),
             Regex(
-                """\b(?:debit\s+card\s+transaction|debit\s+card\s+purchase|card\s+purchase|purchase)\s+(.+)$""",
+                """\b(?:debit\s+card\s+transaction|debit\s+card\s+purchase|card\s+transaction|card\s+charge|card\s+purchase|purchase)\s+(.+)$""",
                 RegexOption.IGNORE_CASE,
             ),
+            Regex("""\bpurchase\s+from\s+(.+)$""", RegexOption.IGNORE_CASE),
             Regex("""\b(?:was\s+charged\s+by|were\s+charged\s+by|charged\s+by)\s+(.+)$""", RegexOption.IGNORE_CASE),
         )
         return patterns
@@ -214,7 +221,7 @@ class GenericBankNotificationTemplate : BankTemplate {
 
     private companion object {
         val BankPackagePattern = Regex(
-            """^notification:.*(alrajhi|stcpay|stcbank|d360|barq|alinma|riyad|snb|alahli|anb|albilad|bsf|saib|jazira|wise|revolut|chase|capitalone|mercury|monzo|n26|starling|hsbc|barclays|lloyds|natwest|santander|halifax|usbank|pnc|sofi|walletnfcrel|paisa|samsung\.android\.spay|paypal|venmo|squareup\.cash|americanexpress|amex|bankofamerica|bofa|wellsfargo|citimobile|usaa).*""",
+            """^notification:.*(alrajhi|stcpay|stcbank|d360|barq|alinma|riyad|snb|alahli|anb|albilad|bsf|saib|jazira|wise|transferwise|revolut|chase|capitalone|mercury|monzo|n26|starling|hsbc|barclays|lloyds|natwest|santander|halifax|usbank|pnc|sofi|walletnfcrel|paisa|samsung\.android\.spay|paypal|venmo|squareup\.cash|americanexpress|amex|bankofamerica|bofa|wellsfargo|citimobile|usaa|payoneer|remitly|westernunion|bunq|nubank|bbva|scotiabank|tdbank|rbc).*""",
             RegexOption.IGNORE_CASE,
         )
     }

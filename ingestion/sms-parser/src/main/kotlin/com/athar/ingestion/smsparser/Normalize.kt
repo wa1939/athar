@@ -79,7 +79,9 @@ internal object Normalize {
             "AUD", "AU$", "A$" -> "AUD"
             "CHF" -> "CHF"
             "د.إ", "دإ", "AED" -> "AED"
-            "USD", "EUR", "GBP", "INR", "PKR", "TRY", "EGP", "KWD", "QAR", "BHD", "OMR", "JOD" -> normalized
+            "USD", "EUR", "GBP", "INR", "PKR", "TRY", "EGP", "KWD", "QAR", "BHD", "OMR", "JOD",
+            "CNY", "HKD", "SGD", "SEK", "NOK", "DKK", "ZAR", "BRL", "MXN", "THB", "IDR",
+            "MYR", "PHP", "VND", "KRW" -> normalized
             else -> "SAR"
         }
     }

@@ -210,6 +210,42 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses merchant charged your card notification`() {
+        val result = parser.parse(
+            event("notification:com.capitalone.mobile", "Netflix charged your card USD 8.99"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("8.99"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Netflix")
+    }
+
+    @Test
+    fun `parses card transaction merchant before amount notification`() {
+        val result = parser.parse(
+            event("notification:com.transferwise.android", "Card transaction Starbucks SGD 6.40"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("6.40"))
+        assertThat(result.amount.currency).isEqualTo("SGD")
+        assertThat(result.merchant).isEqualTo("Starbucks")
+    }
+
+    @Test
+    fun `parses broader global currency code notification`() {
+        val result = parser.parse(
+            event("notification:com.revolut.revolut", "You spent SEK 129,00 at IKEA"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("129.00"))
+        assertThat(result.amount.currency).isEqualTo("SEK")
+        assertThat(result.merchant).isEqualTo("IKEA")
+    }
+
+    @Test
     fun `parses debit card transaction from merchant notification`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "Debit card transaction from Trader Joe's for $23.10"),
@@ -290,6 +326,18 @@ class GenericBankNotificationTemplateTest {
                 event(
                     "notification:com.capitalone.mobile",
                     "Your statement is ready. Minimum payment due USD 25.00 by July 1.",
+                ),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores scheduled payment notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event(
+                    "notification:com.chase.sig.android",
+                    "Your scheduled payment of USD 25.00 to Netflix is tomorrow.",
                 ),
             ),
         ).isEqualTo(ParseResult.Ignored)

@@ -614,6 +614,16 @@ class SmsCorpusTest {
         assertThat(r.templateId).isEqualTo("universal-amount")
     }
 
+    @Test fun `universal fallback preserves broader foreign currency code`() {
+        val body = "Purchase SGD 6.40 at Starbucks"
+        val r = parser().parse(event("Alinma", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.EXPENSE)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("6.40"))
+        assertThat(r.amount.currency).isEqualTo("SGD")
+        assertThat(r.merchant).isEqualTo("Starbucks")
+        assertThat(r.templateId).isEqualTo("universal-amount")
+    }
+
     @Test fun `uppercase STCPAY migration notice is Ignored`() {
         val body = """
             ستنتقل جميع خدمات stc pay إلى STC Bank ولضمان استمرار خدماتكم، يرجى تحميل تطبيق STC Bank.

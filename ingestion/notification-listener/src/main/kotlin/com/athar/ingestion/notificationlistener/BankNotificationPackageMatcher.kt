@@ -31,6 +31,9 @@ object BankNotificationPackageMatcher : BankPackageFilter {
         "com.usbank.mobilebanking",
         "com.pnc.ecommerce.mobile",
         "com.sofi.mobile",
+        "com.transferwise.android",
+        "com.payoneer.android",
+        "com.remitly.androidapp",
     )
 
     private val packageKeywords = listOf(
@@ -49,6 +52,7 @@ object BankNotificationPackageMatcher : BankPackageFilter {
         "saib",
         "jazira",
         "wise",
+        "transferwise",
         "revolut",
         "chase",
         "capitalone",
@@ -76,6 +80,15 @@ object BankNotificationPackageMatcher : BankPackageFilter {
         "wellsfargo",
         "citimobile",
         "usaa",
+        "payoneer",
+        "remitly",
+        "westernunion",
+        "bunq",
+        "nubank",
+        "bbva",
+        "scotiabank",
+        "tdbank",
+        "rbc",
     )
 
     override fun isBankPackage(packageName: String): Boolean {
