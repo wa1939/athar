@@ -10,6 +10,7 @@ import com.athar.core.domain.repo.ActivityAction
 import com.athar.core.domain.repo.ActivityLogEntry
 import com.athar.core.domain.repo.ActivityLogRepository
 import com.athar.core.domain.repo.TransactionRepository
+import com.athar.core.domain.repo.WidgetRefresher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
@@ -22,6 +23,7 @@ internal class TransactionRepositoryImpl @Inject constructor(
     private val dao: TransactionDao,
     private val activityLog: ActivityLogRepository,
     private val clock: Clock,
+    private val widgetRefresher: WidgetRefresher,
 ) : TransactionRepository {
 
     override fun observeByPeriod(period: Period, status: TxStatus?): Flow<List<Transaction>> =
@@ -49,6 +51,7 @@ internal class TransactionRepositoryImpl @Inject constructor(
                 summary = "${transaction.merchant} · ${transaction.amount.amount.toPlainString()} ${transaction.amount.currency}",
             ),
         )
+        widgetRefresher.requestRefresh()
     }
 
     override suspend fun delete(id: String) {
@@ -64,6 +67,7 @@ internal class TransactionRepositoryImpl @Inject constructor(
                 summary = existing?.merchant.orEmpty(),
             ),
         )
+        widgetRefresher.requestRefresh()
     }
 
     override suspend fun setStatus(id: String, status: TxStatus) {
@@ -85,6 +89,7 @@ internal class TransactionRepositoryImpl @Inject constructor(
                 ),
             )
         }
+        widgetRefresher.requestRefresh()
     }
 
     override suspend fun clearPending(): Int {
@@ -100,36 +105,52 @@ internal class TransactionRepositoryImpl @Inject constructor(
                     summary = "Cleared $count pending entries",
                 ),
             )
+            widgetRefresher.requestRefresh()
         }
         return count
     }
 
     override suspend fun confirmAllConfident(minConfidence: Float): Int =
         dao.confirmAllConfident(minConfidence, clock.now()).also {
-            if (it > 0) logBulk(ActivityAction.CONFIRM, "Bulk-confirmed $it (≥${minConfidence})")
+            if (it > 0) {
+                logBulk(ActivityAction.CONFIRM, "Bulk-confirmed $it (≥${minConfidence})")
+                widgetRefresher.requestRefresh()
+            }
         }
 
     override suspend fun dismissAllLowConfidence(maxConfidence: Float): Int =
         dao.dismissAllLowConfidence(maxConfidence, clock.now()).also {
-            if (it > 0) logBulk(ActivityAction.DISMISS, "Bulk-dismissed $it (<${maxConfidence})")
+            if (it > 0) {
+                logBulk(ActivityAction.DISMISS, "Bulk-dismissed $it (<${maxConfidence})")
+                widgetRefresher.requestRefresh()
+            }
         }
 
     override suspend fun dismissAllPending(): Int =
         dao.dismissAllPending(clock.now()).also {
-            if (it > 0) logBulk(ActivityAction.DISMISS, "Dismissed all $it pending")
+            if (it > 0) {
+                logBulk(ActivityAction.DISMISS, "Dismissed all $it pending")
+                widgetRefresher.requestRefresh()
+            }
         }
 
     override suspend fun recoverDismissedToPending(): Int =
         dao.recoverDismissedToPending(clock.now()).also {
-            if (it > 0) logBulk(ActivityAction.UPDATE, "Recovered $it dismissed → pending")
+            if (it > 0) {
+                logBulk(ActivityAction.UPDATE, "Recovered $it dismissed → pending")
+                widgetRefresher.requestRefresh()
+            }
         }
 
     override suspend fun applyCategoryToMatching(pattern: String, categoryId: String): Int =
         dao.applyCategoryToMatching(pattern.lowercase().trim(), categoryId, clock.now()).also {
-            if (it > 0) logBulk(
-                ActivityAction.UPDATE,
-                "Applied category '$categoryId' to $it transactions matching '$pattern'",
-            )
+            if (it > 0) {
+                logBulk(
+                    ActivityAction.UPDATE,
+                    "Applied category '$categoryId' to $it transactions matching '$pattern'",
+                )
+                widgetRefresher.requestRefresh()
+            }
         }
 
     private suspend fun logBulk(action: ActivityAction, summary: String) {
