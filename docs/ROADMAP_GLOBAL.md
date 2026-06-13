@@ -86,8 +86,8 @@ Below is the prioritized gap list, in delivery order.
 **How:** First slice adds a generic package-name-based notification template for common English/Arabic push alerts (`spent`, `purchase`, `paid`, `received`, `deposit`, `sent`, `transfer`, and their Arabic equivalents). It extracts currency-aware amounts plus merchant/counterparty hints, ignores OTP/security/declined/marketing alerts, and teaches the listener to include `bigText`, `subText`, and `textLines` so collapsed Android notifications are not truncated. The store-safe package matcher now covers Saudi banks/wallets plus common global finance apps and Google Wallet. Follow-up work should add app-specific handlers for Apple Wallet/Google Pay/Revolut/Wise/Chase/Capital One/Mercury copy variants that the generic parser cannot infer safely.
 
 ### G-12 — Bank statement / CSV / OFX import
-**Status:** CSV import exists for a single hand-rolled column layout.
-**Gap:** Banks export CSV, OFX, QFX with different shapes. Users on every continent need to be able to drag in their statement.
+**Status:** CSV import now auto-detects the original Athar/TMOAP layout plus common statement layouts (`description`/`amount`, split `debit`/`credit`, optional ISO currency).
+**Gap:** OFX, QFX, MT940, preview, and manual column mapping are still missing. Users on every continent need to be able to drag in their statement and verify rows before commit.
 **Fix:**
 - Import wizard: auto-detect format (CSV / OFX / QFX / MT940), preview rows, let user map columns to fields.
 - Support multi-currency statements.

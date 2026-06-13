@@ -13,10 +13,8 @@ import com.athar.core.domain.repo.CsvImportTrigger
 import com.athar.core.domain.repo.TransactionRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDate
 import timber.log.Timber
 import java.io.InputStream
-import java.math.BigDecimal
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -34,17 +32,10 @@ internal class CsvImporter @Inject constructor(
         val lines = text.lineSequence().filter { it.isNotBlank() }.toList()
         if (lines.isEmpty()) return CsvImportResult.Failed("Empty CSV file.")
 
-        val header = parseRow(lines[0]).map { it.lowercase().trim() }
-        val dateIdx = header.indexOf("date")
-        val merchantIdx = header.indexOfFirst { it == "vendor" || it == "merchant" }
-        val amountIdx = header.indexOf("amount")
-        val categoryIdx = header.indexOf("category")
-        val typeIdx = header.indexOf("type")
-        val notesIdx = header.indexOf("notes")
-
-        if (dateIdx < 0 || merchantIdx < 0 || amountIdx < 0) {
+        val columns = StatementCsvMapper.detect(parseRow(lines[0]))
+        if (columns == null) {
             return CsvImportResult.Failed(
-                "CSV must have these columns at minimum: date, vendor (or merchant), amount.",
+                "CSV must include date, merchant/description, and either amount or debit/credit columns.",
             )
         }
 
@@ -60,12 +51,7 @@ internal class CsvImporter @Inject constructor(
             val tx = mapRow(
                 rowIndex = rowIndex + 2, // +1 for header, +1 to make 1-based
                 row = row,
-                dateIdx = dateIdx,
-                merchantIdx = merchantIdx,
-                amountIdx = amountIdx,
-                categoryIdx = categoryIdx,
-                typeIdx = typeIdx,
-                notesIdx = notesIdx,
+                columns = columns,
                 categoryByName = categoryByName,
                 categoryByAr = categoryByAr,
                 now = now,
@@ -84,61 +70,31 @@ internal class CsvImporter @Inject constructor(
     private fun mapRow(
         rowIndex: Int,
         row: List<String>,
-        dateIdx: Int,
-        merchantIdx: Int,
-        amountIdx: Int,
-        categoryIdx: Int,
-        typeIdx: Int,
-        notesIdx: Int,
+        columns: StatementCsvColumns,
         categoryByName: Map<String, Category>,
         categoryByAr: Map<String, Category>,
         now: kotlinx.datetime.Instant,
     ): Transaction? {
-        if (row.size <= maxOf(dateIdx, merchantIdx, amountIdx)) {
-            Timber.w("CSV row %d skipped (too few columns)", rowIndex)
+        val mapped = StatementCsvMapper.map(row, columns) ?: run {
+            Timber.w("CSV row %d skipped (unparseable statement row)", rowIndex)
             return null
         }
-        val date = parseDate(row[dateIdx]) ?: run {
-            Timber.w("CSV row %d skipped (unparseable date %s)", rowIndex, row[dateIdx])
-            return null
-        }
-        val merchant = row[merchantIdx].trim()
-        if (merchant.isBlank()) {
-            Timber.w("CSV row %d skipped (blank merchant)", rowIndex)
-            return null
-        }
-        val amount = parseAmount(row[amountIdx]) ?: run {
-            Timber.w("CSV row %d skipped (unparseable amount %s)", rowIndex, row[amountIdx])
-            return null
-        }
-        val type = if (typeIdx >= 0 && typeIdx < row.size) {
-            when (row[typeIdx].uppercase().trim()) {
-                "INCOME" -> TxType.INCOME
-                "TRANSFER" -> TxType.TRANSFER
-                else -> TxType.EXPENSE
-            }
-        } else TxType.EXPENSE
 
-        val categoryId = if (categoryIdx >= 0 && categoryIdx < row.size) {
-            val key = row[categoryIdx].trim()
+        val categoryId = mapped.category?.let { key ->
             categoryByAr[key]?.id ?: categoryByName[key.lowercase()]?.id
-        } else null
-
-        val notes = if (notesIdx >= 0 && notesIdx < row.size) {
-            row[notesIdx].trim().takeIf { it.isNotBlank() }
-        } else null
+        }
 
         return Transaction(
             id = UUID.randomUUID().toString(),
             accountId = MANUAL_ACCOUNT_ID,
-            type = type,
-            amount = Money.of(amount),
-            date = date,
+            type = mapped.type,
+            amount = Money.of(mapped.amount, mapped.currency),
+            date = mapped.date,
             occurredAt = null,
-            merchant = merchant,
-            merchantNormalized = merchant.lowercase().trim(),
+            merchant = mapped.merchant,
+            merchantNormalized = mapped.merchant.lowercase().trim(),
             categoryId = categoryId,
-            notes = notes,
+            notes = mapped.notes,
             source = IngestSource.IMPORT,
             sourceRefId = "csv-row-$rowIndex",
             status = TxStatus.CONFIRMED,
@@ -146,33 +102,6 @@ internal class CsvImporter @Inject constructor(
             createdAt = now,
             updatedAt = now,
         )
-    }
-
-    private fun parseAmount(raw: String): BigDecimal? {
-        val cleaned = raw.replace(",", "").replace("ر.س", "").replace("SAR", "", ignoreCase = true).trim()
-        return runCatching { BigDecimal(cleaned).abs() }.getOrNull()
-    }
-
-    private fun parseDate(raw: String): LocalDate? {
-        val s = raw.trim()
-        // Try ISO first
-        runCatching { return LocalDate.parse(s) }
-        // DD/MM/YYYY or MM/DD/YYYY (assume DD first for non-US users; could be made config later)
-        val slashed = s.split("/", "-")
-        if (slashed.size == 3) {
-            val a = slashed[0].toIntOrNull() ?: return null
-            val b = slashed[1].toIntOrNull() ?: return null
-            val c = slashed[2].toIntOrNull() ?: return null
-            return runCatching {
-                when {
-                    c > 31 && a in 1..31 && b in 1..12 -> LocalDate(c, b, a) // DD/MM/YYYY
-                    c > 31 && a in 1..12 -> LocalDate(c, a, b)               // MM/DD/YYYY
-                    a > 31 -> LocalDate(a, b, c)                              // YYYY/MM/DD
-                    else -> null
-                }
-            }.getOrNull()
-        }
-        return null
     }
 
     /** RFC 4180-ish CSV row parser. Handles `"a,b"`, `""` escapes, trailing empties. */

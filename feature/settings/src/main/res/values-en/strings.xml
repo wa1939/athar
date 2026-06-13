@@ -68,7 +68,7 @@
 
     <!-- CSV card -->
     <string name="settings_csv_title">CSV exchange</string>
-    <string name="settings_csv_body">Import from your old Excel sheet, or export transactions to CSV (columns: date · vendor · amount · category · type · notes).</string>
+    <string name="settings_csv_body">Import from an old Excel sheet or a bank-statement CSV. Supports date/description/amount or debit/credit columns with optional currency, and exports transactions for accounting.</string>
     <string name="settings_csv_done" formatted="true">Imported %1$d transactions. (Skipped %2$d rows.)</string>
     <string name="settings_csv_exported" formatted="true">Exported %1$d transactions.</string>
     <string name="settings_csv_action_import">Import</string>
