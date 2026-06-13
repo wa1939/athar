@@ -3164,6 +3164,61 @@
       "pattern": "youtube premium",
       "categoryId": "cat-subscriptions",
       "priority": 90
+    },
+    {
+      "pattern": "xtra",
+      "categoryId": "cat-electronics",
+      "priority": 90
+    },
+    {
+      "pattern": "fit time",
+      "categoryId": "cat-gym",
+      "priority": 90
+    },
+    {
+      "pattern": "github",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "duty free",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "camel step",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "manuel",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "riyadh parking",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "cursor",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "boots",
+      "categoryId": "cat-medical",
+      "priority": 90
+    },
+    {
+      "pattern": "section b",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "splash",
+      "categoryId": "cat-clothing",
+      "priority": 90
     }
   ]
 }
