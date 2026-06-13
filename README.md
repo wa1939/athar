@@ -101,7 +101,7 @@ Other tools force a trade-off:
 - ✅ **SQLCipher** database encryption at rest, key wrapped via Android Keystore
 - ✅ **SMS audit log** — every parsed/failed/ignored SMS retained, never deleted
 - ✅ **Activity log** — every transaction edit, with timestamp
-- ✅ **All transactions history (H-01, beta.12)** — searchable list of every transaction across all time, filter chips for status (All / Confirmed / Pending / Dismissed) and type (Expenses / Income / Transfers), tap any row to edit category or delete. Reachable from Settings → "All transactions"
+- ✅ **All transactions history (H-01, beta.12)** — searchable list of every transaction across all time, filter chips for status (All / Confirmed / Pending / Dismissed), type (Expenses / Income / Transfers), and source (SMS / notification / manual / import / recurring / share), tap any row to edit category or delete. Reachable from Settings → "All transactions"
 - ✅ **Recover dismissed (beta.15)** — one-tap action moves every DISMISSED transaction back to PENDING so users on older builds can recover what was hidden by the now-removed auto-dismiss policy
 - ✅ **SMS backfill scans entire inbox** (beta.11) — no 90-day cap; pass `daysBack: Int? = null` to scan all history
 - ✅ **Rescan + clean** button — wipe pending tray, re-run backfill with latest templates
