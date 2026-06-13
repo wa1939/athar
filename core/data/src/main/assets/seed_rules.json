@@ -3334,6 +3334,61 @@
       "pattern": "ejar",
       "categoryId": "cat-rent",
       "priority": 90
+    },
+    {
+      "pattern": "marjane",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "migros",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "nova coop",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "seoudi",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "knpc",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "cottonil",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "kunest cafe",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "okaz phar",
+      "categoryId": "cat-medical",
+      "priority": 90
+    },
+    {
+      "pattern": "orange al",
+      "categoryId": "cat-telecom",
+      "priority": 90
+    },
+    {
+      "pattern": "marks & spencer",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "aliexpress",
+      "categoryId": "cat-other-expense",
+      "priority": 90
     }
   ]
 }
