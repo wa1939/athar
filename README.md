@@ -95,6 +95,7 @@ Other tools force a trade-off:
 - ✅ **90-day historical SMS backfill** on first install
 - ✅ Rule engine with **551 merchant seed rules** across 22 categories (beta.17 — expanded from 44 curated rules with 507 high-confidence AI-categorized patterns extracted from a 1,000-message real-world AlRajhi corpus + a friend's SMS history; rules auto-refresh on app upgrade)
 - ✅ "Always categorize X as Y?" **learn-from-correction** loop — **as of beta.18 the learned rule is backfilled to every existing PENDING + DISMISSED row** matching the merchant pattern, not just future SMS. Picking "Always" for one Hemmah charge fixes every stranded Hemmah in one tap
+- ✅ **Local category rule learning** — after three confirmed transactions for the exact same merchant all share one category, Athar creates an exact local rule so future matches stop asking. Explicit "Always" rules still win; ambiguous merchants are ignored
 - ✅ Source of every categorization is **explainable** (rule id, confidence)
 
 #### Settings + ops
@@ -117,6 +118,7 @@ Other tools force a trade-off:
 - ✅ **Subscriptions screen (R-04, beta.17)** — recurring rules reframed as subscriptions with Active / Paused sections, monthly-total card, one-tap Active↔Paused toggle
 - ✅ **Confirm-before-create sheet (R-03, beta.17)** — tapping a recurring suggestion opens a sheet to edit cadence (Monthly/Weekly/Yearly), day-of-month, and category before saving the rule
 - ✅ **Bulk categorize with AI (beta.18)** — export every PENDING/DISMISSED/uncategorized transaction to CSV, run it through ChatGPT/Claude with the AI triage prompt, import the filled file back. Each row updates its transaction *and* records a merchant→category rule so future SMS auto-categorize. No API keys, no cloud round-trip — your personal merchant library grows permanently
+- ✅ **Local category rule learning** — repeated confirmed exact-merchant/category history creates private priority-150 exact rules. No cloud, no community sharing, and no learning from ambiguous merchants
 - ✅ **Reconcile to bank balance (beta.19)** — per-account "تسوية / Reconcile" chip. Enter your bank's actual balance; Athar inserts one manual adjustment transaction so the running balance matches. No silent history rewrite, full audit trail
 - ✅ **Share your rules with the community (beta.20)** — Settings → "Help others · share your rules" exports only your "Always categorize X" merchant→category mappings as JSON, then opens a pre-filled GitHub issue. Maintainer reviews; accepted rules ship in the next release's seed for every user. Zero transaction data leaves your device
 - ✅ **Home-screen widgets (beta.21+)** — three Glance widgets: Month summary (net + Income/Expense/Net-worth pills), Today snapshot (today's net + pending count), and Pending list (top-3 pending transactions with Confirm / Dismiss / Categorize shortcuts). Long-press home screen → Widgets → Athar

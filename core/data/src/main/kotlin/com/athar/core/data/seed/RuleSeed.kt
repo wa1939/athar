@@ -36,7 +36,7 @@ internal class RuleSeed @Inject constructor(
         }
         if (current > 0) {
             Timber.i("Refreshing system rules: $current → $expected")
-            dao.clearSystemRules()
+            dao.clearSeedRules()
         }
         val now = clock.now()
         val entities = payload.rules.map { dto ->
