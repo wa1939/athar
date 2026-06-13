@@ -2,6 +2,7 @@ package com.athar.feature.plan
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,7 +40,7 @@ import com.athar.core.designsystem.theme.AtharTheme
 import kotlinx.datetime.LocalDate
 import java.math.BigDecimal
 
-enum class PlanTab { BUDGET, WISHLIST, GOALS, INVESTMENTS }
+enum class PlanTab { BUDGET, BILLS, WISHLIST, GOALS, INVESTMENTS }
 
 @Composable
 fun PlanScreen(
@@ -67,12 +68,14 @@ fun PlanScreen(
             AtharSegmentedControl(
                 segments = listOf(
                     AtharSegment(PlanTab.BUDGET, stringResource(R.string.plan_tab_budget)),
+                    AtharSegment(PlanTab.BILLS, stringResource(R.string.plan_tab_bills)),
                     AtharSegment(PlanTab.WISHLIST, stringResource(R.string.plan_tab_wishlist)),
                     AtharSegment(PlanTab.GOALS, stringResource(R.string.plan_tab_goals)),
                     AtharSegment(PlanTab.INVESTMENTS, stringResource(R.string.plan_tab_investments)),
                 ),
                 selected = tab,
                 onSelect = { tab = it },
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
             )
             when (tab) {
                 PlanTab.BUDGET -> BudgetContent(
@@ -80,6 +83,7 @@ fun PlanScreen(
                     onClickRow = { editing = it },
                     onEvent = viewModel::onEvent,
                 )
+                PlanTab.BILLS -> BillsContent()
                 PlanTab.WISHLIST -> WishlistContent()
                 PlanTab.GOALS -> GoalsContent()
                 PlanTab.INVESTMENTS -> InvestmentsContent()
