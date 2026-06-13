@@ -66,6 +66,27 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `ignores English balance-only notifications with account hints`() {
+        assertThat(
+            parser.parse(
+                event(
+                    "notification:com.chase.sig.android",
+                    "Available balance SAR 1,234.56 at your checking account",
+                ),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores Arabic balance-only notifications with account hints`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.alrajhibank.alrajhimobile", "رصيدك ٥٠٠ ر.س لدى حسابك الجاري"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
     fun `parses Arabic debit without offer wording`() {
         val result = parser.parse(
             event("notification:com.alrajhibank.alrajhimobile", "خصم ٣٥٫٥٠ ر.س لدى كارفور"),

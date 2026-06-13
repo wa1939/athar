@@ -162,9 +162,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (requestWords.containsMatchIn(normalized) && !hasAction) return ParseResult.Ignored
         if (securityWords.containsMatchIn(normalized) && !hasAction) return ParseResult.Ignored
         if (marketingWords.containsMatchIn(normalized) && !hasAction) return ParseResult.Ignored
-        if (balanceWords.containsMatchIn(normalized) && !hasAction && !hasMerchantHint(normalized)) {
-            return ParseResult.Ignored
-        }
+        if (hasBalanceNoticeText(normalized) && !hasAction) return ParseResult.Ignored
 
         val amountMatch = selectTransactionAmount(normalized)
             ?: return ParseResult.Failed("notification amount not found", listOf(id))
@@ -290,6 +288,9 @@ class GenericBankNotificationTemplate : BankTemplate {
         return balanceAmountContext.containsMatchIn(text) ||
             ArabicBalanceTerms.any { text.contains(it) }
     }
+
+    private fun hasBalanceNoticeText(text: String): Boolean =
+        balanceWords.containsMatchIn(text) || ArabicBalanceTerms.any { text.contains(it) }
 
     private fun MatchResult.hasCurrency(): Boolean =
         groups["lead"]?.value?.isNotBlank() == true || groups["trail"]?.value?.isNotBlank() == true
