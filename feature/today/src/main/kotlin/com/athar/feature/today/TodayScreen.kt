@@ -392,7 +392,7 @@ private fun PendingTray(
             ) {
                 AtharListRow(
                     title = tx.merchant,
-                    subtitle = tx.categoryId ?: stringResource(R.string.today_uncategorized),
+                    subtitle = transactionCategoryLabel(tx, state.categoryLabels),
                     trailing = tx.amount,
                     onClick = { onEvent(TodayEvent.OpenTransaction(tx.id)) },
                 )
@@ -510,7 +510,7 @@ private fun RecentList(
                 AtharListRow(
                     modifier = Modifier.animateItem(),
                     title = tx.merchant,
-                    subtitle = tx.categoryId ?: stringResource(R.string.today_uncategorized),
+                    subtitle = transactionCategoryLabel(tx, state.categoryLabels),
                     trailing = tx.amount,
                     onClick = { onEvent(TodayEvent.OpenTransaction(tx.id)) },
                 )
@@ -529,7 +529,7 @@ private fun RecentList(
                 AtharListRow(
                     modifier = Modifier.animateItem(),
                     title = tx.merchant,
-                    subtitle = tx.categoryId ?: stringResource(R.string.today_uncategorized),
+                    subtitle = transactionCategoryLabel(tx, state.categoryLabels),
                     trailing = tx.amount,
                     onClick = { onEvent(TodayEvent.OpenTransaction(tx.id)) },
                 )

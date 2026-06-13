@@ -8,14 +8,18 @@ import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRuleRepository
+import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -30,6 +34,7 @@ enum class HistoryCategoryFilter { ALL, UNCATEGORIZED, CATEGORIZED }
 class HistoryViewModel @Inject constructor(
     private val transactions: TransactionRepository,
     private val rules: CategoryRuleRepository,
+    private val categories: CategoryRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -47,6 +52,11 @@ class HistoryViewModel @Inject constructor(
 
     private val _category = MutableStateFlow(HistoryCategoryFilter.ALL)
     val category: StateFlow<HistoryCategoryFilter> = _category.asStateFlow()
+
+    val categoryLabels: StateFlow<ImmutableMap<String, CategoryLabel>> =
+        categories.observeAll(kind = null, includeArchived = true)
+            .map { it.toCategoryLabels() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), persistentMapOf())
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val items: StateFlow<List<Transaction>> =

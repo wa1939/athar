@@ -51,6 +51,7 @@ fun HistoryScreen(
     val type by viewModel.type.collectAsStateWithLifecycle()
     val source by viewModel.source.collectAsStateWithLifecycle()
     val category by viewModel.category.collectAsStateWithLifecycle()
+    val categoryLabels by viewModel.categoryLabels.collectAsStateWithLifecycle()
     val backfill by viewModel.lastBackfill.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<Transaction?>(null) }
 
@@ -165,7 +166,11 @@ fun HistoryScreen(
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
                     items(items, key = { it.id }) { tx ->
-                        TxRow(tx, onClick = { editing = tx })
+                        TxRow(
+                            tx = tx,
+                            categoryLabel = transactionCategoryLabel(tx, categoryLabels),
+                            onClick = { editing = tx },
+                        )
                     }
                 }
             }
@@ -191,7 +196,7 @@ fun HistoryScreen(
 }
 
 @Composable
-private fun TxRow(tx: Transaction, onClick: () -> Unit) {
+private fun TxRow(tx: Transaction, categoryLabel: String, onClick: () -> Unit) {
     val theme = AtharTheme
     val statusTint = when (tx.status) {
         TxStatus.CONFIRMED -> theme.colors.olive
@@ -211,6 +216,7 @@ private fun TxRow(tx: Transaction, onClick: () -> Unit) {
             typeChip,
             statusLabel(tx.status),
             sourceLabel(tx.source),
+            categoryLabel,
         ),
         trailing = tx.amount,
         onClick = onClick,

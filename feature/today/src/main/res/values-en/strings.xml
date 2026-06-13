@@ -63,7 +63,7 @@
     <string name="history_category_all">All categories</string>
     <string name="history_category_uncategorized">Uncategorized</string>
     <string name="history_category_categorized">Categorized</string>
-    <string name="history_row_subtitle" formatted="true">%1$s · %2$s · %3$s · %4$s</string>
+    <string name="history_row_subtitle" formatted="true">%1$s · %2$s · %3$s · %4$s · %5$s</string>
     <string name="history_count" formatted="true">%1$d transactions</string>
     <string name="history_empty">No transactions match this filter.</string>
     <string name="category_backfill_applied" formatted="true">Updated matching transactions for "%2$s": %1$d.</string>

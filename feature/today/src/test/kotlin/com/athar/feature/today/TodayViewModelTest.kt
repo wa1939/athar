@@ -5,6 +5,8 @@ import com.athar.core.common.time.Period
 import com.athar.core.domain.model.Account
 import com.athar.core.domain.model.AccountBalance
 import com.athar.core.domain.model.AccountType
+import com.athar.core.domain.model.Category
+import com.athar.core.domain.model.CategoryKind
 import com.athar.core.domain.model.CategoryRule
 import com.athar.core.domain.model.IngestSource
 import com.athar.core.domain.model.NetWorth
@@ -13,6 +15,7 @@ import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.AccountRepository
+import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.CategoryRuleRepository
 import com.athar.core.domain.repo.ReconcileResult
 import com.athar.core.domain.repo.TransactionRepository
@@ -67,6 +70,7 @@ class TodayViewModelTest {
                 ),
             ),
             rules = RecordingCategoryRuleRepository(),
+            categories = TodayFakeCategoryRepository(),
             prefs = FakeUserPreferencesRepository(savingsTarget = 30, emergencyMonths = 6),
             accounts = FakeAccountRepository(liquidBalance = Money.of("5000")),
             clock = FixedClock,
@@ -91,6 +95,7 @@ class TodayViewModelTest {
         val viewModel = TodayViewModel(
             transactions = transactions,
             rules = rules,
+            categories = TodayFakeCategoryRepository(),
             prefs = FakeUserPreferencesRepository(savingsTarget = 30, emergencyMonths = 6),
             accounts = FakeAccountRepository(liquidBalance = Money.of("5000")),
             clock = FixedClock,
@@ -128,6 +133,36 @@ class TodayViewModelTest {
         viewModel.clearBackfill()
 
         assertThat(viewModel.lastBackfill.value).isNull()
+    }
+
+    @Test
+    fun `state exposes readable category labels including archived categories`() = runTest(mainDispatcher) {
+        val archivedCoffee = Fixtures.category(
+            id = "cat-coffee",
+            name = "Coffee",
+            nameAr = "قهوة",
+            kind = CategoryKind.EXPENSE,
+        ).copy(archived = true)
+        val viewModel = TodayViewModel(
+            transactions = FakeTransactionRepository(
+                currentConfirmed = listOf(
+                    transaction(
+                        id = "coffee",
+                        type = TxType.EXPENSE,
+                        amount = Money.of("18"),
+                    ).copy(categoryId = "cat-coffee"),
+                ),
+            ),
+            rules = RecordingCategoryRuleRepository(),
+            categories = TodayFakeCategoryRepository(listOf(archivedCoffee)),
+            prefs = FakeUserPreferencesRepository(savingsTarget = 30, emergencyMonths = 6),
+            accounts = FakeAccountRepository(liquidBalance = Money.of("5000")),
+            clock = FixedClock,
+        )
+
+        val state = viewModel.state.first { !it.isLoading }
+
+        assertThat(state.categoryLabels["cat-coffee"]).isEqualTo(CategoryLabel(name = "Coffee", nameAr = "قهوة"))
     }
 }
 
@@ -202,6 +237,22 @@ private data class LearnedRule(
     val categoryId: String,
     val patternType: PatternType,
 )
+
+private class TodayFakeCategoryRepository(
+    private val categories: List<Category> = emptyList(),
+) : CategoryRepository {
+    override fun observeAll(kind: CategoryKind?, includeArchived: Boolean): Flow<List<Category>> =
+        flowOf(
+            categories.filter { category ->
+                (kind == null || category.kind == kind) && (includeArchived || !category.archived)
+            },
+        )
+
+    override suspend fun get(id: String): Category? = categories.firstOrNull { it.id == id }
+    override suspend fun upsert(category: Category) = Unit
+    override suspend fun archive(id: String) = Unit
+    override suspend fun reorder(ids: List<String>) = Unit
+}
 
 private class FakeUserPreferencesRepository(
     private val savingsTarget: Int,

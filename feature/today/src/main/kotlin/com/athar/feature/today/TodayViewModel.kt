@@ -14,11 +14,13 @@ import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.model.isReconciliation
 import com.athar.core.domain.repo.AccountRepository
+import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.CategoryRuleRepository
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -38,6 +40,7 @@ import javax.inject.Inject
 class TodayViewModel @Inject constructor(
     private val transactions: TransactionRepository,
     private val rules: CategoryRuleRepository,
+    private val categories: CategoryRepository,
     private val prefs: UserPreferencesRepository,
     private val accounts: AccountRepository,
     private val clock: Clock,
@@ -61,10 +64,11 @@ class TodayViewModel @Inject constructor(
                         ) { confirmed, pending, dismissed, netWorth ->
                             TodayInputs(confirmed, pending, dismissed, netWorth)
                         },
+                        categories.observeAll(kind = null, includeArchived = true),
                         transactions.observeByPeriod(goalsPeriod, status = TxStatus.CONFIRMED),
                         prefs.savingsRateTargetPercent(),
                         prefs.emergencyFundTargetMonths(),
-                    ) { inputs, goalTransactions, savingsTarget, emergencyMonths ->
+                    ) { inputs, allCategories, goalTransactions, savingsTarget, emergencyMonths ->
                         deriveState(
                             month = m,
                             confirmed = inputs.confirmed,
@@ -72,6 +76,7 @@ class TodayViewModel @Inject constructor(
                             dismissed = inputs.dismissed,
                             currency = currency,
                             netWorth = inputs.netWorth,
+                            categoryLabels = allCategories.toCategoryLabels(),
                             goalNudge = deriveGoalNudge(
                                 transactions = goalTransactions,
                                 netWorth = inputs.netWorth,
@@ -156,6 +161,7 @@ class TodayViewModel @Inject constructor(
         dismissed: List<Transaction>,
         currency: String,
         netWorth: NetWorth,
+        categoryLabels: ImmutableMap<String, CategoryLabel>,
         goalNudge: TodayGoalNudge?,
     ): TodayState {
         // Reconciliation adjustments only affect net worth; never count them as income/expense.
@@ -182,6 +188,7 @@ class TodayViewModel @Inject constructor(
             recent = monthTxns.take(10).toImmutableList(),
             pending = pending.toImmutableList(),
             dismissedToday = dismissedToday.toImmutableList(),
+            categoryLabels = categoryLabels,
             goalNudge = goalNudge,
             isLoading = false,
         )

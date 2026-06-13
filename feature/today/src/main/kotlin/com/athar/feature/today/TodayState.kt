@@ -3,8 +3,10 @@ package com.athar.feature.today
 import androidx.compose.runtime.Immutable
 import com.athar.core.common.money.Money
 import com.athar.core.domain.model.Transaction
+import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentMapOf
 import java.math.BigDecimal
 import java.time.YearMonth
 
@@ -21,6 +23,7 @@ data class TodayState(
     val recent: ImmutableList<Transaction>,
     val pending: ImmutableList<Transaction>,
     val dismissedToday: ImmutableList<Transaction>,
+    val categoryLabels: ImmutableMap<String, CategoryLabel>,
     val goalNudge: TodayGoalNudge?,
     val isLoading: Boolean,
 ) {
@@ -42,6 +45,7 @@ data class TodayState(
             recent = persistentListOf(),
             pending = persistentListOf(),
             dismissedToday = persistentListOf(),
+            categoryLabels = persistentMapOf(),
             goalNudge = null,
             isLoading = true,
         )
