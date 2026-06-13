@@ -67,6 +67,18 @@ class AddTransactionViewModel @Inject constructor(
             is AddTransactionEvent.SetAmount -> _state.update { it.copy(amount = event.value, validationError = null) }
             is AddTransactionEvent.SetMerchant -> _state.update { it.copy(merchant = event.value, validationError = null) }
             is AddTransactionEvent.SetNotes -> _state.update { it.copy(notes = event.value) }
+            is AddTransactionEvent.SetQuickEntry -> _state.update {
+                it.copy(quickEntry = event.value, quickEntryError = null)
+            }
+            AddTransactionEvent.ApplyQuickEntry -> _state.update {
+                ManualEntryPhraseApplier.apply(it, it.quickEntry)
+            }
+            is AddTransactionEvent.ApplyVoiceTranscript -> _state.update {
+                ManualEntryPhraseApplier.apply(it.copy(quickEntry = event.value), event.value)
+            }
+            AddTransactionEvent.VoiceUnavailable -> _state.update {
+                it.copy(quickEntryError = QuickEntryError.VOICE_UNAVAILABLE)
+            }
             is AddTransactionEvent.SetType -> _state.update {
                 it.copy(type = event.type, selectedCategoryId = null, validationError = null)
             }

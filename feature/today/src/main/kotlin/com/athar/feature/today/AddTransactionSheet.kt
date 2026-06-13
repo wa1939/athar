@@ -1,14 +1,22 @@
 package com.athar.feature.today
 
+import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,6 +44,7 @@ import com.athar.core.designsystem.theme.AtharTheme
 import com.athar.core.designsystem.theme.MinTouchTarget
 import com.athar.core.domain.model.TxType
 import kotlinx.coroutines.flow.filterIsInstance
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,6 +56,14 @@ fun AddTransactionSheet(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val voiceLauncher = rememberLauncherForActivityResult(StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data
+                ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                ?.firstOrNull()
+                ?.let { viewModel.onEvent(AddTransactionEvent.ApplyVoiceTranscript(it)) }
+        }
+    }
 
     LaunchedEffect(viewModel) {
         viewModel.events
@@ -64,6 +81,17 @@ fun AddTransactionSheet(
         AddTransactionForm(
             state = state,
             onEvent = viewModel::onEvent,
+            onVoiceClick = {
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                    .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    .putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
+                    .putExtra(RecognizerIntent.EXTRA_PROMPT, "")
+                try {
+                    voiceLauncher.launch(intent)
+                } catch (_: ActivityNotFoundException) {
+                    viewModel.onEvent(AddTransactionEvent.VoiceUnavailable)
+                }
+            },
             contentPadding = PaddingValues(
                 start = AtharTheme.spacing.m,
                 end = AtharTheme.spacing.m,
@@ -77,6 +105,7 @@ fun AddTransactionSheet(
 private fun AddTransactionForm(
     state: AddTransactionState,
     onEvent: (AddTransactionEvent) -> Unit,
+    onVoiceClick: () -> Unit,
     contentPadding: PaddingValues,
 ) {
     val theme = AtharTheme
@@ -96,6 +125,14 @@ private fun AddTransactionForm(
             ),
             selected = state.type,
             onSelect = { onEvent(AddTransactionEvent.SetType(it)) },
+        )
+
+        QuickEntryRow(
+            value = state.quickEntry,
+            error = state.quickEntryError,
+            onValueChange = { onEvent(AddTransactionEvent.SetQuickEntry(it)) },
+            onApply = { onEvent(AddTransactionEvent.ApplyQuickEntry) },
+            onVoiceClick = onVoiceClick,
         )
 
         AtharAmountField(
@@ -154,6 +191,76 @@ private fun AddTransactionForm(
         SaveButton(
             isSaving = state.isSaving,
             onClick = { onEvent(AddTransactionEvent.Save) },
+        )
+    }
+}
+
+@Composable
+private fun QuickEntryRow(
+    value: String,
+    error: QuickEntryError?,
+    onValueChange: (String) -> Unit,
+    onApply: () -> Unit,
+    onVoiceClick: () -> Unit,
+) {
+    val theme = AtharTheme
+    Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AtharTextField(
+                value = value,
+                onValueChange = onValueChange,
+                label = stringResource(R.string.add_tx_label_quick_entry),
+                placeholder = stringResource(R.string.add_tx_placeholder_quick_entry),
+                modifier = Modifier.weight(1f),
+                isError = error == QuickEntryError.PARSE_FAILED,
+            )
+            CompactActionButton(
+                text = stringResource(R.string.add_tx_quick_apply),
+                enabled = value.isNotBlank(),
+                onClick = onApply,
+            )
+            CompactActionButton(
+                text = stringResource(R.string.add_tx_voice),
+                enabled = true,
+                onClick = onVoiceClick,
+            )
+        }
+        val errorText = when (error) {
+            QuickEntryError.PARSE_FAILED -> stringResource(R.string.add_tx_error_quick_entry)
+            QuickEntryError.VOICE_UNAVAILABLE -> stringResource(R.string.add_tx_error_voice_unavailable)
+            null -> null
+        }
+        errorText?.let {
+            AtharText(text = it, style = theme.typography.caption, color = theme.colors.crimson)
+        }
+    }
+}
+
+@Composable
+private fun CompactActionButton(
+    text: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val theme = AtharTheme
+    Box(
+        modifier = Modifier
+            .width(72.dp)
+            .heightIn(min = MinTouchTarget)
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(if (enabled) theme.colors.ink else theme.colors.surface)
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = theme.spacing.s, vertical = theme.spacing.s),
+        contentAlignment = Alignment.Center,
+    ) {
+        AtharText(
+            text = text,
+            style = theme.typography.caption,
+            color = if (enabled) theme.colors.parchment else theme.colors.muted,
         )
     }
 }

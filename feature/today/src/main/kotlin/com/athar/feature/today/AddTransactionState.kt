@@ -16,6 +16,8 @@ data class AddTransactionState(
     val expenseCategories: ImmutableList<Category>,
     val incomeCategories: ImmutableList<Category>,
     val merchantSuggestions: ImmutableList<ManualEntrySuggestion>,
+    val quickEntry: String,
+    val quickEntryError: QuickEntryError?,
     val isSaving: Boolean,
     val validationError: ValidationError?,
 ) {
@@ -47,6 +49,8 @@ data class AddTransactionState(
             expenseCategories = persistentListOf(),
             incomeCategories = persistentListOf(),
             merchantSuggestions = persistentListOf(),
+            quickEntry = "",
+            quickEntryError = null,
             isSaving = false,
             validationError = null,
         )
@@ -63,10 +67,19 @@ enum class ValidationError {
     CATEGORY_REQUIRED,
 }
 
+enum class QuickEntryError {
+    PARSE_FAILED,
+    VOICE_UNAVAILABLE,
+}
+
 sealed interface AddTransactionEvent {
     data class SetAmount(val value: String) : AddTransactionEvent
     data class SetMerchant(val value: String) : AddTransactionEvent
     data class SetNotes(val value: String) : AddTransactionEvent
+    data class SetQuickEntry(val value: String) : AddTransactionEvent
+    data object ApplyQuickEntry : AddTransactionEvent
+    data class ApplyVoiceTranscript(val value: String) : AddTransactionEvent
+    data object VoiceUnavailable : AddTransactionEvent
     data class SetType(val type: TxType) : AddTransactionEvent
     data class SetDate(val date: LocalDate) : AddTransactionEvent
     data class SelectCategory(val categoryId: String) : AddTransactionEvent

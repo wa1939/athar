@@ -91,6 +91,12 @@
     <string name="add_tx_segment_income">Income</string>
     <string name="add_tx_error_amount_required">Enter an amount</string>
     <string name="add_tx_error_amount_invalid">Amount is invalid</string>
+    <string name="add_tx_label_quick_entry">Quick entry</string>
+    <string name="add_tx_placeholder_quick_entry">spent 50 at Starbucks</string>
+    <string name="add_tx_quick_apply">Fill</string>
+    <string name="add_tx_voice">Speak</string>
+    <string name="add_tx_error_quick_entry">Could not read amount and merchant</string>
+    <string name="add_tx_error_voice_unavailable">Voice input is not available on this device</string>
     <string name="add_tx_label_merchant">Merchant</string>
     <string name="add_tx_placeholder_merchant">e.g. Starbucks</string>
     <string name="add_tx_error_merchant_required">Enter a merchant name</string>

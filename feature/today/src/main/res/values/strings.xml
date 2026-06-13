@@ -92,6 +92,12 @@
     <string name="add_tx_segment_income">دخل</string>
     <string name="add_tx_error_amount_required">أدخل المبلغ</string>
     <string name="add_tx_error_amount_invalid">المبلغ غير صحيح</string>
+    <string name="add_tx_label_quick_entry">إدخال سريع</string>
+    <string name="add_tx_placeholder_quick_entry">دفعت 50 في ستاربكس</string>
+    <string name="add_tx_quick_apply">تعبئة</string>
+    <string name="add_tx_voice">تحدث</string>
+    <string name="add_tx_error_quick_entry">لم نقرأ المبلغ والتاجر</string>
+    <string name="add_tx_error_voice_unavailable">الإدخال الصوتي غير متاح على هذا الجهاز</string>
     <string name="add_tx_label_merchant">التاجر</string>
     <string name="add_tx_placeholder_merchant">مثال: ستاربكس</string>
     <string name="add_tx_error_merchant_required">أدخل اسم التاجر</string>
