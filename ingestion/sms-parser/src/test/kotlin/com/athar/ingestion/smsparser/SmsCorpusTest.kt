@@ -589,6 +589,31 @@ class SmsCorpusTest {
         assertThat(parser().parse(event("alinma", body))).isEqualTo(ParseResult.Ignored)
     }
 
+    @Test fun `generic structured bank template parses comma decimal amount`() {
+        val body = """
+            شراء
+            مبلغ:18,50 SAR
+            لدى: Coffee Shop
+            في:14-1-2026 09:45
+        """.trimIndent()
+        val r = parser().parse(event("Alinma", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.EXPENSE)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("18.50"))
+        assertThat(r.amount.currency).isEqualTo("SAR")
+        assertThat(r.merchant).isEqualTo("Coffee Shop")
+        assertThat(r.templateId).isEqualTo("alinma-structured")
+    }
+
+    @Test fun `universal fallback preserves comma decimal foreign currency amount`() {
+        val body = "Purchase EUR 18,50 at Carrefour"
+        val r = parser().parse(event("Alinma", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.EXPENSE)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("18.50"))
+        assertThat(r.amount.currency).isEqualTo("EUR")
+        assertThat(r.merchant).isEqualTo("Carrefour")
+        assertThat(r.templateId).isEqualTo("universal-amount")
+    }
+
     @Test fun `uppercase STCPAY migration notice is Ignored`() {
         val body = """
             ستنتقل جميع خدمات stc pay إلى STC Bank ولضمان استمرار خدماتكم، يرجى تحميل تطبيق STC Bank.

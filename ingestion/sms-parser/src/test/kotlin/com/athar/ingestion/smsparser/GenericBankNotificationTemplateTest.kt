@@ -162,6 +162,30 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses comma decimal notification amount`() {
+        val result = parser.parse(
+            event("notification:com.revolut.revolut", "You spent €18,50 at Carrefour"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("18.50"))
+        assertThat(result.amount.currency).isEqualTo("EUR")
+        assertThat(result.merchant).isEqualTo("Carrefour")
+    }
+
+    @Test
+    fun `parses European grouped notification amount`() {
+        val result = parser.parse(
+            event("notification:com.revolut.revolut", "You spent EUR 1.234,56 at Ikea"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("1234.56"))
+        assertThat(result.amount.currency).isEqualTo("EUR")
+        assertThat(result.merchant).isEqualTo("Ikea")
+    }
+
+    @Test
     fun `parses Google Pay India payment package`() {
         val result = parser.parse(
             event("notification:com.google.android.apps.nbu.paisa.user", "Paid INR 450.00 to Swiggy"),

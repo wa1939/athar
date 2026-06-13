@@ -8,7 +8,6 @@ import com.athar.ingestion.smsparser.Normalize
 import com.athar.ingestion.smsparser.ParseResult
 import com.athar.ingestion.smsparser.SenderMatcher
 import kotlinx.datetime.Instant
-import java.math.BigDecimal
 
 /**
  * Currency-and-language-agnostic last-resort parser — restricted to KNOWN bank senders.
@@ -34,7 +33,7 @@ class UniversalAmountTemplate : BankTemplate {
 
     // (currency-symbol|ISO-code)?  amount  (ISO-code)?  — covers `$200`, `200 SAR`, `SAR 200`, `₹500`.
     private val amountWithCurrency = Regex(
-        """(?:(?<lead>[\$€£﷼₹¥₺د\.ك]|SAR|SR|AED|USD|EUR|GBP|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD)\s*)?(?<num>\d{1,3}(?:[ ,]\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)(?:\s*(?<trail>[\$€£﷼₹¥₺د\.ك]|SAR|SR|AED|USD|EUR|GBP|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|ر\.?\s*س|د\.?\s*إ))?""",
+        """(?:(?<lead>CA\$|C\$|AU\$|A\$|[\$€£﷼₹¥₺د\.ك]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY)\s*)?(?<num>${Normalize.LOCALIZED_AMOUNT_PATTERN})(?:\s*(?<trail>CA\$|C\$|AU\$|A\$|[\$€£﷼₹¥₺د\.ك]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|ر\.?\s*س|د\.?\s*إ))?""",
         RegexOption.IGNORE_CASE,
     )
 
@@ -74,11 +73,11 @@ class UniversalAmountTemplate : BankTemplate {
             ?: return ParseResult.Failed("no monetary value detected", listOf(id))
         val rawNum = match.groups["num"]?.value
             ?: return ParseResult.Failed("amount group missing", listOf(id))
-        val parsed = runCatching {
-            BigDecimal(rawNum.replace(" ", "").replace(",", ""))
-        }.getOrNull() ?: return ParseResult.Failed("amount unparseable: $rawNum", listOf(id))
+        val parsed = Normalize.amount(rawNum)
+            ?: return ParseResult.Failed("amount unparseable: $rawNum", listOf(id))
 
         val currency = (match.groups["lead"]?.value ?: match.groups["trail"]?.value)?.trim()
+        val currencyCode = Normalize.currencyCode(currency)
 
         // Heuristic: prefer the most specific verb. Income > Transfer > Expense (default).
         val type = when {
@@ -101,7 +100,7 @@ class UniversalAmountTemplate : BankTemplate {
 
         return ParseResult.Success(
             type = type,
-            amount = Money.of(parsed),
+            amount = Money.of(parsed, currencyCode),
             merchant = merchant,
             counterparty = null,
             balanceAfter = null,

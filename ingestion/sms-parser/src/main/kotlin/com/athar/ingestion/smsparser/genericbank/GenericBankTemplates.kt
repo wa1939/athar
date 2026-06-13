@@ -7,7 +7,6 @@ import com.athar.ingestion.smsparser.Normalize
 import com.athar.ingestion.smsparser.ParseResult
 import com.athar.ingestion.smsparser.SenderMatcher
 import kotlinx.datetime.Instant
-import java.math.BigDecimal
 
 /**
  * Shared base template for Saudi banks/wallets that use a structured
@@ -37,7 +36,7 @@ abstract class StructuredBankTemplate(
 ) : BankTemplate {
 
     private val amount = Regex(
-        """(?:Amount|المبلغ|مبلغ(?:\s+العملية)?|بمبلغ|قيمة\s+العملية)\s*[:\s]\s*(?:SAR\s+|SR\s+)?([\d.,]+)(?:\s*SAR|\s*SR|\s*ر\.?\s*س)?""",
+        """(?:Amount|المبلغ|مبلغ(?:\s+العملية)?|بمبلغ|قيمة\s+العملية)\s*[:\s]\s*(?:SAR\s+|SR\s+)?([\d., ]+)(?:\s*SAR|\s*SR|\s*ر\.?\s*س)?""",
         RegexOption.IGNORE_CASE,
     )
     private val purchaseMarker = Regex(
@@ -87,7 +86,7 @@ abstract class StructuredBankTemplate(
 
         val amountRaw = amount.find(normalized)?.groupValues?.get(1)
             ?: return ParseResult.Failed("amount label not found", listOf(id))
-        val parsedAmount = runCatching { BigDecimal(amountRaw.replace(",", "")) }.getOrNull()
+        val parsedAmount = Normalize.amount(amountRaw)
             ?: return ParseResult.Failed("amount unparseable: $amountRaw", listOf(id))
 
         val isPurchase = purchaseMarker.containsMatchIn(normalized)

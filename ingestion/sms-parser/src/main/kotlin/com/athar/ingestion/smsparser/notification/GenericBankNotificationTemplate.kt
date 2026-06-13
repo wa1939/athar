@@ -7,7 +7,6 @@ import com.athar.ingestion.smsparser.Normalize
 import com.athar.ingestion.smsparser.ParseResult
 import com.athar.ingestion.smsparser.SenderMatcher
 import kotlinx.datetime.Instant
-import java.math.BigDecimal
 
 /**
  * Generic parser for Play-Store-safe bank-app push notifications.
@@ -22,7 +21,7 @@ class GenericBankNotificationTemplate : BankTemplate {
     override val senderMatcher: SenderMatcher = SenderMatcher.Regex(BankPackagePattern)
 
     private val amountWithCurrency = Regex(
-        """(?:(?<lead>CA\$|C\$|AU\$|A\$|[$€£﷼₹¥₺]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD)\s*)?(?<num>\d{1,3}(?:[ ,]\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)(?:\s*(?<trail>CA\$|C\$|AU\$|A\$|[$€£﷼₹¥₺]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|ر\.?\s*س|د\.?\s*إ))?""",
+        """(?:(?<lead>CA\$|C\$|AU\$|A\$|[\$€£﷼₹¥₺]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY)\s*)?(?<num>${Normalize.LOCALIZED_AMOUNT_PATTERN})(?:\s*(?<trail>CA\$|C\$|AU\$|A\$|[\$€£﷼₹¥₺]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|ر\.?\s*س|د\.?\s*إ))?""",
         RegexOption.IGNORE_CASE,
     )
     private val expenseWords = Regex(
@@ -115,9 +114,9 @@ class GenericBankNotificationTemplate : BankTemplate {
             ?: return ParseResult.Failed("notification amount not found", listOf(id))
         val amountRaw = amountMatch.groups["num"]?.value
             ?: return ParseResult.Failed("notification amount missing", listOf(id))
-        val amount = runCatching { BigDecimal(amountRaw.replace(",", "").replace(" ", "")) }.getOrNull()
+        val amount = Normalize.amount(amountRaw)
             ?: return ParseResult.Failed("notification amount unparseable: $amountRaw", listOf(id))
-        val currency = currencyCode(amountMatch.groups["lead"]?.value ?: amountMatch.groups["trail"]?.value)
+        val currency = Normalize.currencyCode(amountMatch.groups["lead"]?.value ?: amountMatch.groups["trail"]?.value)
 
         val type = when {
             hasIncomeAction(normalized) -> TxType.INCOME
@@ -174,22 +173,6 @@ class GenericBankNotificationTemplate : BankTemplate {
 
     private fun MatchResult.hasCurrency(): Boolean =
         groups["lead"]?.value?.isNotBlank() == true || groups["trail"]?.value?.isNotBlank() == true
-
-    private fun currencyCode(raw: String?): String = when (raw?.trim()?.uppercase()?.replace(" ", "")) {
-        "$" -> "USD"
-        "€" -> "EUR"
-        "£" -> "GBP"
-        "﷼", "SR", "SAR", "ر.س", "رس" -> "SAR"
-        "₹" -> "INR"
-        "¥" -> "JPY"
-        "₺" -> "TRY"
-        "CAD", "CA$", "C$" -> "CAD"
-        "AUD", "AU$", "A$" -> "AUD"
-        "CHF" -> "CHF"
-        "د.إ", "دإ", "AED" -> "AED"
-        "USD", "EUR", "GBP", "INR", "PKR", "TRY", "EGP", "KWD", "QAR", "BHD", "OMR", "JOD" -> raw.uppercase()
-        else -> "SAR"
-    }
 
     private fun cleanParty(raw: String?): String? {
         if (raw.isNullOrBlank()) return null
