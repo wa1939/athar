@@ -618,6 +618,42 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `ignores security code authorization notifications with payment amounts`() {
+        assertThat(
+            parser.parse(
+                event(
+                    "notification:com.chase.sig.android",
+                    "Use OTP 123456 to authorize payment of SAR 500.00. Do not share it.",
+                ),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores Arabic verification code purchase authorization notifications`() {
+        assertThat(
+            parser.parse(
+                event(
+                    "notification:com.alrajhibank.alrajhimobile",
+                    "رمز التحقق ١٢٣٤٥٦ لتأكيد عملية شراء بمبلغ ٥٠٠ ر.س. لا تشاركه",
+                ),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `parses real posted payment notifications without security code wording`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Card payment SAR 500.00 to Amazon confirmed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("500.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Amazon")
+    }
+
+    @Test
     fun `ignores marketing cashback notifications`() {
         assertThat(
             parser.parse(event("notification:com.revolut.revolut", "Earn 10 SAR cashback this weekend")),

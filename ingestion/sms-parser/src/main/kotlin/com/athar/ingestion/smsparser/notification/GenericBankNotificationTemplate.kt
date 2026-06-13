@@ -68,6 +68,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         """\b(?:otp|one[-\s]?time|verification|security\s+code|login|password|do\s+not\s+share|رمز|تحقق|الدخول|كلمة\s+المرور)\b""",
         RegexOption.IGNORE_CASE,
     )
+    private val securityCodeAuthorizationWords = Regex(
+        """(?:\b(?:otp|one[-\s]?time\s+(?:password|code)|verification\s+code|security\s+code|auth(?:entication|orization)?\s+code|passcode|do\s+not\s+share|use\s+(?:this\s+)?code|code\s+to\s+(?:authorize|confirm|verify))\b|رمز\s+(?:التحقق|التأكيد|الدخول|الأمان|الامان)|لا\s+تشارك|لا\s+تشاركه|لا\s+تفصح|استخدم\s+الرمز|كود\s+(?:التحقق|التأكيد))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val marketingWords = Regex(
         """\b(?:offer|promo|cashback|points|reward|earn|win|discount|عرض|خصم|نقاط|مكافأة|اكسب|اربح)\b""",
         RegexOption.IGNORE_CASE,
@@ -141,6 +145,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         val normalized = Normalize.digits(body)
         val hasAction = hasAction(normalized)
 
+        if (securityCodeAuthorizationWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (isRewardOnlyNotification(normalized)) return ParseResult.Ignored
         if (isMarketingOnlyPromotion(normalized)) return ParseResult.Ignored
         if (declinedWords.containsMatchIn(normalized)) return ParseResult.Ignored
@@ -323,6 +328,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             .firstOrNull()
             ?.replace(amountWithCurrency, "")
             ?.replace(Regex("""\s+\band\s+earned\b.*$""", RegexOption.IGNORE_CASE), "")
+            ?.replace(Regex("""\s+\b(?:confirmed|successful|completed|approved|posted)\b\.?$""", RegexOption.IGNORE_CASE), "")
             ?.replace(Regex("""\b(?:for|using|with|via|card|ending|منتهية|البطاقة)\b.*$""", RegexOption.IGNORE_CASE), "")
             ?.trim(' ', '.', ',', '-', '·', ':')
             ?.take(48)
