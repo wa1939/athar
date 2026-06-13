@@ -39,7 +39,7 @@ import com.athar.core.designsystem.theme.AtharTheme
 import kotlinx.datetime.LocalDate
 import java.math.BigDecimal
 
-enum class PlanTab { BUDGET, WISHLIST, INVESTMENTS }
+enum class PlanTab { BUDGET, WISHLIST, GOALS, INVESTMENTS }
 
 @Composable
 fun PlanScreen(
@@ -68,6 +68,7 @@ fun PlanScreen(
                 segments = listOf(
                     AtharSegment(PlanTab.BUDGET, stringResource(R.string.plan_tab_budget)),
                     AtharSegment(PlanTab.WISHLIST, stringResource(R.string.plan_tab_wishlist)),
+                    AtharSegment(PlanTab.GOALS, stringResource(R.string.plan_tab_goals)),
                     AtharSegment(PlanTab.INVESTMENTS, stringResource(R.string.plan_tab_investments)),
                 ),
                 selected = tab,
@@ -80,6 +81,7 @@ fun PlanScreen(
                     onEvent = viewModel::onEvent,
                 )
                 PlanTab.WISHLIST -> WishlistContent()
+                PlanTab.GOALS -> GoalsContent()
                 PlanTab.INVESTMENTS -> InvestmentsContent()
             }
         }

@@ -12,6 +12,7 @@
     <!-- Top-level tabs -->
     <string name="plan_tab_budget">Budget</string>
     <string name="plan_tab_wishlist">Wishlist</string>
+    <string name="plan_tab_goals">Goals</string>
     <string name="plan_tab_investments">Investments</string>
 
     <!-- Period selector -->
@@ -79,6 +80,27 @@
     <string name="plan_wishlist_label_notes">Notes</string>
     <string name="plan_wishlist_action_delete">Delete</string>
     <string name="plan_wishlist_action_save">Save</string>
+
+    <!-- Goals -->
+    <string name="plan_goals_savings_title">Savings rate</string>
+    <string name="plan_goals_emergency_title">Emergency fund</string>
+    <string name="plan_goals_percent_value" formatted="true">%1$s%%</string>
+    <string name="plan_goals_months_value" formatted="true">%1$s months</string>
+    <string name="plan_goals_not_available">Not available</string>
+    <string name="plan_goals_no_monthly_burn">Complete</string>
+    <string name="plan_goals_savings_target" formatted="true">Target %1$d%%</string>
+    <string name="plan_goals_emergency_target" formatted="true">Target %1$d months</string>
+    <string name="plan_goals_monthly_income">Average monthly income</string>
+    <string name="plan_goals_monthly_expense">Average monthly expenses</string>
+    <string name="plan_goals_monthly_savings">Average monthly savings</string>
+    <string name="plan_goals_liquid_balance">Liquid balance</string>
+    <string name="plan_goals_emergency_target_amount">Target amount</string>
+    <string name="plan_goals_edit_savings_title">Edit savings goal</string>
+    <string name="plan_goals_edit_savings_label">Target percent from 0 to 100</string>
+    <string name="plan_goals_edit_savings_error">Enter a number from 0 to 100</string>
+    <string name="plan_goals_edit_emergency_title">Edit emergency fund</string>
+    <string name="plan_goals_edit_emergency_label">Target months</string>
+    <string name="plan_goals_edit_emergency_error">Enter a number from 1 to 120</string>
 
     <!-- Investments -->
     <string name="plan_investments_title">Investments</string>
