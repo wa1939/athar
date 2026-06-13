@@ -40,6 +40,7 @@ import com.athar.core.designsystem.display.LocalDisplayCurrency
 import com.athar.core.designsystem.theme.AtharTheme
 import com.athar.core.domain.model.Account
 import com.athar.core.domain.model.AccountBalance
+import com.athar.core.domain.model.AccountRouting
 import com.athar.core.domain.model.AccountType
 import com.athar.core.domain.model.MANUAL_ACCOUNT_ID
 import java.math.BigDecimal
@@ -133,12 +134,13 @@ fun AccountsScreen(
             if (showAdd) {
                 AddAccountForm(
                     defaultCurrency = displayCurrency,
-                    onSave = { name, type, currency, opening, notes ->
+                    onSave = { name, type, currency, opening, aliases, notes ->
                         viewModel.add(
                             name = name,
                             type = type,
                             currency = currency,
                             openingBalanceText = opening,
+                            smsSendersText = aliases,
                             notes = notes,
                         )
                         showAdd = false
@@ -376,7 +378,14 @@ private fun NetWorthCard(netWorth: com.athar.core.domain.model.NetWorth) {
 @Composable
 private fun AddAccountForm(
     defaultCurrency: String,
-    onSave: (name: String, type: AccountType, currency: String, openingBalanceText: String, notes: String) -> Unit,
+    onSave: (
+        name: String,
+        type: AccountType,
+        currency: String,
+        openingBalanceText: String,
+        smsSendersText: String,
+        notes: String,
+    ) -> Unit,
     onCancel: () -> Unit,
 ) {
     val theme = AtharTheme
@@ -384,6 +393,7 @@ private fun AddAccountForm(
     var type by remember { mutableStateOf(AccountType.CHECKING) }
     var currency by remember { mutableStateOf(defaultCurrency) }
     var opening by remember { mutableStateOf("") }
+    var smsSenders by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
     var currencyExpanded by remember { mutableStateOf(false) }
 
@@ -419,6 +429,19 @@ private fun AddAccountForm(
             )
 
             AtharTextField(
+                value = smsSenders,
+                onValueChange = { smsSenders = it },
+                label = stringResource(R.string.settings_accounts_field_sms_senders),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = false,
+            )
+            AtharText(
+                text = stringResource(R.string.settings_accounts_field_sms_senders_help),
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+
+            AtharTextField(
                 value = notes,
                 onValueChange = { notes = it },
                 label = stringResource(R.string.settings_accounts_field_notes),
@@ -434,7 +457,7 @@ private fun AddAccountForm(
                     text = stringResource(R.string.settings_action_save),
                     onClick = {
                         if (name.isNotBlank()) {
-                            onSave(name, type, currency, opening, notes)
+                            onSave(name, type, currency, opening, smsSenders, notes)
                         }
                     },
                     modifier = Modifier.weight(1f),
@@ -495,6 +518,16 @@ private fun AccountRow(
                             )
                         }
                     }
+                    if (account.smsSenders.isNotEmpty()) {
+                        AtharText(
+                            text = stringResource(
+                                R.string.settings_accounts_sms_routes,
+                                account.smsSenders.joinToString(", "),
+                            ),
+                            style = theme.typography.caption,
+                            color = theme.colors.muted,
+                        )
+                    }
                 }
                 AtharNumber(
                     money = balance.current,
@@ -553,6 +586,7 @@ private fun EditAccountPanel(
     var opening by remember(account.id) {
         mutableStateOf(account.openingBalance.amount.toPlainString())
     }
+    var smsSenders by remember(account.id) { mutableStateOf(account.smsSenders.joinToString(", ")) }
     var notes by remember(account.id) { mutableStateOf(account.notes.orEmpty()) }
     var currencyExpanded by remember(account.id) { mutableStateOf(false) }
 
@@ -594,6 +628,19 @@ private fun EditAccountPanel(
         )
 
         AtharTextField(
+            value = smsSenders,
+            onValueChange = { smsSenders = it },
+            label = stringResource(R.string.settings_accounts_field_sms_senders),
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = false,
+        )
+        AtharText(
+            text = stringResource(R.string.settings_accounts_field_sms_senders_help),
+            style = theme.typography.caption,
+            color = theme.colors.muted,
+        )
+
+        AtharTextField(
             value = notes,
             onValueChange = { notes = it },
             label = stringResource(R.string.settings_accounts_field_notes),
@@ -616,6 +663,7 @@ private fun EditAccountPanel(
                         type = type,
                         currency = currency,
                         openingBalance = newOpening,
+                        smsSenders = AccountRouting.normalizeAliases(smsSenders),
                         notes = notes.trim().ifBlank { null },
                     ),
                 )

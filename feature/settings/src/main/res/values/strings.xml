@@ -167,6 +167,9 @@
     <string name="settings_accounts_field_name">اسم الحساب</string>
     <string name="settings_accounts_field_name_hint">اسم الحساب (مثلاً: الراجحي - جاري)</string>
     <string name="settings_accounts_field_opening" formatted="true">الرصيد الافتتاحي (%1$s)</string>
+    <string name="settings_accounts_field_sms_senders">معرّفات توجيه الرسائل</string>
+    <string name="settings_accounts_field_sms_senders_help">اكتب أسماء مرسلي الرسائل أو آخر أرقام البطاقة/الحساب مفصولة بفواصل، مثل: AlRajhiBank, 9803. تُستخدم محليًا فقط لربط الرسائل الجديدة بهذا الحساب.</string>
+    <string name="settings_accounts_sms_routes" formatted="true">توجيه رسائل البنك: %1$s</string>
     <string name="settings_accounts_field_notes">ملاحظات (اختياري)</string>
     <string name="settings_accounts_save_edits">حفظ التعديلات</string>
     <string name="settings_accounts_action_edit">تعديل</string>

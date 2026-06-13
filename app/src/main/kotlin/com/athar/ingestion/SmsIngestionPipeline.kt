@@ -9,6 +9,7 @@ import com.athar.core.domain.model.RawIngestEvent
 import com.athar.core.domain.model.SmsParseStatus
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
+import com.athar.core.domain.repo.AccountRepository
 import com.athar.core.domain.repo.CategoryRuleRepository
 import com.athar.core.domain.repo.SmsAuditRepository
 import com.athar.core.domain.repo.TransactionRepository
@@ -43,6 +44,7 @@ import javax.inject.Singleton
 class SmsIngestionPipeline @Inject constructor(
     private val parser: SmsParser,
     private val transactions: TransactionRepository,
+    private val accounts: AccountRepository,
     private val rules: CategoryRuleRepository,
     private val audit: SmsAuditRepository,
     private val prefs: UserPreferencesRepository,
@@ -98,6 +100,11 @@ class SmsIngestionPipeline @Inject constructor(
         }
         val merchantNormalized = effectiveMerchant.lowercase().trim()
         val suggestion = categorize(merchantNormalized)
+        val routedAccountId = accounts.resolveForIngest(
+            sender = event.sender,
+            body = event.body,
+            counterparty = parsed.counterparty,
+        )?.id ?: MANUAL_ACCOUNT_ID
         val now = clock.now()
         val occurredAt = parsed.occurredAt ?: event.receivedAt
         val date = occurredAt.toLocalDateTime(TimeZone.currentSystemDefault()).date
@@ -118,7 +125,7 @@ class SmsIngestionPipeline @Inject constructor(
 
         val tx = Transaction(
             id = txId,
-            accountId = MANUAL_ACCOUNT_ID, // temporary until S-20 lands a real account map per SMS sender
+            accountId = routedAccountId,
             type = parsed.type,
             amount = parsed.amount,
             date = date,

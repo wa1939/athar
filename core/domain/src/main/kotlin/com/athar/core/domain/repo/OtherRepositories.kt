@@ -35,6 +35,12 @@ interface AccountRepository {
     fun observeBalances(): Flow<List<AccountBalance>>
 
     /**
+     * Resolve an incoming SMS/notification to one active account from its configured
+     * routing aliases. Returns null when routing is missing or ambiguous.
+     */
+    suspend fun resolveForIngest(sender: String, body: String, counterparty: String?): Account?
+
+    /**
      * "Match my bank balance" — instead of letting the user edit the opening balance
      * (which silently rewrites history and is fragile across currency changes), this
      * inserts one manual adjustment transaction so the computed running balance equals
