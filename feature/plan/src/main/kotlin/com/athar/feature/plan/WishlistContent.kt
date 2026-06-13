@@ -33,6 +33,7 @@ import com.athar.core.designsystem.component.AtharText
 import com.athar.core.designsystem.component.AtharTextField
 import com.athar.core.designsystem.theme.AtharTheme
 import com.athar.core.designsystem.theme.MinTouchTarget
+import com.athar.core.domain.calc.WishlistCalc
 import com.athar.core.domain.model.WishlistItem
 import com.athar.core.domain.model.WishlistStatus
 import java.math.BigDecimal
@@ -110,6 +111,7 @@ private fun CapacityCard(state: WishlistState, onAdd: () -> Unit) {
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
+            WishlistSummaryBlock(summary = state.summary)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -122,6 +124,94 @@ private fun CapacityCard(state: WishlistState, onAdd: () -> Unit) {
                 AtharText(text = stringResource(R.string.plan_wishlist_add), style = theme.typography.headline, color = theme.colors.parchment)
             }
         }
+    }
+}
+
+@Composable
+private fun WishlistSummaryBlock(summary: WishlistCalc.Summary) {
+    val theme = AtharTheme
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(theme.colors.surface)
+            .padding(theme.spacing.m),
+        verticalArrangement = Arrangement.spacedBy(theme.spacing.xs),
+    ) {
+        MoneySummaryRow(
+            label = stringResource(R.string.plan_wishlist_summary_remaining),
+            money = summary.totalRemaining,
+            color = theme.colors.ember,
+        )
+        TextSummaryRow(
+            label = stringResource(R.string.plan_wishlist_summary_ready_now),
+            value = stringResource(R.string.plan_wishlist_summary_count, summary.readyNowCount),
+            color = theme.colors.olive,
+        )
+        TextSummaryRow(
+            label = stringResource(R.string.plan_wishlist_summary_next_reachable),
+            value = summary.nextReachableMonth?.let(::formatMonth)
+                ?: stringResource(R.string.plan_wishlist_summary_none),
+            color = if (summary.nextReachableMonth == null) theme.colors.muted else theme.colors.ink,
+        )
+        MoneySummaryRow(
+            label = stringResource(R.string.plan_wishlist_summary_target_pressure),
+            money = summary.targetMonthlyRequired,
+            color = theme.colors.dust,
+        )
+        if (summary.infeasibleCount > 0) {
+            TextSummaryRow(
+                label = stringResource(R.string.plan_wishlist_summary_infeasible),
+                value = stringResource(R.string.plan_wishlist_summary_count, summary.infeasibleCount),
+                color = theme.colors.crimson,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MoneySummaryRow(label: String, money: Money, color: androidx.compose.ui.graphics.Color) {
+    val theme = AtharTheme
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        AtharText(
+            text = label,
+            modifier = Modifier.weight(1f),
+            style = theme.typography.caption,
+            color = theme.colors.muted,
+        )
+        AtharNumber(
+            money = money,
+            modifier = Modifier.padding(start = theme.spacing.s),
+            color = color,
+        )
+    }
+}
+
+@Composable
+private fun TextSummaryRow(label: String, value: String, color: androidx.compose.ui.graphics.Color) {
+    val theme = AtharTheme
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        AtharText(
+            text = label,
+            modifier = Modifier.weight(1f),
+            style = theme.typography.caption,
+            color = theme.colors.muted,
+        )
+        AtharText(
+            text = value,
+            modifier = Modifier.padding(start = theme.spacing.s),
+            style = theme.typography.headline,
+            color = color,
+            maxLines = 1,
+        )
     }
 }
 

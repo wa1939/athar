@@ -89,6 +89,13 @@
     <string name="plan_wishlist_capacity_title">السعة الشهرية للرغبات</string>
     <string name="plan_wishlist_capacity_subtitle">متوسط (الدخل − المصاريف) خلال آخر ٣ أشهر</string>
     <string name="plan_wishlist_add">إضافة رغبة</string>
+    <string name="plan_wishlist_summary_remaining">إجمالي المتبقي</string>
+    <string name="plan_wishlist_summary_ready_now">متاحة الآن</string>
+    <string name="plan_wishlist_summary_next_reachable">أقرب موعد</string>
+    <string name="plan_wishlist_summary_target_pressure">ضغط الأهداف شهريًا</string>
+    <string name="plan_wishlist_summary_infeasible">تحتاج سعة</string>
+    <string name="plan_wishlist_summary_none">لا يوجد</string>
+    <string name="plan_wishlist_summary_count" formatted="true">%1$d</string>
     <string name="plan_wishlist_empty_text">لا رغبات بعد.</string>
     <string name="plan_wishlist_empty_subtle">أضف ما تتمنى شراءه — سنخبرك متى يمكنك ذلك بدون أن تقع في الحفرة.</string>
     <string name="plan_wishlist_saved_label">وفّرت </string>

@@ -89,6 +89,13 @@
     <string name="plan_wishlist_capacity_title">Monthly wishlist capacity</string>
     <string name="plan_wishlist_capacity_subtitle">Average (income − expenses) over the last 3 months</string>
     <string name="plan_wishlist_add">Add a wish</string>
+    <string name="plan_wishlist_summary_remaining">Remaining wishlist</string>
+    <string name="plan_wishlist_summary_ready_now">Ready now</string>
+    <string name="plan_wishlist_summary_next_reachable">Next reachable</string>
+    <string name="plan_wishlist_summary_target_pressure">Target pressure</string>
+    <string name="plan_wishlist_summary_infeasible">Needs more capacity</string>
+    <string name="plan_wishlist_summary_none">None</string>
+    <string name="plan_wishlist_summary_count" formatted="true">%1$d</string>
     <string name="plan_wishlist_empty_text">No wishes yet.</string>
     <string name="plan_wishlist_empty_subtle">Add what you want to buy. We will tell you when it fits without strain.</string>
     <string name="plan_wishlist_saved_label">saved </string>

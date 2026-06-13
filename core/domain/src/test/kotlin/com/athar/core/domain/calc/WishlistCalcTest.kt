@@ -132,6 +132,61 @@ class WishlistCalcTest {
         assertThat(projection.targetFeasible).isTrue()
     }
 
+    @Test
+    fun `summary counts wishlist states and totals remaining amounts`() {
+        val currentMonth = YearMonth.of(2026, 1)
+        val projections = listOf(
+            WishlistCalc.project(
+                item = wish(
+                    cost = Money.of("1000"),
+                    saved = Money.of("1000"),
+                    desiredMonths = 3,
+                ),
+                capacity = Money.of("500"),
+                currentMonth = currentMonth,
+            ),
+            WishlistCalc.project(
+                item = wish(
+                    cost = Money.of("600"),
+                    saved = Money.of("100"),
+                    desiredMonths = 5,
+                ),
+                capacity = Money.of("100"),
+                currentMonth = currentMonth,
+            ),
+            WishlistCalc.project(
+                item = wish(
+                    cost = Money.of("1200"),
+                    saved = Money.zero(),
+                    desiredMonths = 6,
+                ),
+                capacity = Money.of("100"),
+                currentMonth = currentMonth,
+            ),
+        )
+
+        val summary = WishlistCalc.summarize(projections)
+
+        assertThat(summary.totalRemaining.amount).isEqualTo(BigDecimal("1700"))
+        assertThat(summary.targetMonthlyRequired.amount).isEqualTo(BigDecimal("300.00"))
+        assertThat(summary.readyNowCount).isEqualTo(1)
+        assertThat(summary.waitingCount).isEqualTo(1)
+        assertThat(summary.infeasibleCount).isEqualTo(1)
+        assertThat(summary.nextReachableMonth).isEqualTo(YearMonth.of(2026, 6))
+    }
+
+    @Test
+    fun `summary is empty when there are no wishes`() {
+        val summary = WishlistCalc.summarize(emptyList(), currency = "USD")
+
+        assertThat(summary.totalRemaining).isEqualTo(Money.zero("USD"))
+        assertThat(summary.targetMonthlyRequired).isEqualTo(Money.zero("USD"))
+        assertThat(summary.readyNowCount).isEqualTo(0)
+        assertThat(summary.waitingCount).isEqualTo(0)
+        assertThat(summary.infeasibleCount).isEqualTo(0)
+        assertThat(summary.nextReachableMonth).isNull()
+    }
+
     private fun wish(
         cost: Money,
         saved: Money,

@@ -28,6 +28,26 @@ object WishlistCalc {
         val targetFeasible: Boolean?,
     )
 
+    data class Summary(
+        val totalRemaining: Money,
+        val readyNowCount: Int,
+        val waitingCount: Int,
+        val infeasibleCount: Int,
+        val nextReachableMonth: YearMonth?,
+        val targetMonthlyRequired: Money,
+    ) {
+        companion object {
+            fun empty(currency: String = Money.SAR): Summary = Summary(
+                totalRemaining = Money.zero(currency),
+                readyNowCount = 0,
+                waitingCount = 0,
+                infeasibleCount = 0,
+                nextReachableMonth = null,
+                targetMonthlyRequired = Money.zero(currency),
+            )
+        }
+    }
+
     /**
      * Monthly capacity = `(income - expense) / 3`, floored at zero. The denominator is
      * the lookback window in months that the VM passes (3-month rolling).
@@ -113,6 +133,24 @@ object WishlistCalc {
             targetMonth = targetMonth,
             monthlyRequired = monthlyRequired,
             targetFeasible = targetFeasible,
+        )
+    }
+
+    fun summarize(projections: Iterable<Projection>, currency: String = Money.SAR): Summary {
+        val list = projections.toList()
+        if (list.isEmpty()) return Summary.empty(currency)
+
+        val totalRemaining = Money.sumAmounts(list.map { it.remaining }, currency)
+        val targetMonthlyRequired = Money.sumAmounts(list.mapNotNull { it.monthlyRequired }, currency)
+        return Summary(
+            totalRemaining = totalRemaining,
+            readyNowCount = list.count { it.status == WishlistStatus.Now },
+            waitingCount = list.count { it.status is WishlistStatus.WaitUntil },
+            infeasibleCount = list.count { it.status == WishlistStatus.Infeasible },
+            nextReachableMonth = list.mapNotNull { projection ->
+                projection.projectedMonth.takeIf { projection.status is WishlistStatus.WaitUntil }
+            }.minOrNull(),
+            targetMonthlyRequired = targetMonthlyRequired,
         )
     }
 

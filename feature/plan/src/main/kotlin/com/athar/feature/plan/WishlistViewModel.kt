@@ -58,20 +58,21 @@ class WishlistViewModel @Inject constructor(
         val capacity = WishlistCalc.monthlyCapacity(income, expense)
         val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
         val currentMonth = YearMonth.of(now.year, now.monthNumber)
-        val rows = items
-            .map { item -> classify(item, capacity, currentMonth) }
+        val projected = items.map { item -> item to WishlistCalc.project(item, capacity, currentMonth) }
+        val rows = projected
+            .map { (item, projection) -> classify(item, projection) }
             .sortedWith(wishlistPriority())
             .toImmutableList()
 
         return WishlistState(
             items = rows,
             monthlyCapacity = capacity,
+            summary = WishlistCalc.summarize(projected.map { it.second }, currency),
             isLoading = false,
         )
     }
 
-    private fun classify(item: WishlistItem, capacity: Money, currentMonth: YearMonth): WishlistRow {
-        val projection = WishlistCalc.project(item, capacity, currentMonth)
+    private fun classify(item: WishlistItem, projection: WishlistCalc.Projection): WishlistRow {
         return WishlistRow(
             item = item,
             status = projection.status,
