@@ -87,6 +87,36 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `ignores available credit notifications with card hints`() {
+        assertThat(
+            parser.parse(
+                event(
+                    "notification:com.capitalone.mobile",
+                    "Available credit USD 5,000.00 on your card ending 1234",
+                ),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores credit limit update notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.chase.sig.android", "Your credit limit was updated to AED 20,000.00"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores Arabic credit availability notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.alrajhibank.alrajhimobile", "الحد الائتماني المتاح ٥٠٠٠ ر.س على بطاقتك"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
     fun `parses Arabic debit without offer wording`() {
         val result = parser.parse(
             event("notification:com.alrajhibank.alrajhimobile", "خصم ٣٥٫٥٠ ر.س لدى كارفور"),

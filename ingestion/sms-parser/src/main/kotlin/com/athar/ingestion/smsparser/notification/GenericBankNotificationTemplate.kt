@@ -49,7 +49,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val limitWords = Regex(
-        """\b(?:transfer\s+limit|daily\s+limit|card\s+limit|spending\s+limit|limit\s+(?:changed|updated|increased|decreased))\b""",
+        """\b(?:transfer\s+limit|daily\s+limit|card\s+limit|spending\s+limit|credit\s+limit|cash\s+advance\s+limit|limit\s+(?:changed|updated|increased|decreased))\b""",
         RegexOption.IGNORE_CASE,
     )
     private val declinedWords = Regex(
@@ -102,6 +102,10 @@ class GenericBankNotificationTemplate : BankTemplate {
     )
     private val balanceAmountContext = Regex(
         """(?:\b(?:balance|available|remaining\s+balance|current\s+balance)\b|رصيد|الرصيد|المتاح|الرصيد\s+المتبقي)""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val creditStateWords = Regex(
+        """(?:\b(?:available\s+credit|credit\s+available|remaining\s+credit|credit\s+remaining|credit\s+limit|cash\s+advance\s+limit|available\s+cash\s+advance)\b|الحد\s+الائتماني|الحد\s+المتاح|الائتمان\s+المتاح)""",
         RegexOption.IGNORE_CASE,
     )
     private val trailingCurrencyContext = Regex(
@@ -163,6 +167,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (securityWords.containsMatchIn(normalized) && !hasAction) return ParseResult.Ignored
         if (marketingWords.containsMatchIn(normalized) && !hasAction) return ParseResult.Ignored
         if (hasBalanceNoticeText(normalized) && !hasAction) return ParseResult.Ignored
+        if (creditStateWords.containsMatchIn(normalized) && !hasAction) return ParseResult.Ignored
 
         val amountMatch = selectTransactionAmount(normalized)
             ?: return ParseResult.Failed("notification amount not found", listOf(id))
