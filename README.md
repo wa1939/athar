@@ -101,6 +101,7 @@ Other tools force a trade-off:
 - ✅ **90-day historical SMS backfill** on first install
 - ✅ Rule engine with **678 merchant seed rules** across 22 categories (beta.17+R-05 — expanded from 44 curated rules with AI-categorized patterns plus reviewed priority-90 catalog/private-audit batches; rules auto-refresh on app upgrade)
 - ✅ "Always categorize X as Y?" **learn-from-correction** loop — **as of beta.18 the learned rule is backfilled to every existing PENDING + DISMISSED row** matching the merchant pattern, not just future SMS. Picking "Always" for one Hemmah charge fixes every stranded Hemmah in one tap
+- ✅ Today and History show a short localized feedback card after "Always categorize..." so users know how many existing matching rows were fixed, or that future rows will auto-categorize when there were no existing matches
 - ✅ **Local category rule learning** — after three confirmed transactions for the exact same merchant all share one category, Athar creates an exact local rule so future matches stop asking. Explicit "Always" rules still win; ambiguous merchants are ignored
 - ✅ Source of every categorization is **explainable** (rule id, confidence)
 

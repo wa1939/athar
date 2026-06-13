@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -65,7 +66,7 @@ class TodayViewModelTest {
                     transaction(id = "goal-expense", type = TxType.EXPENSE, amount = Money.of("6000")),
                 ),
             ),
-            rules = FakeCategoryRuleRepository,
+            rules = RecordingCategoryRuleRepository(),
             prefs = FakeUserPreferencesRepository(savingsTarget = 30, emergencyMonths = 6),
             accounts = FakeAccountRepository(liquidBalance = Money.of("5000")),
             clock = FixedClock,
@@ -82,6 +83,52 @@ class TodayViewModelTest {
         assertThat(nudge.emergencyFundTargetMonths).isEqualTo(6)
         assertThat(nudge.emergencyFundProgress).isWithin(0.0001f).of(0.4167f)
     }
+
+    @Test
+    fun `always categorize emits backfill event and can be cleared`() = runTest(mainDispatcher) {
+        val transactions = FakeTransactionRepository(backfillCount = 3)
+        val rules = RecordingCategoryRuleRepository()
+        val viewModel = TodayViewModel(
+            transactions = transactions,
+            rules = rules,
+            prefs = FakeUserPreferencesRepository(savingsTarget = 30, emergencyMonths = 6),
+            accounts = FakeAccountRepository(liquidBalance = Money.of("5000")),
+            clock = FixedClock,
+        )
+
+        viewModel.updateTransaction(
+            transaction(
+                id = "hemmah",
+                type = TxType.EXPENSE,
+                amount = Money.of("42"),
+            ).copy(
+                merchant = "Hemmah",
+                merchantNormalized = "hemmah",
+                categoryId = "cat-home-maintenance",
+                status = TxStatus.PENDING,
+            ),
+            learnRule = true,
+        )
+        advanceUntilIdle()
+
+        assertThat(transactions.upserts.single().status).isEqualTo(TxStatus.CONFIRMED)
+        assertThat(rules.learned).containsExactly(
+            LearnedRule(
+                merchantNormalized = "hemmah",
+                categoryId = "cat-home-maintenance",
+                patternType = PatternType.SUBSTRING,
+            ),
+        )
+        assertThat(transactions.appliedPatterns).containsExactly(
+            "hemmah" to "cat-home-maintenance",
+        )
+        assertThat(viewModel.lastBackfill.value)
+            .isEqualTo(TodayViewModel.BackfillEvent(pattern = "Hemmah", count = 3))
+
+        viewModel.clearBackfill()
+
+        assertThat(viewModel.lastBackfill.value).isNull()
+    }
 }
 
 private class FakeTransactionRepository(
@@ -89,7 +136,11 @@ private class FakeTransactionRepository(
     private val goalConfirmed: List<Transaction> = emptyList(),
     private val pending: List<Transaction> = emptyList(),
     private val dismissed: List<Transaction> = emptyList(),
+    private val backfillCount: Int = 0,
 ) : TransactionRepository {
+    val upserts = mutableListOf<Transaction>()
+    val appliedPatterns = mutableListOf<Pair<String, String>>()
+
     override fun observeByPeriod(period: Period, status: TxStatus?): Flow<List<Transaction>> {
         val rows = when (period) {
             is Period.Last -> goalConfirmed
@@ -105,7 +156,9 @@ private class FakeTransactionRepository(
     override fun observePending(): Flow<List<Transaction>> = flowOf(pending)
     override fun observeAll(): Flow<List<Transaction>> = flowOf(currentConfirmed + goalConfirmed + pending + dismissed)
     override suspend fun get(id: String): Transaction? = null
-    override suspend fun upsert(transaction: Transaction) = Unit
+    override suspend fun upsert(transaction: Transaction) {
+        upserts += transaction
+    }
     override suspend fun delete(id: String) = Unit
     override suspend fun setStatus(id: String, status: TxStatus) = Unit
     override suspend fun clearPending(): Int = 0
@@ -113,10 +166,15 @@ private class FakeTransactionRepository(
     override suspend fun dismissAllLowConfidence(maxConfidence: Float): Int = 0
     override suspend fun dismissAllPending(): Int = 0
     override suspend fun recoverDismissedToPending(): Int = 0
-    override suspend fun applyCategoryToMatching(pattern: String, categoryId: String): Int = 0
+    override suspend fun applyCategoryToMatching(pattern: String, categoryId: String): Int {
+        appliedPatterns += pattern to categoryId
+        return backfillCount
+    }
 }
 
-private object FakeCategoryRuleRepository : CategoryRuleRepository {
+private class RecordingCategoryRuleRepository : CategoryRuleRepository {
+    val learned = mutableListOf<LearnedRule>()
+
     override fun observeAll(): Flow<List<CategoryRule>> = flowOf(emptyList())
     override suspend fun findMatching(merchantNormalized: String): List<CategoryRule> = emptyList()
     override suspend fun upsert(rule: CategoryRule) = Unit
@@ -125,8 +183,25 @@ private object FakeCategoryRuleRepository : CategoryRuleRepository {
         merchantNormalized: String,
         categoryId: String,
         patternType: PatternType,
-    ): CategoryRule = error("Not used")
+    ): CategoryRule {
+        learned += LearnedRule(merchantNormalized, categoryId, patternType)
+        return CategoryRule(
+            id = "learned-$merchantNormalized",
+            pattern = merchantNormalized,
+            patternType = patternType,
+            categoryId = categoryId,
+            priority = 100,
+            learnedFromUser = true,
+            createdAt = FixedClock.now(),
+        )
+    }
 }
+
+private data class LearnedRule(
+    val merchantNormalized: String,
+    val categoryId: String,
+    val patternType: PatternType,
+)
 
 private class FakeUserPreferencesRepository(
     private val savingsTarget: Int,

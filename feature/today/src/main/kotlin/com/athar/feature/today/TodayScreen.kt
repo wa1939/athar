@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.getValue
@@ -46,11 +47,21 @@ fun TodayScreen(
     viewModel: TodayViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val backfill by viewModel.lastBackfill.collectAsStateWithLifecycle()
     var showAddSheet by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Transaction?>(null) }
 
+    LaunchedEffect(backfill) {
+        if (backfill != null) {
+            kotlinx.coroutines.delay(4_000)
+            viewModel.clearBackfill()
+        }
+    }
+
     TodayContent(
         state = state,
+        backfill = backfill,
+        onClearBackfill = viewModel::clearBackfill,
         onEvent = { event ->
             when (event) {
                 is TodayEvent.AddManual -> showAddSheet = true
@@ -96,6 +107,8 @@ internal fun TodayContent(
     state: TodayState,
     onEvent: (TodayEvent) -> Unit,
     modifier: Modifier = Modifier,
+    backfill: TodayViewModel.BackfillEvent? = null,
+    onClearBackfill: () -> Unit = {},
 ) {
     val theme = AtharTheme
     Box(
@@ -109,6 +122,13 @@ internal fun TodayContent(
                 .padding(theme.spacing.m),
             verticalArrangement = Arrangement.spacedBy(theme.spacing.l),
         ) {
+            backfill?.let {
+                CategoryBackfillToast(
+                    pattern = it.pattern,
+                    count = it.count,
+                    onDismiss = onClearBackfill,
+                )
+            }
             if (state.pending.isNotEmpty()) {
                 PendingAttentionBanner(
                     count = state.pending.size,

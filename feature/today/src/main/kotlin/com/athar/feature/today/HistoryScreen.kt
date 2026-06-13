@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -49,7 +50,15 @@ fun HistoryScreen(
     val status by viewModel.status.collectAsStateWithLifecycle()
     val type by viewModel.type.collectAsStateWithLifecycle()
     val source by viewModel.source.collectAsStateWithLifecycle()
+    val backfill by viewModel.lastBackfill.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<Transaction?>(null) }
+
+    LaunchedEffect(backfill) {
+        if (backfill != null) {
+            kotlinx.coroutines.delay(4_000)
+            viewModel.clearBackfill()
+        }
+    }
 
     Box(
         modifier = modifier
@@ -72,6 +81,14 @@ fun HistoryScreen(
                     text = stringResource(R.string.history_overline),
                     style = theme.typography.overline,
                     color = theme.colors.muted,
+                )
+            }
+
+            backfill?.let {
+                CategoryBackfillToast(
+                    pattern = it.pattern,
+                    count = it.count,
+                    onDismiss = viewModel::clearBackfill,
                 )
             }
 
