@@ -37,19 +37,19 @@ abstract class StructuredBankTemplate(
 ) : BankTemplate {
 
     private val amount = Regex(
-        """(?:Amount|المبلغ|مبلغ|قيمة\s+العملية)\s*[:\s]\s*(?:SAR\s+|SR\s+)?([\d.,]+)(?:\s*SAR|\s*SR|\s*ر\.?\s*س)?""",
+        """(?:Amount|المبلغ|مبلغ(?:\s+العملية)?|بمبلغ|قيمة\s+العملية)\s*[:\s]\s*(?:SAR\s+|SR\s+)?([\d.,]+)(?:\s*SAR|\s*SR|\s*ر\.?\s*س)?""",
         RegexOption.IGNORE_CASE,
     )
     private val purchaseMarker = Regex(
-        """(?:purchase|POS|PoS|نقاط\s+بيع|شراء|خصم|سحب)""",
+        """(?:purchase|POS|PoS|نقاط\s+بيع|شراء|خصم|سحب|مدين)""",
         RegexOption.IGNORE_CASE,
     )
     private val transferOutMarker = Regex(
-        """(?:Debit|Outgoing|تحويل\s+صادر|تحويل\s+خارج|إرسال)""",
+        """(?:Debit|Outgoing|outward|حوالة\s+صادرة|حوالة\s+مالية\s+صادرة|تحويل\s+صادر|تحويل\s+خارج|إرسال|صادرة\s+(?:داخلية|محلية))""",
         RegexOption.IGNORE_CASE,
     )
     private val incomeMarker = Regex(
-        """(?:Credit|Deposit|incoming|ايداع|إيداع|وارد|استلام)""",
+        """(?:Credit|Deposit|incoming|حوالة\s+واردة|ايداع|إيداع|وارد|استلام)""",
         RegexOption.IGNORE_CASE,
     )
     private val merchantAt = Regex(
@@ -61,7 +61,7 @@ abstract class StructuredBankTemplate(
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val fromField = Regex(
-        """(?:From|من)\s*[:\s]\s*([^\n\r]+?)(?:\n|$)""",
+        """(?:From|من|اسم\s+المرسل)\s*[:\s]\s*([^\n\r]+?)(?:\n|$)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val card = Regex(
@@ -90,16 +90,18 @@ abstract class StructuredBankTemplate(
         val parsedAmount = runCatching { BigDecimal(amountRaw.replace(",", "")) }.getOrNull()
             ?: return ParseResult.Failed("amount unparseable: $amountRaw", listOf(id))
 
+        val isPurchase = purchaseMarker.containsMatchIn(normalized)
         val type = when {
             incomeMarker.containsMatchIn(normalized) -> TxType.INCOME
             transferOutMarker.containsMatchIn(normalized) -> TxType.TRANSFER
-            purchaseMarker.containsMatchIn(normalized) -> TxType.EXPENSE
+            isPurchase -> TxType.EXPENSE
             else -> TxType.EXPENSE  // default — user can correct on confirm
         }
 
-        val merchant = merchantAt.find(normalized)?.groupValues?.get(1)?.trim()
         val to = toField.find(normalized)?.groupValues?.get(1)?.trim()
         val from = fromField.find(normalized)?.groupValues?.get(1)?.trim()
+        val merchant = merchantAt.find(normalized)?.groupValues?.get(1)?.trim()
+            ?: from.takeIf { type == TxType.EXPENSE && isPurchase && !it.isNullOrBlank() }
         val counterparty = when (type) {
             TxType.INCOME -> from
             TxType.TRANSFER -> to
@@ -155,7 +157,7 @@ class RiyadBankTemplate : StructuredBankTemplate(
 class SnbTemplate : StructuredBankTemplate(
     id = "snb-structured",
     senderMatcher = SenderMatcher.AnyOf(
-        setOf("SNB", "AlAhli", "AlahliBank", "البنك الأهلي السعودي"),
+        setOf("SNB", "SNB-AlAhli", "SNB Bank", "AlAhli", "AlAhliBank", "AlahliBank", "البنك الأهلي السعودي"),
     ),
 )
 
@@ -163,5 +165,19 @@ class AnbTemplate : StructuredBankTemplate(
     id = "anb-structured",
     senderMatcher = SenderMatcher.AnyOf(
         setOf("ANB", "ANBBank", "Arab National Bank", "البنك العربي الوطني"),
+    ),
+)
+
+class AlJaziraTemplate : StructuredBankTemplate(
+    id = "aljazira-structured",
+    senderMatcher = SenderMatcher.AnyOf(
+        setOf("AlJazira", "AlJaziraSMS", "Jazira Bank", "JaziraBank", "BankAlJazira", "Bank AlJazira", "BAJ"),
+    ),
+)
+
+class UrpayTemplate : StructuredBankTemplate(
+    id = "urpay-structured",
+    senderMatcher = SenderMatcher.AnyOf(
+        setOf("urpay", "Urpay", "URPAY"),
     ),
 )

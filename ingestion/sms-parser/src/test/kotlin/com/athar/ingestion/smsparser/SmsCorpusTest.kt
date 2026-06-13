@@ -29,6 +29,9 @@ import com.athar.ingestion.smsparser.d360.D360InternationalPurchaseTemplate
 import com.athar.ingestion.smsparser.d360.D360InternationalTransferTemplate
 import com.athar.ingestion.smsparser.d360.D360LocalPurchaseTemplate
 import com.athar.ingestion.smsparser.d360.D360OnlinePurchaseTemplate
+import com.athar.ingestion.smsparser.genericbank.AlJaziraTemplate
+import com.athar.ingestion.smsparser.genericbank.SnbTemplate
+import com.athar.ingestion.smsparser.genericbank.UrpayTemplate
 import com.athar.ingestion.smsparser.stcbank.StcBankIncomingTransferTemplate
 import com.athar.ingestion.smsparser.stcbank.StcBankOnlinePurchaseTemplate
 import com.athar.ingestion.smsparser.stcbank.StcBankOutgoingTransferTemplate
@@ -83,6 +86,9 @@ class SmsCorpusTest {
             BarqAtmWithdrawalTemplate(),
             BarqDebitTransferTemplate(),
             BarqCreditTransferTemplate(),
+            SnbTemplate(),
+            AlJaziraTemplate(),
+            UrpayTemplate(),
             UniversalAmountTemplate(),
         ),
     )
@@ -479,6 +485,98 @@ class SmsCorpusTest {
             At: ALP zhangjiajieruidel
         """.trimIndent()
         assertThat(parser().parse(event("barq app", body))).isEqualTo(ParseResult.Ignored)
+    }
+
+    // ─── Family-device corpus additions ──────────────────────────────────
+
+    @Test fun `SNB AlAhli outgoing internal transfer is TRANSFER`() {
+        val body = """
+            حوالة صادرة داخلية
+            مبلغ:1100 SAR
+            إلى:مستفيد العائلة
+            إلى:304*111
+            في:20/01/25 16:56
+        """.trimIndent()
+        val r = parser().parse(event("SNB-AlAhli", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.TRANSFER)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("1100"))
+        assertThat(r.counterparty).isEqualTo("مستفيد العائلة")
+        assertThat(r.templateId).isEqualTo("snb-structured")
+    }
+
+    @Test fun `SNB AlAhli OTP amount preauthorization is Ignored`() {
+        val body = """
+            لا تشارك رمز التفعيل 5311
+            ‬‪تحويل داخل البنك
+            مبلغ ‬‪SAR ‬‪1100
+        """.trimIndent()
+        assertThat(parser().parse(event("SNB-AlAhli", body))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `AlJazira incoming internal transfer is INCOME`() {
+        val body = """
+            حوالة واردة داخلية
+            مبلغ: SAR 205,328.79
+            إلى: 8001
+            اسم المرسل: جهة تحويل
+            في: 2025-04-06 13:16
+        """.trimIndent()
+        val r = parser().parse(event("AlJaziraSMS", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.INCOME)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("205328.79"))
+        assertThat(r.counterparty).isEqualTo("جهة تحويل")
+        assertThat(r.templateId).isEqualTo("aljazira-structured")
+    }
+
+    @Test fun `Jazira outgoing accepted transfer is TRANSFER`() {
+        val body = """
+            عملية حوالة مالية صادرة مقبولة
+            خصمت من حساب: 8001
+            الى: مستفيد العائلة
+            مبلغ العملية: 498.00 SAR
+            المعرف البديل \الايبان : 8573
+            [بنك الراجحي]
+            في: 2026-01-16 20:27
+            رقم المعاملة: 2BTMS12027368595
+        """.trimIndent()
+        val r = parser().parse(event("Jazira Bank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.TRANSFER)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("498.00"))
+        assertThat(r.counterparty).isEqualTo("مستفيد العائلة")
+        assertThat(r.templateId).isEqualTo("aljazira-structured")
+    }
+
+    @Test fun `Jazira one-time-password with amount is Ignored`() {
+        val body = """
+            كلمة مرور صالحة لمرة واحدة
+            رمز: 6826
+            السبب: التحويل عبر خدمة مدفوعات سريع
+            المستفيد: مستفيد
+            المبلغ: 498.00 SAR
+            التاريخ: 20:27 16-01-2026
+        """.trimIndent()
+        assertThat(parser().parse(event("Jazira Bank", body))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `urpay Arabic purchase captures merchant from from field`() {
+        val body = """
+            شراء
+            بطاقة:2322
+            مبلغ:SAR 19
+            من:BARNS AL..
+            في:14-1-2025 09:45
+            الرصيد المتبقي:824.18 SAR
+        """.trimIndent()
+        val r = parser().parse(event("urpay", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.EXPENSE)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("19"))
+        assertThat(r.merchant).isEqualTo("BARNS AL..")
+        assertThat(r.templateId).isEqualTo("urpay-structured")
+    }
+
+    @Test fun `urpay device-linking notice is Ignored`() {
+        val body = "تم إلغاء ربط جهاز android v33 بحسابك"
+        assertThat(parser().parse(event("urpay", body))).isEqualTo(ParseResult.Ignored)
     }
 
     // ─── Cross-cutting: unknown sender ────────────────────────────────────

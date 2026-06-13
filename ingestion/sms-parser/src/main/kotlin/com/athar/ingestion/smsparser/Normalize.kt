@@ -20,13 +20,17 @@ internal object Normalize {
 
     fun digits(input: String): String = buildString(input.length) {
         for (ch in input) {
-            append(
-                when (ch) {
-                    ArabicDecimal -> '.'
-                    ArabicThousands -> ','
-                    else -> ArabicDigits[ch] ?: ch
-                },
-            )
+            when (ch) {
+                // SMS bodies from some Arabic bank gateways contain bidi controls
+                // around SAR/amount tokens. They are invisible, but break regexes.
+                '\u200E', '\u200F',
+                '\u202A', '\u202B', '\u202C', '\u202D', '\u202E',
+                '\u2066', '\u2067', '\u2068', '\u2069' -> Unit
+                '\u00A0' -> append(' ')
+                ArabicDecimal -> append('.')
+                ArabicThousands -> append(',')
+                else -> append(ArabicDigits[ch] ?: ch)
+            }
         }
     }
 

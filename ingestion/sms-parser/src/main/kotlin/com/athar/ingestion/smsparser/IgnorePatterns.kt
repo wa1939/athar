@@ -25,8 +25,11 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""\bverification\s+code\b""", RegexOption.IGNORE_CASE),
         Regex("""\bdo\s+not\s+share\s+(?:the\s+)?(?:code|otp)""", RegexOption.IGNORE_CASE),
         Regex("""رمز\s+(?:التحقق|التفعيل|الدخول|OTP)"""),
+        Regex("""رمز\s*:\s*\d{3,6}"""),
+        Regex("""لا\s+تشارك\s+رمز"""),
         Regex("""لا\s+تشاركه"""),
         Regex("""كلمة\s+مرور\s+مؤقتة"""),
+        Regex("""كلمة\s+مرور\s+صالحة\s+لمرة\s+واحدة"""),
 
         // Beneficiary management
         Regex("""\bBeneficiary\s*:\s*[^\n\r]+?\s+has\s+been\s+(?:added|activated|deleted|removed)""", RegexOption.IGNORE_CASE),
@@ -91,10 +94,18 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""\bpassword\s+(?:reset|change)""", RegexOption.IGNORE_CASE),
         Regex("""\blogin\s+from\s+(?:a\s+)?(?:new\s+)?device""", RegexOption.IGNORE_CASE),
         Regex("""\bsuccessful\s+login\b""", RegexOption.IGNORE_CASE),
+        Regex("""تم\s+(?:إلغاء\s+)?ربط\s+جهاز"""),
 
         // Account request acknowledgement
         Regex("""تم\s+تسجيل\s+طلبكم"""),
         Regex("""\brequest\s+(?:received|registered|number)\b""", RegexOption.IGNORE_CASE),
+
+        // Non-transaction bank notices observed in real family-device exports.
+        Regex("""تحديث\s+الشروط\s+والأحكام"""),
+        Regex("""تم\s+تغيير\s+شريحة\s+الحساب"""),
+        Regex("""سيتم\s+تحديث\s+تعرفة"""),
+        Regex("""تحديثات?\s+على\s+انظمتنا\s+البنكية"""),
+        Regex("""قنواتنا\s+الرقمية\s+خارج\s+الخدمة"""),
     )
 
     override fun tryParse(body: String, receivedAt: Instant): ParseResult {

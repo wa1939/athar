@@ -30,13 +30,13 @@ object KnownBankSenders {
         // Other major SA banks
         "Alinma", "AlinmaBank", "Alinma Bank", "ALINMA",
         "Riyad Bank", "RiyadBank", "RIYADBANK",
-        "SNB", "SNB Bank", "NCB", "ALAHLI", "AlAhliBank",
+        "SNB", "SNB Bank", "SNB-AlAhli", "NCB", "ALAHLI", "AlAhli", "AlAhliBank", "AlahliBank",
         "ANB", "ANBBank", "AlArabi",
         "SAMBA", "SambaBank",
         "Albilad", "BankAlbilad", "ALBILAD",
         "BSF", "Banque Saudi Fransi", "BSFBank",
         "GIB", "Saudi Investment Bank", "SAIB",
-        "AlJazira", "BankAlJazira", "BAJ",
+        "AlJazira", "AlJaziraSMS", "Jazira Bank", "JaziraBank", "BankAlJazira", "Bank AlJazira", "BAJ",
         // Wallets
         "urpay", "Urpay",
         "Mobily Pay", "MobilyPay",

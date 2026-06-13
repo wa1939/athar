@@ -39,11 +39,13 @@ import com.athar.ingestion.smsparser.d360.D360InternationalTransferTemplate
 import com.athar.ingestion.smsparser.d360.D360LocalPurchaseTemplate
 import com.athar.ingestion.smsparser.d360.D360OnlinePurchaseTemplate
 import com.athar.ingestion.smsparser.genericbank.AlinmaTemplate
+import com.athar.ingestion.smsparser.genericbank.AlJaziraTemplate
 import com.athar.ingestion.smsparser.genericbank.AnbTemplate
 import com.athar.ingestion.smsparser.genericbank.BarqTemplate as GenericBarqTemplate
 import com.athar.ingestion.smsparser.genericbank.D360Template as GenericD360Template
 import com.athar.ingestion.smsparser.genericbank.RiyadBankTemplate
 import com.athar.ingestion.smsparser.genericbank.SnbTemplate
+import com.athar.ingestion.smsparser.genericbank.UrpayTemplate
 import com.athar.ingestion.smsparser.stcbank.StcBankIncomingTransferTemplate
 import com.athar.ingestion.smsparser.stcbank.StcBankOnlinePurchaseTemplate
 import com.athar.ingestion.smsparser.stcbank.StcBankOutgoingTransferTemplate
@@ -155,6 +157,8 @@ internal object IngestionModule {
         GenericBarqTemplate(),
         RiyadBankTemplate(),
         SnbTemplate(),
+        AlJaziraTemplate(),
+        UrpayTemplate(),
         AnbTemplate(),
 
         // Universal last-resort — but RESTRICTED to known bank senders only (the
