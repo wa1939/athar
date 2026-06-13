@@ -1,5 +1,11 @@
 package com.athar.feature.today
 
+import android.content.ContentResolver
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +30,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -39,11 +48,15 @@ import com.athar.core.designsystem.theme.AtharTheme
 import com.athar.core.designsystem.theme.MinTouchTarget
 import com.athar.core.domain.model.Category
 import com.athar.core.domain.model.CategoryKind
+import com.athar.core.domain.model.ReceiptAttachment
+import com.athar.core.domain.model.ReceiptAttachmentMeta
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRepository
+import com.athar.core.domain.repo.ReceiptAttachmentRepository
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -51,9 +64,11 @@ import kotlinx.coroutines.flow.update
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.math.BigDecimal
+import java.util.Locale
 import javax.inject.Inject
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * State for the edit-mode sheet. The original transaction is captured so we can detect
@@ -68,6 +83,10 @@ data class EditTransactionState(
     val selectedCategoryId: String?,
     val expenseCategories: ImmutableList<Category>,
     val incomeCategories: ImmutableList<Category>,
+    val receiptMeta: ReceiptAttachmentMeta?,
+    val receiptPreview: ReceiptAttachment?,
+    val isReceiptWorking: Boolean,
+    val receiptStatus: EditReceiptStatus?,
 ) {
     val categoriesForType: ImmutableList<Category>
         get() = when (type) {
@@ -80,9 +99,18 @@ data class EditTransactionState(
         get() = original.categoryId != selectedCategoryId
 }
 
+enum class EditReceiptStatus {
+    Exported,
+    Deleted,
+    ExportFailed,
+    DeleteFailed,
+    ViewFailed,
+}
+
 @HiltViewModel
 class EditTransactionViewModel @Inject constructor(
     private val categories: CategoryRepository,
+    private val receipts: ReceiptAttachmentRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<EditTransactionState?>(null)
@@ -109,8 +137,13 @@ class EditTransactionViewModel @Inject constructor(
             selectedCategoryId = tx.categoryId,
             expenseCategories = kotlinx.collections.immutable.persistentListOf(),
             incomeCategories = kotlinx.collections.immutable.persistentListOf(),
+            receiptMeta = null,
+            receiptPreview = null,
+            isReceiptWorking = false,
+            receiptStatus = null,
         )
         loadJob = viewModelScope.launch {
+            refreshReceiptMeta(tx.id, clearStatus = true)
             categories.observeAll().collect { all ->
                 val expense = all.filter { it.kind == CategoryKind.EXPENSE }.toImmutableList()
                 val income = all.filter { it.kind == CategoryKind.INCOME }.toImmutableList()
@@ -124,6 +157,122 @@ class EditTransactionViewModel @Inject constructor(
     fun setNotes(v: String) = _state.update { it?.copy(notes = v) }
     fun setType(t: TxType) = _state.update { it?.copy(type = t, selectedCategoryId = null) }
     fun selectCategory(id: String) = _state.update { it?.copy(selectedCategoryId = id) }
+
+    fun openReceiptViewer() {
+        val txId = _state.value?.original?.id ?: return
+        viewModelScope.launch {
+            _state.update { it?.copy(isReceiptWorking = true, receiptStatus = null) }
+            val result = runCatching {
+                receipts.getForTransaction(txId)
+            }
+            _state.update { state ->
+                if (state?.original?.id != txId) {
+                    state
+                } else {
+                    val receipt = result.getOrNull()
+                    if (receipt == null) {
+                        state.copy(isReceiptWorking = false, receiptStatus = EditReceiptStatus.ViewFailed)
+                    } else {
+                        state.copy(
+                            receiptMeta = receipt.toMeta(),
+                            receiptPreview = receipt,
+                            isReceiptWorking = false,
+                            receiptStatus = null,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun dismissReceiptViewer() {
+        _state.update { it?.copy(receiptPreview = null) }
+    }
+
+    fun exportReceipt(resolver: ContentResolver, uri: Uri) {
+        val txId = _state.value?.original?.id ?: return
+        viewModelScope.launch {
+            _state.update { it?.copy(isReceiptWorking = true, receiptStatus = null) }
+            val result = runCatching {
+                withContext(Dispatchers.IO) {
+                    val receipt = receipts.getForTransaction(txId) ?: error("Receipt missing")
+                    resolver.openOutputStream(uri)?.use { out ->
+                        out.write(receipt.payload)
+                    } ?: error("Receipt destination unavailable")
+                    receipt
+                }
+            }
+            _state.update { state ->
+                if (state?.original?.id != txId) {
+                    state
+                } else {
+                    result.fold(
+                        onSuccess = { receipt ->
+                            state.copy(
+                                receiptMeta = receipt.toMeta(),
+                                isReceiptWorking = false,
+                                receiptStatus = EditReceiptStatus.Exported,
+                            )
+                        },
+                        onFailure = {
+                            state.copy(
+                                isReceiptWorking = false,
+                                receiptStatus = EditReceiptStatus.ExportFailed,
+                            )
+                        },
+                    )
+                }
+            }
+        }
+    }
+
+    fun deleteReceipt() {
+        val txId = _state.value?.original?.id ?: return
+        viewModelScope.launch {
+            _state.update { it?.copy(isReceiptWorking = true, receiptStatus = null) }
+            val result = runCatching {
+                receipts.deleteForTransaction(txId)
+            }
+            _state.update { state ->
+                if (state?.original?.id != txId) {
+                    state
+                } else if (result.isSuccess) {
+                    state.copy(
+                        receiptMeta = null,
+                        receiptPreview = null,
+                        isReceiptWorking = false,
+                        receiptStatus = EditReceiptStatus.Deleted,
+                    )
+                } else {
+                    state.copy(
+                        isReceiptWorking = false,
+                        receiptStatus = EditReceiptStatus.DeleteFailed,
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearReceiptStatus() {
+        _state.update { it?.copy(receiptStatus = null) }
+    }
+
+    private suspend fun refreshReceiptMeta(transactionId: String, clearStatus: Boolean) {
+        val meta = runCatching {
+            receipts.metadataForTransaction(transactionId)
+        }.getOrNull()
+        _state.update { state ->
+            if (state?.original?.id == transactionId) {
+                state.copy(
+                    receiptMeta = meta,
+                    receiptPreview = if (meta == null) null else state.receiptPreview,
+                    receiptStatus = if (clearStatus) null else state.receiptStatus,
+                )
+            } else {
+                state
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -135,9 +284,13 @@ fun EditTransactionSheet(
     onDelete: (String) -> Unit,
     viewModel: EditTransactionViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val theme = AtharTheme
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var pendingLearn by remember { mutableStateOf<EditTransactionState?>(null) }
+    val receiptExportLauncher = rememberLauncherForActivityResult(CreateDocument("image/*")) { uri ->
+        uri?.let { viewModel.exportReceipt(context.contentResolver, it) }
+    }
 
     LaunchedEffect(transaction.id) { viewModel.load(transaction) }
 
@@ -208,6 +361,18 @@ fun EditTransactionSheet(
                 singleLine = false,
             )
 
+            EditReceiptRow(
+                meta = s.receiptMeta,
+                isWorking = s.isReceiptWorking,
+                status = s.receiptStatus,
+                onView = viewModel::openReceiptViewer,
+                onExport = {
+                    s.receiptMeta?.let { receiptExportLauncher.launch(receiptExportFileName(it)) }
+                },
+                onDelete = viewModel::deleteReceipt,
+                onClearStatus = viewModel::clearReceiptStatus,
+            )
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
@@ -264,6 +429,16 @@ fun EditTransactionSheet(
             containerColor = theme.colors.parchment,
         )
     }
+
+    s.receiptPreview?.let { receipt ->
+        ReceiptPreviewDialog(
+            receipt = receipt,
+            onDismiss = viewModel::dismissReceiptViewer,
+            onExport = {
+                receiptExportLauncher.launch(receiptExportFileName(receipt.toMeta()))
+            },
+        )
+    }
 }
 
 private fun commit(
@@ -281,6 +456,172 @@ private fun commit(
         categoryId = s.selectedCategoryId,
     )
     onSave(updated, learnRule)
+}
+
+@Composable
+private fun EditReceiptRow(
+    meta: ReceiptAttachmentMeta?,
+    isWorking: Boolean,
+    status: EditReceiptStatus?,
+    onView: () -> Unit,
+    onExport: () -> Unit,
+    onDelete: () -> Unit,
+    onClearStatus: () -> Unit,
+) {
+    val theme = AtharTheme
+    Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+        AtharText(
+            text = stringResource(R.string.add_tx_receipt_title),
+            style = theme.typography.caption,
+            color = theme.colors.muted,
+        )
+        val statusText = when {
+            isWorking -> stringResource(R.string.add_tx_receipt_loading)
+            meta != null -> stringResource(
+                R.string.add_tx_receipt_attached,
+                meta.originalName ?: receiptExportFileName(meta),
+                formatReceiptSize(meta.sizeBytes),
+            )
+            else -> stringResource(R.string.edit_tx_receipt_missing)
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = MinTouchTarget)
+                .clip(RoundedCornerShape(theme.spacing.s))
+                .background(theme.colors.surface)
+                .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            AtharText(
+                text = statusText,
+                style = theme.typography.caption,
+                color = if (meta == null) theme.colors.muted else theme.colors.ink,
+                maxLines = 1,
+            )
+        }
+        if (meta != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+            ) {
+                ReceiptActionButton(
+                    text = stringResource(R.string.edit_tx_receipt_view),
+                    enabled = !isWorking,
+                    onClick = onView,
+                    modifier = Modifier.weight(1f),
+                )
+                ReceiptActionButton(
+                    text = stringResource(R.string.edit_tx_receipt_export),
+                    enabled = !isWorking,
+                    onClick = onExport,
+                    modifier = Modifier.weight(1f),
+                )
+                ReceiptActionButton(
+                    text = stringResource(R.string.add_tx_receipt_remove),
+                    enabled = !isWorking,
+                    onClick = onDelete,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        val message = when (status) {
+            EditReceiptStatus.Exported -> stringResource(R.string.edit_tx_receipt_exported)
+            EditReceiptStatus.Deleted -> stringResource(R.string.edit_tx_receipt_deleted)
+            EditReceiptStatus.ExportFailed -> stringResource(R.string.edit_tx_receipt_export_failed)
+            EditReceiptStatus.DeleteFailed -> stringResource(R.string.edit_tx_receipt_delete_failed)
+            EditReceiptStatus.ViewFailed -> stringResource(R.string.edit_tx_receipt_view_failed)
+            null -> null
+        }
+        message?.let {
+            AtharText(
+                text = it,
+                style = theme.typography.caption,
+                color = when (status) {
+                    EditReceiptStatus.Exported,
+                    EditReceiptStatus.Deleted -> theme.colors.olive
+                    else -> theme.colors.crimson
+                },
+                modifier = Modifier.clickable(onClick = onClearStatus),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReceiptPreviewDialog(
+    receipt: ReceiptAttachment,
+    onDismiss: () -> Unit,
+    onExport: () -> Unit,
+) {
+    val theme = AtharTheme
+    val image = remember(receipt.id, receipt.sizeBytes) {
+        BitmapFactory.decodeByteArray(receipt.payload, 0, receipt.payload.size)?.asImageBitmap()
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            AtharText(
+                text = receipt.originalName ?: stringResource(R.string.edit_tx_receipt_preview_title),
+                style = theme.typography.headline,
+            )
+        },
+        text = {
+            if (image == null) {
+                AtharText(
+                    text = stringResource(R.string.edit_tx_receipt_preview_error),
+                    style = theme.typography.body,
+                    color = theme.colors.muted,
+                )
+            } else {
+                Image(
+                    bitmap = image,
+                    contentDescription = stringResource(R.string.edit_tx_receipt_preview_title),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 160.dp, max = 420.dp),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onExport) {
+                AtharText(text = stringResource(R.string.edit_tx_receipt_export), color = theme.colors.ember)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                AtharText(text = stringResource(R.string.edit_tx_receipt_close), color = theme.colors.muted)
+            }
+        },
+        containerColor = theme.colors.parchment,
+    )
+}
+
+@Composable
+private fun ReceiptActionButton(
+    text: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val theme = AtharTheme
+    Box(
+        modifier = modifier
+            .heightIn(min = MinTouchTarget)
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(if (enabled) theme.colors.ink else theme.colors.surface)
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = theme.spacing.s, vertical = theme.spacing.s),
+        contentAlignment = Alignment.Center,
+    ) {
+        AtharText(
+            text = text,
+            style = theme.typography.caption,
+            color = if (enabled) theme.colors.parchment else theme.colors.muted,
+            maxLines = 1,
+        )
+    }
 }
 
 @Composable
@@ -305,3 +646,43 @@ private fun SheetButton(
     }
 }
 
+internal fun receiptExportFileName(meta: ReceiptAttachmentMeta): String {
+    val extension = receiptExtension(meta.mimeType)
+    val base = meta.originalName
+        ?.trim()
+        ?.substringAfterLast('/')
+        ?.substringAfterLast('\\')
+        ?.takeIf { it.isNotBlank() }
+        ?: "athar-receipt-${meta.transactionId.take(8)}.$extension"
+    val withoutUnsafeChars = base.replace(Regex("""[\\/:*?"<>|]"""), "_")
+    return if (withoutUnsafeChars.substringAfterLast('.', missingDelimiterValue = "").isBlank()) {
+        "$withoutUnsafeChars.$extension"
+    } else {
+        withoutUnsafeChars
+    }
+}
+
+private fun receiptExtension(mimeType: String): String = when (mimeType.lowercase(Locale.US)) {
+    "image/jpeg",
+    "image/jpg",
+    -> "jpg"
+    "image/png" -> "png"
+    "image/webp" -> "webp"
+    else -> "img"
+}
+
+private fun formatReceiptSize(bytes: Long): String =
+    if (bytes >= 1024 * 1024) {
+        String.format(Locale.getDefault(), "%.1f MB", bytes / 1024f / 1024f)
+    } else {
+        "${((bytes + 1023) / 1024).coerceAtLeast(1)} KB"
+    }
+
+private fun ReceiptAttachment.toMeta(): ReceiptAttachmentMeta = ReceiptAttachmentMeta(
+    id = id,
+    transactionId = transactionId,
+    mimeType = mimeType,
+    originalName = originalName,
+    sizeBytes = sizeBytes,
+    createdAt = createdAt,
+)

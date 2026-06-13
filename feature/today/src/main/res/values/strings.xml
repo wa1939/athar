@@ -128,5 +128,16 @@
     <string name="edit_tx_learn_message" formatted="true">هل تريد أن يصنّف أثر دائمًا «%1$s» كـ«%2$s»؟</string>
     <string name="edit_tx_learn_always">دائمًا</string>
     <string name="edit_tx_learn_once">هذه المرة فقط</string>
+    <string name="edit_tx_receipt_missing">لا يوجد إيصال محفوظ لهذه الحركة</string>
+    <string name="edit_tx_receipt_view">عرض</string>
+    <string name="edit_tx_receipt_export">تصدير</string>
+    <string name="edit_tx_receipt_exported">تم حفظ نسخة من الإيصال</string>
+    <string name="edit_tx_receipt_deleted">تمت إزالة الإيصال</string>
+    <string name="edit_tx_receipt_export_failed">تعذر تصدير الإيصال</string>
+    <string name="edit_tx_receipt_delete_failed">تعذرت إزالة الإيصال</string>
+    <string name="edit_tx_receipt_view_failed">تعذر فتح الإيصال</string>
+    <string name="edit_tx_receipt_preview_title">معاينة الإيصال</string>
+    <string name="edit_tx_receipt_preview_error">تعذرت معاينة الصورة، ويمكنك تصديرها كملف.</string>
+    <string name="edit_tx_receipt_close">إغلاق</string>
 
 </resources>

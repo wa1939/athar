@@ -127,5 +127,16 @@
     <string name="edit_tx_learn_message" formatted="true">Always categorize "%1$s" as "%2$s"?</string>
     <string name="edit_tx_learn_always">Always</string>
     <string name="edit_tx_learn_once">Just this once</string>
+    <string name="edit_tx_receipt_missing">No saved receipt for this transaction</string>
+    <string name="edit_tx_receipt_view">View</string>
+    <string name="edit_tx_receipt_export">Export</string>
+    <string name="edit_tx_receipt_exported">Receipt copy saved</string>
+    <string name="edit_tx_receipt_deleted">Receipt removed</string>
+    <string name="edit_tx_receipt_export_failed">Could not export receipt</string>
+    <string name="edit_tx_receipt_delete_failed">Could not remove receipt</string>
+    <string name="edit_tx_receipt_view_failed">Could not open receipt</string>
+    <string name="edit_tx_receipt_preview_title">Receipt preview</string>
+    <string name="edit_tx_receipt_preview_error">Could not preview the image. You can still export it as a file.</string>
+    <string name="edit_tx_receipt_close">Close</string>
 
 </resources>

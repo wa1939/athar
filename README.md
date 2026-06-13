@@ -60,7 +60,7 @@ Other tools force a trade-off:
 - ✅ **Ember attention banner** when pending > 0 — "%d transactions awaiting review · Tap to review →" — impossible to miss above the net-flow number. Dust-color secondary banner appears below it when today had any auto-dismissed transactions, so parser false-negatives never go unnoticed.
 - ✅ **Fail-safe ingestion (beta.15):** SMS that parse as transactions are NEVER auto-dismissed; if the categorizer is uncertain, the transaction lands in PENDING for explicit user review. Money never silently disappears. See `docs/adr/ADR-008-ingestion-fail-safe.md` for rationale.
 - ✅ Auto-confirm transactions when category is already known (CategoryRule match); user fixes are recorded as new rules so the same merchant auto-confirms next time
-- ✅ FAB to add a manual transaction in seconds, with recent-merchant quick-add chips, quick phrase/voice fill, and one local encrypted receipt attachment
+- ✅ FAB to add a manual transaction in seconds, with recent-merchant quick-add chips, quick phrase/voice fill, and one local encrypted receipt attachment that can be viewed/exported later from the edit sheet
 
 #### Trends (النمط) — TMOAP-depth analysis
 - ✅ Period selector: **month · 3 months · year · period-vs-prior · custom range**
@@ -323,6 +323,7 @@ maestro test .maestro/flows/                     # 10 E2E flows
 - ✅ The scoped `dev/global-notification-phrases` branch passes `:ingestion:sms-parser:test`, `:ingestion:notification-listener:test`, and the full JVM test/build/lint stack after adding merchant-first charge/card-transaction notification parsing, broader ISO currency preservation, scheduled-payment ignores, and more global finance package coverage. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`.
 - ✅ The scoped `dev/manual-entry-voice-phrase` branch passes `:feature:today:testDebugUnitTest`, `:feature:today:compileDebugKotlin`, and the full JVM test/build/lint stack after adding typed/voice quick-entry fill to Add Transaction. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`.
 - ✅ The scoped `dev/manual-entry-receipts` branch passes focused `:core:domain:test`, `:core:data:testDebugUnitTest`, `:core:data:compileDebugKotlin`, `:feature:today:testDebugUnitTest`, `:feature:today:compileDebugKotlin`, and the full JVM test/build/lint stack after adding encrypted manual receipt attachments.
+- ✅ The scoped `dev/receipt-view-export` branch passes `:feature:today:test` and the full JVM test/build/lint stack after adding edit-sheet receipt view/export/remove. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`; runtime tap-through remains blocked because `adb devices -l` returned no attached devices.
 - ⏳ Device E2E, screenshot UI audit, and notification tap-through still need a physical Android device or a working accelerated emulator. On 2026-06-13 the local AVD could not boot because firmware virtualization was disabled, and `adb devices -l` still returned no attached devices during this branch validation.
 
 ### In flight / remaining
@@ -331,7 +332,7 @@ maestro test .maestro/flows/                     # 10 E2E flows
 |---|---|---|---|---|
 | QA-01 | Runtime E2E + UI audit | ⏳ | 0.5–1 day | Needs physical Android device or accelerated emulator |
 | G-7 | Bill reminders | ✅ | — | Bills calendar + opt-in reminders shipped; runtime notification QA remains under QA-01 |
-| G-8 | Manual transaction UX upgrades | ✅ | 1.5 days | ✅ Recent-merchant autocomplete + quick-add chips · ✅ quick phrase/voice fill · ✅ local encrypted receipt attachment |
+| G-8 | Manual transaction UX upgrades | ✅ | 1.5 days | ✅ Recent-merchant autocomplete + quick-add chips · ✅ quick phrase/voice fill · ✅ local encrypted receipt attachment · ✅ receipt view/export/remove from edit sheet |
 | G-10 | Savings-rate goals + emergency fund | ✅ | — | Plan → Goals tab plus Today Goals check shipped; device visual QA remains under QA-01 |
 | G-11 | Broader notification handlers | ◐ | 3 days | Generic parser, wallet/card phrases, peer-payment/global-currency handlers, localized comma-decimal amount parsing, bank-specific card-charge/debit-card merchant extraction, merchant-first charge/card-transaction parsing, scheduled-payment ignores, and broader package coverage shipped; more real bank copy remains |
 | G-12 | Bank statement / CSV / OFX / QFX / MT940 import wizard | ◐ | 3 days | CSV/TSV delimiter + header auto-detect, debit/credit indicator support, duplicate-safe preview/confirm, OFX/QFX, MT940, and destination-account selection shipped; manual mapping and richer row editing still planned |
