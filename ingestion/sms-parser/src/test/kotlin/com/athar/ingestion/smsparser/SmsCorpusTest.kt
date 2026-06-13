@@ -14,6 +14,7 @@ import com.athar.ingestion.smsparser.alrajhi.AlRajhiDepositRealTemplate
 import com.athar.ingestion.smsparser.alrajhi.AlRajhiLoanInstalmentTemplate
 import com.athar.ingestion.smsparser.alrajhi.AlRajhiOnlinePurchaseRealTemplate
 import com.athar.ingestion.smsparser.alrajhi.AlRajhiPosPurchaseRealTemplate
+import com.athar.ingestion.smsparser.alrajhi.AlRajhiPosPurchaseTemplate
 import com.athar.ingestion.smsparser.alrajhi.AlRajhiReverseTemplate
 import com.athar.ingestion.smsparser.alrajhi.AlRajhiTransferBetweenOwnTemplate
 import com.athar.ingestion.smsparser.barq.BarqAtmWithdrawalTemplate
@@ -69,6 +70,7 @@ class SmsCorpusTest {
             AlRajhiDebitInternalTransferTemplate(),
             AlRajhiTransferBetweenOwnTemplate(),
             AlRajhiDepositRealTemplate(),
+            AlRajhiPosPurchaseTemplate(),
             StcBankIncomingTransferTemplate(),
             StcBankOutgoingTransferTemplate(),
             StcBankSarieOutwardTemplate(),
@@ -268,6 +270,51 @@ class SmsCorpusTest {
         """.trimIndent()
         val r = parser().parse(event("AlRajhiBank", body))
         assertThat(r).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `AlRajhi Arabic labeled purchase captures merchant`() {
+        val body = """
+            شراء عبر نقاط البيع
+            بطاقة:1234
+            لدى: STARBUCKS RIYADH
+            مبلغ:56.35 SAR
+            رصيد:2270.94 SAR
+            في:27/12/25 23:04
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.EXPENSE)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("56.35"))
+        assertThat(r.merchant).isEqualTo("STARBUCKS RIYADH")
+        assertThat(r.templateId).isEqualTo("al-rajhi-pos-purchase")
+    }
+
+    @Test fun `AlRajhi Arabic temporary code with amount is Ignored`() {
+        val body = """
+            رمز مؤقت
+            لـ: عملية دفع
+            المبلغ: 100 SAR
+        """.trimIndent()
+        assertThat(parser().parse(event("AlRajhiBank", body))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `AlRajhi Arabic card statement notice is Ignored`() {
+        val body = """
+            بطاقة ائتمانية
+            البطاقة:1234
+            إجمالي المبلغ المستحق: 2500 SAR
+            المبلغ الأدنى المستحق: 125 SAR
+            كما يمكنك سداد مستحقات البطاقة عبر التطبيق.
+        """.trimIndent()
+        assertThat(parser().parse(event("AlRajhiBank", body))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `digital wallet provisioning and loyalty expiry notices are Ignored`() {
+        assertThat(
+            parser().parse(event("AlRajhiBank", "Apple Pay , الرجاء الموافقة على الطلب من خلال التطبيق")),
+        ).isEqualTo(ParseResult.Ignored)
+        assertThat(
+            parser().parse(event("AlRajhiBank", "برنامج مكافآتي 2486 نقطة سينتهي خلال 30 يوم")),
+        ).isEqualTo(ParseResult.Ignored)
     }
 
     // ─── STC Bank ──────────────────────────────────────────────────────────

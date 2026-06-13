@@ -46,7 +46,7 @@ class UniversalAmountTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val transferWords = Regex(
-        """\b(?:transfer|sent|outgoing|remit|تحويل|إرسال|envío|virement|havale|بھیج)\b""",
+        """\b(?:transfer|sent|outgoing|remit|تحويل|حوالة|إرسال|envío|virement|havale|بھیج)\b""",
         RegexOption.IGNORE_CASE,
     )
     private val ignoreWords = Regex(
@@ -54,7 +54,7 @@ class UniversalAmountTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val merchantHint = Regex(
-        """(?:at|from|to|لدى|من|إلى|الى|de|à|en|chez)\s+([A-Za-z\u0600-\u06FF][^\n\r]{1,40})""",
+        """(?:at|from|to|لدى|من|إلى|الى|لـ|الجهة|الخدمة|مكان\s+السحب|مفوتر|على|de|à|en|chez)\s*[:\s]\s*([A-Za-z\u0600-\u06FF][^\n\r]{1,40})""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
 

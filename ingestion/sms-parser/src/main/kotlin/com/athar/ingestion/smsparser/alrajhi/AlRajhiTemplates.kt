@@ -164,7 +164,10 @@ class AlRajhiPosPurchaseTemplate : BankTemplate {
     override val senderMatcher: SenderMatcher = AL_RAJHI_SENDERS
 
     private val markerEn = Regex("""(?:PoS|POS)\s+(?:purchase|Purchase)""")
-    private val markerAr = Regex("""(?:نقاط\s+بيع|شراء\s+نقطة\s+بيع)""")
+    private val markerAr = Regex(
+        """(?:^|\n)\s*(?:شراء|شراء\s+عبر\s+نقاط\s+البيع|شراء\s+دولي|شراء\s+إنترنت|شراء\s+انترنت|نقاط\s+بيع|شراء\s+نقطة\s+بيع)\s*(?:\n|$)""",
+        RegexOption.IGNORE_CASE,
+    )
     private val amount = Regex("""(?:Amount|المبلغ|مبلغ)\s*[:\s]\s*(?:SAR\s+)?([\d.,]+)(?:\s*SAR|\s*ر\.?\s*س)?""", RegexOption.IGNORE_CASE)
     private val merchant = Regex("""(?:At|لدى|من)\s*[:\s]\s*([^\n\r]+?)(?:\n|$)""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
     private val card = Regex("""(?:Card|البطاقة)\s*[:\s]\s*(\d{3,4})""", RegexOption.IGNORE_CASE)
@@ -210,8 +213,14 @@ class AlRajhiInternalTransferTemplate : BankTemplate {
     override val id: String = "al-rajhi-internal-transfer"
     override val senderMatcher: SenderMatcher = AL_RAJHI_SENDERS
 
-    private val debitMarker = Regex("""(?:Debit|Outgoing).{0,40}(?:Transfer|Wire|تحويل\s+صادر)""", RegexOption.IGNORE_CASE)
-    private val creditMarker = Regex("""(?:Credit|Incoming).{0,40}(?:Transfer|Wire|تحويل\s+وارد)""", RegexOption.IGNORE_CASE)
+    private val debitMarker = Regex(
+        """(?:Debit|Outgoing).{0,40}(?:Transfer|Wire)|تحويل\s+صادر|حوالة\s+(?:صادرة|داخلية\s+صادرة|محلية\s+صادرة)|حوالة\s+(?:داخلية|محلية)(?!\s+واردة)""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val creditMarker = Regex(
+        """(?:Credit|Incoming).{0,40}(?:Transfer|Wire)|تحويل\s+وارد|حوالة\s+(?:واردة|داخلية\s+واردة|محلية\s+واردة)""",
+        RegexOption.IGNORE_CASE,
+    )
     private val amount = Regex("""(?:Amount|المبلغ|مبلغ)\s*[:\s]\s*(?:SR\s+|SAR\s+)?([\d.,]+)(?:\s*SAR|\s*ر\.?\s*س)?""", RegexOption.IGNORE_CASE)
     private val toField = Regex("""(?:To|الى|إلى|لـ)\s*[:\s]\s*([^\n\r]+?)(?:\n|$)""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
     private val fromField = Regex("""(?:From|من)\s*[:\s]\s*([^\n\r]+?)(?:\n|$)""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
@@ -257,6 +266,13 @@ class AlRajhiGenericAmountTemplate : BankTemplate {
 
     private val amount = Regex("""(?:Amount|المبلغ|مبلغ)\s*[:\s]\s*(?:SAR\s+|SR\s+)?([\d.,]+)(?:\s*SAR|\s*SR|\s*ر\.?\s*س)?""", RegexOption.IGNORE_CASE)
     private val isIncome = Regex("""(?:Credit|Deposit|ايداع|إيداع|وارد)""", RegexOption.IGNORE_CASE)
+    private val isTransfer = Regex("""(?:Transfer|Wire|تحويل|حوالة)""", RegexOption.IGNORE_CASE)
+    private val party = Regex(
+        """(?:At|Merchant|Biller|Service|لدى|الجهة|الخدمة|مكان\s+السحب|مفوتر)\s*[:\s]\s*([^\n\r]+?)(?:\n|$)""",
+        setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
+    )
+    private val toField = Regex("""(?:To|الى|إلى|لـ)\s*[:\s]\s*([^\n\r]+?)(?:\n|$)""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
+    private val fromField = Regex("""(?:From|من)\s*[:\s]\s*([^\n\r]+?)(?:\n|$)""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
 
     override fun tryParse(body: String, receivedAt: Instant): ParseResult {
         val normalized = Normalize.digits(body)
@@ -265,15 +281,25 @@ class AlRajhiGenericAmountTemplate : BankTemplate {
         val parsedAmount = runCatching { BigDecimal(amountRaw.replace(",", "")) }.getOrNull()
             ?: return ParseResult.Failed("amount unparseable", listOf(id))
 
-        val type = if (isIncome.containsMatchIn(normalized)) TxType.INCOME else TxType.EXPENSE
+        val type = when {
+            isIncome.containsMatchIn(normalized) -> TxType.INCOME
+            isTransfer.containsMatchIn(normalized) -> TxType.TRANSFER
+            else -> TxType.EXPENSE
+        }
+        val merchant = party.find(normalized)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }
+        val counterparty = when (type) {
+            TxType.INCOME -> fromField.find(normalized)?.groupValues?.get(1)?.trim()
+            TxType.TRANSFER -> toField.find(normalized)?.groupValues?.get(1)?.trim()
+            TxType.EXPENSE -> merchant
+        }
         return ParseResult.Success(
             type = type,
             amount = Money.of(parsedAmount),
-            merchant = null,
-            counterparty = null,
+            merchant = merchant.takeIf { type == TxType.EXPENSE },
+            counterparty = counterparty.takeUnless { type == TxType.EXPENSE },
             balanceAfter = null,
             occurredAt = receivedAt,
-            confidence = 0.5f,  // low — user must confirm
+            confidence = if (merchant != null || counterparty != null) 0.6f else 0.5f,  // low — user must confirm
             templateId = id,
         )
     }

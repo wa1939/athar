@@ -102,6 +102,40 @@ class AlRajhiRealFormatTest {
     }
 
     @Test
+    fun `parses Arabic labeled internal transfer as transfer`() {
+        val body = """
+            حوالة داخلية
+            من:0930
+            مبلغ:1350 SAR
+            الى:RAGHAD ALGHAMDI
+            في:27/12/25 23:04
+        """.trimIndent()
+
+        val result = parser.parse(event(body)) as ParseResult.Success
+        assertThat(result.type).isEqualTo(TxType.TRANSFER)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("1350"))
+        assertThat(result.counterparty).isEqualTo("RAGHAD ALGHAMDI")
+        assertThat(result.templateId).isEqualTo("al-rajhi-internal-transfer")
+    }
+
+    @Test
+    fun `parses Arabic labeled incoming transfer as income`() {
+        val body = """
+            حوالة داخلية واردة
+            مبلغ:500 SAR
+            من:RAGHAD ALGHAMDI
+            الى:0930
+            في:27/12/25 23:04
+        """.trimIndent()
+
+        val result = parser.parse(event(body)) as ParseResult.Success
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("500"))
+        assertThat(result.counterparty).isEqualTo("RAGHAD ALGHAMDI")
+        assertThat(result.templateId).isEqualTo("al-rajhi-internal-transfer")
+    }
+
+    @Test
     fun `generic-amount fallback catches unrecognized formats with Amount label`() {
         val body = """
             ATM Withdrawal
@@ -114,6 +148,25 @@ class AlRajhiRealFormatTest {
         assertThat(result.amount.amount).isEqualTo(BigDecimal("500"))
         assertThat(result.templateId).isEqualTo("al-rajhi-generic-amount")
         assertThat(result.confidence).isLessThan(0.7f)  // low — user must confirm
+    }
+
+    @Test
+    fun `generic-amount fallback preserves Arabic biller label`() {
+        val body = """
+            مدفوعات وزارة الداخلية
+            من:0930
+            مبلغ:500 SAR
+            الجهة: المخالفات المرورية
+            الخدمة: الاستعلام عن المخالفات
+            في:27/12/25 23:04
+        """.trimIndent()
+
+        val result = parser.parse(event(body)) as ParseResult.Success
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("500"))
+        assertThat(result.merchant).isEqualTo("المخالفات المرورية")
+        assertThat(result.templateId).isEqualTo("al-rajhi-generic-amount")
+        assertThat(result.confidence).isLessThan(0.7f)
     }
 
     @Test

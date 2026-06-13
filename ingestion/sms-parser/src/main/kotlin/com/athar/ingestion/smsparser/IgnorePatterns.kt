@@ -30,6 +30,7 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""لا\s+تشاركه"""),
         Regex("""كلمة\s+مرور\s+مؤقتة"""),
         Regex("""كلمة\s+مرور\s+صالحة\s+لمرة\s+واحدة"""),
+        Regex("""رمز\s+مؤقت"""),
 
         // Beneficiary management
         Regex("""\bBeneficiary\s*:\s*[^\n\r]+?\s+has\s+been\s+(?:added|activated|deleted|removed)""", RegexOption.IGNORE_CASE),
@@ -49,8 +50,12 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""\bcomplete\s+the\s+card\s+activation""", RegexOption.IGNORE_CASE),
         Regex("""\bThank\s+you\s+for\s+activating\s+your\s+card""", RegexOption.IGNORE_CASE),
         Regex("""\bcard\s+renewal\b""", RegexOption.IGNORE_CASE),
+        Regex("""(?:apple|mada)\s*pay[^\n\r]{0,120}(?:following\s+your\s+request|الموافقة|بناءً\s+على\s+طلبك)""", RegexOption.IGNORE_CASE),
+        Regex("""تطبيق\s*(?:apple|mada)\s*pay[^\n\r]{0,120}طلبك""", RegexOption.IGNORE_CASE),
         Regex("""الموافقة\s+على\s+طلبكم[^\n\r]{0,80}منتج\s+بطاقة\s+الائتمان"""),
         Regex("""سندات\s+الأمر[^\n\r]{0,120}البطاقات\s+الائتمانية"""),
+        Regex("""بطاقة\s+ائتمانية[\s\S]{0,240}(?:إجمالي\s+المبلغ\s+المستحق|المبلغ\s+الأدنى\s+المستحق)"""),
+        Regex("""كشف\s+حسابكم\s+الشهري"""),
         Regex("""تحديث\s+شروط\s+استبدال\s+البطاقة"""),
         Regex("""البطاقة\s+البلاستيكية\s+التالفة\s+أو\s+المفقودة"""),
         Regex("""عملية\s+مرفوضة[^\n\r]{0,80}بطاقتك\s+غير\s+مفعلة"""),
@@ -98,6 +103,7 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""جوائز|جائزة|مسابقة|اربح|اكسب"""),
         Regex("""فرصة\s+الفوز|سجّل\s+الآن|سجل\s+الآن"""),
         Regex("""نقاط\s+مكافأة|نقطة\s+مكافأة"""),
+        Regex("""برنامج\s+مكافآتي[^\n\r]{0,80}نقط[^\n\r]{0,80}سينتهي"""),
         Regex("""تطبق\s+الشروط"""),
         Regex("""تقسيط|التقسيط"""),
         Regex("""موافقة\s+فورية"""),
