@@ -114,6 +114,56 @@ class CsvImporterTest {
         assertThat(transactions.upserts.map { it.sourceRefId }).containsExactly("ofx-fit-1", "ofx-fit-2").inOrder()
     }
 
+    @Test
+    fun `preview reports mt940 transactions without committing`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(emptyList()),
+            clock = FixedClock,
+        )
+
+        val result = importer.preview(ByteArrayInputStream(statementMt940.toByteArray()))
+
+        val preview = (result as CsvImportPreviewResult.Done).preview
+        assertThat(preview.importable).isEqualTo(2)
+        assertThat(preview.skipped).isEqualTo(1)
+        assertThat(preview.columns.date).isEqualTo("MT940 :61: date")
+        assertThat(preview.columns.merchant).isEqualTo("MT940 :86:")
+        assertThat(preview.columns.amount).isEqualTo("MT940 :61: amount")
+        assertThat(preview.sampleRows.map { it.rowNumber }).containsExactly(1, 2).inOrder()
+        assertThat(preview.sampleRows.first().date).isEqualTo("2026-06-01")
+        assertThat(preview.sampleRows.first().merchant).isEqualTo("Starbucks")
+        assertThat(preview.sampleRows.first().amount).isEqualTo("18.50")
+        assertThat(preview.sampleRows.first().currency).isEqualTo("USD")
+        assertThat(preview.sampleRows.first().type).isEqualTo(TxType.EXPENSE)
+        assertThat(preview.sampleRows[1].type).isEqualTo(TxType.INCOME)
+        assertThat(preview.skippedRows.single().rowNumber).isEqualTo(3)
+        assertThat(transactions.upserts).isEmpty()
+    }
+
+    @Test
+    fun `import commits mt940 transactions through same preview path`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(emptyList()),
+            clock = FixedClock,
+        )
+
+        val result = importer.import(ByteArrayInputStream(statementMt940.toByteArray()))
+
+        assertThat(result).isEqualTo(CsvImportResult.Done(imported = 2, skipped = 1))
+        assertThat(transactions.upserts).hasSize(2)
+        assertThat(transactions.upserts.map { it.merchant }).containsExactly("Starbucks", "Acme Payroll").inOrder()
+        assertThat(transactions.upserts.map { it.type }).containsExactly(TxType.EXPENSE, TxType.INCOME).inOrder()
+        assertThat(transactions.upserts.map { it.amount.amount })
+            .containsExactly(BigDecimal("18.50"), BigDecimal("1000.00"))
+            .inOrder()
+        assertThat(transactions.upserts.map { it.amount.currency }).containsExactly("USD", "USD").inOrder()
+        assertThat(transactions.upserts.map { it.sourceRefId }).containsExactly("mt940-mt1", "mt940-mt2").inOrder()
+    }
+
     private class FakeTransactionRepository : TransactionRepository {
         val upserts = mutableListOf<Transaction>()
 
@@ -189,6 +239,20 @@ class CsvImporterTest {
             </STMTTRNRS>
             </BANKMSGSRSV1>
             </OFX>
+        """.trimIndent()
+
+        val statementMt940 = """
+            :20:STARTUMSE
+            :25:123456789
+            :28C:00001/001
+            :60F:C260531USD1000,00
+            :61:2606010601D18,50NMSCNONREF//mt1
+            :86:Starbucks
+            :61:2606020602C1000,00NTRFNONREF//mt2
+            :86:Acme Payroll
+            :61:2606030603D9,00NMSCNONREF//mt3
+            :62F:C260602USD1981,50
+            -}
         """.trimIndent()
 
         fun coffeeCategory(): Category = Category(

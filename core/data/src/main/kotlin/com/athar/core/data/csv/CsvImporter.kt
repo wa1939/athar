@@ -45,7 +45,7 @@ internal class CsvImporter @Inject constructor(
         }
 
         plan.transactions.forEach { transactions.upsert(it.transaction) }
-        Timber.i("CSV import: imported=%d skipped=%d", plan.transactions.size, plan.skippedRows.size)
+        Timber.i("Statement import: imported=%d skipped=%d", plan.transactions.size, plan.skippedRows.size)
         return CsvImportResult.Done(imported = plan.transactions.size, skipped = plan.skippedRows.size)
     }
 
@@ -57,6 +57,10 @@ internal class CsvImporter @Inject constructor(
 
         if (StatementOfxMapper.looksLikeOfx(text)) {
             return buildOfxPlan(text)
+        }
+
+        if (StatementMt940Mapper.looksLikeMt940(text)) {
+            return buildMt940Plan(text)
         }
 
         val header = parseRow(lines[0])
@@ -158,6 +162,63 @@ internal class CsvImporter @Inject constructor(
                     category = null,
                     type = "OFX TRNTYPE",
                     notes = "OFX MEMO/FITID",
+                ),
+                transactions = transactions,
+                skippedRows = skippedRows,
+            ),
+        )
+    }
+
+    private suspend fun buildMt940Plan(text: String): CsvPlanResult {
+        val parsed = when (val result = StatementMt940Mapper.parse(text)) {
+            is StatementMt940ParseResult.Done -> result
+            is StatementMt940ParseResult.Failed -> return CsvPlanResult.Failed(result.reason)
+        }
+
+        val now = clock.now()
+        val transactions = parsed.rows.map { row ->
+            CsvPlanTransaction(
+                rowNumber = row.rowNumber,
+                transaction = Transaction(
+                    id = UUID.randomUUID().toString(),
+                    accountId = MANUAL_ACCOUNT_ID,
+                    type = row.type,
+                    amount = Money.of(row.amount, row.currency),
+                    date = row.date,
+                    occurredAt = null,
+                    merchant = row.merchant,
+                    merchantNormalized = row.merchant.lowercase().trim(),
+                    categoryId = null,
+                    notes = row.notes,
+                    source = IngestSource.IMPORT,
+                    sourceRefId = row.sourceRefId ?: "mt940-row-${row.rowNumber}",
+                    status = TxStatus.CONFIRMED,
+                    confidence = 1.0f,
+                    createdAt = now,
+                    updatedAt = now,
+                ),
+                categoryPreview = null,
+            )
+        }
+        val skippedRows = parsed.skippedRowNumbers.map { skippedRowNumber ->
+            CsvImportSkippedRow(
+                rowNumber = skippedRowNumber,
+                reason = "Unparseable MT940 transaction",
+            )
+        }
+
+        return CsvPlanResult.Done(
+            CsvImportPlan(
+                columns = CsvImportDetectedColumns(
+                    date = "MT940 :61: date",
+                    merchant = "MT940 :86:",
+                    amount = "MT940 :61: amount",
+                    debit = null,
+                    credit = null,
+                    currency = "MT940 :60F:/:62F:",
+                    category = null,
+                    type = "MT940 debit/credit mark",
+                    notes = "MT940 :61:/:86:",
                 ),
                 transactions = transactions,
                 skippedRows = skippedRows,

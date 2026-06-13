@@ -73,7 +73,7 @@
 
     <!-- Statement exchange card -->
     <string name="settings_csv_title">Statement exchange</string>
-    <string name="settings_csv_body">Import from an old Excel sheet, bank-statement CSV, OFX, or QFX. Preview detected fields before import; export transactions as CSV for accounting.</string>
+    <string name="settings_csv_body">Import from an old Excel sheet, bank-statement CSV, OFX, QFX, or MT940. Preview detected fields before import; export transactions as CSV for accounting.</string>
     <string name="settings_csv_done" formatted="true">Imported %1$d transactions. (Skipped %2$d rows.)</string>
     <string name="settings_csv_exported" formatted="true">Exported %1$d transactions.</string>
     <string name="settings_csv_action_import">Import statement</string>

@@ -190,8 +190,10 @@ fun SettingsScreen(
                         arrayOf(
                             "text/csv",
                             "text/comma-separated-values",
+                            "text/plain",
                             "application/x-ofx",
                             "application/vnd.intu.qfx",
+                            "application/x-mt940",
                             "application/octet-stream",
                             "*/*",
                         ),

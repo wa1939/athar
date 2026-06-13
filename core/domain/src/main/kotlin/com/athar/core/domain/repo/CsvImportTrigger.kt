@@ -23,6 +23,11 @@ import java.io.InputStream
  *   - `CURDEF` / `CURSYM` — optional ISO-4217 currency; defaults to SAR when missing
  *   - `FITID` — stable import reference when present
  *
+ * Supported MT940 fields:
+ *   - `:61:` — date, debit/credit mark, amount, transaction code, and optional reference
+ *   - `:86:` — merchant/counterparty details
+ *   - `:60F:` / `:60M:` / `:62F:` / `:62M:` — optional statement currency; defaults to SAR when missing
+ *
  * The importer is conservative: a row with a parse error is skipped and counted in
  * [CsvImportResult.skipped] rather than aborting the whole batch.
  *
