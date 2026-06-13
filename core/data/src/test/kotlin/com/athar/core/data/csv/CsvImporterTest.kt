@@ -9,6 +9,7 @@ import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRepository
+import com.athar.core.domain.repo.CsvImportColumnMapping
 import com.athar.core.domain.repo.CsvImportPreviewResult
 import com.athar.core.domain.repo.CsvImportResult
 import com.athar.core.domain.repo.TransactionRepository
@@ -142,6 +143,57 @@ class CsvImporterTest {
         assertThat(preview.columns.type).isEqualTo("D/C")
         assertThat(preview.sampleRows.map { it.type }).containsExactly(TxType.EXPENSE, TxType.INCOME).inOrder()
         assertThat(preview.sampleRows.map { it.amount }).containsExactly("42.00", "15.25").inOrder()
+    }
+
+    @Test
+    fun `preview requests mapping for unknown csv headers and imports with manual mapping`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            clock = FixedClock,
+        )
+
+        val first = importer.preview(ByteArrayInputStream(statementUnknownHeadersCsv.toByteArray()))
+
+        val required = first as CsvImportPreviewResult.MappingRequired
+        assertThat(required.columns).containsExactly("Booked", "Counterparty text", "Out", "In", "ISO", "Bucket")
+        assertThat(required.reason).contains("Map date")
+
+        val mapping = CsvImportColumnMapping(
+            date = "Booked",
+            merchant = "Counterparty text",
+            debit = "Out",
+            credit = "In",
+            currency = "ISO",
+            category = "Bucket",
+        )
+        val preview = importer.preview(
+            input = ByteArrayInputStream(statementUnknownHeadersCsv.toByteArray()),
+            mapping = mapping,
+        ) as CsvImportPreviewResult.Done
+        val imported = importer.import(
+            input = ByteArrayInputStream(statementUnknownHeadersCsv.toByteArray()),
+            mapping = mapping,
+        )
+
+        assertThat(preview.preview.importable).isEqualTo(2)
+        assertThat(preview.preview.availableColumns).containsExactly(
+            "Booked",
+            "Counterparty text",
+            "Out",
+            "In",
+            "ISO",
+            "Bucket",
+        ).inOrder()
+        assertThat(preview.preview.columns.date).isEqualTo("Booked")
+        assertThat(preview.preview.columns.merchant).isEqualTo("Counterparty text")
+        assertThat(preview.preview.columns.debit).isEqualTo("Out")
+        assertThat(preview.preview.columns.credit).isEqualTo("In")
+        assertThat(preview.preview.sampleRows.map { it.type }).containsExactly(TxType.EXPENSE, TxType.INCOME).inOrder()
+        assertThat(imported).isEqualTo(CsvImportResult.Done(imported = 2, skipped = 0))
+        assertThat(transactions.upserts.map { it.merchant }).containsExactly("Unknown Coffee", "Payroll").inOrder()
+        assertThat(transactions.upserts.map { it.amount.currency }).containsExactly("USD", "USD").inOrder()
     }
 
     @Test
@@ -392,6 +444,12 @@ class CsvImporterTest {
             Booking Date,Narrative,Amount,D/C,Currency
             2026-06-01,Train ticket,42.00,D,GBP
             2026-06-02,Refund,15.25,C,GBP
+        """.trimIndent()
+
+        val statementUnknownHeadersCsv = """
+            Booked,Counterparty text,Out,In,ISO,Bucket
+            2026-06-01,Unknown Coffee,18.50,,USD,Coffee
+            2026-06-02,Payroll,,1000.00,USD,
         """.trimIndent()
 
         val statementOfx = """

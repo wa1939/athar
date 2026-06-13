@@ -107,6 +107,7 @@ Other tools force a trade-off:
 - ✅ **Per-account ingestion routing** — add SMS sender aliases or card/account tails to each account so new bank messages land on the right checking, savings, or credit-card account instead of the manual seed account
 - ✅ **AES-256-GCM encrypted backup** (Argon2-equivalent KDF, passphrase-protected)
 - ✅ **Statement import + CSV export** for Excel and bank-statement interop — preview detected fields and sample rows, choose the destination account, skip already-imported rows, then import TMOAP/Athar CSVs, common statement CSVs/TSVs with description/amount, split debit/credit, or debit-credit indicator columns, OFX/QFX, or MT940 files; export annual data for your accountant
+- ✅ **Manual CSV column mapping** — when a bank's CSV/TSV headers are unfamiliar, map date, merchant, amount/debit/credit, currency, category, type, and notes before preview/confirm
 - ✅ **Annual accountant/tax PDF export** — pick a year in Settings and export income/expense totals, category totals, and the confirmed transaction list
 - ✅ **First-run CSV import** — new users can bring a TMOAP / Excel transaction log into Athar during onboarding instead of hunting for the Settings exchange later
 - ✅ **SQLCipher** database encryption at rest, key wrapped via Android Keystore
@@ -326,6 +327,7 @@ maestro test .maestro/flows/                     # 10 E2E flows
 - ✅ The scoped `dev/manual-entry-receipts` branch passes focused `:core:domain:test`, `:core:data:testDebugUnitTest`, `:core:data:compileDebugKotlin`, `:feature:today:testDebugUnitTest`, `:feature:today:compileDebugKotlin`, and the full JVM test/build/lint stack after adding encrypted manual receipt attachments.
 - ✅ The scoped `dev/receipt-view-export` branch passes `:feature:today:test` and the full JVM test/build/lint stack after adding edit-sheet receipt view/export/remove. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`; runtime tap-through remains blocked because `adb devices -l` returned no attached devices.
 - ✅ The scoped `dev/bank-admin-notice-ignores` branch passes `:ingestion:sms-parser:test` and the full JVM test/build/lint stack after adding sanitized bank-admin notice ignores. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`; runtime tap-through remains blocked because `adb devices -l` returned no attached devices.
+- ✅ The scoped `dev/csv-manual-column-mapping` branch passes `:core:data:testDebugUnitTest`, `:feature:settings:testDebugUnitTest`, and the full JVM test/build/lint stack after adding manual CSV/TSV column mapping to statement import. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`; runtime Settings import tap-through remains blocked because `adb devices -l` returned no attached devices.
 - ⏳ Device E2E, screenshot UI audit, and notification tap-through still need a physical Android device or a working accelerated emulator. On 2026-06-13 the local AVD could not boot because firmware virtualization was disabled, and `adb devices -l` still returned no attached devices during this branch validation.
 
 ### In flight / remaining
@@ -337,7 +339,7 @@ maestro test .maestro/flows/                     # 10 E2E flows
 | G-8 | Manual transaction UX upgrades | ✅ | 1.5 days | ✅ Recent-merchant autocomplete + quick-add chips · ✅ quick phrase/voice fill · ✅ local encrypted receipt attachment · ✅ receipt view/export/remove from edit sheet |
 | G-10 | Savings-rate goals + emergency fund | ✅ | — | Plan → Goals tab plus Today Goals check shipped; device visual QA remains under QA-01 |
 | G-11 | Broader notification handlers | ◐ | 3 days | Generic parser, wallet/card phrases, peer-payment/global-currency handlers, localized comma-decimal amount parsing, bank-specific card-charge/debit-card merchant extraction, merchant-first charge/card-transaction parsing, scheduled-payment ignores, and broader package coverage shipped; more real bank copy remains |
-| G-12 | Bank statement / CSV / OFX / QFX / MT940 import wizard | ◐ | 3 days | CSV/TSV delimiter + header auto-detect, debit/credit indicator support, duplicate-safe preview/confirm, OFX/QFX, MT940, and destination-account selection shipped; manual mapping and richer row editing still planned |
+| G-12 | Bank statement / CSV / OFX / QFX / MT940 import wizard | ◐ | 3 days | CSV/TSV delimiter + header auto-detect, debit/credit indicator support, duplicate-safe preview/confirm, OFX/QFX, MT940, destination-account selection, and manual CSV column mapping shipped; richer row editing still planned |
 | G-13 | Zero-knowledge sync to companion devices | ⏳ | 5 days | E2E-encrypted via Dropbox / Drive / iCloud / WebDAV / S3 — user holds the key |
 | G-14 | Tax-export PDF for accountants | ✅ | 2 days | Annual category totals + transaction list in user's locale |
 

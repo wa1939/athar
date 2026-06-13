@@ -1,6 +1,7 @@
 package com.athar.core.data.csv
 
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.repo.CsvImportColumnMapping
 import com.google.common.truth.Truth.assertThat
 import kotlinx.datetime.LocalDate
 import org.junit.jupiter.api.Test
@@ -149,5 +150,30 @@ class StatementCsvMapperTest {
         )
 
         assertThat(row).isNull()
+    }
+
+    @Test
+    fun `manual mapping supports unknown bank headers`() {
+        val columns = StatementCsvMapper.detect(
+            header = listOf("Booked", "Counterparty text", "Out", "In", "ISO"),
+            mapping = CsvImportColumnMapping(
+                date = "Booked",
+                merchant = "Counterparty text",
+                debit = "Out",
+                credit = "In",
+                currency = "ISO",
+            ),
+        )!!
+
+        val row = StatementCsvMapper.map(
+            row = listOf("2026-05-07", "Unknown Coffee", "12.75", "", "USD"),
+            columns = columns,
+        )
+
+        assertThat(row!!.date).isEqualTo(LocalDate(2026, 5, 7))
+        assertThat(row.merchant).isEqualTo("Unknown Coffee")
+        assertThat(row.type).isEqualTo(TxType.EXPENSE)
+        assertThat(row.amount).isEqualTo(BigDecimal("12.75"))
+        assertThat(row.currency).isEqualTo("USD")
     }
 }

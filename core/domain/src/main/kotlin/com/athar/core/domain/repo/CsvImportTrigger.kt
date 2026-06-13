@@ -17,6 +17,10 @@ import java.io.InputStream
  *   - **category** — matches `name` or `nameAr` (case-insensitive); if missing, transaction lands uncategorized
  *   - **notes** — optional
  *
+ * If auto-detection cannot recognize a CSV/TSV header row, callers can pass
+ * [CsvImportColumnMapping] after showing the user the parsed header list from
+ * [CsvImportPreviewResult.MappingRequired].
+ *
  * Supported OFX/QFX fields:
  *   - `DTPOSTED` / `DTUSER` — transaction date
  *   - `TRNAMT` — signed amount; negative imports as expense unless `TRNTYPE` says otherwise
@@ -39,12 +43,22 @@ import java.io.InputStream
  * Master Brief / Backlog M-14 and roadmap G-12.
  */
 interface CsvImportTrigger {
-    suspend fun preview(input: InputStream, accountId: String = MANUAL_ACCOUNT_ID): CsvImportPreviewResult
-    suspend fun import(input: InputStream, accountId: String = MANUAL_ACCOUNT_ID): CsvImportResult
+    suspend fun preview(
+        input: InputStream,
+        accountId: String = MANUAL_ACCOUNT_ID,
+        mapping: CsvImportColumnMapping? = null,
+    ): CsvImportPreviewResult
+
+    suspend fun import(
+        input: InputStream,
+        accountId: String = MANUAL_ACCOUNT_ID,
+        mapping: CsvImportColumnMapping? = null,
+    ): CsvImportResult
 }
 
 sealed interface CsvImportPreviewResult {
     data class Done(val preview: CsvImportPreview) : CsvImportPreviewResult
+    data class MappingRequired(val columns: List<String>, val reason: String) : CsvImportPreviewResult
     data class Failed(val reason: String) : CsvImportPreviewResult
 }
 
@@ -52,9 +66,58 @@ data class CsvImportPreview(
     val importable: Int,
     val skipped: Int,
     val columns: CsvImportDetectedColumns,
+    val availableColumns: List<String> = emptyList(),
     val sampleRows: List<CsvImportPreviewRow>,
     val skippedRows: List<CsvImportSkippedRow>,
 )
+
+data class CsvImportColumnMapping(
+    val date: String? = null,
+    val merchant: String? = null,
+    val amount: String? = null,
+    val debit: String? = null,
+    val credit: String? = null,
+    val currency: String? = null,
+    val category: String? = null,
+    val type: String? = null,
+    val notes: String? = null,
+) {
+    fun valueFor(role: CsvImportColumnRole): String? = when (role) {
+        CsvImportColumnRole.DATE -> date
+        CsvImportColumnRole.MERCHANT -> merchant
+        CsvImportColumnRole.AMOUNT -> amount
+        CsvImportColumnRole.DEBIT -> debit
+        CsvImportColumnRole.CREDIT -> credit
+        CsvImportColumnRole.CURRENCY -> currency
+        CsvImportColumnRole.CATEGORY -> category
+        CsvImportColumnRole.TYPE -> type
+        CsvImportColumnRole.NOTES -> notes
+    }
+
+    fun with(role: CsvImportColumnRole, column: String?): CsvImportColumnMapping = when (role) {
+        CsvImportColumnRole.DATE -> copy(date = column)
+        CsvImportColumnRole.MERCHANT -> copy(merchant = column)
+        CsvImportColumnRole.AMOUNT -> copy(amount = column)
+        CsvImportColumnRole.DEBIT -> copy(debit = column)
+        CsvImportColumnRole.CREDIT -> copy(credit = column)
+        CsvImportColumnRole.CURRENCY -> copy(currency = column)
+        CsvImportColumnRole.CATEGORY -> copy(category = column)
+        CsvImportColumnRole.TYPE -> copy(type = column)
+        CsvImportColumnRole.NOTES -> copy(notes = column)
+    }
+}
+
+enum class CsvImportColumnRole {
+    DATE,
+    MERCHANT,
+    AMOUNT,
+    DEBIT,
+    CREDIT,
+    CURRENCY,
+    CATEGORY,
+    TYPE,
+    NOTES,
+}
 
 data class CsvImportDetectedColumns(
     val date: String,

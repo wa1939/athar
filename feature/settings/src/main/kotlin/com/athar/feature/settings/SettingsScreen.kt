@@ -33,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.core.content.ContextCompat
@@ -41,8 +40,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.athar.core.domain.model.Account
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.repo.CsvImportColumnMapping
+import com.athar.core.domain.repo.CsvImportColumnRole
 import com.athar.core.domain.repo.CsvImportPreview
 import com.athar.core.domain.repo.CsvImportPreviewRow
 import com.athar.core.designsystem.component.AtharCard
@@ -206,6 +208,8 @@ fun SettingsScreen(
                         ),
                     )
                 },
+                onColumnMappingChange = viewModel::setCsvColumnMapping,
+                onPreviewMappedImport = viewModel::previewCsvImportWithMapping,
                 onConfirmImport = viewModel::confirmCsvImport,
                 onCancelPreview = viewModel::cancelCsvImportPreview,
                 onExport = { csvExportLauncher.launch("athar-transactions.csv") },
@@ -672,6 +676,8 @@ private fun CsvImportCard(
     selectedAccountId: String,
     onSelectAccount: (String) -> Unit,
     onImport: () -> Unit,
+    onColumnMappingChange: (CsvImportColumnRole, String?) -> Unit,
+    onPreviewMappedImport: () -> Unit,
     onConfirmImport: () -> Unit,
     onCancelPreview: () -> Unit,
     onExport: () -> Unit,
@@ -698,6 +704,30 @@ private fun CsvImportCard(
                     style = theme.typography.caption,
                     color = theme.colors.muted,
                 )
+                is CsvStatus.MappingRequired -> {
+                    CsvMappingEditor(
+                        columns = s.columns,
+                        reason = s.reason,
+                        mapping = s.mapping,
+                        onChange = onColumnMappingChange,
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+                    ) {
+                        PrimaryButton(
+                            text = stringResource(R.string.settings_csv_mapping_preview),
+                            onClick = onPreviewMappedImport,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Box(modifier = Modifier.weight(1f)) {
+                            SecondaryButton(
+                                text = stringResource(R.string.settings_csv_preview_cancel),
+                                onClick = onCancelPreview,
+                            )
+                        }
+                    }
+                }
                 is CsvStatus.Preview -> {
                     CsvPreviewSummary(preview = s.preview)
                     Row(
@@ -745,7 +775,7 @@ private fun CsvImportCard(
                 }
             }
             val isWorking = status is CsvStatus.Working
-            if (status !is CsvStatus.Preview) {
+            if (status !is CsvStatus.Preview && status !is CsvStatus.MappingRequired) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
@@ -826,6 +856,112 @@ private fun StatementImportAccountPicker(
             }
         }
     }
+}
+
+@Composable
+private fun CsvMappingEditor(
+    columns: List<String>,
+    reason: String,
+    mapping: CsvImportColumnMapping,
+    onChange: (CsvImportColumnRole, String?) -> Unit,
+) {
+    val theme = AtharTheme
+    val roles = listOf(
+        CsvImportColumnRole.DATE,
+        CsvImportColumnRole.MERCHANT,
+        CsvImportColumnRole.AMOUNT,
+        CsvImportColumnRole.DEBIT,
+        CsvImportColumnRole.CREDIT,
+        CsvImportColumnRole.CURRENCY,
+        CsvImportColumnRole.CATEGORY,
+        CsvImportColumnRole.TYPE,
+        CsvImportColumnRole.NOTES,
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+        AtharText(
+            text = reason,
+            style = theme.typography.caption,
+            color = theme.colors.crimson,
+        )
+        AtharText(
+            text = stringResource(R.string.settings_csv_mapping_body),
+            style = theme.typography.caption,
+            color = theme.colors.muted,
+        )
+        roles.forEach { role ->
+            CsvMappingRoleSelector(
+                role = role,
+                columns = columns,
+                selected = mapping.valueFor(role),
+                onSelect = { onChange(role, it) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun CsvMappingRoleSelector(
+    role: CsvImportColumnRole,
+    columns: List<String>,
+    selected: String?,
+    onSelect: (String?) -> Unit,
+) {
+    val theme = AtharTheme
+    Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+        AtharText(
+            text = role.label(),
+            style = theme.typography.caption,
+            color = theme.colors.muted,
+        )
+        CsvMappingChoice(
+            label = stringResource(R.string.settings_csv_mapping_none),
+            selected = selected == null,
+            onClick = { onSelect(null) },
+        )
+        columns.forEach { column ->
+            CsvMappingChoice(
+                label = column.ifBlank { stringResource(R.string.settings_csv_mapping_blank_column) },
+                selected = selected == column,
+                onClick = { onSelect(column) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun CsvMappingChoice(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val theme = AtharTheme
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(if (selected) theme.colors.olive else theme.colors.divider)
+            .clickable(onClick = onClick)
+            .padding(theme.spacing.s),
+    ) {
+        AtharText(
+            text = label,
+            style = theme.typography.caption,
+            color = if (selected) theme.colors.parchment else theme.colors.ink,
+        )
+    }
+}
+
+@Composable
+private fun CsvImportColumnRole.label(): String = when (this) {
+    CsvImportColumnRole.DATE -> stringResource(R.string.settings_csv_mapping_date)
+    CsvImportColumnRole.MERCHANT -> stringResource(R.string.settings_csv_mapping_merchant)
+    CsvImportColumnRole.AMOUNT -> stringResource(R.string.settings_csv_mapping_amount)
+    CsvImportColumnRole.DEBIT -> stringResource(R.string.settings_csv_mapping_debit)
+    CsvImportColumnRole.CREDIT -> stringResource(R.string.settings_csv_mapping_credit)
+    CsvImportColumnRole.CURRENCY -> stringResource(R.string.settings_csv_mapping_currency)
+    CsvImportColumnRole.CATEGORY -> stringResource(R.string.settings_csv_mapping_category)
+    CsvImportColumnRole.TYPE -> stringResource(R.string.settings_csv_mapping_type)
+    CsvImportColumnRole.NOTES -> stringResource(R.string.settings_csv_mapping_notes)
 }
 
 @Composable

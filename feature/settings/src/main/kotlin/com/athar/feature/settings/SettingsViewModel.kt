@@ -13,6 +13,8 @@ import com.athar.core.domain.repo.CommunityRulesShareResult
 import com.athar.core.domain.repo.CommunityRulesShareTrigger
 import com.athar.core.domain.repo.CsvExportResult
 import com.athar.core.domain.repo.CsvExportTrigger
+import com.athar.core.domain.repo.CsvImportColumnMapping
+import com.athar.core.domain.repo.CsvImportColumnRole
 import com.athar.core.domain.repo.CsvImportPreview
 import com.athar.core.domain.repo.CsvImportPreviewResult
 import com.athar.core.domain.repo.CsvImportResult
@@ -52,6 +54,11 @@ sealed interface BackupStatus {
 sealed interface CsvStatus {
     data object Idle : CsvStatus
     data object Working : CsvStatus
+    data class MappingRequired(
+        val columns: List<String>,
+        val reason: String,
+        val mapping: CsvImportColumnMapping,
+    ) : CsvStatus
     data class Preview(val preview: CsvImportPreview) : CsvStatus
     data class Done(val imported: Int, val skipped: Int) : CsvStatus
     data class Exported(val count: Int) : CsvStatus
@@ -149,6 +156,7 @@ class SettingsViewModel @Inject constructor(
     private val _csv = MutableStateFlow<CsvStatus>(CsvStatus.Idle)
     val csvStatus: StateFlow<CsvStatus> = _csv.asStateFlow()
     private var pendingCsvImportBytes: ByteArray? = null
+    private var pendingCsvImportMapping: CsvImportColumnMapping? = null
     private val _selectedStatementImportAccountId = MutableStateFlow(MANUAL_ACCOUNT_ID)
     val selectedStatementImportAccountId: StateFlow<String> = _selectedStatementImportAccountId.asStateFlow()
 
@@ -219,7 +227,7 @@ class SettingsViewModel @Inject constructor(
         _selectedStatementImportAccountId.value = accountId
         val bytes = pendingCsvImportBytes
         if (bytes != null && _csv.value is CsvStatus.Preview) {
-            previewCsvImportBytes(bytes)
+            previewCsvImportBytes(bytes, pendingCsvImportMapping)
         }
     }
 
@@ -255,32 +263,69 @@ class SettingsViewModel @Inject constructor(
             val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
             if (bytes == null) {
                 pendingCsvImportBytes = null
+                pendingCsvImportMapping = null
                 _csv.value = CsvStatus.Failed("Couldn't open import file.")
                 return@launch
             }
-            previewCsvImportBytes(bytes)
+            pendingCsvImportMapping = null
+            previewCsvImportBytes(bytes, mapping = null)
         }
     }
 
-    internal fun previewCsvImportBytes(bytes: ByteArray) {
+    internal fun previewCsvImportBytes(
+        bytes: ByteArray,
+        mapping: CsvImportColumnMapping? = pendingCsvImportMapping,
+    ) {
         viewModelScope.launch {
             _csv.value = CsvStatus.Working
             _csv.value = when (
                 val result = csvImporter.preview(
                     input = bytes.inputStream(),
                     accountId = _selectedStatementImportAccountId.value,
+                    mapping = mapping,
                 )
             ) {
                 is CsvImportPreviewResult.Done -> {
                     pendingCsvImportBytes = bytes
+                    pendingCsvImportMapping = mapping
                     CsvStatus.Preview(result.preview)
+                }
+                is CsvImportPreviewResult.MappingRequired -> {
+                    val nextMapping = mapping ?: CsvImportColumnMapping()
+                    pendingCsvImportBytes = bytes
+                    pendingCsvImportMapping = nextMapping
+                    CsvStatus.MappingRequired(
+                        columns = result.columns,
+                        reason = result.reason,
+                        mapping = nextMapping,
+                    )
                 }
                 is CsvImportPreviewResult.Failed -> {
                     pendingCsvImportBytes = null
+                    pendingCsvImportMapping = null
                     CsvStatus.Failed(result.reason)
                 }
             }
         }
+    }
+
+    fun setCsvColumnMapping(role: CsvImportColumnRole, column: String?) {
+        val current = pendingCsvImportMapping ?: CsvImportColumnMapping()
+        val next = current.with(role, column?.takeIf { it.isNotBlank() })
+        pendingCsvImportMapping = next
+        val status = _csv.value
+        if (status is CsvStatus.MappingRequired) {
+            _csv.value = status.copy(mapping = next)
+        }
+    }
+
+    fun previewCsvImportWithMapping() {
+        val bytes = pendingCsvImportBytes
+        if (bytes == null) {
+            _csv.value = CsvStatus.Failed("No import file is ready to map.")
+            return
+        }
+        previewCsvImportBytes(bytes, pendingCsvImportMapping ?: CsvImportColumnMapping())
     }
 
     fun confirmCsvImport() {
@@ -295,17 +340,20 @@ class SettingsViewModel @Inject constructor(
                 val result = csvImporter.import(
                     input = bytes.inputStream(),
                     accountId = _selectedStatementImportAccountId.value,
+                    mapping = pendingCsvImportMapping,
                 )
             ) {
                 is CsvImportResult.Done -> CsvStatus.Done(result.imported, result.skipped)
                 is CsvImportResult.Failed -> CsvStatus.Failed(result.reason)
             }
             pendingCsvImportBytes = null
+            pendingCsvImportMapping = null
         }
     }
 
     fun cancelCsvImportPreview() {
         pendingCsvImportBytes = null
+        pendingCsvImportMapping = null
         _csv.value = CsvStatus.Idle
     }
 
@@ -392,6 +440,7 @@ class SettingsViewModel @Inject constructor(
 
     fun clearCsvStatus() {
         pendingCsvImportBytes = null
+        pendingCsvImportMapping = null
         _csv.value = CsvStatus.Idle
     }
 

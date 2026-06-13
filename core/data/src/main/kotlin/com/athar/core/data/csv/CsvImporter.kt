@@ -8,6 +8,7 @@ import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRepository
+import com.athar.core.domain.repo.CsvImportColumnMapping
 import com.athar.core.domain.repo.CsvImportDetectedColumns
 import com.athar.core.domain.repo.CsvImportPreview
 import com.athar.core.domain.repo.CsvImportPreviewResult
@@ -33,16 +34,29 @@ internal class CsvImporter @Inject constructor(
     private val clock: Clock,
 ) : CsvImportTrigger {
 
-    override suspend fun preview(input: InputStream, accountId: String): CsvImportPreviewResult {
-        return when (val plan = buildPlan(input, accountId)) {
+    override suspend fun preview(
+        input: InputStream,
+        accountId: String,
+        mapping: CsvImportColumnMapping?,
+    ): CsvImportPreviewResult {
+        return when (val plan = buildPlan(input, accountId, mapping)) {
             is CsvPlanResult.Done -> CsvImportPreviewResult.Done(plan.plan.toPreview())
+            is CsvPlanResult.MappingRequired -> CsvImportPreviewResult.MappingRequired(
+                columns = plan.columns,
+                reason = plan.reason,
+            )
             is CsvPlanResult.Failed -> CsvImportPreviewResult.Failed(plan.reason)
         }
     }
 
-    override suspend fun import(input: InputStream, accountId: String): CsvImportResult {
-        val plan = when (val result = buildPlan(input, accountId)) {
+    override suspend fun import(
+        input: InputStream,
+        accountId: String,
+        mapping: CsvImportColumnMapping?,
+    ): CsvImportResult {
+        val plan = when (val result = buildPlan(input, accountId, mapping)) {
             is CsvPlanResult.Done -> result.plan
+            is CsvPlanResult.MappingRequired -> return CsvImportResult.Failed(result.reason)
             is CsvPlanResult.Failed -> return CsvImportResult.Failed(result.reason)
         }
 
@@ -54,6 +68,7 @@ internal class CsvImporter @Inject constructor(
     private suspend fun buildPlan(
         input: InputStream,
         accountId: String = MANUAL_ACCOUNT_ID,
+        mapping: CsvImportColumnMapping? = null,
     ): CsvPlanResult {
         val text = runCatching { input.bufferedReader().use { it.readText() } }
             .getOrElse { return CsvPlanResult.Failed("Couldn't read import file: ${it.message}") }
@@ -68,10 +83,11 @@ internal class CsvImporter @Inject constructor(
             return buildMt940Plan(text, accountId)
         }
 
-        val format = detectCsvFormat(lines[0])
+        val format = detectCsvFormat(lines[0], mapping)
         if (format == null) {
-            return CsvPlanResult.Failed(
-                "Delimited statement file must include date, merchant/description, and either amount or debit/credit columns.",
+            return CsvPlanResult.MappingRequired(
+                columns = detectDelimitedHeader(lines[0]),
+                reason = "Map date, merchant, and amount/debit/credit columns before previewing this file.",
             )
         }
         val header = format.header
@@ -121,6 +137,7 @@ internal class CsvImporter @Inject constructor(
         return CsvPlanResult.Done(
             CsvImportPlan(
                 columns = detectedColumns(header, columns),
+                availableColumns = header,
                 transactions = transactions,
                 skippedRows = skippedRows,
             ),
@@ -191,6 +208,7 @@ internal class CsvImporter @Inject constructor(
                     type = "OFX TRNTYPE",
                     notes = "OFX MEMO/FITID",
                 ),
+                availableColumns = emptyList(),
                 transactions = transactions,
                 skippedRows = skippedRows,
             ),
@@ -261,6 +279,7 @@ internal class CsvImporter @Inject constructor(
                     type = "MT940 debit/credit mark",
                     notes = "MT940 :61:/:86:",
                 ),
+                availableColumns = emptyList(),
                 transactions = transactions,
                 skippedRows = skippedRows,
             ),
@@ -312,6 +331,7 @@ internal class CsvImporter @Inject constructor(
         importable = transactions.size,
         skipped = skippedRows.size,
         columns = columns,
+        availableColumns = availableColumns,
         sampleRows = transactions.take(PREVIEW_ROW_LIMIT).map { row ->
             CsvImportPreviewRow(
                 rowNumber = row.rowNumber,
@@ -375,11 +395,11 @@ internal class CsvImporter @Inject constructor(
     private fun Transaction.withStableSourceRef(sourceRefId: String): Transaction =
         copy(sourceRefId = sourceRefId)
 
-    private fun detectCsvFormat(headerLine: String): CsvFormat? =
+    private fun detectCsvFormat(headerLine: String, mapping: CsvImportColumnMapping?): CsvFormat? =
         CsvDelimiters
             .mapNotNull { delimiter ->
                 val header = parseRow(headerLine, delimiter)
-                val columns = StatementCsvMapper.detect(header) ?: return@mapNotNull null
+                val columns = StatementCsvMapper.detect(header, mapping) ?: return@mapNotNull null
                 CsvFormat(
                     delimiter = delimiter,
                     header = header,
@@ -387,6 +407,11 @@ internal class CsvImporter @Inject constructor(
                 )
             }
             .maxByOrNull { it.header.size }
+
+    private fun detectDelimitedHeader(headerLine: String): List<String> =
+        CsvDelimiters
+            .map { delimiter -> parseRow(headerLine, delimiter) }
+            .maxByOrNull { it.size } ?: listOf(headerLine)
 
     /** RFC 4180-ish delimited row parser. Handles quoted delimiters, `""` escapes, trailing empties. */
     private fun parseRow(line: String, delimiter: Char = ','): List<String> {
@@ -412,11 +437,13 @@ internal class CsvImporter @Inject constructor(
 
     private sealed interface CsvPlanResult {
         data class Done(val plan: CsvImportPlan) : CsvPlanResult
+        data class MappingRequired(val columns: List<String>, val reason: String) : CsvPlanResult
         data class Failed(val reason: String) : CsvPlanResult
     }
 
     private data class CsvImportPlan(
         val columns: CsvImportDetectedColumns,
+        val availableColumns: List<String>,
         val transactions: List<CsvPlanTransaction>,
         val skippedRows: List<CsvImportSkippedRow>,
     )

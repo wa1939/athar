@@ -91,6 +91,19 @@
     <string name="settings_csv_preview_type_expense">مصروف</string>
     <string name="settings_csv_preview_type_income">دخل</string>
     <string name="settings_csv_preview_type_transfer">تحويل</string>
+    <string name="settings_csv_mapping_body">اختر أعمدة الكشف ثم اعرض المعاينة مرة أخرى.</string>
+    <string name="settings_csv_mapping_preview">معاينة الأعمدة</string>
+    <string name="settings_csv_mapping_none">بدون</string>
+    <string name="settings_csv_mapping_blank_column">عمود بلا اسم</string>
+    <string name="settings_csv_mapping_date">تاريخ الحركة</string>
+    <string name="settings_csv_mapping_merchant">التاجر أو الوصف</string>
+    <string name="settings_csv_mapping_amount">مبلغ واحد</string>
+    <string name="settings_csv_mapping_debit">مدين / مصروف</string>
+    <string name="settings_csv_mapping_credit">دائن / دخل</string>
+    <string name="settings_csv_mapping_currency">العملة</string>
+    <string name="settings_csv_mapping_category">الفئة</string>
+    <string name="settings_csv_mapping_type">نوع الحركة</string>
+    <string name="settings_csv_mapping_notes">ملاحظات</string>
 
     <!-- Tax export card -->
     <string name="settings_tax_title">تصدير للمحاسب والضرائب</string>

@@ -91,6 +91,19 @@
     <string name="settings_csv_preview_type_expense">Expense</string>
     <string name="settings_csv_preview_type_income">Income</string>
     <string name="settings_csv_preview_type_transfer">Transfer</string>
+    <string name="settings_csv_mapping_body">Choose the statement columns, then preview again.</string>
+    <string name="settings_csv_mapping_preview">Preview columns</string>
+    <string name="settings_csv_mapping_none">None</string>
+    <string name="settings_csv_mapping_blank_column">Unnamed column</string>
+    <string name="settings_csv_mapping_date">Transaction date</string>
+    <string name="settings_csv_mapping_merchant">Merchant or description</string>
+    <string name="settings_csv_mapping_amount">Single amount</string>
+    <string name="settings_csv_mapping_debit">Debit / expense</string>
+    <string name="settings_csv_mapping_credit">Credit / income</string>
+    <string name="settings_csv_mapping_currency">Currency</string>
+    <string name="settings_csv_mapping_category">Category</string>
+    <string name="settings_csv_mapping_type">Transaction type</string>
+    <string name="settings_csv_mapping_notes">Notes</string>
 
     <!-- Tax export card -->
     <string name="settings_tax_title">Export for taxes and accountant</string>

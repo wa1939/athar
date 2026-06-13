@@ -2,6 +2,7 @@ package com.athar.core.data.csv
 
 import com.athar.core.common.money.Money
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.repo.CsvImportColumnMapping
 import kotlinx.datetime.LocalDate
 import java.math.BigDecimal
 
@@ -30,13 +31,13 @@ internal data class StatementCsvMappedRow(
 
 internal object StatementCsvMapper {
 
-    fun detect(header: List<String>): StatementCsvColumns? {
+    fun detect(header: List<String>, mapping: CsvImportColumnMapping? = null): StatementCsvColumns? {
         val normalized = header.map(::normalizeHeader)
-        val dateIdx = find(normalized, DATE_HEADERS)
-        val merchantIdx = find(normalized, MERCHANT_HEADERS)
-        val amountIdx = find(normalized, AMOUNT_HEADERS).takeIfFound()
-        val debitIdx = find(normalized, DEBIT_HEADERS).takeIfFound()
-        val creditIdx = find(normalized, CREDIT_HEADERS).takeIfFound()
+        val dateIdx = mapping?.date.mappedIndex(header, normalized) ?: find(normalized, DATE_HEADERS)
+        val merchantIdx = mapping?.merchant.mappedIndex(header, normalized) ?: find(normalized, MERCHANT_HEADERS)
+        val amountIdx = mapping?.amount.mappedIndex(header, normalized) ?: find(normalized, AMOUNT_HEADERS).takeIfFound()
+        val debitIdx = mapping?.debit.mappedIndex(header, normalized) ?: find(normalized, DEBIT_HEADERS).takeIfFound()
+        val creditIdx = mapping?.credit.mappedIndex(header, normalized) ?: find(normalized, CREDIT_HEADERS).takeIfFound()
 
         if (dateIdx < 0 || merchantIdx < 0 || (amountIdx == null && debitIdx == null && creditIdx == null)) {
             return null
@@ -55,10 +56,10 @@ internal object StatementCsvMapper {
             amountIdx = amountIdx,
             debitIdx = debitIdx,
             creditIdx = creditIdx,
-            currencyIdx = find(normalized, CURRENCY_HEADERS).takeIfFound(),
-            categoryIdx = find(normalized, CATEGORY_HEADERS).takeIfFound(),
-            typeIdx = find(normalized, TYPE_HEADERS).takeIfFound(),
-            notesIdx = find(normalized, NOTES_HEADERS).takeIfFound(),
+            currencyIdx = mapping?.currency.mappedIndex(header, normalized) ?: find(normalized, CURRENCY_HEADERS).takeIfFound(),
+            categoryIdx = mapping?.category.mappedIndex(header, normalized) ?: find(normalized, CATEGORY_HEADERS).takeIfFound(),
+            typeIdx = mapping?.type.mappedIndex(header, normalized) ?: find(normalized, TYPE_HEADERS).takeIfFound(),
+            notesIdx = mapping?.notes.mappedIndex(header, normalized) ?: find(normalized, NOTES_HEADERS).takeIfFound(),
             signedPositiveAmount = signedPositiveAmount,
         )
     }
@@ -233,6 +234,14 @@ internal object StatementCsvMapper {
         header.indexOfFirst { h ->
             aliases.any { alias -> h == alias || h.startsWith("$alias ") || h.endsWith(" $alias") }
         }
+
+    private fun String?.mappedIndex(header: List<String>, normalized: List<String>): Int? {
+        val requested = this?.trim()?.takeIf { it.isNotBlank() } ?: return null
+        val normalizedRequested = normalizeHeader(requested)
+        return header.indexOfFirst { it.trim() == requested }
+            .takeIfFound()
+            ?: normalized.indexOfFirst { it == normalizedRequested }.takeIfFound()
+    }
 
     private fun cell(row: List<String>, idx: Int?): String =
         if (idx != null && idx >= 0 && idx < row.size) row[idx] else ""

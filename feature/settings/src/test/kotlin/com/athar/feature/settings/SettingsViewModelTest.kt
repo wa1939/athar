@@ -15,6 +15,8 @@ import com.athar.core.domain.repo.CommunityRulesShareResult
 import com.athar.core.domain.repo.CommunityRulesShareTrigger
 import com.athar.core.domain.repo.CsvExportResult
 import com.athar.core.domain.repo.CsvExportTrigger
+import com.athar.core.domain.repo.CsvImportColumnMapping
+import com.athar.core.domain.repo.CsvImportColumnRole
 import com.athar.core.domain.repo.CsvImportDetectedColumns
 import com.athar.core.domain.repo.CsvImportPreview
 import com.athar.core.domain.repo.CsvImportPreviewResult
@@ -144,6 +146,36 @@ class SettingsViewModelTest {
         assertThat(csv.importedBytes.map { it.decodeToString() }).containsExactly("selected account csv")
     }
 
+    @Test
+    fun `csv column mapping is used for preview and confirm`() = runTest(mainDispatcher) {
+        val csv = RecordingCsvImportTrigger(
+            previewResult = CsvImportPreviewResult.MappingRequired(
+                columns = listOf("Booked", "Details", "Out"),
+                reason = "Map columns",
+            ),
+        )
+        val viewModel = settingsViewModel(csvImporter = csv)
+
+        viewModel.previewCsvImportBytes("needs mapping".toByteArray())
+        advanceUntilIdle()
+        viewModel.setCsvColumnMapping(CsvImportColumnRole.DATE, "Booked")
+        viewModel.setCsvColumnMapping(CsvImportColumnRole.MERCHANT, "Details")
+        viewModel.setCsvColumnMapping(CsvImportColumnRole.DEBIT, "Out")
+        csv.previewResult = CsvImportPreviewResult.Done(emptyPreview())
+        viewModel.previewCsvImportWithMapping()
+        advanceUntilIdle()
+        viewModel.confirmCsvImport()
+        advanceUntilIdle()
+
+        assertThat(csv.previewedMappings.last()).isEqualTo(
+            CsvImportColumnMapping(date = "Booked", merchant = "Details", debit = "Out"),
+        )
+        assertThat(csv.importedMappings).containsExactly(
+            CsvImportColumnMapping(date = "Booked", merchant = "Details", debit = "Out"),
+        )
+        assertThat(viewModel.csvStatus.value).isEqualTo(CsvStatus.Done(imported = 3, skipped = 1))
+    }
+
     private fun settingsViewModel(
         backfill: SmsBackfillTrigger = FakeSmsBackfillTrigger(),
         csvImporter: CsvImportTrigger = FakeCsvImportTrigger,
@@ -224,28 +256,50 @@ private object FakeBackupRepository : BackupRepository {
 }
 
 private object FakeCsvImportTrigger : CsvImportTrigger {
-    override suspend fun preview(input: InputStream, accountId: String): CsvImportPreviewResult =
+    override suspend fun preview(
+        input: InputStream,
+        accountId: String,
+        mapping: CsvImportColumnMapping?,
+    ): CsvImportPreviewResult =
         CsvImportPreviewResult.Done(emptyPreview())
 
-    override suspend fun import(input: InputStream, accountId: String): CsvImportResult =
+    override suspend fun import(
+        input: InputStream,
+        accountId: String,
+        mapping: CsvImportColumnMapping?,
+    ): CsvImportResult =
         CsvImportResult.Done(imported = 0, skipped = 0)
 }
 
-private class RecordingCsvImportTrigger : CsvImportTrigger {
+private class RecordingCsvImportTrigger(
+    var previewResult: CsvImportPreviewResult = CsvImportPreviewResult.Done(emptyPreview()),
+) : CsvImportTrigger {
     val previewedBytes = mutableListOf<ByteArray>()
     val previewedAccountIds = mutableListOf<String>()
+    val previewedMappings = mutableListOf<CsvImportColumnMapping?>()
     val importedBytes = mutableListOf<ByteArray>()
     val importedAccountIds = mutableListOf<String>()
+    val importedMappings = mutableListOf<CsvImportColumnMapping?>()
 
-    override suspend fun preview(input: InputStream, accountId: String): CsvImportPreviewResult {
+    override suspend fun preview(
+        input: InputStream,
+        accountId: String,
+        mapping: CsvImportColumnMapping?,
+    ): CsvImportPreviewResult {
         previewedBytes += input.readBytes()
         previewedAccountIds += accountId
-        return CsvImportPreviewResult.Done(emptyPreview())
+        previewedMappings += mapping
+        return previewResult
     }
 
-    override suspend fun import(input: InputStream, accountId: String): CsvImportResult {
+    override suspend fun import(
+        input: InputStream,
+        accountId: String,
+        mapping: CsvImportColumnMapping?,
+    ): CsvImportResult {
         importedBytes += input.readBytes()
         importedAccountIds += accountId
+        importedMappings += mapping
         return CsvImportResult.Done(imported = 3, skipped = 1)
     }
 }
