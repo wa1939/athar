@@ -76,6 +76,7 @@ Other tools force a trade-off:
 #### Plan (الخطة)
 - ✅ **Budget targets** per category with variance pills (over/under)
 - ✅ **Editable monthly targets** — tap any row, type the number, save
+- ✅ **Bills calendar** — Plan → Bills projects recurring rules 60 days ahead, highlights overdue items, and folds uncategorized pending transactions into the same scannable list
 - ✅ **Wishlist** with savings-capacity math (NOW / WAIT until YYYY-MM / INFEASIBLE)
 - ✅ **Family investments pool** with **percentage-based return entry**, proportional share %, delete pool/contributor
 - ✅ **Recurring transactions** — define rent / salary / Netflix / utilities once; rules materialize into PENDING transactions on their due date
@@ -292,7 +293,7 @@ maestro test .maestro/flows/                     # 10 E2E flows
 
 | ID | Feature | Status | Effort | Notes |
 |---|---|---|---|---|
-| G-7 | Bills calendar | ⏳ | 2 days | "Upcoming bills" view + push notifications 2 days before each bill |
+| G-7 | Bills calendar | ◐ | 2 days | Plan → Bills upcoming view shipped; push reminders remain follow-up |
 | G-8 | Manual transaction UX upgrades | ⏳ | 2 days | Recent-merchant autocomplete · quick-add chips · voice entry · receipt photo |
 | G-10 | Savings-rate goals + emergency fund | ⏳ | 2 days | Plan → Goals tab with target progress |
 | G-11 | Broader notification handlers | ⏳ | 3 days | Apple Wallet, Google Pay, Revolut, Wise, Chase, Capital One, Mercury (Play-Store flavor) |

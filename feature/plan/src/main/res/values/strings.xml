@@ -11,6 +11,7 @@
 
     <!-- Top-level tabs -->
     <string name="plan_tab_budget">الميزانية</string>
+    <string name="plan_tab_bills">الفواتير</string>
     <string name="plan_tab_wishlist">الرغبات</string>
     <string name="plan_tab_investments">الاستثمارات</string>
 
@@ -43,6 +44,20 @@
     <!-- Empty state -->
     <string name="plan_empty_text">لا تصنيفات بعد.</string>
     <string name="plan_empty_subtle">حدد الهدف الشهري لكل تصنيف. اضغط على البطاقة لتعديل.</string>
+
+    <!-- Bills -->
+    <string name="plan_bills_empty_text">لا فواتير مجدولة.</string>
+    <string name="plan_bills_empty_subtle">أضف قواعد متكررة من الإعدادات لرؤية القادم هنا.</string>
+    <string name="plan_bills_summary_title">المستحق الآن و٣٠ يومًا</string>
+    <string name="plan_bills_summary_subtitle" formatted="true">%1$d بنود حتى %2$s</string>
+    <string name="plan_bills_unknown_title">بند معلق</string>
+    <string name="plan_bills_pending_review">يحتاج مراجعة</string>
+    <string name="plan_bills_cadence_monthly">شهري</string>
+    <string name="plan_bills_cadence_weekly">أسبوعي</string>
+    <string name="plan_bills_cadence_yearly">سنوي</string>
+    <string name="plan_bills_overdue">متأخر</string>
+    <string name="plan_bills_today">اليوم</string>
+    <string name="plan_bills_in_days_short" formatted="true">%1$d ي</string>
 
     <!-- Target editor sheet -->
     <string name="plan_target_editor_title_suffix"> · هدف شهري</string>

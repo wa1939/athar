@@ -52,6 +52,7 @@ fun <T> AtharSegmentedControl(
                     text = segment.labelAr,
                     style = theme.typography.caption,
                     color = if (isSelected) theme.colors.ink else theme.colors.muted,
+                    maxLines = 1,
                 )
             }
         }

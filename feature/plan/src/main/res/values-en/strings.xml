@@ -11,6 +11,7 @@
 
     <!-- Top-level tabs -->
     <string name="plan_tab_budget">Budget</string>
+    <string name="plan_tab_bills">Bills</string>
     <string name="plan_tab_wishlist">Wishlist</string>
     <string name="plan_tab_investments">Investments</string>
 
@@ -43,6 +44,20 @@
     <!-- Empty state -->
     <string name="plan_empty_text">No categories yet.</string>
     <string name="plan_empty_subtle">Set a monthly target per category. Tap any row to edit.</string>
+
+    <!-- Bills -->
+    <string name="plan_bills_empty_text">No bills scheduled.</string>
+    <string name="plan_bills_empty_subtle">Create recurring rules in Settings to see upcoming bills here.</string>
+    <string name="plan_bills_summary_title">Due now + next 30 days</string>
+    <string name="plan_bills_summary_subtitle" formatted="true">%1$d items through %2$s</string>
+    <string name="plan_bills_unknown_title">Pending item</string>
+    <string name="plan_bills_pending_review">Needs review</string>
+    <string name="plan_bills_cadence_monthly">Monthly</string>
+    <string name="plan_bills_cadence_weekly">Weekly</string>
+    <string name="plan_bills_cadence_yearly">Yearly</string>
+    <string name="plan_bills_overdue">Late</string>
+    <string name="plan_bills_today">Today</string>
+    <string name="plan_bills_in_days_short" formatted="true">%1$d d</string>
 
     <!-- Target editor sheet -->
     <string name="plan_target_editor_title_suffix"> · Monthly target</string>
