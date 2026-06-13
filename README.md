@@ -86,7 +86,7 @@ Other tools force a trade-off:
 #### Ingestion + categorization (Saudi-first, universal-ready)
 - ✅ **Al Rajhi SMS** parser (Arabic + English) — purchase, transfer, deposit, profit deposit, loan instalment, credit card payment, declined transactions, transfers between own accounts
 - ✅ **STC Bank · Alinma · D360 · Barq** templates derived from real corpus, with date extraction so historical SMS sit in their correct months
-- ✅ **User-defined templates** — paste a sample SMS from your bank, mark the anchor strings around the amount/merchant, save (W-4)
+- ✅ **User-defined templates** — paste a sample SMS from your bank, mark the anchor strings around the amount/merchant, and confirm the live parse preview before saving (W-4)
 - ✅ **Spam-resistant pipeline** — `-AD` suffix block (CITC convention), sender allow-list, ~40 ignore patterns for OTP/promo/marketing (Tasaheal, "Buy X Get Y", "Earn 10,000")
 - ✅ **Notification listener** path for Play-Store-safe distribution, with generic bank-app push parsing for common English/Arabic spend, income, and transfer alerts
 - ✅ **Multi-currency capture** — foreign-card spend keeps both the original amount and the SAR equivalent
