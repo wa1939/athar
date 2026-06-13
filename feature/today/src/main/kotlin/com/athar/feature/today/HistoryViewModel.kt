@@ -24,6 +24,7 @@ import javax.inject.Inject
 enum class HistoryStatusFilter { ALL, CONFIRMED, PENDING, DISMISSED }
 enum class HistoryTypeFilter { ALL, INCOME, EXPENSE, TRANSFER }
 enum class HistorySourceFilter { ALL, SMS, NOTIFICATION, MANUAL, IMPORT, RECURRING, SHARE }
+enum class HistoryCategoryFilter { ALL, UNCATEGORIZED, CATEGORIZED }
 
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
@@ -44,15 +45,24 @@ class HistoryViewModel @Inject constructor(
     private val _source = MutableStateFlow(HistorySourceFilter.ALL)
     val source: StateFlow<HistorySourceFilter> = _source.asStateFlow()
 
+    private val _category = MutableStateFlow(HistoryCategoryFilter.ALL)
+    val category: StateFlow<HistoryCategoryFilter> = _category.asStateFlow()
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val items: StateFlow<List<Transaction>> =
-        combine(transactions.observeAll(), _query, _status, _type, _source) { all, q, s, t, source ->
+        combine(
+            transactions.observeAll(),
+            combine(_query, _status, _type, _source, _category) { q, s, t, source, category ->
+                HistoryFilterState(q, s, t, source, category)
+            },
+        ) { all, filter ->
             filterHistoryTransactions(
                 all = all,
-                query = q,
-                status = s,
-                type = t,
-                source = source,
+                query = filter.query,
+                status = filter.status,
+                type = filter.type,
+                source = filter.source,
+                category = filter.category,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -60,6 +70,7 @@ class HistoryViewModel @Inject constructor(
     fun setStatus(s: HistoryStatusFilter) { _status.value = s }
     fun setType(t: HistoryTypeFilter) { _type.value = t }
     fun setSource(s: HistorySourceFilter) { _source.value = s }
+    fun setCategory(c: HistoryCategoryFilter) { _category.value = c }
 
     private val _lastBackfill = MutableStateFlow<BackfillEvent?>(null)
     /** Emits the count of dismissed/pending rows auto-recategorized by "Always categorize…". */
@@ -98,12 +109,21 @@ class HistoryViewModel @Inject constructor(
     data class BackfillEvent(val pattern: String, val count: Int)
 }
 
+private data class HistoryFilterState(
+    val query: String,
+    val status: HistoryStatusFilter,
+    val type: HistoryTypeFilter,
+    val source: HistorySourceFilter,
+    val category: HistoryCategoryFilter,
+)
+
 internal fun filterHistoryTransactions(
     all: List<Transaction>,
     query: String,
     status: HistoryStatusFilter,
     type: HistoryTypeFilter,
     source: HistorySourceFilter,
+    category: HistoryCategoryFilter,
 ): List<Transaction> =
     all.asSequence()
         .filter { tx ->
@@ -131,6 +151,13 @@ internal fun filterHistoryTransactions(
                 HistorySourceFilter.IMPORT -> tx.source == IngestSource.IMPORT
                 HistorySourceFilter.RECURRING -> tx.source == IngestSource.RECURRING
                 HistorySourceFilter.SHARE -> tx.source == IngestSource.SHARE
+            }
+        }
+        .filter { tx ->
+            when (category) {
+                HistoryCategoryFilter.ALL -> true
+                HistoryCategoryFilter.UNCATEGORIZED -> tx.categoryId.isNullOrBlank()
+                HistoryCategoryFilter.CATEGORIZED -> !tx.categoryId.isNullOrBlank()
             }
         }
         .filter { tx ->

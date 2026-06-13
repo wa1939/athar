@@ -50,6 +50,7 @@ fun HistoryScreen(
     val status by viewModel.status.collectAsStateWithLifecycle()
     val type by viewModel.type.collectAsStateWithLifecycle()
     val source by viewModel.source.collectAsStateWithLifecycle()
+    val category by viewModel.category.collectAsStateWithLifecycle()
     val backfill by viewModel.lastBackfill.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<Transaction?>(null) }
 
@@ -135,6 +136,16 @@ fun HistoryScreen(
                 ),
                 selected = source,
                 onSelect = viewModel::setSource,
+            )
+
+            FilterChipRow(
+                labels = listOf(
+                    HistoryCategoryFilter.ALL to stringResource(R.string.history_category_all),
+                    HistoryCategoryFilter.UNCATEGORIZED to stringResource(R.string.history_category_uncategorized),
+                    HistoryCategoryFilter.CATEGORIZED to stringResource(R.string.history_category_categorized),
+                ),
+                selected = category,
+                onSelect = viewModel::setCategory,
             )
 
             AtharText(

@@ -27,6 +27,7 @@ class HistoryFilterTest {
             status = HistoryStatusFilter.PENDING,
             type = HistoryTypeFilter.EXPENSE,
             source = HistorySourceFilter.SMS,
+            category = HistoryCategoryFilter.ALL,
         )
 
         assertThat(filtered.map { it.id }).containsExactly("sms-expense")
@@ -46,6 +47,7 @@ class HistoryFilterTest {
             status = HistoryStatusFilter.ALL,
             type = HistoryTypeFilter.ALL,
             source = HistorySourceFilter.ALL,
+            category = HistoryCategoryFilter.ALL,
         )
 
         assertThat(filtered.map { it.id }).containsExactly("import")
@@ -65,9 +67,52 @@ class HistoryFilterTest {
             status = HistoryStatusFilter.ALL,
             type = HistoryTypeFilter.ALL,
             source = HistorySourceFilter.ALL,
+            category = HistoryCategoryFilter.ALL,
         )
 
         assertThat(filtered.map { it.id }).containsExactly("sms", "manual", "recurring").inOrder()
+    }
+
+    @Test
+    fun `filters uncategorized rows across status type and source`() {
+        val rows = listOf(
+            tx(id = "sms-missing", source = IngestSource.SMS, status = TxStatus.PENDING, categoryId = null),
+            tx(id = "sms-blank", source = IngestSource.SMS, status = TxStatus.PENDING, categoryId = " "),
+            tx(id = "sms-categorized", source = IngestSource.SMS, status = TxStatus.PENDING, categoryId = "cat-food"),
+            tx(id = "manual-missing", source = IngestSource.MANUAL, status = TxStatus.PENDING, categoryId = null),
+            tx(id = "sms-income", source = IngestSource.SMS, status = TxStatus.PENDING, type = TxType.INCOME, categoryId = null),
+        )
+
+        val filtered = filterHistoryTransactions(
+            all = rows,
+            query = "",
+            status = HistoryStatusFilter.PENDING,
+            type = HistoryTypeFilter.EXPENSE,
+            source = HistorySourceFilter.SMS,
+            category = HistoryCategoryFilter.UNCATEGORIZED,
+        )
+
+        assertThat(filtered.map { it.id }).containsExactly("sms-missing", "sms-blank").inOrder()
+    }
+
+    @Test
+    fun `filters categorized rows without hiding searched merchants`() {
+        val rows = listOf(
+            tx(id = "coffee-categorized", source = IngestSource.IMPORT, categoryId = "cat-coffee"),
+            tx(id = "coffee-missing", source = IngestSource.IMPORT, categoryId = null),
+            tx(id = "grocery-categorized", source = IngestSource.IMPORT, categoryId = "cat-groceries"),
+        )
+
+        val filtered = filterHistoryTransactions(
+            all = rows,
+            query = "coffee",
+            status = HistoryStatusFilter.ALL,
+            type = HistoryTypeFilter.ALL,
+            source = HistorySourceFilter.IMPORT,
+            category = HistoryCategoryFilter.CATEGORIZED,
+        )
+
+        assertThat(filtered.map { it.id }).containsExactly("coffee-categorized")
     }
 
     private fun tx(
@@ -76,6 +121,7 @@ class HistoryFilterTest {
         status: TxStatus = TxStatus.CONFIRMED,
         type: TxType = TxType.EXPENSE,
         sourceRefId: String? = "$source-$id",
+        categoryId: String? = null,
     ) = Transaction(
         id = id,
         accountId = "account",
@@ -85,7 +131,7 @@ class HistoryFilterTest {
         occurredAt = Instant.parse("2026-06-13T00:00:00Z"),
         merchant = "Merchant $id",
         merchantNormalized = "merchant $id",
-        categoryId = null,
+        categoryId = categoryId,
         notes = null,
         source = source,
         sourceRefId = sourceRefId,
