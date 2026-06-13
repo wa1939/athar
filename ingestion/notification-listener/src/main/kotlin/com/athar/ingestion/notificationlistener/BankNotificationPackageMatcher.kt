@@ -12,6 +12,14 @@ object BankNotificationPackageMatcher : BankPackageFilter {
         "com.alrajhibank.AlRajhiMobile",
         "com.alrajhibank.alrajhimobile",
         "com.google.android.apps.walletnfcrel",
+        "com.paypal.android.p2pmobile",
+        "com.venmo",
+        "com.squareup.cash",
+        "com.americanexpress.android.acctsvcs.us",
+        "com.infonow.bofa",
+        "com.wf.wellsfargomobile",
+        "com.citi.citimobile",
+        "com.usaa.mobile.android.usaa",
     )
 
     private val packageKeywords = listOf(
@@ -37,6 +45,14 @@ object BankNotificationPackageMatcher : BankPackageFilter {
         "monzo",
         "n26",
         "starling",
+        "paypal",
+        "venmo",
+        "americanexpress",
+        "amex",
+        "bankofamerica",
+        "wellsfargo",
+        "citimobile",
+        "usaa",
     )
 
     override fun isBankPackage(packageName: String): Boolean {

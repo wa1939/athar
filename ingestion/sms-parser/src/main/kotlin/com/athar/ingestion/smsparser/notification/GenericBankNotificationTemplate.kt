@@ -29,12 +29,28 @@ class GenericBankNotificationTemplate : BankTemplate {
         """\b(?:spent|purchase|paid|payment|debit|charged|card\s+purchase|withdrawal|pos|خصم|شراء|دفع|سحب)\b""",
         RegexOption.IGNORE_CASE,
     )
+    private val expensePhrases = Regex(
+        """\b(?:card\s+(?:ending\s+\d{2,4}\s+)?(?:was\s+)?used|card\s+payment|debit\s+card\s+transaction|direct\s+debit|payment\s+to|transaction\s+at|transaction\s+with)\b""",
+        RegexOption.IGNORE_CASE,
+    )
     private val incomeWords = Regex(
         """\b(?:received|deposit|deposited|credited|refund|salary|incoming|top\s*up|إيداع|ايداع|وارد|استلام|استلمت|راتب)\b""",
         RegexOption.IGNORE_CASE,
     )
+    private val incomePhrases = Regex(
+        """\b(?:paid\s+you|payment\s+from|direct\s+deposit|direct\s+credit|ach\s+credit|credit\s+from|money\s+received)\b""",
+        RegexOption.IGNORE_CASE,
+    )
     private val transferWords = Regex(
         """\b(?:sent|transfer|transferred|outgoing|remit|تحويل|حوالة|إرسال|ارسال)\b""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val statementWords = Regex(
+        """\b(?:statement\s+(?:is\s+)?(?:ready|available)|minimum\s+payment|payment\s+due|due\s+date)\b""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val limitWords = Regex(
+        """\b(?:transfer\s+limit|daily\s+limit|card\s+limit|spending\s+limit|limit\s+(?:changed|updated|increased|decreased))\b""",
         RegexOption.IGNORE_CASE,
     )
     private val declinedWords = Regex(
@@ -65,12 +81,20 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\bfrom\b|من)\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
+    private val paidYouHint = Regex(
+        """(?m)^([A-Za-z\u0600-\u06FF][^\n\r]{1,64}?)\s+paid\s+you\b""",
+        RegexOption.IGNORE_CASE,
+    )
 
     override fun tryParse(body: String, receivedAt: Instant): ParseResult {
         val normalized = Normalize.digits(body)
         val hasAction = hasAction(normalized)
 
         if (declinedWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (statementWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (limitWords.containsMatchIn(normalized) && !hasExpenseAction(normalized) && !hasIncomeAction(normalized)) {
+            return ParseResult.Ignored
+        }
         if (securityWords.containsMatchIn(normalized) && !hasAction) return ParseResult.Ignored
         if (marketingWords.containsMatchIn(normalized) && !hasAction) return ParseResult.Ignored
         if (balanceWords.containsMatchIn(normalized) && !hasAction && !hasMerchantHint(normalized)) {
@@ -87,9 +111,9 @@ class GenericBankNotificationTemplate : BankTemplate {
         val currency = currencyCode(amountMatch.groups["lead"]?.value ?: amountMatch.groups["trail"]?.value)
 
         val type = when {
-            incomeWords.containsMatchIn(normalized) -> TxType.INCOME
+            hasIncomeAction(normalized) -> TxType.INCOME
             transferWords.containsMatchIn(normalized) -> TxType.TRANSFER
-            expenseWords.containsMatchIn(normalized) || hasMerchantHint(normalized) -> TxType.EXPENSE
+            hasExpenseAction(normalized) || hasMerchantHint(normalized) -> TxType.EXPENSE
             else -> return ParseResult.Failed("notification action not found", listOf(id))
         }
 
@@ -101,7 +125,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         }
         val counterparty = when (type) {
             TxType.EXPENSE -> null
-            TxType.INCOME -> cleanParty(fromHint.find(normalized)?.groupValues?.get(1))
+            TxType.INCOME -> cleanParty(
+                fromHint.find(normalized)?.groupValues?.get(1)
+                    ?: paidYouHint.find(normalized)?.groupValues?.get(1),
+            )
             TxType.TRANSFER -> cleanParty(toHint.find(normalized)?.groupValues?.get(1)
                 ?: fromHint.find(normalized)?.groupValues?.get(1))
         }
@@ -124,7 +151,13 @@ class GenericBankNotificationTemplate : BankTemplate {
     }
 
     private fun hasAction(body: String): Boolean =
-        expenseWords.containsMatchIn(body) || incomeWords.containsMatchIn(body) || transferWords.containsMatchIn(body)
+        hasExpenseAction(body) || hasIncomeAction(body) || transferWords.containsMatchIn(body)
+
+    private fun hasExpenseAction(body: String): Boolean =
+        expenseWords.containsMatchIn(body) || expensePhrases.containsMatchIn(body)
+
+    private fun hasIncomeAction(body: String): Boolean =
+        incomeWords.containsMatchIn(body) || incomePhrases.containsMatchIn(body)
 
     private fun hasMerchantHint(body: String): Boolean =
         atHint.containsMatchIn(body) || toHint.containsMatchIn(body) || fromHint.containsMatchIn(body)
@@ -160,7 +193,7 @@ class GenericBankNotificationTemplate : BankTemplate {
 
     private companion object {
         val BankPackagePattern = Regex(
-            """^notification:.*(alrajhi|stcpay|stcbank|d360|barq|alinma|riyad|snb|alahli|anb|albilad|bsf|saib|jazira|wise|revolut|chase|capitalone|mercury|monzo|n26|starling|walletnfcrel).*""",
+            """^notification:.*(alrajhi|stcpay|stcbank|d360|barq|alinma|riyad|snb|alahli|anb|albilad|bsf|saib|jazira|wise|revolut|chase|capitalone|mercury|monzo|n26|starling|walletnfcrel|paypal|venmo|squareup\.cash|americanexpress|amex|bankofamerica|wellsfargo|citimobile|usaa).*""",
             RegexOption.IGNORE_CASE,
         )
     }

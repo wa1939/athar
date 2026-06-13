@@ -63,6 +63,69 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses card-used wallet notification`() {
+        val result = parser.parse(
+            event(
+                "notification:com.google.android.apps.walletnfcrel",
+                "Card ending 1234 was used for USD 19.99 at Amazon",
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("19.99"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Amazon")
+    }
+
+    @Test
+    fun `parses card payment to merchant notification`() {
+        val result = parser.parse(
+            event("notification:com.revolut.revolut", "You made a card payment to Uber Trip USD 18.75"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("18.75"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Uber Trip")
+    }
+
+    @Test
+    fun `parses direct debit notification`() {
+        val result = parser.parse(
+            event("notification:com.monzo", "Direct debit of GBP 29.99 to Netflix"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("29.99"))
+        assertThat(result.amount.currency).isEqualTo("GBP")
+        assertThat(result.merchant).isEqualTo("Netflix")
+    }
+
+    @Test
+    fun `parses payment-from income notification`() {
+        val result = parser.parse(
+            event("notification:com.mercury", "Payment from ACME Payroll USD 250.00"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("250.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.counterparty).isEqualTo("ACME Payroll")
+    }
+
+    @Test
+    fun `parses paid-you income notification`() {
+        val result = parser.parse(
+            event("notification:com.paypal.android.p2pmobile", "ACME Payroll paid you $1,200.00"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("1200.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.counterparty).isEqualTo("ACME Payroll")
+    }
+
+    @Test
     fun `prefers currency marked amount over card last four`() {
         val result = parser.parse(
             event("notification:com.google.android.apps.walletnfcrel", "Card ending 1234 purchase at Amazon SAR 56.35"),
@@ -83,6 +146,25 @@ class GenericBankNotificationTemplateTest {
     fun `ignores marketing cashback notifications`() {
         assertThat(
             parser.parse(event("notification:com.revolut.revolut", "Earn 10 SAR cashback this weekend")),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores transfer limit notifications with amounts`() {
+        assertThat(
+            parser.parse(event("notification:com.chase.sig.android", "Your daily transfer limit is now AED 5,000")),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores statement and minimum-payment notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event(
+                    "notification:com.capitalone.mobile",
+                    "Your statement is ready. Minimum payment due USD 25.00 by July 1.",
+                ),
+            ),
         ).isEqualTo(ParseResult.Ignored)
     }
 
