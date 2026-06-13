@@ -2257,8 +2257,8 @@
     },
     {
       "pattern": "منصة ايجار",
-      "categoryId": "cat-side-income",
-      "priority": 80
+      "categoryId": "cat-rent",
+      "priority": 90
     },
     {
       "pattern": "مهارة",
@@ -3428,6 +3428,26 @@
     {
       "pattern": "harvard",
       "categoryId": "cat-education",
+      "priority": 90
+    },
+    {
+      "pattern": "منصة إيجار",
+      "categoryId": "cat-rent",
+      "priority": 90
+    },
+    {
+      "pattern": "موبايلي",
+      "categoryId": "cat-telecom",
+      "priority": 90
+    },
+    {
+      "pattern": "جونشور",
+      "categoryId": "cat-insurance",
+      "priority": 90
+    },
+    {
+      "pattern": "تأميني",
+      "categoryId": "cat-insurance",
       "priority": 90
     }
   ]
