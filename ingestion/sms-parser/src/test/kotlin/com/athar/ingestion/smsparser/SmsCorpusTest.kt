@@ -721,6 +721,22 @@ class SmsCorpusTest {
         assertThat(parser().parse(event("AlJaziraSMS", fraudNotice))).isEqualTo(ParseResult.Ignored)
     }
 
+    @Test fun `card service recovery and brand announcement notices are Ignored`() {
+        val cardServiceNotice = """
+            عميلنا العزيز،
+            نعتذر عن الخلل الذي واجهته أثناء استخدام البطاقة، ونود إبلاغك بأنه يمكنك استخدام بطاقتك مجددًا الآن.
+            شكرًا لتفهّمك.
+        """.trimIndent()
+        assertThat(parser().parse(event("D360 Bank", cardServiceNotice))).isEqualTo(ParseResult.Ignored)
+
+        val brandAnnouncement = """
+            نطلق اليوم هويتنا الجديدة والتي تعكس رؤيتنا وتلبي طموحاتكم.
+            معًا نواصل رحلة النمو.
+            بنك الجزيرة .. هنا تنمو الثروات.
+        """.trimIndent()
+        assertThat(parser().parse(event("Jazira Bank", brandAnnouncement))).isEqualTo(ParseResult.Ignored)
+    }
+
     // ─── Cross-cutting: unknown sender ────────────────────────────────────
 
     @Test fun `unknown sender with money figure is Ignored — NOT a transaction`() {

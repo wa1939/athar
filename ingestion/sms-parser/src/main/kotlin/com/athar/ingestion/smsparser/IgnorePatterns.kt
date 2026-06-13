@@ -111,6 +111,8 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""بطاقات\s+إهداء"""),
         Regex("""فرصة\s+استثمارية"""),
         Regex("""رمز\s+الريال\s+السعودي"""),
+        Regex("""نطلق\s+اليوم\s+هويتنا\s+الجديدة"""),
+        Regex("""هنا\s+تنمو\s+الثروات"""),
 
         // Password / login / device alerts (not a transaction; sometimes contains amounts as limits)
         Regex("""\bpassword\s+(?:reset|change)""", RegexOption.IGNORE_CASE),
@@ -125,6 +127,8 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""تم\s+التسجيل\s+في\s+خاصية\s+(?:البصمة|الدخول\s+السريع)"""),
         Regex("""تم\s+إلغاء\s+خاصية\s+البصمة"""),
         Regex("""تفعيل\s+خدمة\s+الدخول[^\n\r]{0,80}بصمة"""),
+        Regex("""نعتذر\s+عن\s+الخلل[^\n\r]{0,120}استخدام\s+البطاقة"""),
+        Regex("""يمكنك\s+استخدام\s+بطاقتك\s+مجدد"""),
 
         // Account request acknowledgement
         Regex("""تم\s+تسجيل\s+طلبكم"""),
