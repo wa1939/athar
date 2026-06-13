@@ -28,7 +28,7 @@
 
     <!-- Backfill card -->
     <string name="settings_backfill_title">إعادة فحص الرسائل</string>
-    <string name="settings_backfill_body">اقرأ آخر ٩٠ يومًا من الرسائل في صندوق الوارد وأنشئ منها حركات معلّقة في انتظار التأكيد.</string>
+    <string name="settings_backfill_body">اقرأ صندوق الرسائل وأنشئ منه حركات معلّقة في انتظار التأكيد.</string>
     <string name="settings_backfill_running" formatted="true">جارٍ المسح… (%1$d رسالة)</string>
     <string name="settings_backfill_done" formatted="true">تم فحص %1$d رسالة، أُرسلت %2$d للمعالجة.</string>
     <string name="settings_backfill_failed" formatted="true">تعذّر الفحص: %1$s</string>
@@ -38,9 +38,14 @@
     <!-- Rescan & clean card -->
     <string name="settings_rescan_title">إعادة فحص الرسائل</string>
     <string name="settings_rescan_body">يحذف كل الحركات قيد التأكيد ويعيد قراءة سجل الرسائل بأحدث القوالب. حركاتك المؤكدة لن تتأثر. مفيد بعد التحديث لتنظيف الإعلانات والإشعارات التي دخلت بالخطأ.</string>
+    <string name="settings_rescan_pending_count" formatted="true">المعلّقة الآن: %1$d</string>
     <string name="settings_rescan_working">جاري إعادة الفحص…</string>
     <string name="settings_rescan_done" formatted="true">تم حذف %1$d عنصرًا من قائمة الانتظار، وأُعيد فحص السجل.</string>
     <string name="settings_rescan_action">إعادة فحص ومسح المُعلَّقات</string>
+    <string name="settings_rescan_confirm_title">إعادة فحص سجل الرسائل؟</string>
+    <string name="settings_rescan_confirm_body" formatted="true">سيحذف هذا الإجراء %1$d حركة معلّقة، ثم يقرأ سجل الرسائل من جديد بالقوالب الحالية. الحركات المؤكدة لا تتأثر. راجع النتيجة في «اليوم» أو سجل الحركات قبل الاعتماد على الإجماليات.</string>
+    <string name="settings_rescan_confirm_cancel">إبقاء البيانات الحالية</string>
+    <string name="settings_rescan_confirm_action">إعادة الفحص</string>
 
     <!-- Recover dismissed transactions card -->
     <string name="settings_recover_title">استرجاع الحركات المتجاهَلة</string>

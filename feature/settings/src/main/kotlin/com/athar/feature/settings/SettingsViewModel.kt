@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -116,6 +117,10 @@ class SettingsViewModel @Inject constructor(
     val communityShareStatus: StateFlow<CommunityShareStatus> = _communityShare.asStateFlow()
 
     val backfillProgress: StateFlow<BackfillProgress> = backfillTrigger.progress
+
+    val pendingCount: StateFlow<Int> = transactions.observePending()
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
     val hijriEnabled: StateFlow<Boolean> = prefs.hijriEnabled()
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
