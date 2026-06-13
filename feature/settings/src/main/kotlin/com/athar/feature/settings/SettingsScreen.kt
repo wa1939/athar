@@ -49,6 +49,7 @@ import com.athar.core.domain.repo.CsvImportColumnRole
 import com.athar.core.domain.repo.CsvImportCurrencySummary
 import com.athar.core.domain.repo.CsvImportPreview
 import com.athar.core.domain.repo.CsvImportPreviewRow
+import com.athar.core.domain.repo.CsvImportRowEdit
 import com.athar.core.designsystem.component.AtharCard
 import com.athar.core.designsystem.component.AtharText
 import com.athar.core.designsystem.component.AtharTextField
@@ -214,6 +215,7 @@ fun SettingsScreen(
                 onColumnMappingChange = viewModel::setCsvColumnMapping,
                 onPreviewMappedImport = viewModel::previewCsvImportWithMapping,
                 onRowIncludedChange = viewModel::setCsvImportRowIncluded,
+                onRowEditChange = viewModel::setCsvImportRowEdit,
                 onConfirmImport = viewModel::confirmCsvImport,
                 onCancelPreview = viewModel::cancelCsvImportPreview,
                 onExport = { csvExportLauncher.launch("athar-transactions.csv") },
@@ -683,6 +685,7 @@ private fun CsvImportCard(
     onColumnMappingChange: (CsvImportColumnRole, String?) -> Unit,
     onPreviewMappedImport: () -> Unit,
     onRowIncludedChange: (Int, Boolean) -> Unit,
+    onRowEditChange: (CsvImportRowEdit) -> Unit,
     onConfirmImport: () -> Unit,
     onCancelPreview: () -> Unit,
     onExport: () -> Unit,
@@ -737,6 +740,7 @@ private fun CsvImportCard(
                     CsvPreviewSummary(
                         preview = s.preview,
                         onRowIncludedChange = onRowIncludedChange,
+                        onRowEditChange = onRowEditChange,
                     )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -976,8 +980,10 @@ private fun CsvImportColumnRole.label(): String = when (this) {
 private fun CsvPreviewSummary(
     preview: CsvImportPreview,
     onRowIncludedChange: (Int, Boolean) -> Unit,
+    onRowEditChange: (CsvImportRowEdit) -> Unit,
 ) {
     val theme = AtharTheme
+    var editingRow by remember { mutableStateOf<CsvImportPreviewRow?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
         AtharText(
             text = stringResource(R.string.settings_csv_preview_summary, preview.importable, preview.skipped),
@@ -1018,6 +1024,7 @@ private fun CsvPreviewSummary(
             CsvPreviewRowToggle(
                 row = row,
                 onIncludedChange = onRowIncludedChange,
+                onEdit = { editingRow = row },
             )
         }
         preview.skippedRows.firstOrNull()?.let { skipped ->
@@ -1028,12 +1035,23 @@ private fun CsvPreviewSummary(
             )
         }
     }
+    editingRow?.let { row ->
+        CsvPreviewRowEditDialog(
+            row = row,
+            onSave = { edit ->
+                onRowEditChange(edit)
+                editingRow = null
+            },
+            onDismiss = { editingRow = null },
+        )
+    }
 }
 
 @Composable
 private fun CsvPreviewRowToggle(
     row: CsvImportPreviewRow,
     onIncludedChange: (Int, Boolean) -> Unit,
+    onEdit: () -> Unit,
 ) {
     val theme = AtharTheme
     Row(
@@ -1072,7 +1090,163 @@ private fun CsvPreviewRowToggle(
                 style = theme.typography.caption,
                 color = if (row.included) theme.colors.olive else theme.colors.crimson,
             )
+            if (row.edited) {
+                AtharText(
+                    text = stringResource(R.string.settings_csv_preview_row_edited),
+                    style = theme.typography.caption,
+                    color = theme.colors.ember,
+                )
+            }
+            TextButton(onClick = onEdit) {
+                AtharText(
+                    text = stringResource(R.string.settings_csv_preview_row_edit),
+                    color = theme.colors.ember,
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun CsvPreviewRowEditDialog(
+    row: CsvImportPreviewRow,
+    onSave: (CsvImportRowEdit) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val theme = AtharTheme
+    var date by remember(row.rowNumber, row.date) { mutableStateOf(row.date) }
+    var merchant by remember(row.rowNumber, row.merchant) { mutableStateOf(row.merchant) }
+    var amount by remember(row.rowNumber, row.amount) { mutableStateOf(row.amount) }
+    var currency by remember(row.rowNumber, row.currency) { mutableStateOf(row.currency) }
+    var type by remember(row.rowNumber, row.type) { mutableStateOf(row.type) }
+    var category by remember(row.rowNumber, row.category) { mutableStateOf(row.category.orEmpty()) }
+    var notes by remember(row.rowNumber, row.notes) { mutableStateOf(row.notes.orEmpty()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            AtharText(
+                text = stringResource(R.string.settings_csv_row_edit_title, row.rowNumber),
+                style = theme.typography.headline,
+                color = theme.colors.ink,
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(theme.spacing.s),
+            ) {
+                AtharTextField(
+                    value = date,
+                    onValueChange = { date = it },
+                    label = stringResource(R.string.settings_csv_row_edit_date),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                AtharTextField(
+                    value = merchant,
+                    onValueChange = { merchant = it },
+                    label = stringResource(R.string.settings_csv_row_edit_merchant),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                AtharTextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    label = stringResource(R.string.settings_csv_row_edit_amount),
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardType = KeyboardType.Decimal,
+                )
+                AtharTextField(
+                    value = currency,
+                    onValueChange = { currency = it.uppercase().take(3) },
+                    label = stringResource(R.string.settings_csv_row_edit_currency),
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardType = KeyboardType.Ascii,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+                    CsvTypeChoice(
+                        label = stringResource(R.string.settings_csv_preview_type_expense),
+                        selected = type == TxType.EXPENSE,
+                        onClick = { type = TxType.EXPENSE },
+                        modifier = Modifier.weight(1f),
+                    )
+                    CsvTypeChoice(
+                        label = stringResource(R.string.settings_csv_preview_type_income),
+                        selected = type == TxType.INCOME,
+                        onClick = { type = TxType.INCOME },
+                        modifier = Modifier.weight(1f),
+                    )
+                    CsvTypeChoice(
+                        label = stringResource(R.string.settings_csv_preview_type_transfer),
+                        selected = type == TxType.TRANSFER,
+                        onClick = { type = TxType.TRANSFER },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                AtharTextField(
+                    value = category,
+                    onValueChange = { category = it },
+                    label = stringResource(R.string.settings_csv_row_edit_category),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                AtharTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = stringResource(R.string.settings_csv_row_edit_notes),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = false,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onSave(
+                        CsvImportRowEdit(
+                            rowNumber = row.rowNumber,
+                            date = date,
+                            merchant = merchant,
+                            amount = amount,
+                            currency = currency,
+                            type = type,
+                            category = category,
+                            notes = notes,
+                        ),
+                    )
+                },
+            ) {
+                AtharText(text = stringResource(R.string.settings_csv_row_edit_save), color = theme.colors.ember)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                AtharText(text = stringResource(R.string.settings_action_cancel), color = theme.colors.muted)
+            }
+        },
+        containerColor = theme.colors.parchment,
+    )
+}
+
+@Composable
+private fun CsvTypeChoice(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val theme = AtharTheme
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(if (selected) theme.colors.olive else theme.colors.divider)
+            .clickable(onClick = onClick)
+            .padding(theme.spacing.s),
+        contentAlignment = Alignment.Center,
+    ) {
+        AtharText(
+            text = label,
+            style = theme.typography.caption,
+            color = if (selected) theme.colors.parchment else theme.colors.ink,
+        )
     }
 }
 

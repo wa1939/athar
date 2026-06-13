@@ -16,11 +16,13 @@ import com.athar.core.domain.repo.CsvImportPreviewResult
 import com.athar.core.domain.repo.CsvImportPreviewRow
 import com.athar.core.domain.repo.CsvImportResult
 import com.athar.core.domain.repo.CsvImportRowDecision
+import com.athar.core.domain.repo.CsvImportRowEdit
 import com.athar.core.domain.repo.CsvImportSkippedRow
 import com.athar.core.domain.repo.CsvImportTrigger
 import com.athar.core.domain.repo.TransactionRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 import timber.log.Timber
 import java.io.InputStream
 import java.math.BigDecimal
@@ -41,8 +43,9 @@ internal class CsvImporter @Inject constructor(
         accountId: String,
         mapping: CsvImportColumnMapping?,
         rowDecisions: List<CsvImportRowDecision>,
+        rowEdits: List<CsvImportRowEdit>,
     ): CsvImportPreviewResult {
-        return when (val plan = buildPlan(input, accountId, mapping, rowDecisions)) {
+        return when (val plan = buildPlan(input, accountId, mapping, rowDecisions, rowEdits)) {
             is CsvPlanResult.Done -> CsvImportPreviewResult.Done(plan.plan.toPreview())
             is CsvPlanResult.MappingRequired -> CsvImportPreviewResult.MappingRequired(
                 columns = plan.columns,
@@ -57,8 +60,9 @@ internal class CsvImporter @Inject constructor(
         accountId: String,
         mapping: CsvImportColumnMapping?,
         rowDecisions: List<CsvImportRowDecision>,
+        rowEdits: List<CsvImportRowEdit>,
     ): CsvImportResult {
-        val plan = when (val result = buildPlan(input, accountId, mapping, rowDecisions)) {
+        val plan = when (val result = buildPlan(input, accountId, mapping, rowDecisions, rowEdits)) {
             is CsvPlanResult.Done -> result.plan
             is CsvPlanResult.MappingRequired -> return CsvImportResult.Failed(result.reason)
             is CsvPlanResult.Failed -> return CsvImportResult.Failed(result.reason)
@@ -74,6 +78,7 @@ internal class CsvImporter @Inject constructor(
         accountId: String = MANUAL_ACCOUNT_ID,
         mapping: CsvImportColumnMapping? = null,
         rowDecisions: List<CsvImportRowDecision> = emptyList(),
+        rowEdits: List<CsvImportRowEdit> = emptyList(),
     ): CsvPlanResult {
         val text = runCatching { input.bufferedReader().use { it.readText() } }
             .getOrElse { return CsvPlanResult.Failed("Couldn't read import file: ${it.message}") }
@@ -81,13 +86,15 @@ internal class CsvImporter @Inject constructor(
         if (lines.isEmpty()) return CsvPlanResult.Failed("Empty import file.")
 
         val decisions = rowDecisions.shouldImportByRowNumber()
+        val edits = rowEdits.byRowNumber()
+        val categoryLookup = categoryLookup()
 
         if (StatementOfxMapper.looksLikeOfx(text)) {
-            return buildOfxPlan(text, accountId, decisions)
+            return buildOfxPlan(text, accountId, decisions, edits, categoryLookup)
         }
 
         if (StatementMt940Mapper.looksLikeMt940(text)) {
-            return buildMt940Plan(text, accountId, decisions)
+            return buildMt940Plan(text, accountId, decisions, edits, categoryLookup)
         }
 
         val format = detectCsvFormat(lines[0], mapping)
@@ -102,9 +109,6 @@ internal class CsvImporter @Inject constructor(
 
         val existingImports = existingImportIdentities(accountId)
         val refs = StableImportRefBuilder(accountId = accountId, format = "csv")
-        val cats = categories.observeAll(kind = null, includeArchived = false).first()
-        val categoryByName = cats.associateBy { it.name.lowercase().trim() }
-        val categoryByAr = cats.associateBy { it.nameAr.trim() }
         val now = clock.now()
 
         val transactions = mutableListOf<CsvPlanTransaction>()
@@ -117,8 +121,7 @@ internal class CsvImporter @Inject constructor(
                 rowIndex = rowNumber,
                 row = row,
                 columns = columns,
-                categoryByName = categoryByName,
-                categoryByAr = categoryByAr,
+                categoryLookup = categoryLookup,
                 now = now,
                 accountId = accountId,
             )
@@ -129,13 +132,24 @@ internal class CsvImporter @Inject constructor(
                 )
                 continue
             }
-            val identity = refs.nextForContent(mapped.transaction)
-            val transaction = mapped.transaction.withStableSourceRef(identity.sourceRefId)
+            val edited = when (val editResult = mapped.applyEdit(edits[rowNumber], categoryLookup)) {
+                is RowEditResult.Done -> editResult.row
+                is RowEditResult.Invalid -> {
+                    skippedRows += CsvImportSkippedRow(
+                        rowNumber = rowNumber,
+                        reason = editResult.reason,
+                    )
+                    continue
+                }
+            }
+            val identity = refs.nextForContent(edited.transaction)
+            val transaction = edited.transaction.withStableSourceRef(identity.sourceRefId)
             addImportableOrDuplicateSkip(
                 rowNumber = rowNumber,
                 transaction = transaction,
                 identity = identity,
-                categoryPreview = mapped.categoryPreview,
+                categoryPreview = edited.categoryPreview,
+                edited = edited.edited,
                 decisions = decisions,
                 existingImports = existingImports,
                 transactions = transactions,
@@ -159,6 +173,8 @@ internal class CsvImporter @Inject constructor(
         text: String,
         accountId: String,
         decisions: Map<Int, Boolean>,
+        edits: Map<Int, CsvImportRowEdit>,
+        categoryLookup: CategoryLookup,
     ): CsvPlanResult {
         val parsed = when (val result = StatementOfxMapper.parse(text)) {
             is StatementOfxParseResult.Done -> result
@@ -196,15 +212,24 @@ internal class CsvImporter @Inject constructor(
                 createdAt = now,
                 updatedAt = now,
             )
+            val mapped = CsvMappedTransaction(transactionWithoutRef, categoryPreview = null, edited = false)
+            val edited = when (val editResult = mapped.applyEdit(edits[row.rowNumber], categoryLookup)) {
+                is RowEditResult.Done -> editResult.row
+                is RowEditResult.Invalid -> {
+                    skippedRows += CsvImportSkippedRow(rowNumber = row.rowNumber, reason = editResult.reason)
+                    return@forEach
+                }
+            }
             val identity = row.sourceRefId
-                ?.let { refs.nextForExternalRef(it, transactionWithoutRef) }
-                ?: refs.nextForContent(transactionWithoutRef)
-            val transaction = transactionWithoutRef.withStableSourceRef(identity.sourceRefId)
+                ?.let { refs.nextForExternalRef(it, edited.transaction) }
+                ?: refs.nextForContent(edited.transaction)
+            val transaction = edited.transaction.withStableSourceRef(identity.sourceRefId)
             addImportableOrDuplicateSkip(
                 rowNumber = row.rowNumber,
                 transaction = transaction,
                 identity = identity,
-                categoryPreview = null,
+                categoryPreview = edited.categoryPreview,
+                edited = edited.edited,
                 decisions = decisions,
                 existingImports = existingImports,
                 transactions = transactions,
@@ -238,6 +263,8 @@ internal class CsvImporter @Inject constructor(
         text: String,
         accountId: String,
         decisions: Map<Int, Boolean>,
+        edits: Map<Int, CsvImportRowEdit>,
+        categoryLookup: CategoryLookup,
     ): CsvPlanResult {
         val parsed = when (val result = StatementMt940Mapper.parse(text)) {
             is StatementMt940ParseResult.Done -> result
@@ -275,15 +302,24 @@ internal class CsvImporter @Inject constructor(
                 createdAt = now,
                 updatedAt = now,
             )
+            val mapped = CsvMappedTransaction(transactionWithoutRef, categoryPreview = null, edited = false)
+            val edited = when (val editResult = mapped.applyEdit(edits[row.rowNumber], categoryLookup)) {
+                is RowEditResult.Done -> editResult.row
+                is RowEditResult.Invalid -> {
+                    skippedRows += CsvImportSkippedRow(rowNumber = row.rowNumber, reason = editResult.reason)
+                    return@forEach
+                }
+            }
             val identity = row.sourceRefId
-                ?.let { refs.nextForExternalRef(it, transactionWithoutRef) }
-                ?: refs.nextForContent(transactionWithoutRef)
-            val transaction = transactionWithoutRef.withStableSourceRef(identity.sourceRefId)
+                ?.let { refs.nextForExternalRef(it, edited.transaction) }
+                ?: refs.nextForContent(edited.transaction)
+            val transaction = edited.transaction.withStableSourceRef(identity.sourceRefId)
             addImportableOrDuplicateSkip(
                 rowNumber = row.rowNumber,
                 transaction = transaction,
                 identity = identity,
-                categoryPreview = null,
+                categoryPreview = edited.categoryPreview,
+                edited = edited.edited,
                 decisions = decisions,
                 existingImports = existingImports,
                 transactions = transactions,
@@ -317,8 +353,7 @@ internal class CsvImporter @Inject constructor(
         rowIndex: Int,
         row: List<String>,
         columns: StatementCsvColumns,
-        categoryByName: Map<String, Category>,
-        categoryByAr: Map<String, Category>,
+        categoryLookup: CategoryLookup,
         now: kotlinx.datetime.Instant,
         accountId: String,
     ): CsvMappedTransaction? {
@@ -327,9 +362,7 @@ internal class CsvImporter @Inject constructor(
             return null
         }
 
-        val categoryId = mapped.category?.let { key ->
-            categoryByAr[key]?.id ?: categoryByName[key.lowercase()]?.id
-        }
+        val categoryId = mapped.category?.let(categoryLookup::categoryIdFor)
 
         return CsvMappedTransaction(
             transaction = Transaction(
@@ -351,6 +384,7 @@ internal class CsvImporter @Inject constructor(
                 updatedAt = now,
             ),
             categoryPreview = mapped.category,
+            edited = false,
         )
     }
 
@@ -369,7 +403,9 @@ internal class CsvImporter @Inject constructor(
                 currency = row.transaction.amount.currency,
                 type = row.transaction.type,
                 category = row.categoryPreview,
+                notes = row.transaction.notes,
                 included = row.included,
+                edited = row.edited,
             )
         },
         skippedRows = skippedRows.take(PREVIEW_ROW_LIMIT),
@@ -391,6 +427,68 @@ internal class CsvImporter @Inject constructor(
     private fun List<CsvPlanTransaction>.totalFor(type: TxType): BigDecimal =
         filter { it.transaction.type == type }
             .fold(BigDecimal.ZERO) { total, row -> total + row.transaction.amount.amount }
+
+    private suspend fun categoryLookup(): CategoryLookup {
+        val rows = categories.observeAll(kind = null, includeArchived = false).first()
+        return CategoryLookup(
+            byId = rows.associateBy { it.id.lowercase().trim() },
+            byName = rows.associateBy { it.name.lowercase().trim() },
+            byAr = rows.associateBy { it.nameAr.trim() },
+        )
+    }
+
+    private fun CsvMappedTransaction.applyEdit(
+        edit: CsvImportRowEdit?,
+        categoryLookup: CategoryLookup,
+    ): RowEditResult {
+        if (edit == null) return RowEditResult.Done(this)
+
+        val nextDate = edit.date?.trim()?.let { raw ->
+            raw.takeIf { it.isNotBlank() } ?: return RowEditResult.Invalid("Invalid edited date")
+            runCatching { LocalDate.parse(raw) }.getOrNull()
+                ?: return RowEditResult.Invalid("Invalid edited date")
+        } ?: transaction.date
+
+        val nextMerchant = edit.merchant?.trim()?.let { raw ->
+            raw.takeIf { it.isNotBlank() } ?: return RowEditResult.Invalid("Edited merchant is blank")
+        } ?: transaction.merchant
+
+        val nextAmount = edit.amount?.trim()?.let { raw ->
+            raw.takeIf { it.isNotBlank() } ?: return RowEditResult.Invalid("Invalid edited amount")
+            val parsed = runCatching { BigDecimal(raw.replace(",", "")) }.getOrNull()
+                ?: return RowEditResult.Invalid("Invalid edited amount")
+            parsed.abs().takeIf { it.signum() > 0 }
+                ?: return RowEditResult.Invalid("Invalid edited amount")
+        } ?: transaction.amount.amount
+
+        val nextCurrency = edit.currency?.trim()?.let { raw ->
+            raw.takeIf { it.isNotBlank() } ?: return RowEditResult.Invalid("Invalid edited currency")
+            raw.uppercase().takeIf { ISO_CURRENCY_REGEX.matches(it) }
+                ?: return RowEditResult.Invalid("Invalid edited currency")
+        } ?: transaction.amount.currency
+
+        val categoryOverride = edit.category?.let { raw ->
+            categoryLookup.resolve(raw) ?: return RowEditResult.Invalid("Unknown edited category")
+        }
+        val editedNotes = edit.notes
+
+        val nextTransaction = transaction.copy(
+            date = nextDate,
+            merchant = nextMerchant,
+            merchantNormalized = nextMerchant.lowercase().trim(),
+            amount = Money.of(nextAmount, nextCurrency),
+            type = edit.type ?: transaction.type,
+            categoryId = if (categoryOverride != null) categoryOverride.id else transaction.categoryId,
+            notes = if (editedNotes != null) editedNotes.trim().takeIf { it.isNotBlank() } else transaction.notes,
+        )
+        return RowEditResult.Done(
+            copy(
+                transaction = nextTransaction,
+                categoryPreview = if (categoryOverride != null) categoryOverride.preview else categoryPreview,
+                edited = true,
+            ),
+        )
+    }
 
     private fun detectedColumns(header: List<String>, columns: StatementCsvColumns): CsvImportDetectedColumns =
         CsvImportDetectedColumns(
@@ -420,6 +518,7 @@ internal class CsvImporter @Inject constructor(
         transaction: Transaction,
         identity: ImportIdentity,
         categoryPreview: String?,
+        edited: Boolean,
         decisions: Map<Int, Boolean>,
         existingImports: ExistingImportIdentities,
         transactions: MutableList<CsvPlanTransaction>,
@@ -432,6 +531,7 @@ internal class CsvImporter @Inject constructor(
                 transaction = transaction,
                 categoryPreview = categoryPreview,
                 included = false,
+                edited = edited,
             )
             skippedRows += CsvImportSkippedRow(
                 rowNumber = rowNumber,
@@ -451,6 +551,7 @@ internal class CsvImporter @Inject constructor(
             transaction = transaction,
             categoryPreview = categoryPreview,
             included = true,
+            edited = edited,
         )
         previewRows += transactions.last()
     }
@@ -523,22 +624,58 @@ internal class CsvImporter @Inject constructor(
         val transaction: Transaction,
         val categoryPreview: String?,
         val included: Boolean,
+        val edited: Boolean,
     )
 
     private data class CsvMappedTransaction(
         val transaction: Transaction,
         val categoryPreview: String?,
+        val edited: Boolean,
     )
+
+    private sealed interface RowEditResult {
+        data class Done(val row: CsvMappedTransaction) : RowEditResult
+        data class Invalid(val reason: String) : RowEditResult
+    }
 
     private companion object {
         const val PREVIEW_ROW_LIMIT = 5
         val CsvDelimiters = listOf(',', ';', '\t')
+        val ISO_CURRENCY_REGEX = Regex("""[A-Z]{3}""")
     }
 }
 
 private fun List<CsvImportRowDecision>.shouldImportByRowNumber(): Map<Int, Boolean> =
     filter { it.rowNumber > 0 }
         .associate { it.rowNumber to it.shouldImport }
+
+private fun List<CsvImportRowEdit>.byRowNumber(): Map<Int, CsvImportRowEdit> =
+    filter { it.rowNumber > 0 }
+        .associateBy { it.rowNumber }
+
+private data class CategoryLookup(
+    val byId: Map<String, Category>,
+    val byName: Map<String, Category>,
+    val byAr: Map<String, Category>,
+) {
+    fun categoryIdFor(raw: String): String? = resolve(raw)?.id
+
+    fun resolve(raw: String): CategoryOverride? {
+        val trimmed = raw.trim()
+        if (trimmed.isBlank()) return CategoryOverride(id = null, preview = null)
+
+        val category = byId[trimmed.lowercase()]
+            ?: byName[trimmed.lowercase()]
+            ?: byAr[trimmed]
+            ?: return null
+        return CategoryOverride(id = category.id, preview = category.name)
+    }
+}
+
+private data class CategoryOverride(
+    val id: String?,
+    val preview: String?,
+)
 
 private data class ImportIdentity(
     val sourceRefId: String,

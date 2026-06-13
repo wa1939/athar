@@ -1,6 +1,7 @@
 package com.athar.core.domain.repo
 
 import com.athar.core.domain.model.MANUAL_ACCOUNT_ID
+import com.athar.core.domain.model.TxType
 import java.io.InputStream
 import java.math.BigDecimal
 
@@ -49,6 +50,7 @@ interface CsvImportTrigger {
         accountId: String = MANUAL_ACCOUNT_ID,
         mapping: CsvImportColumnMapping? = null,
         rowDecisions: List<CsvImportRowDecision> = emptyList(),
+        rowEdits: List<CsvImportRowEdit> = emptyList(),
     ): CsvImportPreviewResult
 
     suspend fun import(
@@ -56,6 +58,7 @@ interface CsvImportTrigger {
         accountId: String = MANUAL_ACCOUNT_ID,
         mapping: CsvImportColumnMapping? = null,
         rowDecisions: List<CsvImportRowDecision> = emptyList(),
+        rowEdits: List<CsvImportRowEdit> = emptyList(),
     ): CsvImportResult
 }
 
@@ -124,6 +127,17 @@ data class CsvImportRowDecision(
     val shouldImport: Boolean,
 )
 
+data class CsvImportRowEdit(
+    val rowNumber: Int,
+    val date: String? = null,
+    val merchant: String? = null,
+    val amount: String? = null,
+    val currency: String? = null,
+    val type: TxType? = null,
+    val category: String? = null,
+    val notes: String? = null,
+)
+
 enum class CsvImportColumnRole {
     DATE,
     MERCHANT,
@@ -156,7 +170,9 @@ data class CsvImportPreviewRow(
     val currency: String,
     val type: com.athar.core.domain.model.TxType,
     val category: String?,
+    val notes: String?,
     val included: Boolean = true,
+    val edited: Boolean = false,
 )
 
 data class CsvImportSkippedRow(

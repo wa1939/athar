@@ -13,6 +13,7 @@ import com.athar.core.domain.repo.CsvImportColumnMapping
 import com.athar.core.domain.repo.CsvImportPreviewResult
 import com.athar.core.domain.repo.CsvImportResult
 import com.athar.core.domain.repo.CsvImportRowDecision
+import com.athar.core.domain.repo.CsvImportRowEdit
 import com.athar.core.domain.repo.TransactionRepository
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.Flow
@@ -128,6 +129,84 @@ class CsvImporterTest {
         assertThat(usd.expenseTotal.compareTo(BigDecimal("18.50"))).isEqualTo(0)
         assertThat(usd.incomeTotal.compareTo(BigDecimal("1000.00"))).isEqualTo(0)
         assertThat(transactions.upserts).isEmpty()
+    }
+
+    @Test
+    fun `row edits override preview and imported transaction fields`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            clock = FixedClock,
+        )
+        val edits = listOf(
+            CsvImportRowEdit(
+                rowNumber = 2,
+                date = "2026-06-05",
+                merchant = "Corrected Coffee",
+                amount = "20.00",
+                currency = "USD",
+                type = TxType.TRANSFER,
+                category = "",
+                notes = "Manual preview fix",
+            ),
+        )
+
+        val result = importer.preview(
+            input = ByteArrayInputStream(statementCsv.toByteArray()),
+            rowEdits = edits,
+        )
+        val imported = importer.import(
+            input = ByteArrayInputStream(statementCsv.toByteArray()),
+            rowEdits = edits,
+        )
+
+        val preview = (result as CsvImportPreviewResult.Done).preview
+        val editedRow = preview.sampleRows.first()
+        assertThat(editedRow.edited).isTrue()
+        assertThat(editedRow.date).isEqualTo("2026-06-05")
+        assertThat(editedRow.merchant).isEqualTo("Corrected Coffee")
+        assertThat(editedRow.amount).isEqualTo("20.00")
+        assertThat(editedRow.currency).isEqualTo("USD")
+        assertThat(editedRow.type).isEqualTo(TxType.TRANSFER)
+        assertThat(editedRow.category).isNull()
+        assertThat(editedRow.notes).isEqualTo("Manual preview fix")
+        assertThat(imported).isEqualTo(CsvImportResult.Done(imported = 2, skipped = 1))
+        val tx = transactions.upserts.first()
+        assertThat(tx.date).isEqualTo(LocalDate(2026, 6, 5))
+        assertThat(tx.merchant).isEqualTo("Corrected Coffee")
+        assertThat(tx.merchantNormalized).isEqualTo("corrected coffee")
+        assertThat(tx.amount.amount.compareTo(BigDecimal("20.00"))).isEqualTo(0)
+        assertThat(tx.amount.currency).isEqualTo("USD")
+        assertThat(tx.type).isEqualTo(TxType.TRANSFER)
+        assertThat(tx.categoryId).isNull()
+        assertThat(tx.notes).isEqualTo("Manual preview fix")
+    }
+
+    @Test
+    fun `invalid row edits skip the edited row conservatively`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            clock = FixedClock,
+        )
+
+        val result = importer.preview(
+            input = ByteArrayInputStream(statementCsv.toByteArray()),
+            rowEdits = listOf(CsvImportRowEdit(rowNumber = 2, amount = "not-money")),
+        )
+        val imported = importer.import(
+            input = ByteArrayInputStream(statementCsv.toByteArray()),
+            rowEdits = listOf(CsvImportRowEdit(rowNumber = 2, amount = "not-money")),
+        )
+
+        val preview = (result as CsvImportPreviewResult.Done).preview
+        assertThat(preview.importable).isEqualTo(1)
+        assertThat(preview.skipped).isEqualTo(2)
+        assertThat(preview.skippedRows.map { it.reason }).contains("Invalid edited amount")
+        assertThat(imported).isEqualTo(CsvImportResult.Done(imported = 1, skipped = 2))
+        assertThat(transactions.upserts.map { it.merchant }).containsExactly("Salary")
     }
 
     @Test

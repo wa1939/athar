@@ -27,6 +27,8 @@ Athar/TMOAP-style CSV and common bank-statement CSV exports.
 - Category names still resolve against Athar's English or Arabic category names.
 
 The G-12 slices now include OFX/QFX/MT940 parsing, safe preview/confirm, account
-selection, duplicate-safe stable references, manual CSV column mapping, and preview-row
-exclusion. Preview also summarizes importable rows by currency with expense, income, and
-transfer totals. Field-level row editing remains planned for the full import wizard.
+selection, duplicate-safe stable references, manual CSV column mapping, preview-row
+exclusion, per-currency totals, and field-level preview row editing. Users can correct
+date, merchant, amount, currency, type, category, and notes before confirmation; the
+same edited plan is used for duplicate checks and final inserts. Per-row account review
+remains planned for the full import wizard.

@@ -85,8 +85,18 @@
     <string name="settings_csv_preview_first_skip" formatted="true">أول صف متخطى: #%1$d · %2$s</string>
     <string name="settings_csv_preview_row_included">سيتم استيراد هذا الصف</string>
     <string name="settings_csv_preview_row_excluded">مستبعد من الاستيراد</string>
+    <string name="settings_csv_preview_row_edited">تم تعديل هذا الصف</string>
+    <string name="settings_csv_preview_row_edit">تعديل الصف</string>
     <string name="settings_csv_preview_currency_title">ملخص العملات قبل الاستيراد</string>
     <string name="settings_csv_preview_currency_rows">صف</string>
+    <string name="settings_csv_row_edit_title" formatted="true">تعديل الصف #%1$d</string>
+    <string name="settings_csv_row_edit_date">التاريخ (YYYY-MM-DD)</string>
+    <string name="settings_csv_row_edit_merchant">التاجر أو الوصف</string>
+    <string name="settings_csv_row_edit_amount">المبلغ</string>
+    <string name="settings_csv_row_edit_currency">العملة</string>
+    <string name="settings_csv_row_edit_category">الفئة</string>
+    <string name="settings_csv_row_edit_notes">ملاحظات</string>
+    <string name="settings_csv_row_edit_save">حفظ التعديل</string>
     <string name="settings_csv_preview_column_date">التاريخ</string>
     <string name="settings_csv_preview_column_merchant">التاجر</string>
     <string name="settings_csv_preview_column_money">المبلغ</string>

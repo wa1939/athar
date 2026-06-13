@@ -8,6 +8,7 @@ import com.athar.core.domain.model.MANUAL_ACCOUNT_ID
 import com.athar.core.domain.model.NetWorth
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
+import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.AccountRepository
 import com.athar.core.domain.repo.BackfillProgress
 import com.athar.core.domain.repo.BackupRepository
@@ -23,6 +24,7 @@ import com.athar.core.domain.repo.CsvImportPreviewResult
 import com.athar.core.domain.repo.CsvImportPreviewRow
 import com.athar.core.domain.repo.CsvImportResult
 import com.athar.core.domain.repo.CsvImportRowDecision
+import com.athar.core.domain.repo.CsvImportRowEdit
 import com.athar.core.domain.repo.CsvImportTrigger
 import com.athar.core.domain.repo.MerchantBulkExportResult
 import com.athar.core.domain.repo.MerchantBulkExportTrigger
@@ -197,6 +199,30 @@ class SettingsViewModelTest {
         )
     }
 
+    @Test
+    fun `csv row edits are used for preview and confirm`() = runTest(mainDispatcher) {
+        val csv = RecordingCsvImportTrigger()
+        val viewModel = settingsViewModel(csvImporter = csv)
+        val edit = CsvImportRowEdit(
+            rowNumber = 2,
+            merchant = "Corrected Merchant",
+            amount = "20.00",
+            currency = "USD",
+            type = TxType.TRANSFER,
+            notes = "preview fix",
+        )
+
+        viewModel.previewCsvImportBytes("row edit csv".toByteArray())
+        advanceUntilIdle()
+        viewModel.setCsvImportRowEdit(edit)
+        advanceUntilIdle()
+        viewModel.confirmCsvImport()
+        advanceUntilIdle()
+
+        assertThat(csv.previewedRowEdits.last()).containsExactly(edit)
+        assertThat(csv.importedRowEdits).containsExactly(listOf(edit))
+    }
+
     private fun settingsViewModel(
         backfill: SmsBackfillTrigger = FakeSmsBackfillTrigger(),
         csvImporter: CsvImportTrigger = FakeCsvImportTrigger,
@@ -282,6 +308,7 @@ private object FakeCsvImportTrigger : CsvImportTrigger {
         accountId: String,
         mapping: CsvImportColumnMapping?,
         rowDecisions: List<CsvImportRowDecision>,
+        rowEdits: List<CsvImportRowEdit>,
     ): CsvImportPreviewResult =
         CsvImportPreviewResult.Done(emptyPreview())
 
@@ -290,6 +317,7 @@ private object FakeCsvImportTrigger : CsvImportTrigger {
         accountId: String,
         mapping: CsvImportColumnMapping?,
         rowDecisions: List<CsvImportRowDecision>,
+        rowEdits: List<CsvImportRowEdit>,
     ): CsvImportResult =
         CsvImportResult.Done(imported = 0, skipped = 0)
 }
@@ -301,21 +329,25 @@ private class RecordingCsvImportTrigger(
     val previewedAccountIds = mutableListOf<String>()
     val previewedMappings = mutableListOf<CsvImportColumnMapping?>()
     val previewedRowDecisions = mutableListOf<List<CsvImportRowDecision>>()
+    val previewedRowEdits = mutableListOf<List<CsvImportRowEdit>>()
     val importedBytes = mutableListOf<ByteArray>()
     val importedAccountIds = mutableListOf<String>()
     val importedMappings = mutableListOf<CsvImportColumnMapping?>()
     val importedRowDecisions = mutableListOf<List<CsvImportRowDecision>>()
+    val importedRowEdits = mutableListOf<List<CsvImportRowEdit>>()
 
     override suspend fun preview(
         input: InputStream,
         accountId: String,
         mapping: CsvImportColumnMapping?,
         rowDecisions: List<CsvImportRowDecision>,
+        rowEdits: List<CsvImportRowEdit>,
     ): CsvImportPreviewResult {
         previewedBytes += input.readBytes()
         previewedAccountIds += accountId
         previewedMappings += mapping
         previewedRowDecisions += rowDecisions
+        previewedRowEdits += rowEdits
         return previewResult
     }
 
@@ -324,11 +356,13 @@ private class RecordingCsvImportTrigger(
         accountId: String,
         mapping: CsvImportColumnMapping?,
         rowDecisions: List<CsvImportRowDecision>,
+        rowEdits: List<CsvImportRowEdit>,
     ): CsvImportResult {
         importedBytes += input.readBytes()
         importedAccountIds += accountId
         importedMappings += mapping
         importedRowDecisions += rowDecisions
+        importedRowEdits += rowEdits
         return CsvImportResult.Done(imported = 3, skipped = 1)
     }
 }
@@ -356,7 +390,9 @@ private fun emptyPreview(): CsvImportPreview = CsvImportPreview(
             currency = "SAR",
             type = com.athar.core.domain.model.TxType.EXPENSE,
             category = null,
+            notes = null,
             included = true,
+            edited = false,
         ),
     ),
     skippedRows = emptyList(),

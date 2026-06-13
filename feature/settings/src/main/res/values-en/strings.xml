@@ -85,8 +85,18 @@
     <string name="settings_csv_preview_first_skip" formatted="true">First skipped row: #%1$d · %2$s</string>
     <string name="settings_csv_preview_row_included">This row will import</string>
     <string name="settings_csv_preview_row_excluded">Excluded from import</string>
+    <string name="settings_csv_preview_row_edited">This row has edits</string>
+    <string name="settings_csv_preview_row_edit">Edit row</string>
     <string name="settings_csv_preview_currency_title">Currency review before import</string>
     <string name="settings_csv_preview_currency_rows">rows</string>
+    <string name="settings_csv_row_edit_title" formatted="true">Edit row #%1$d</string>
+    <string name="settings_csv_row_edit_date">Date (YYYY-MM-DD)</string>
+    <string name="settings_csv_row_edit_merchant">Merchant or description</string>
+    <string name="settings_csv_row_edit_amount">Amount</string>
+    <string name="settings_csv_row_edit_currency">Currency</string>
+    <string name="settings_csv_row_edit_category">Category</string>
+    <string name="settings_csv_row_edit_notes">Notes</string>
+    <string name="settings_csv_row_edit_save">Save edit</string>
     <string name="settings_csv_preview_column_date">date</string>
     <string name="settings_csv_preview_column_merchant">merchant</string>
     <string name="settings_csv_preview_column_money">money</string>
