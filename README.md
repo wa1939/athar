@@ -105,6 +105,7 @@ Other tools force a trade-off:
 - ✅ **CSV import + export** for Excel and bank-statement interop — import TMOAP/Athar CSVs or common statement layouts with description/amount or debit/credit columns; export annual data for your accountant
 - ✅ **CSV import + export** for Excel interop — drop in your TMOAP transaction log to import; export annual data for your accountant
 - ✅ **Annual accountant/tax PDF export** — pick a year in Settings and export income/expense totals, category totals, and the confirmed transaction list
+- ✅ **First-run CSV import** — new users can bring a TMOAP / Excel transaction log into Athar during onboarding instead of hunting for the Settings exchange later
 - ✅ **SQLCipher** database encryption at rest, key wrapped via Android Keystore
 - ✅ **SMS audit log** — every parsed/failed/ignored SMS retained, never deleted
 - ✅ **Support diagnostics export** — Settings writes a redacted JSON report with SMS parse counts, pseudonymous sender hashes, body-shape fingerprints/flags, failed-template groups, and redacted parser errors. No raw SMS body, sender, balance, card, or account numbers are included
