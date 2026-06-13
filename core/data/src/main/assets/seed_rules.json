@@ -3086,6 +3086,81 @@
       "priority": 90
     },
     {
+      "pattern": "herfy",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "luckin",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "manner coffee",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "aldrees",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "didi taxi",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "hellobike",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "alnahdi",
+      "categoryId": "cat-medical",
+      "priority": 90
+    },
+    {
+      "pattern": "saudi electric",
+      "categoryId": "cat-utilities",
+      "priority": 90
+    },
+    {
+      "pattern": "electric company",
+      "categoryId": "cat-utilities",
+      "priority": 90
+    },
+    {
+      "pattern": "zara",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "uniqlo",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "airbnb",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "booking.com",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "credit card payment",
+      "categoryId": "cat-debt",
+      "priority": 90
+    },
+    {
+      "pattern": "loan instalment",
+      "categoryId": "cat-debt",
+      "priority": 90
+    },
+    {
       "pattern": "youtube premium",
       "categoryId": "cat-subscriptions",
       "priority": 90
