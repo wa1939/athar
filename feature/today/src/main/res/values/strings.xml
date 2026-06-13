@@ -23,6 +23,13 @@
     <!-- Captions -->
     <string name="today_caption_savings_rate" formatted="true">معدّل الادخار · %1$s٪</string>
     <string name="today_caption_net_worth_mixed">الثروة بعملات متعددة · بدون تحويل</string>
+    <string name="today_goals_nudge_title">فحص الأهداف</string>
+    <string name="today_goals_savings_on_track" formatted="true">هدف الادخار مكتمل · %1$s٪ / %2$d٪</string>
+    <string name="today_goals_savings_below" formatted="true">هدف الادخار · %1$s٪ / %2$d٪</string>
+    <string name="today_goals_savings_waiting">هدف الادخار · أضف دخلاً لقياسه</string>
+    <string name="today_goals_emergency_on_track" formatted="true">صندوق الطوارئ مكتمل · %1$s / %2$d شهر</string>
+    <string name="today_goals_emergency_below" formatted="true">صندوق الطوارئ · %1$s / %2$d شهر</string>
+    <string name="today_goals_emergency_waiting">صندوق الطوارئ · أضف مصاريف لتقديره</string>
 
     <!-- Sections -->
     <string name="today_section_today">حركات اليوم</string>

@@ -4,6 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.athar.core.common.money.Money
 import com.athar.core.common.time.Period
+import com.athar.core.domain.calc.GoalCalc
+import com.athar.core.domain.model.AccountBalance
+import com.athar.core.domain.model.AccountType
+import com.athar.core.domain.model.NetWorth
 import com.athar.core.domain.model.PatternType
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
@@ -26,6 +30,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import java.math.BigDecimal
 import java.time.YearMonth
 import javax.inject.Inject
 
@@ -45,14 +50,36 @@ class TodayViewModel @Inject constructor(
         month
             .flatMapLatest { m ->
                 val period = Period.Month(m)
+                val goalsPeriod = last3MonthsPeriod()
                 prefs.displayCurrency().flatMapLatest { currency ->
                     combine(
-                        transactions.observeByPeriod(period, status = TxStatus.CONFIRMED),
-                        transactions.observePending(),
-                        transactions.observeByPeriod(period, status = TxStatus.DISMISSED),
-                        accounts.observeNetWorth(currency),
-                    ) { confirmed, pending, dismissed, netWorth ->
-                        deriveState(m, confirmed, pending, dismissed, currency, netWorth)
+                        combine(
+                            transactions.observeByPeriod(period, status = TxStatus.CONFIRMED),
+                            transactions.observePending(),
+                            transactions.observeByPeriod(period, status = TxStatus.DISMISSED),
+                            accounts.observeNetWorth(currency),
+                        ) { confirmed, pending, dismissed, netWorth ->
+                            TodayInputs(confirmed, pending, dismissed, netWorth)
+                        },
+                        transactions.observeByPeriod(goalsPeriod, status = TxStatus.CONFIRMED),
+                        prefs.savingsRateTargetPercent(),
+                        prefs.emergencyFundTargetMonths(),
+                    ) { inputs, goalTransactions, savingsTarget, emergencyMonths ->
+                        deriveState(
+                            month = m,
+                            confirmed = inputs.confirmed,
+                            pending = inputs.pending,
+                            dismissed = inputs.dismissed,
+                            currency = currency,
+                            netWorth = inputs.netWorth,
+                            goalNudge = deriveGoalNudge(
+                                transactions = goalTransactions,
+                                netWorth = inputs.netWorth,
+                                currency = currency,
+                                savingsTarget = savingsTarget,
+                                emergencyMonths = emergencyMonths,
+                            ),
+                        )
                     }
                 }
             }
@@ -128,7 +155,8 @@ class TodayViewModel @Inject constructor(
         pending: List<Transaction>,
         dismissed: List<Transaction>,
         currency: String,
-        netWorth: com.athar.core.domain.model.NetWorth,
+        netWorth: NetWorth,
+        goalNudge: TodayGoalNudge?,
     ): TodayState {
         // Reconciliation adjustments only affect net worth; never count them as income/expense.
         val operating = confirmed.filterNot { it.isReconciliation() }
@@ -154,12 +182,79 @@ class TodayViewModel @Inject constructor(
             recent = monthTxns.take(10).toImmutableList(),
             pending = pending.toImmutableList(),
             dismissedToday = dismissedToday.toImmutableList(),
+            goalNudge = goalNudge,
             isLoading = false,
         )
+    }
+
+    private fun deriveGoalNudge(
+        transactions: List<Transaction>,
+        netWorth: NetWorth,
+        currency: String,
+        savingsTarget: Int,
+        emergencyMonths: Int,
+    ): TodayGoalNudge {
+        val operating = transactions.filterNot { it.isReconciliation() }
+        val totalIncome = Money.sumAmounts(
+            operating.filter { it.type == TxType.INCOME }.map { it.amount },
+            currency,
+        )
+        val totalExpense = Money.sumAmounts(
+            operating.filter { it.type == TxType.EXPENSE }.map { it.amount },
+            currency,
+        )
+        val monthlyIncome = GoalCalc.averageMonthly(totalIncome, LOOKBACK_MONTHS)
+        val monthlyExpense = GoalCalc.averageMonthly(totalExpense, LOOKBACK_MONTHS)
+        val savingsRate = GoalCalc.savingsRatePercent(monthlyIncome, monthlyExpense)
+        val emergencyCovered = GoalCalc.emergencyMonthsCovered(
+            liquidBalance(netWorth.accounts, currency),
+            monthlyExpense,
+        )
+
+        return TodayGoalNudge(
+            savingsRatePercent = savingsRate,
+            savingsRateTargetPercent = savingsTarget,
+            savingsRateProgress = GoalCalc.savingsRateProgress(savingsRate, savingsTarget).toProgressFloat(),
+            emergencyMonthsCovered = emergencyCovered,
+            emergencyFundTargetMonths = emergencyMonths,
+            emergencyFundProgress = GoalCalc.emergencyProgress(emergencyCovered, emergencyMonths).toProgressFloat(),
+        )
+    }
+
+    private fun liquidBalance(balances: List<AccountBalance>, currency: String): Money =
+        Money.sumAmounts(
+            balances
+                .filter { it.account.type in LIQUID_ACCOUNT_TYPES }
+                .map { it.current },
+            currency,
+        ).let { if (it.amount.signum() < 0) Money.zero(currency) else it }
+
+    private fun last3MonthsPeriod(): Period {
+        val today = clock.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        return Period.Last(months = LOOKBACK_MONTHS, endingAt = today)
     }
 
     private fun currentMonth(): YearMonth {
         val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
         return YearMonth.of(now.year, now.monthNumber)
+    }
+
+    private fun BigDecimal.toProgressFloat(): Float =
+        toFloat().coerceIn(0f, 1f)
+
+    private data class TodayInputs(
+        val confirmed: List<Transaction>,
+        val pending: List<Transaction>,
+        val dismissed: List<Transaction>,
+        val netWorth: NetWorth,
+    )
+
+    companion object {
+        private const val LOOKBACK_MONTHS = 3
+        private val LIQUID_ACCOUNT_TYPES = setOf(
+            AccountType.CHECKING,
+            AccountType.SAVINGS,
+            AccountType.CASH,
+        )
     }
 }

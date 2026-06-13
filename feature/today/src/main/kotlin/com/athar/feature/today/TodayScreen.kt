@@ -36,6 +36,8 @@ import com.athar.core.designsystem.component.AtharNumber
 import com.athar.core.designsystem.component.AtharSwipeRow
 import com.athar.core.designsystem.component.AtharText
 import com.athar.core.designsystem.theme.AtharTheme
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 @Composable
 fun TodayScreen(
@@ -257,8 +259,70 @@ private fun Header(state: TodayState) {
                 color = theme.colors.muted,
             )
         }
+        state.goalNudge?.let { GoalsNudge(it) }
     }
 }
+
+@Composable
+private fun GoalsNudge(nudge: TodayGoalNudge) {
+    val theme = AtharTheme
+    AtharCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+            AtharText(
+                text = stringResource(R.string.today_goals_nudge_title),
+                style = theme.typography.overline,
+                color = theme.colors.muted,
+            )
+            GoalNudgeLine(
+                text = savingsNudgeText(nudge),
+                color = when {
+                    nudge.savingsRatePercent == null -> theme.colors.muted
+                    nudge.savingsRateProgress >= 1f -> theme.colors.olive
+                    else -> theme.colors.ember
+                },
+            )
+            GoalNudgeLine(
+                text = emergencyNudgeText(nudge),
+                color = when {
+                    nudge.emergencyMonthsCovered == null -> theme.colors.muted
+                    nudge.emergencyFundProgress >= 1f -> theme.colors.olive
+                    else -> theme.colors.ember
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun GoalNudgeLine(text: String, color: Color) {
+    val theme = AtharTheme
+    AtharText(text = text, style = theme.typography.caption, color = color)
+}
+
+@Composable
+private fun savingsNudgeText(nudge: TodayGoalNudge): String {
+    val actual = nudge.savingsRatePercent ?: return stringResource(R.string.today_goals_savings_waiting)
+    val actualLabel = actual.format(scale = 0)
+    return if (nudge.savingsRateProgress >= 1f) {
+        stringResource(R.string.today_goals_savings_on_track, actualLabel, nudge.savingsRateTargetPercent)
+    } else {
+        stringResource(R.string.today_goals_savings_below, actualLabel, nudge.savingsRateTargetPercent)
+    }
+}
+
+@Composable
+private fun emergencyNudgeText(nudge: TodayGoalNudge): String {
+    val actual = nudge.emergencyMonthsCovered ?: return stringResource(R.string.today_goals_emergency_waiting)
+    val actualLabel = actual.format(scale = 1)
+    return if (nudge.emergencyFundProgress >= 1f) {
+        stringResource(R.string.today_goals_emergency_on_track, actualLabel, nudge.emergencyFundTargetMonths)
+    } else {
+        stringResource(R.string.today_goals_emergency_below, actualLabel, nudge.emergencyFundTargetMonths)
+    }
+}
+
+private fun BigDecimal.format(scale: Int): String =
+    setScale(scale, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
 
 @Composable
 private fun FlowPill(

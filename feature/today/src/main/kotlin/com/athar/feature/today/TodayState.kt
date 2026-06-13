@@ -5,6 +5,7 @@ import com.athar.core.common.money.Money
 import com.athar.core.domain.model.Transaction
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import java.math.BigDecimal
 import java.time.YearMonth
 
 @Immutable
@@ -20,6 +21,7 @@ data class TodayState(
     val recent: ImmutableList<Transaction>,
     val pending: ImmutableList<Transaction>,
     val dismissedToday: ImmutableList<Transaction>,
+    val goalNudge: TodayGoalNudge?,
     val isLoading: Boolean,
 ) {
     /** Percentage of income that became savings this month, or null if no income yet. */
@@ -40,10 +42,21 @@ data class TodayState(
             recent = persistentListOf(),
             pending = persistentListOf(),
             dismissedToday = persistentListOf(),
+            goalNudge = null,
             isLoading = true,
         )
     }
 }
+
+@Immutable
+data class TodayGoalNudge(
+    val savingsRatePercent: BigDecimal?,
+    val savingsRateTargetPercent: Int,
+    val savingsRateProgress: Float,
+    val emergencyMonthsCovered: BigDecimal?,
+    val emergencyFundTargetMonths: Int,
+    val emergencyFundProgress: Float,
+)
 
 sealed interface TodayEvent {
     data class ConfirmPending(val id: String) : TodayEvent

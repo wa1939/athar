@@ -53,6 +53,7 @@ Other tools force a trade-off:
 - ✅ One landmark net-flow number with **count-up animation**
 - ✅ **Income + Expense pills** (olive / ember) — see your monthly inflow and outflow at a glance
 - ✅ **Savings-rate caption** (e.g., "معدّل الادخار · 18٪") — the TMOAP discipline, on the home screen
+- ✅ **Goals check** — a compact savings-rate target and emergency-fund cue pulled from Plan targets
 - ✅ **Today section** at the top of the list filters to transactions where `date == today` so you instantly see what you spent today (with `Today's net · X SAR` subtitle in olive/ember). Below it: "This month's recent" for context.
 - ✅ Pending tray for SMS-captured transactions awaiting your confirmation
 - ✅ Swipe right to confirm · swipe left to dismiss · **bulk actions** for 5+ pending entries
@@ -303,7 +304,8 @@ maestro test .maestro/flows/                     # 10 E2E flows
 
 - ✅ The recovered PR stack (#11–#30) is integrated locally on `dev/integration-recovered-stack`; details are in [`docs/RECOVERY_2026-06-13.md`](docs/RECOVERY_2026-06-13.md).
 - ✅ JVM tests, both debug APK builds, and both app lint variants pass with JDK 17.
-- ⏳ Device E2E and screenshot UI audit still need a physical Android device or a working accelerated emulator. On 2026-06-13 the local AVD could not boot because firmware virtualization was disabled.
+- ✅ The scoped `dev/today-goals-nudge` branch also passes `:feature:today:test` plus the full JVM test/build/lint stack after adding the Today Goals check.
+- ⏳ Device E2E and screenshot UI audit still need a physical Android device or a working accelerated emulator. On 2026-06-13 the local AVD could not boot because firmware virtualization was disabled, and `adb devices -l` still returned no attached devices during this branch validation.
 
 ### In flight / remaining
 
@@ -312,7 +314,7 @@ maestro test .maestro/flows/                     # 10 E2E flows
 | QA-01 | Runtime E2E + UI audit | ⏳ | 0.5–1 day | Needs physical Android device or accelerated emulator |
 | G-7 | Bill reminders | ⏳ | 1.5 days | Plan → Bills upcoming view shipped; push reminders remain follow-up |
 | G-8 | Manual transaction UX upgrades | ◐ | 1.5 days | ✅ Recent-merchant autocomplete + quick-add chips · ⏳ voice entry · receipt photo |
-| G-10 | Savings-rate goals + emergency fund | ◐ | 0.5 day | ✅ Plan → Goals tab · ⏳ Today progress/nudge |
+| G-10 | Savings-rate goals + emergency fund | ✅ | — | Plan → Goals tab plus Today Goals check shipped; device visual QA remains under QA-01 |
 | G-11 | Broader notification handlers | ◐ | 3 days | Generic bank-app push parser shipped; app-specific handlers remain follow-up |
 | G-12 | Bank statement / CSV / OFX / QFX import wizard | ◐ | 3 days | CSV header auto-detect shipped; preview, manual mapping, OFX/QFX/MT940 still planned |
 | G-13 | Zero-knowledge sync to companion devices | ⏳ | 5 days | E2E-encrypted via Dropbox / Drive / iCloud / WebDAV / S3 — user holds the key |

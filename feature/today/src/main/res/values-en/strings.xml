@@ -22,6 +22,13 @@
     <!-- Captions -->
     <string name="today_caption_savings_rate" formatted="true">Savings rate · %1$s%%</string>
     <string name="today_caption_net_worth_mixed">Net worth spans multiple currencies · not converted</string>
+    <string name="today_goals_nudge_title">Goals check</string>
+    <string name="today_goals_savings_on_track" formatted="true">Savings target met · %1$s%% / %2$d%%</string>
+    <string name="today_goals_savings_below" formatted="true">Savings target · %1$s%% / %2$d%%</string>
+    <string name="today_goals_savings_waiting">Savings target · add income to measure</string>
+    <string name="today_goals_emergency_on_track" formatted="true">Emergency fund covered · %1$s / %2$d mo</string>
+    <string name="today_goals_emergency_below" formatted="true">Emergency fund · %1$s / %2$d mo</string>
+    <string name="today_goals_emergency_waiting">Emergency fund · add expenses to estimate</string>
 
     <!-- Sections -->
     <string name="today_section_today">Today\'s transactions</string>
