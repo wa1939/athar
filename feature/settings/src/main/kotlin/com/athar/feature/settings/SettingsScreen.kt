@@ -66,6 +66,8 @@ fun SettingsScreen(
     var smsGranted by remember { mutableStateOf(hasSmsPermissions(context)) }
     val status by viewModel.status.collectAsStateWithLifecycle()
     val backfill by viewModel.backfillProgress.collectAsStateWithLifecycle()
+    val pendingCount by viewModel.pendingCount.collectAsStateWithLifecycle()
+    var showRescanConfirm by remember { mutableStateOf(false) }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -160,7 +162,8 @@ fun SettingsScreen(
 
             RescanAndCleanCard(
                 status = rescanStatus,
-                onRescan = viewModel::rescanAndClean,
+                pendingCount = pendingCount,
+                onRequestRescan = { showRescanConfirm = true },
                 onClearStatus = viewModel::clearRescanStatus,
             )
 
@@ -285,6 +288,17 @@ fun SettingsScreen(
                 pendingImportUri = null
             },
             onDismiss = { pendingImportUri = null },
+        )
+    }
+
+    if (showRescanConfirm) {
+        RescanConfirmDialog(
+            pendingCount = pendingCount,
+            onConfirm = {
+                showRescanConfirm = false
+                viewModel.rescanAndClean()
+            },
+            onDismiss = { showRescanConfirm = false },
         )
     }
 }
@@ -1101,7 +1115,8 @@ private fun OwnAccountsCard(accounts: List<String>, onSave: (String) -> Unit) {
 @Composable
 private fun RescanAndCleanCard(
     status: RescanStatus,
-    onRescan: () -> Unit,
+    pendingCount: Int,
+    onRequestRescan: () -> Unit,
     onClearStatus: () -> Unit,
 ) {
     val theme = AtharTheme
@@ -1111,6 +1126,11 @@ private fun RescanAndCleanCard(
             AtharText(
                 text = stringResource(R.string.settings_rescan_body),
                 style = theme.typography.body,
+                color = theme.colors.muted,
+            )
+            AtharText(
+                text = stringResource(R.string.settings_rescan_pending_count, pendingCount),
+                style = theme.typography.caption,
                 color = theme.colors.muted,
             )
             val statusText = when (status) {
@@ -1127,7 +1147,7 @@ private fun RescanAndCleanCard(
                     .clip(RoundedCornerShape(theme.spacing.s))
                     .background(theme.colors.ember)
                     .clickable(enabled = status != RescanStatus.Working) {
-                        if (status is RescanStatus.Done) onClearStatus() else onRescan()
+                        if (status is RescanStatus.Done) onClearStatus() else onRequestRescan()
                     }
                     .padding(theme.spacing.m),
                 contentAlignment = Alignment.Center,
@@ -1140,6 +1160,45 @@ private fun RescanAndCleanCard(
             }
         }
     }
+}
+
+@Composable
+private fun RescanConfirmDialog(
+    pendingCount: Int,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val theme = AtharTheme
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            AtharText(
+                text = stringResource(R.string.settings_rescan_confirm_title),
+                style = theme.typography.headline,
+            )
+        },
+        text = {
+            AtharText(
+                text = stringResource(R.string.settings_rescan_confirm_body, pendingCount),
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                AtharText(
+                    text = stringResource(R.string.settings_rescan_confirm_action),
+                    color = theme.colors.ember,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                AtharText(text = stringResource(R.string.settings_rescan_confirm_cancel), color = theme.colors.muted)
+            }
+        },
+        containerColor = theme.colors.parchment,
+    )
 }
 
 @Composable

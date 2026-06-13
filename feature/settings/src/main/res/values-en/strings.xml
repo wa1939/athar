@@ -28,7 +28,7 @@
 
     <!-- Backfill card -->
     <string name="settings_backfill_title">Rescan SMS</string>
-    <string name="settings_backfill_body">Read the last 90 days of SMS in your inbox and create pending transactions awaiting confirmation.</string>
+    <string name="settings_backfill_body">Read your SMS inbox and create pending transactions awaiting confirmation.</string>
     <string name="settings_backfill_running" formatted="true">Scanning… (%1$d messages)</string>
     <string name="settings_backfill_done" formatted="true">Scanned %1$d messages, sent %2$d for processing.</string>
     <string name="settings_backfill_failed" formatted="true">Scan failed: %1$s</string>
@@ -38,9 +38,14 @@
     <!-- Rescan & clean card -->
     <string name="settings_rescan_title">Rescan SMS</string>
     <string name="settings_rescan_body">Removes all pending transactions and re-reads the SMS log with the latest templates. Your confirmed transactions are untouched. Useful after an update to clear ads and false positives.</string>
+    <string name="settings_rescan_pending_count" formatted="true">Pending now: %1$d</string>
     <string name="settings_rescan_working">Rescanning…</string>
     <string name="settings_rescan_done" formatted="true">Cleared %1$d pending items and rescanned the log.</string>
     <string name="settings_rescan_action">Rescan and clear pending</string>
+    <string name="settings_rescan_confirm_title">Rescan SMS log?</string>
+    <string name="settings_rescan_confirm_body" formatted="true">This will clear %1$d pending transaction(s), then read the SMS log again with the current templates. Confirmed transactions stay untouched. Review the result in Today or History before trusting the totals.</string>
+    <string name="settings_rescan_confirm_cancel">Keep current data</string>
+    <string name="settings_rescan_confirm_action">Rescan</string>
 
     <!-- Recover dismissed transactions card -->
     <string name="settings_recover_title">Recover dismissed transactions</string>
