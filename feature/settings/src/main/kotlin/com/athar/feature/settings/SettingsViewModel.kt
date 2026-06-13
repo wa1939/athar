@@ -17,6 +17,8 @@ import com.athar.core.domain.repo.MerchantBulkExportTrigger
 import com.athar.core.domain.repo.MerchantBulkImportResult
 import com.athar.core.domain.repo.MerchantBulkImportTrigger
 import com.athar.core.domain.repo.SmsBackfillTrigger
+import com.athar.core.domain.repo.SupportDiagnosticsExportResult
+import com.athar.core.domain.repo.SupportDiagnosticsExportTrigger
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -84,6 +86,18 @@ sealed interface CommunityShareStatus {
     data class Failed(val reason: String) : CommunityShareStatus
 }
 
+sealed interface SupportDiagnosticsStatus {
+    data object Idle : SupportDiagnosticsStatus
+    data object Working : SupportDiagnosticsStatus
+    data class Exported(
+        val auditRows: Int,
+        val parsed: Int,
+        val failed: Int,
+        val ignored: Int,
+    ) : SupportDiagnosticsStatus
+    data class Failed(val reason: String) : SupportDiagnosticsStatus
+}
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val backup: BackupRepository,
@@ -93,6 +107,7 @@ class SettingsViewModel @Inject constructor(
     private val bulkExporter: MerchantBulkExportTrigger,
     private val bulkImporter: MerchantBulkImportTrigger,
     private val communityShare: CommunityRulesShareTrigger,
+    private val supportDiagnostics: SupportDiagnosticsExportTrigger,
     private val prefs: UserPreferencesRepository,
     private val transactions: TransactionRepository,
 ) : ViewModel() {
@@ -114,6 +129,9 @@ class SettingsViewModel @Inject constructor(
 
     private val _communityShare = MutableStateFlow<CommunityShareStatus>(CommunityShareStatus.Idle)
     val communityShareStatus: StateFlow<CommunityShareStatus> = _communityShare.asStateFlow()
+
+    private val _supportDiagnostics = MutableStateFlow<SupportDiagnosticsStatus>(SupportDiagnosticsStatus.Idle)
+    val supportDiagnosticsStatus: StateFlow<SupportDiagnosticsStatus> = _supportDiagnostics.asStateFlow()
 
     val backfillProgress: StateFlow<BackfillProgress> = backfillTrigger.progress
 
@@ -321,5 +339,34 @@ class SettingsViewModel @Inject constructor(
 
     fun clearCommunityShareStatus() {
         _communityShare.value = CommunityShareStatus.Idle
+    }
+
+    /**
+     * Exports a redacted parser-support report. The JSON contains counts, hashes,
+     * body-shape flags, and redacted parser errors only — no raw SMS body or sender.
+     */
+    fun exportSupportDiagnostics(resolver: ContentResolver, uri: Uri) {
+        viewModelScope.launch {
+            _supportDiagnostics.value = SupportDiagnosticsStatus.Working
+            val out = resolver.openOutputStream(uri)
+            if (out == null) {
+                _supportDiagnostics.value =
+                    SupportDiagnosticsStatus.Failed("Couldn't open JSON destination.")
+                return@launch
+            }
+            _supportDiagnostics.value = when (val r = supportDiagnostics.exportDiagnostics(out)) {
+                is SupportDiagnosticsExportResult.Done -> SupportDiagnosticsStatus.Exported(
+                    auditRows = r.auditRows,
+                    parsed = r.parsed,
+                    failed = r.failed,
+                    ignored = r.ignored,
+                )
+                is SupportDiagnosticsExportResult.Failed -> SupportDiagnosticsStatus.Failed(r.reason)
+            }
+        }
+    }
+
+    fun clearSupportDiagnosticsStatus() {
+        _supportDiagnostics.value = SupportDiagnosticsStatus.Idle
     }
 }

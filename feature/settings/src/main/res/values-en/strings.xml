@@ -90,6 +90,12 @@
     <string name="settings_community_action_export">Export my rules</string>
     <string name="settings_community_action_open_issue">Open GitHub issue</string>
 
+    <!-- Support diagnostics export -->
+    <string name="settings_support_diagnostics_title">Support diagnostics</string>
+    <string name="settings_support_diagnostics_body">Export a redacted JSON report for parser support: SMS counts, pseudonymous sender hashes, body-shape flags, failed-template groups, and redacted errors. It never includes raw SMS bodies, balances, card numbers, or account numbers.</string>
+    <string name="settings_support_diagnostics_exported" formatted="true">Exported diagnostics for %1$d SMS rows (%2$d parsed · %3$d failed · %4$d ignored).</string>
+    <string name="settings_support_diagnostics_action_export">Export diagnostics</string>
+
     <!-- Bulk-categorize via AI (Issue #5a) -->
     <string name="settings_bulk_cat_title">Bulk categorize with AI</string>
     <string name="settings_bulk_cat_body">Export every uncategorized transaction to CSV, run it through ChatGPT/Claude with the triage prompt, then import the filled file. Each row updates the transaction AND records a merchant→category rule so future SMS auto-categorize.</string>

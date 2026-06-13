@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Redacted support diagnostics export from Settings. Users can save `athar-support-diagnostics.json` for parser triage; it contains SMS audit counts, pseudonymous sender hashes, body-shape fingerprints/flags, failed-template groups, and redacted parser errors without raw SMS bodies, balances, card numbers, or account numbers.
 - In-place Confirm / Dismiss / Categorize buttons on the Pending widget (currently a tap opens the app). Needs HiltWorker + WorkManager+Hilt wiring.
 - App-triggered widget refresh (`updateAll(context)`) after in-app Confirm/Dismiss so the widget syncs within seconds instead of the system's 30-minute cadence.
 
