@@ -217,6 +217,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setStatementImportAccount(accountId: String) {
         _selectedStatementImportAccountId.value = accountId
+        val bytes = pendingCsvImportBytes
+        if (bytes != null && _csv.value is CsvStatus.Preview) {
+            previewCsvImportBytes(bytes)
+        }
     }
 
     fun export(resolver: ContentResolver, uri: Uri, passphrase: String) {
@@ -261,7 +265,12 @@ class SettingsViewModel @Inject constructor(
     internal fun previewCsvImportBytes(bytes: ByteArray) {
         viewModelScope.launch {
             _csv.value = CsvStatus.Working
-            _csv.value = when (val result = csvImporter.preview(bytes.inputStream())) {
+            _csv.value = when (
+                val result = csvImporter.preview(
+                    input = bytes.inputStream(),
+                    accountId = _selectedStatementImportAccountId.value,
+                )
+            ) {
                 is CsvImportPreviewResult.Done -> {
                     pendingCsvImportBytes = bytes
                     CsvStatus.Preview(result.preview)

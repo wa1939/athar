@@ -12,9 +12,9 @@ import java.io.InputStream
  *   - **vendor**, **merchant**, **description**, **details**, **narrative**, or Arabic equivalents — text
  *   - **amount** — positive decimal for Athar/TMOAP exports, or signed decimal for statement-like files
  *   - **debit** / **credit** — split amount columns; debit imports as EXPENSE, credit imports as INCOME
+ *   - **type** — `EXPENSE`/`INCOME`/`TRANSFER`, debit/credit synonyms, or marker columns such as `D/C`
  *   - **currency** — optional ISO-4217 code; defaults to SAR when missing
  *   - **category** — matches `name` or `nameAr` (case-insensitive); if missing, transaction lands uncategorized
- *   - **type** — `EXPENSE` (default), `INCOME`, `TRANSFER`, or debit/credit synonyms
  *   - **notes** — optional
  *
  * Supported OFX/QFX fields:
@@ -30,15 +30,16 @@ import java.io.InputStream
  *   - `:86:` — merchant/counterparty details
  *   - `:60F:` / `:60M:` / `:62F:` / `:62M:` — optional statement currency; defaults to SAR when missing
  *
- * The importer is conservative: a row with a parse error is skipped and counted in
- * [CsvImportResult.skipped] rather than aborting the whole batch.
+ * The importer is conservative: a row with a parse error or a row already imported
+ * for the selected account is skipped and counted in [CsvImportResult.skipped]
+ * rather than aborting the whole batch.
  * Imported rows are assigned to [accountId]; callers that do not expose account selection
  * keep using [MANUAL_ACCOUNT_ID].
  *
  * Master Brief / Backlog M-14 and roadmap G-12.
  */
 interface CsvImportTrigger {
-    suspend fun preview(input: InputStream): CsvImportPreviewResult
+    suspend fun preview(input: InputStream, accountId: String = MANUAL_ACCOUNT_ID): CsvImportPreviewResult
     suspend fun import(input: InputStream, accountId: String = MANUAL_ACCOUNT_ID): CsvImportResult
 }
 

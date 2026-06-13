@@ -139,6 +139,7 @@ class SettingsViewModelTest {
         viewModel.confirmCsvImport()
         advanceUntilIdle()
 
+        assertThat(csv.previewedAccountIds).containsExactly("acc-checking")
         assertThat(csv.importedAccountIds).containsExactly("acc-checking")
         assertThat(csv.importedBytes.map { it.decodeToString() }).containsExactly("selected account csv")
     }
@@ -223,7 +224,7 @@ private object FakeBackupRepository : BackupRepository {
 }
 
 private object FakeCsvImportTrigger : CsvImportTrigger {
-    override suspend fun preview(input: InputStream): CsvImportPreviewResult =
+    override suspend fun preview(input: InputStream, accountId: String): CsvImportPreviewResult =
         CsvImportPreviewResult.Done(emptyPreview())
 
     override suspend fun import(input: InputStream, accountId: String): CsvImportResult =
@@ -231,11 +232,16 @@ private object FakeCsvImportTrigger : CsvImportTrigger {
 }
 
 private class RecordingCsvImportTrigger : CsvImportTrigger {
+    val previewedBytes = mutableListOf<ByteArray>()
+    val previewedAccountIds = mutableListOf<String>()
     val importedBytes = mutableListOf<ByteArray>()
     val importedAccountIds = mutableListOf<String>()
 
-    override suspend fun preview(input: InputStream): CsvImportPreviewResult =
-        CsvImportPreviewResult.Done(emptyPreview())
+    override suspend fun preview(input: InputStream, accountId: String): CsvImportPreviewResult {
+        previewedBytes += input.readBytes()
+        previewedAccountIds += accountId
+        return CsvImportPreviewResult.Done(emptyPreview())
+    }
 
     override suspend fun import(input: InputStream, accountId: String): CsvImportResult {
         importedBytes += input.readBytes()

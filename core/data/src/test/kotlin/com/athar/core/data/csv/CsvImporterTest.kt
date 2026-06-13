@@ -1,8 +1,10 @@
 package com.athar.core.data.csv
 
+import com.athar.core.common.money.Money
 import com.athar.core.common.time.Period
 import com.athar.core.domain.model.Category
 import com.athar.core.domain.model.CategoryKind
+import com.athar.core.domain.model.IngestSource
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
@@ -16,6 +18,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.math.BigDecimal
@@ -187,7 +190,10 @@ class CsvImporterTest {
             .containsExactly(BigDecimal("18.50"), BigDecimal("1000.00"))
             .inOrder()
         assertThat(transactions.upserts.map { it.amount.currency }).containsExactly("USD", "USD").inOrder()
-        assertThat(transactions.upserts.map { it.sourceRefId }).containsExactly("ofx-fit-1", "ofx-fit-2").inOrder()
+        val sourceRefs = transactions.upserts.mapNotNull { it.sourceRefId }
+        assertThat(sourceRefs).hasSize(2)
+        assertThat(sourceRefs).containsNoDuplicates()
+        assertThat(sourceRefs.all { it.startsWith("import:ofx:") }).isTrue()
     }
 
     @Test
@@ -237,15 +243,103 @@ class CsvImporterTest {
             .containsExactly(BigDecimal("18.50"), BigDecimal("1000.00"))
             .inOrder()
         assertThat(transactions.upserts.map { it.amount.currency }).containsExactly("USD", "USD").inOrder()
-        assertThat(transactions.upserts.map { it.sourceRefId }).containsExactly("mt940-mt1", "mt940-mt2").inOrder()
+        val sourceRefs = transactions.upserts.mapNotNull { it.sourceRefId }
+        assertThat(sourceRefs).hasSize(2)
+        assertThat(sourceRefs).containsNoDuplicates()
+        assertThat(sourceRefs.all { it.startsWith("import:mt940:") }).isTrue()
     }
 
-    private class FakeTransactionRepository : TransactionRepository {
+    @Test
+    fun `statement import skips rows already imported for same account`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            clock = FixedClock,
+        )
+
+        val first = importer.import(ByteArrayInputStream(statementCsv.toByteArray()), accountId = "acc-checking")
+        val secondPreview = importer.preview(ByteArrayInputStream(statementCsv.toByteArray()), accountId = "acc-checking")
+        val secondImport = importer.import(ByteArrayInputStream(statementCsv.toByteArray()), accountId = "acc-checking")
+
+        assertThat(first).isEqualTo(CsvImportResult.Done(imported = 2, skipped = 1))
+        val preview = (secondPreview as CsvImportPreviewResult.Done).preview
+        assertThat(preview.importable).isEqualTo(0)
+        assertThat(preview.skipped).isEqualTo(3)
+        assertThat(preview.skippedRows.map { it.rowNumber }).containsExactly(2, 3, 4).inOrder()
+        assertThat(preview.skippedRows.map { it.reason })
+            .containsExactly("Already imported", "Unparseable row", "Already imported")
+            .inOrder()
+        assertThat(secondImport).isEqualTo(CsvImportResult.Done(imported = 0, skipped = 3))
+        assertThat(transactions.upserts).hasSize(2)
+    }
+
+    @Test
+    fun `statement import skips legacy imported csv rows by content`() = runTest {
+        val transactions = FakeTransactionRepository(
+            initialRows = listOf(
+                importedTx(
+                    accountId = "acc-checking",
+                    merchant = "Starbucks",
+                    amount = "18.50",
+                    type = TxType.EXPENSE,
+                    date = LocalDate(2026, 6, 1),
+                    sourceRefId = "csv-row-2",
+                ),
+                importedTx(
+                    accountId = "acc-checking",
+                    merchant = "Salary",
+                    amount = "1000.00",
+                    type = TxType.INCOME,
+                    date = LocalDate(2026, 6, 2),
+                    sourceRefId = "csv-row-4",
+                ),
+            ),
+        )
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            clock = FixedClock,
+        )
+
+        val result = importer.preview(ByteArrayInputStream(statementCsv.toByteArray()), accountId = "acc-checking")
+
+        val preview = (result as CsvImportPreviewResult.Done).preview
+        assertThat(preview.importable).isEqualTo(0)
+        assertThat(preview.skippedRows.map { it.reason })
+            .containsExactly("Already imported", "Unparseable row", "Already imported")
+            .inOrder()
+    }
+
+    @Test
+    fun `statement import source refs are account scoped`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            clock = FixedClock,
+        )
+
+        importer.import(ByteArrayInputStream(statementCsv.toByteArray()), accountId = "acc-checking")
+        val checkingRefs = transactions.upserts.map { it.sourceRefId }
+
+        val second = importer.import(ByteArrayInputStream(statementCsv.toByteArray()), accountId = "acc-savings")
+        val savingsRefs = transactions.upserts.drop(2).map { it.sourceRefId }
+
+        assertThat(second).isEqualTo(CsvImportResult.Done(imported = 2, skipped = 1))
+        assertThat(transactions.upserts).hasSize(4)
+        assertThat(checkingRefs.intersect(savingsRefs.toSet())).isEmpty()
+        assertThat((checkingRefs + savingsRefs).filterNotNull().all { it.startsWith("import:csv:") }).isTrue()
+    }
+
+    private class FakeTransactionRepository(
+        private val initialRows: List<Transaction> = emptyList(),
+    ) : TransactionRepository {
         val upserts = mutableListOf<Transaction>()
 
         override fun observeByPeriod(period: Period, status: TxStatus?): Flow<List<Transaction>> = flowOf(emptyList())
         override fun observePending(): Flow<List<Transaction>> = flowOf(emptyList())
-        override fun observeAll(): Flow<List<Transaction>> = flowOf(emptyList())
+        override fun observeAll(): Flow<List<Transaction>> = flowOf(initialRows + upserts)
         override suspend fun get(id: String): Transaction? = null
         override suspend fun upsert(transaction: Transaction) {
             upserts += transaction
@@ -359,6 +453,32 @@ class CsvImporterTest {
             monthlyTarget = null,
             archived = false,
             sortOrder = 0,
+        )
+
+        fun importedTx(
+            accountId: String,
+            merchant: String,
+            amount: String,
+            type: TxType,
+            date: LocalDate,
+            sourceRefId: String,
+        ): Transaction = Transaction(
+            id = "legacy-$sourceRefId",
+            accountId = accountId,
+            type = type,
+            amount = Money.of(BigDecimal(amount), "SAR"),
+            date = date,
+            occurredAt = null,
+            merchant = merchant,
+            merchantNormalized = merchant.lowercase().trim(),
+            categoryId = null,
+            notes = null,
+            source = IngestSource.IMPORT,
+            sourceRefId = sourceRefId,
+            status = TxStatus.CONFIRMED,
+            confidence = 1.0f,
+            createdAt = FixedInstant,
+            updatedAt = FixedInstant,
         )
 
         fun unsupported(): Nothing = throw UnsupportedOperationException("not used in this test")

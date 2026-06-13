@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import timber.log.Timber
 import java.io.InputStream
+import java.math.BigDecimal
+import java.security.MessageDigest
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -31,8 +33,8 @@ internal class CsvImporter @Inject constructor(
     private val clock: Clock,
 ) : CsvImportTrigger {
 
-    override suspend fun preview(input: InputStream): CsvImportPreviewResult {
-        return when (val plan = buildPlan(input)) {
+    override suspend fun preview(input: InputStream, accountId: String): CsvImportPreviewResult {
+        return when (val plan = buildPlan(input, accountId)) {
             is CsvPlanResult.Done -> CsvImportPreviewResult.Done(plan.plan.toPreview())
             is CsvPlanResult.Failed -> CsvImportPreviewResult.Failed(plan.reason)
         }
@@ -75,6 +77,8 @@ internal class CsvImporter @Inject constructor(
         val header = format.header
         val columns = format.columns
 
+        val existingImports = existingImportIdentities(accountId)
+        val refs = StableImportRefBuilder(accountId = accountId, format = "csv")
         val cats = categories.observeAll(kind = null, includeArchived = false).first()
         val categoryByName = cats.associateBy { it.name.lowercase().trim() }
         val categoryByAr = cats.associateBy { it.nameAr.trim() }
@@ -101,10 +105,16 @@ internal class CsvImporter @Inject constructor(
                 )
                 continue
             }
-            transactions += CsvPlanTransaction(
+            val identity = refs.nextForContent(mapped.transaction)
+            val transaction = mapped.transaction.withStableSourceRef(identity.sourceRefId)
+            addImportableOrDuplicateSkip(
                 rowNumber = rowNumber,
-                transaction = mapped.transaction,
+                transaction = transaction,
+                identity = identity,
                 categoryPreview = mapped.categoryPreview,
+                existingImports = existingImports,
+                transactions = transactions,
+                skippedRows = skippedRows,
             )
         }
 
@@ -124,34 +134,47 @@ internal class CsvImporter @Inject constructor(
         }
 
         val now = clock.now()
-        val transactions = parsed.rows.map { row ->
-            CsvPlanTransaction(
-                rowNumber = row.rowNumber,
-                transaction = Transaction(
-                    id = UUID.randomUUID().toString(),
-                    accountId = accountId,
-                    type = row.type,
-                    amount = Money.of(row.amount, row.currency),
-                    date = row.date,
-                    occurredAt = null,
-                    merchant = row.merchant,
-                    merchantNormalized = row.merchant.lowercase().trim(),
-                    categoryId = null,
-                    notes = row.notes,
-                    source = IngestSource.IMPORT,
-                    sourceRefId = row.sourceRefId ?: "ofx-row-${row.rowNumber}",
-                    status = TxStatus.CONFIRMED,
-                    confidence = 1.0f,
-                    createdAt = now,
-                    updatedAt = now,
-                ),
-                categoryPreview = null,
-            )
-        }
+        val existingImports = existingImportIdentities(accountId)
+        val refs = StableImportRefBuilder(accountId = accountId, format = "ofx")
+        val transactions = mutableListOf<CsvPlanTransaction>()
         val skippedRows = parsed.skippedRowNumbers.map { skippedRowNumber ->
             CsvImportSkippedRow(
                 rowNumber = skippedRowNumber,
                 reason = "Unparseable OFX/QFX transaction",
+            )
+        }.toMutableList()
+
+        parsed.rows.forEach { row ->
+            val transactionWithoutRef = Transaction(
+                id = UUID.randomUUID().toString(),
+                accountId = accountId,
+                type = row.type,
+                amount = Money.of(row.amount, row.currency),
+                date = row.date,
+                occurredAt = null,
+                merchant = row.merchant,
+                merchantNormalized = row.merchant.lowercase().trim(),
+                categoryId = null,
+                notes = row.notes,
+                source = IngestSource.IMPORT,
+                sourceRefId = null,
+                status = TxStatus.CONFIRMED,
+                confidence = 1.0f,
+                createdAt = now,
+                updatedAt = now,
+            )
+            val identity = row.sourceRefId
+                ?.let { refs.nextForExternalRef(it, transactionWithoutRef) }
+                ?: refs.nextForContent(transactionWithoutRef)
+            val transaction = transactionWithoutRef.withStableSourceRef(identity.sourceRefId)
+            addImportableOrDuplicateSkip(
+                rowNumber = row.rowNumber,
+                transaction = transaction,
+                identity = identity,
+                categoryPreview = null,
+                existingImports = existingImports,
+                transactions = transactions,
+                skippedRows = skippedRows,
             )
         }
 
@@ -181,34 +204,47 @@ internal class CsvImporter @Inject constructor(
         }
 
         val now = clock.now()
-        val transactions = parsed.rows.map { row ->
-            CsvPlanTransaction(
-                rowNumber = row.rowNumber,
-                transaction = Transaction(
-                    id = UUID.randomUUID().toString(),
-                    accountId = accountId,
-                    type = row.type,
-                    amount = Money.of(row.amount, row.currency),
-                    date = row.date,
-                    occurredAt = null,
-                    merchant = row.merchant,
-                    merchantNormalized = row.merchant.lowercase().trim(),
-                    categoryId = null,
-                    notes = row.notes,
-                    source = IngestSource.IMPORT,
-                    sourceRefId = row.sourceRefId ?: "mt940-row-${row.rowNumber}",
-                    status = TxStatus.CONFIRMED,
-                    confidence = 1.0f,
-                    createdAt = now,
-                    updatedAt = now,
-                ),
-                categoryPreview = null,
-            )
-        }
+        val existingImports = existingImportIdentities(accountId)
+        val refs = StableImportRefBuilder(accountId = accountId, format = "mt940")
+        val transactions = mutableListOf<CsvPlanTransaction>()
         val skippedRows = parsed.skippedRowNumbers.map { skippedRowNumber ->
             CsvImportSkippedRow(
                 rowNumber = skippedRowNumber,
                 reason = "Unparseable MT940 transaction",
+            )
+        }.toMutableList()
+
+        parsed.rows.forEach { row ->
+            val transactionWithoutRef = Transaction(
+                id = UUID.randomUUID().toString(),
+                accountId = accountId,
+                type = row.type,
+                amount = Money.of(row.amount, row.currency),
+                date = row.date,
+                occurredAt = null,
+                merchant = row.merchant,
+                merchantNormalized = row.merchant.lowercase().trim(),
+                categoryId = null,
+                notes = row.notes,
+                source = IngestSource.IMPORT,
+                sourceRefId = null,
+                status = TxStatus.CONFIRMED,
+                confidence = 1.0f,
+                createdAt = now,
+                updatedAt = now,
+            )
+            val identity = row.sourceRefId
+                ?.let { refs.nextForExternalRef(it, transactionWithoutRef) }
+                ?: refs.nextForContent(transactionWithoutRef)
+            val transaction = transactionWithoutRef.withStableSourceRef(identity.sourceRefId)
+            addImportableOrDuplicateSkip(
+                rowNumber = row.rowNumber,
+                transaction = transaction,
+                identity = identity,
+                categoryPreview = null,
+                existingImports = existingImports,
+                transactions = transactions,
+                skippedRows = skippedRows,
             )
         }
 
@@ -262,7 +298,7 @@ internal class CsvImporter @Inject constructor(
                 categoryId = categoryId,
                 notes = mapped.notes,
                 source = IngestSource.IMPORT,
-                sourceRefId = "csv-row-$rowIndex",
+                sourceRefId = null,
                 status = TxStatus.CONFIRMED,
                 confidence = 1.0f,
                 createdAt = now,
@@ -305,6 +341,39 @@ internal class CsvImporter @Inject constructor(
 
     private fun headerName(header: List<String>, index: Int): String =
         header.getOrNull(index)?.takeIf { it.isNotBlank() } ?: "Column ${index + 1}"
+
+    private suspend fun existingImportIdentities(accountId: String): ExistingImportIdentities =
+        ExistingImportIdentities(
+            transactions.observeAll()
+                .first()
+                .filter { it.accountId == accountId && it.source == IngestSource.IMPORT },
+        )
+
+    private fun addImportableOrDuplicateSkip(
+        rowNumber: Int,
+        transaction: Transaction,
+        identity: ImportIdentity,
+        categoryPreview: String?,
+        existingImports: ExistingImportIdentities,
+        transactions: MutableList<CsvPlanTransaction>,
+        skippedRows: MutableList<CsvImportSkippedRow>,
+    ) {
+        if (existingImports.markSeenOrDuplicate(identity)) {
+            skippedRows += CsvImportSkippedRow(
+                rowNumber = rowNumber,
+                reason = "Already imported",
+            )
+            return
+        }
+        transactions += CsvPlanTransaction(
+            rowNumber = rowNumber,
+            transaction = transaction,
+            categoryPreview = categoryPreview,
+        )
+    }
+
+    private fun Transaction.withStableSourceRef(sourceRefId: String): Transaction =
+        copy(sourceRefId = sourceRefId)
 
     private fun detectCsvFormat(headerLine: String): CsvFormat? =
         CsvDelimiters
@@ -373,4 +442,89 @@ internal class CsvImporter @Inject constructor(
         const val PREVIEW_ROW_LIMIT = 5
         val CsvDelimiters = listOf(',', ';', '\t')
     }
+}
+
+private data class ImportIdentity(
+    val sourceRefId: String,
+    val sourceKey: String?,
+    val contentKey: String,
+)
+
+private class ExistingImportIdentities(rows: List<Transaction>) {
+    private val sourceRefs = rows.mapNotNull { it.sourceRefId }.toMutableSet()
+    private val sourceKeys = rows.mapNotNull { it.sourceRefId?.let(::importSourceKey) }.toMutableSet()
+    private val contentRemaining = rows
+        .groupingBy(::statementContentKey)
+        .eachCount()
+        .toMutableMap()
+
+    fun markSeenOrDuplicate(identity: ImportIdentity): Boolean {
+        if (identity.sourceRefId in sourceRefs) return true
+        if (identity.sourceKey != null && identity.sourceKey in sourceKeys) return true
+
+        val remaining = contentRemaining[identity.contentKey] ?: 0
+        if (remaining > 0) {
+            if (remaining == 1) {
+                contentRemaining -= identity.contentKey
+            } else {
+                contentRemaining[identity.contentKey] = remaining - 1
+            }
+            return true
+        }
+
+        sourceRefs += identity.sourceRefId
+        identity.sourceKey?.let { sourceKeys += it }
+        return false
+    }
+}
+
+private class StableImportRefBuilder(
+    private val accountId: String,
+    private val format: String,
+) {
+    private val contentOccurrences = mutableMapOf<String, Int>()
+
+    fun nextForExternalRef(raw: String, transaction: Transaction): ImportIdentity {
+        val sourceKey = importSourceKey(raw)
+        return ImportIdentity(
+            sourceRefId = buildRef(sourceKey),
+            sourceKey = sourceKey,
+            contentKey = statementContentKey(transaction),
+        )
+    }
+
+    fun nextForContent(transaction: Transaction): ImportIdentity {
+        val content = statementContentKey(transaction)
+        val occurrence = (contentOccurrences[content] ?: 0) + 1
+        contentOccurrences[content] = occurrence
+        return ImportIdentity(
+            sourceRefId = buildRef("content=$content|occurrence=$occurrence"),
+            sourceKey = null,
+            contentKey = content,
+        )
+    }
+
+    private fun buildRef(material: String): String =
+        "import:$format:${sha256("account=${accountId.trim()}|$material").take(32)}"
+}
+
+private fun importSourceKey(raw: String): String =
+    "source=${raw.trim().lowercase()}"
+
+private fun statementContentKey(transaction: Transaction): String =
+    listOf(
+        "date=${transaction.date}",
+        "merchant=${transaction.merchantNormalized.lowercase().trim()}",
+        "amount=${normalizeAmount(transaction.amount.amount)}",
+        "currency=${transaction.amount.currency.uppercase().trim()}",
+        "type=${transaction.type.name}",
+        "notes=${transaction.notes.orEmpty().trim()}",
+    ).joinToString("|").let(::sha256)
+
+private fun normalizeAmount(amount: BigDecimal): String =
+    amount.stripTrailingZeros().toPlainString()
+
+private fun sha256(raw: String): String {
+    val bytes = MessageDigest.getInstance("SHA-256").digest(raw.toByteArray(Charsets.UTF_8))
+    return bytes.joinToString(separator = "") { "%02x".format(it) }
 }
