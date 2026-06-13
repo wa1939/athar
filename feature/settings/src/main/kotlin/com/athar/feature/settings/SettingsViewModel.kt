@@ -18,6 +18,7 @@ import com.athar.core.domain.repo.CsvImportColumnRole
 import com.athar.core.domain.repo.CsvImportPreview
 import com.athar.core.domain.repo.CsvImportPreviewResult
 import com.athar.core.domain.repo.CsvImportResult
+import com.athar.core.domain.repo.CsvImportRowDecision
 import com.athar.core.domain.repo.CsvImportTrigger
 import com.athar.core.domain.repo.MerchantBulkExportResult
 import com.athar.core.domain.repo.MerchantBulkExportTrigger
@@ -157,6 +158,7 @@ class SettingsViewModel @Inject constructor(
     val csvStatus: StateFlow<CsvStatus> = _csv.asStateFlow()
     private var pendingCsvImportBytes: ByteArray? = null
     private var pendingCsvImportMapping: CsvImportColumnMapping? = null
+    private var pendingCsvRowDecisions: Map<Int, CsvImportRowDecision> = emptyMap()
     private val _selectedStatementImportAccountId = MutableStateFlow(MANUAL_ACCOUNT_ID)
     val selectedStatementImportAccountId: StateFlow<String> = _selectedStatementImportAccountId.asStateFlow()
 
@@ -264,10 +266,12 @@ class SettingsViewModel @Inject constructor(
             if (bytes == null) {
                 pendingCsvImportBytes = null
                 pendingCsvImportMapping = null
+                pendingCsvRowDecisions = emptyMap()
                 _csv.value = CsvStatus.Failed("Couldn't open import file.")
                 return@launch
             }
             pendingCsvImportMapping = null
+            pendingCsvRowDecisions = emptyMap()
             previewCsvImportBytes(bytes, mapping = null)
         }
     }
@@ -283,6 +287,7 @@ class SettingsViewModel @Inject constructor(
                     input = bytes.inputStream(),
                     accountId = _selectedStatementImportAccountId.value,
                     mapping = mapping,
+                    rowDecisions = pendingCsvRowDecisions.values.toList(),
                 )
             ) {
                 is CsvImportPreviewResult.Done -> {
@@ -303,6 +308,7 @@ class SettingsViewModel @Inject constructor(
                 is CsvImportPreviewResult.Failed -> {
                     pendingCsvImportBytes = null
                     pendingCsvImportMapping = null
+                    pendingCsvRowDecisions = emptyMap()
                     CsvStatus.Failed(result.reason)
                 }
             }
@@ -328,6 +334,20 @@ class SettingsViewModel @Inject constructor(
         previewCsvImportBytes(bytes, pendingCsvImportMapping ?: CsvImportColumnMapping())
     }
 
+    fun setCsvImportRowIncluded(rowNumber: Int, included: Boolean) {
+        pendingCsvRowDecisions = if (included) {
+            pendingCsvRowDecisions - rowNumber
+        } else {
+            pendingCsvRowDecisions + (rowNumber to CsvImportRowDecision(rowNumber, shouldImport = false))
+        }
+        val bytes = pendingCsvImportBytes
+        if (bytes == null) {
+            _csv.value = CsvStatus.Failed("No import preview is ready to edit.")
+            return
+        }
+        previewCsvImportBytes(bytes, pendingCsvImportMapping)
+    }
+
     fun confirmCsvImport() {
         viewModelScope.launch {
             val bytes = pendingCsvImportBytes
@@ -341,6 +361,7 @@ class SettingsViewModel @Inject constructor(
                     input = bytes.inputStream(),
                     accountId = _selectedStatementImportAccountId.value,
                     mapping = pendingCsvImportMapping,
+                    rowDecisions = pendingCsvRowDecisions.values.toList(),
                 )
             ) {
                 is CsvImportResult.Done -> CsvStatus.Done(result.imported, result.skipped)
@@ -348,12 +369,14 @@ class SettingsViewModel @Inject constructor(
             }
             pendingCsvImportBytes = null
             pendingCsvImportMapping = null
+            pendingCsvRowDecisions = emptyMap()
         }
     }
 
     fun cancelCsvImportPreview() {
         pendingCsvImportBytes = null
         pendingCsvImportMapping = null
+        pendingCsvRowDecisions = emptyMap()
         _csv.value = CsvStatus.Idle
     }
 
@@ -441,6 +464,7 @@ class SettingsViewModel @Inject constructor(
     fun clearCsvStatus() {
         pendingCsvImportBytes = null
         pendingCsvImportMapping = null
+        pendingCsvRowDecisions = emptyMap()
         _csv.value = CsvStatus.Idle
     }
 

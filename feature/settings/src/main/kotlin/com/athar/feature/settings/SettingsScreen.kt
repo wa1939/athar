@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.TextButton
 import com.athar.core.domain.repo.BackfillProgress
 import androidx.compose.runtime.Composable
@@ -210,6 +211,7 @@ fun SettingsScreen(
                 },
                 onColumnMappingChange = viewModel::setCsvColumnMapping,
                 onPreviewMappedImport = viewModel::previewCsvImportWithMapping,
+                onRowIncludedChange = viewModel::setCsvImportRowIncluded,
                 onConfirmImport = viewModel::confirmCsvImport,
                 onCancelPreview = viewModel::cancelCsvImportPreview,
                 onExport = { csvExportLauncher.launch("athar-transactions.csv") },
@@ -678,6 +680,7 @@ private fun CsvImportCard(
     onImport: () -> Unit,
     onColumnMappingChange: (CsvImportColumnRole, String?) -> Unit,
     onPreviewMappedImport: () -> Unit,
+    onRowIncludedChange: (Int, Boolean) -> Unit,
     onConfirmImport: () -> Unit,
     onCancelPreview: () -> Unit,
     onExport: () -> Unit,
@@ -729,7 +732,10 @@ private fun CsvImportCard(
                     }
                 }
                 is CsvStatus.Preview -> {
-                    CsvPreviewSummary(preview = s.preview)
+                    CsvPreviewSummary(
+                        preview = s.preview,
+                        onRowIncludedChange = onRowIncludedChange,
+                    )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
@@ -965,7 +971,10 @@ private fun CsvImportColumnRole.label(): String = when (this) {
 }
 
 @Composable
-private fun CsvPreviewSummary(preview: CsvImportPreview) {
+private fun CsvPreviewSummary(
+    preview: CsvImportPreview,
+    onRowIncludedChange: (Int, Boolean) -> Unit,
+) {
     val theme = AtharTheme
     Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
         AtharText(
@@ -984,15 +993,10 @@ private fun CsvPreviewSummary(preview: CsvImportPreview) {
             style = theme.typography.caption,
             color = theme.colors.muted,
         )
-        preview.sampleRows.take(3).forEach { row ->
-            AtharText(
-                text = row.previewLine(
-                    expenseLabel = stringResource(R.string.settings_csv_preview_type_expense),
-                    incomeLabel = stringResource(R.string.settings_csv_preview_type_income),
-                    transferLabel = stringResource(R.string.settings_csv_preview_type_transfer),
-                ),
-                style = theme.typography.caption,
-                color = theme.colors.ink,
+        preview.sampleRows.forEach { row ->
+            CsvPreviewRowToggle(
+                row = row,
+                onIncludedChange = onRowIncludedChange,
             )
         }
         preview.skippedRows.firstOrNull()?.let { skipped ->
@@ -1000,6 +1004,52 @@ private fun CsvPreviewSummary(preview: CsvImportPreview) {
                 text = stringResource(R.string.settings_csv_preview_first_skip, skipped.rowNumber, skipped.reason),
                 style = theme.typography.caption,
                 color = theme.colors.crimson,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CsvPreviewRowToggle(
+    row: CsvImportPreviewRow,
+    onIncludedChange: (Int, Boolean) -> Unit,
+) {
+    val theme = AtharTheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(theme.colors.divider)
+            .clickable { onIncludedChange(row.rowNumber, !row.included) }
+            .padding(theme.spacing.s),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+    ) {
+        Checkbox(
+            checked = row.included,
+            onCheckedChange = { checked -> onIncludedChange(row.rowNumber, checked) },
+        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(theme.spacing.xs),
+        ) {
+            AtharText(
+                text = row.previewLine(
+                    expenseLabel = stringResource(R.string.settings_csv_preview_type_expense),
+                    incomeLabel = stringResource(R.string.settings_csv_preview_type_income),
+                    transferLabel = stringResource(R.string.settings_csv_preview_type_transfer),
+                ),
+                style = theme.typography.caption,
+                color = if (row.included) theme.colors.ink else theme.colors.muted,
+            )
+            AtharText(
+                text = if (row.included) {
+                    stringResource(R.string.settings_csv_preview_row_included)
+                } else {
+                    stringResource(R.string.settings_csv_preview_row_excluded)
+                },
+                style = theme.typography.caption,
+                color = if (row.included) theme.colors.olive else theme.colors.crimson,
             )
         }
     }

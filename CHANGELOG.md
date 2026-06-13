@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Statement import now accepts MT940 files through the same preview-confirm path, mapping `:61:` date/debit-credit/amount/reference data with `:86:` merchant details and statement currency from balance records.
 - Statement import confirmation now lets users choose the destination account, so CSV/OFX/QFX/MT940 rows no longer have to land in the manual Cash account.
 - Statement import now uses account-scoped stable row references and skips rows already imported for the selected account, preventing repeat CSV/OFX/MT940 imports from duplicating or replacing older imported ledger entries.
+- Statement import preview rows can now be excluded before confirmation; excluded rows stay visible, count as skipped, and are not inserted.
 - Curated seed rules now include 93 more active high-confidence merchants from the existing catalog input, bringing `seed_rules.json` from 551 to 644 rules with asset tests for category validity, duplicate patterns, and the R-05 batches.
 - Settings now includes an annual **Export for taxes/accountant** PDF. The report includes income/expense totals, category totals, and the confirmed transaction list for the selected year, while excluding reconciliation adjustments from operating totals.
 - Wishlist planning now uses the full TMOAP-style model: start month and desired-month horizon are editable, each wish shows remaining amount and needed monthly saving, target misses are flagged, and rows sort by practical priority.

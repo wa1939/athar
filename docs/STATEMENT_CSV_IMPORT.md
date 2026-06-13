@@ -26,5 +26,6 @@ Athar/TMOAP-style CSV and common bank-statement CSV exports.
   import as expenses.
 - Category names still resolve against Athar's English or Arabic category names.
 
-This is the first G-12 slice. OFX/QFX/MT940 parsing, preview, and manual column
-mapping remain planned for the full import wizard.
+The G-12 slices now include OFX/QFX/MT940 parsing, safe preview/confirm, account
+selection, duplicate-safe stable references, manual CSV column mapping, and preview-row
+exclusion. Field-level row editing remains planned for the full import wizard.

@@ -14,6 +14,7 @@ import com.athar.core.domain.repo.CsvImportPreview
 import com.athar.core.domain.repo.CsvImportPreviewResult
 import com.athar.core.domain.repo.CsvImportPreviewRow
 import com.athar.core.domain.repo.CsvImportResult
+import com.athar.core.domain.repo.CsvImportRowDecision
 import com.athar.core.domain.repo.CsvImportSkippedRow
 import com.athar.core.domain.repo.CsvImportTrigger
 import com.athar.core.domain.repo.TransactionRepository
@@ -38,8 +39,9 @@ internal class CsvImporter @Inject constructor(
         input: InputStream,
         accountId: String,
         mapping: CsvImportColumnMapping?,
+        rowDecisions: List<CsvImportRowDecision>,
     ): CsvImportPreviewResult {
-        return when (val plan = buildPlan(input, accountId, mapping)) {
+        return when (val plan = buildPlan(input, accountId, mapping, rowDecisions)) {
             is CsvPlanResult.Done -> CsvImportPreviewResult.Done(plan.plan.toPreview())
             is CsvPlanResult.MappingRequired -> CsvImportPreviewResult.MappingRequired(
                 columns = plan.columns,
@@ -53,8 +55,9 @@ internal class CsvImporter @Inject constructor(
         input: InputStream,
         accountId: String,
         mapping: CsvImportColumnMapping?,
+        rowDecisions: List<CsvImportRowDecision>,
     ): CsvImportResult {
-        val plan = when (val result = buildPlan(input, accountId, mapping)) {
+        val plan = when (val result = buildPlan(input, accountId, mapping, rowDecisions)) {
             is CsvPlanResult.Done -> result.plan
             is CsvPlanResult.MappingRequired -> return CsvImportResult.Failed(result.reason)
             is CsvPlanResult.Failed -> return CsvImportResult.Failed(result.reason)
@@ -69,18 +72,21 @@ internal class CsvImporter @Inject constructor(
         input: InputStream,
         accountId: String = MANUAL_ACCOUNT_ID,
         mapping: CsvImportColumnMapping? = null,
+        rowDecisions: List<CsvImportRowDecision> = emptyList(),
     ): CsvPlanResult {
         val text = runCatching { input.bufferedReader().use { it.readText() } }
             .getOrElse { return CsvPlanResult.Failed("Couldn't read import file: ${it.message}") }
         val lines = text.lineSequence().filter { it.isNotBlank() }.toList()
         if (lines.isEmpty()) return CsvPlanResult.Failed("Empty import file.")
 
+        val decisions = rowDecisions.shouldImportByRowNumber()
+
         if (StatementOfxMapper.looksLikeOfx(text)) {
-            return buildOfxPlan(text, accountId)
+            return buildOfxPlan(text, accountId, decisions)
         }
 
         if (StatementMt940Mapper.looksLikeMt940(text)) {
-            return buildMt940Plan(text, accountId)
+            return buildMt940Plan(text, accountId, decisions)
         }
 
         val format = detectCsvFormat(lines[0], mapping)
@@ -101,6 +107,7 @@ internal class CsvImporter @Inject constructor(
         val now = clock.now()
 
         val transactions = mutableListOf<CsvPlanTransaction>()
+        val previewRows = mutableListOf<CsvPlanTransaction>()
         val skippedRows = mutableListOf<CsvImportSkippedRow>()
         for ((rowIndex, line) in lines.drop(1).withIndex()) {
             val rowNumber = rowIndex + 2 // +1 for header, +1 to make 1-based
@@ -128,8 +135,10 @@ internal class CsvImporter @Inject constructor(
                 transaction = transaction,
                 identity = identity,
                 categoryPreview = mapped.categoryPreview,
+                decisions = decisions,
                 existingImports = existingImports,
                 transactions = transactions,
+                previewRows = previewRows,
                 skippedRows = skippedRows,
             )
         }
@@ -139,12 +148,17 @@ internal class CsvImporter @Inject constructor(
                 columns = detectedColumns(header, columns),
                 availableColumns = header,
                 transactions = transactions,
+                previewRows = previewRows,
                 skippedRows = skippedRows,
             ),
         )
     }
 
-    private suspend fun buildOfxPlan(text: String, accountId: String): CsvPlanResult {
+    private suspend fun buildOfxPlan(
+        text: String,
+        accountId: String,
+        decisions: Map<Int, Boolean>,
+    ): CsvPlanResult {
         val parsed = when (val result = StatementOfxMapper.parse(text)) {
             is StatementOfxParseResult.Done -> result
             is StatementOfxParseResult.Failed -> return CsvPlanResult.Failed(result.reason)
@@ -154,6 +168,7 @@ internal class CsvImporter @Inject constructor(
         val existingImports = existingImportIdentities(accountId)
         val refs = StableImportRefBuilder(accountId = accountId, format = "ofx")
         val transactions = mutableListOf<CsvPlanTransaction>()
+        val previewRows = mutableListOf<CsvPlanTransaction>()
         val skippedRows = parsed.skippedRowNumbers.map { skippedRowNumber ->
             CsvImportSkippedRow(
                 rowNumber = skippedRowNumber,
@@ -189,8 +204,10 @@ internal class CsvImporter @Inject constructor(
                 transaction = transaction,
                 identity = identity,
                 categoryPreview = null,
+                decisions = decisions,
                 existingImports = existingImports,
                 transactions = transactions,
+                previewRows = previewRows,
                 skippedRows = skippedRows,
             )
         }
@@ -210,12 +227,17 @@ internal class CsvImporter @Inject constructor(
                 ),
                 availableColumns = emptyList(),
                 transactions = transactions,
+                previewRows = previewRows,
                 skippedRows = skippedRows,
             ),
         )
     }
 
-    private suspend fun buildMt940Plan(text: String, accountId: String): CsvPlanResult {
+    private suspend fun buildMt940Plan(
+        text: String,
+        accountId: String,
+        decisions: Map<Int, Boolean>,
+    ): CsvPlanResult {
         val parsed = when (val result = StatementMt940Mapper.parse(text)) {
             is StatementMt940ParseResult.Done -> result
             is StatementMt940ParseResult.Failed -> return CsvPlanResult.Failed(result.reason)
@@ -225,6 +247,7 @@ internal class CsvImporter @Inject constructor(
         val existingImports = existingImportIdentities(accountId)
         val refs = StableImportRefBuilder(accountId = accountId, format = "mt940")
         val transactions = mutableListOf<CsvPlanTransaction>()
+        val previewRows = mutableListOf<CsvPlanTransaction>()
         val skippedRows = parsed.skippedRowNumbers.map { skippedRowNumber ->
             CsvImportSkippedRow(
                 rowNumber = skippedRowNumber,
@@ -260,8 +283,10 @@ internal class CsvImporter @Inject constructor(
                 transaction = transaction,
                 identity = identity,
                 categoryPreview = null,
+                decisions = decisions,
                 existingImports = existingImports,
                 transactions = transactions,
+                previewRows = previewRows,
                 skippedRows = skippedRows,
             )
         }
@@ -281,6 +306,7 @@ internal class CsvImporter @Inject constructor(
                 ),
                 availableColumns = emptyList(),
                 transactions = transactions,
+                previewRows = previewRows,
                 skippedRows = skippedRows,
             ),
         )
@@ -332,7 +358,7 @@ internal class CsvImporter @Inject constructor(
         skipped = skippedRows.size,
         columns = columns,
         availableColumns = availableColumns,
-        sampleRows = transactions.take(PREVIEW_ROW_LIMIT).map { row ->
+        sampleRows = previewRows.take(PREVIEW_ROW_LIMIT).map { row ->
             CsvImportPreviewRow(
                 rowNumber = row.rowNumber,
                 date = row.transaction.date.toString(),
@@ -341,6 +367,7 @@ internal class CsvImporter @Inject constructor(
                 currency = row.transaction.amount.currency,
                 type = row.transaction.type,
                 category = row.categoryPreview,
+                included = row.included,
             )
         },
         skippedRows = skippedRows.take(PREVIEW_ROW_LIMIT),
@@ -374,10 +401,25 @@ internal class CsvImporter @Inject constructor(
         transaction: Transaction,
         identity: ImportIdentity,
         categoryPreview: String?,
+        decisions: Map<Int, Boolean>,
         existingImports: ExistingImportIdentities,
         transactions: MutableList<CsvPlanTransaction>,
+        previewRows: MutableList<CsvPlanTransaction>,
         skippedRows: MutableList<CsvImportSkippedRow>,
     ) {
+        if (decisions[rowNumber] == false) {
+            previewRows += CsvPlanTransaction(
+                rowNumber = rowNumber,
+                transaction = transaction,
+                categoryPreview = categoryPreview,
+                included = false,
+            )
+            skippedRows += CsvImportSkippedRow(
+                rowNumber = rowNumber,
+                reason = "Excluded from import",
+            )
+            return
+        }
         if (existingImports.markSeenOrDuplicate(identity)) {
             skippedRows += CsvImportSkippedRow(
                 rowNumber = rowNumber,
@@ -389,7 +431,9 @@ internal class CsvImporter @Inject constructor(
             rowNumber = rowNumber,
             transaction = transaction,
             categoryPreview = categoryPreview,
+            included = true,
         )
+        previewRows += transactions.last()
     }
 
     private fun Transaction.withStableSourceRef(sourceRefId: String): Transaction =
@@ -445,6 +489,7 @@ internal class CsvImporter @Inject constructor(
         val columns: CsvImportDetectedColumns,
         val availableColumns: List<String>,
         val transactions: List<CsvPlanTransaction>,
+        val previewRows: List<CsvPlanTransaction>,
         val skippedRows: List<CsvImportSkippedRow>,
     )
 
@@ -458,6 +503,7 @@ internal class CsvImporter @Inject constructor(
         val rowNumber: Int,
         val transaction: Transaction,
         val categoryPreview: String?,
+        val included: Boolean,
     )
 
     private data class CsvMappedTransaction(
@@ -470,6 +516,10 @@ internal class CsvImporter @Inject constructor(
         val CsvDelimiters = listOf(',', ';', '\t')
     }
 }
+
+private fun List<CsvImportRowDecision>.shouldImportByRowNumber(): Map<Int, Boolean> =
+    filter { it.rowNumber > 0 }
+        .associate { it.rowNumber to it.shouldImport }
 
 private data class ImportIdentity(
     val sourceRefId: String,

@@ -12,6 +12,7 @@ import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.CsvImportColumnMapping
 import com.athar.core.domain.repo.CsvImportPreviewResult
 import com.athar.core.domain.repo.CsvImportResult
+import com.athar.core.domain.repo.CsvImportRowDecision
 import com.athar.core.domain.repo.TransactionRepository
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.Flow
@@ -67,6 +68,35 @@ class CsvImporterTest {
         assertThat(transactions.upserts).hasSize(2)
         assertThat(transactions.upserts.map { it.merchant }).containsExactly("Starbucks", "Salary").inOrder()
         assertThat(transactions.upserts.map { it.type }).containsExactly(TxType.EXPENSE, TxType.INCOME).inOrder()
+    }
+
+    @Test
+    fun `row decisions exclude selected rows from preview and import`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            clock = FixedClock,
+        )
+        val decisions = listOf(CsvImportRowDecision(rowNumber = 2, shouldImport = false))
+
+        val result = importer.preview(
+            input = ByteArrayInputStream(statementCsv.toByteArray()),
+            rowDecisions = decisions,
+        )
+        val imported = importer.import(
+            input = ByteArrayInputStream(statementCsv.toByteArray()),
+            rowDecisions = decisions,
+        )
+
+        val preview = (result as CsvImportPreviewResult.Done).preview
+        assertThat(preview.importable).isEqualTo(1)
+        assertThat(preview.skipped).isEqualTo(2)
+        assertThat(preview.sampleRows.map { it.rowNumber }).containsExactly(2, 4).inOrder()
+        assertThat(preview.sampleRows.first().included).isFalse()
+        assertThat(preview.skippedRows.map { it.reason }).contains("Excluded from import")
+        assertThat(imported).isEqualTo(CsvImportResult.Done(imported = 1, skipped = 2))
+        assertThat(transactions.upserts.map { it.merchant }).containsExactly("Salary")
     }
 
     @Test

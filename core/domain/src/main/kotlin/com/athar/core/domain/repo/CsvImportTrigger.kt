@@ -47,12 +47,14 @@ interface CsvImportTrigger {
         input: InputStream,
         accountId: String = MANUAL_ACCOUNT_ID,
         mapping: CsvImportColumnMapping? = null,
+        rowDecisions: List<CsvImportRowDecision> = emptyList(),
     ): CsvImportPreviewResult
 
     suspend fun import(
         input: InputStream,
         accountId: String = MANUAL_ACCOUNT_ID,
         mapping: CsvImportColumnMapping? = null,
+        rowDecisions: List<CsvImportRowDecision> = emptyList(),
     ): CsvImportResult
 }
 
@@ -107,6 +109,11 @@ data class CsvImportColumnMapping(
     }
 }
 
+data class CsvImportRowDecision(
+    val rowNumber: Int,
+    val shouldImport: Boolean,
+)
+
 enum class CsvImportColumnRole {
     DATE,
     MERCHANT,
@@ -139,6 +146,7 @@ data class CsvImportPreviewRow(
     val currency: String,
     val type: com.athar.core.domain.model.TxType,
     val category: String?,
+    val included: Boolean = true,
 )
 
 data class CsvImportSkippedRow(
