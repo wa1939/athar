@@ -15,10 +15,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Reads a CSV emitted by [MerchantBulkExporter] (or any CSV with `id` + `category_id`
- * columns), applies the chosen category to each matching transaction (status → CONFIRMED),
- * and records a learned `CategoryRule` per unique (merchant_normalized → category_id) pair
- * so future ingests benefit too.
+ * Reads a CSV emitted by [MerchantBulkExporter] (or any CSV with `id`/`stable_key` +
+ * `category_id` columns), applies the chosen category to each matching transaction
+ * (status → CONFIRMED), and records a learned `CategoryRule` per unique
+ * (merchant_normalized → category_id) pair so future ingests benefit too.
  *
  * The category column may be either a category **id** (`cat-restaurant`) or the English /
  * Arabic display name — for AI-edited files the id is preferred since it's unambiguous.
@@ -34,19 +34,25 @@ internal class MerchantBulkImporter @Inject constructor(
     override suspend fun importCategorizations(input: InputStream): MerchantBulkImportResult {
         val text = runCatching { input.bufferedReader().use { it.readText() } }
             .getOrElse { return MerchantBulkImportResult.Failed("Couldn't read CSV: ${it.message}") }
-        val lines = text.lineSequence().filter { it.isNotBlank() }.toList()
-        if (lines.isEmpty()) return MerchantBulkImportResult.Failed("Empty CSV file.")
+        val rows = parseRows(text).filter { row -> row.any { it.isNotBlank() } }
+        if (rows.isEmpty()) return MerchantBulkImportResult.Failed("Empty CSV file.")
 
-        val header = parseRow(lines[0]).map { it.lowercase().trim() }
+        val header = rows[0].map { it.lowercase().trim() }
         val idIdx = header.indexOf("id")
+        val stableKeyIdx = header.indexOf("stable_key")
+        val sourceRefIdx = header.indexOf("source_ref_id")
         val merchantIdx = header.indexOfFirst { it == "merchant" || it == "vendor" }
         val merchantNormIdx = header.indexOf("merchant_normalized")
+        val amountIdx = header.indexOf("amount")
+        val currencyIdx = header.indexOf("currency")
+        val typeIdx = header.indexOf("type")
+        val dateIdx = header.indexOf("date")
         val categoryIdx = header.indexOfFirst {
             it == "category_id" || it == "categoryid" || it == "category"
         }
-        if (idIdx < 0 || categoryIdx < 0) {
+        if (categoryIdx < 0 || (idIdx < 0 && stableKeyIdx < 0)) {
             return MerchantBulkImportResult.Failed(
-                "CSV needs an `id` column and a `category_id` (or `category`) column.",
+                "CSV needs a `category_id` (or `category`) column plus either `id` or `stable_key`.",
             )
         }
 
@@ -59,13 +65,15 @@ internal class MerchantBulkImporter @Inject constructor(
         var skipped = 0
         // Track unique (pattern → categoryId) so we add one rule per merchant, not per row.
         val rulesToAdd = mutableMapOf<String, String>()
+        val allTransactions = transactions.observeAll().first()
+        val byStableKey = uniqueBy(allTransactions, MerchantBulkStableKey::sourceAware)
+        val byContentKey = uniqueBy(allTransactions, MerchantBulkStableKey::contentOnly)
 
-        for ((rowIndex, line) in lines.drop(1).withIndex()) {
-            val row = parseRow(line)
-            if (row.size <= maxOf(idIdx, categoryIdx)) { skipped++; continue }
-            val txId = row[idIdx].trim()
+        for ((rowIndex, row) in rows.drop(1).withIndex()) {
+            if (row.size <= requiredMaxIndex(idIdx, stableKeyIdx, categoryIdx)) { skipped++; continue }
+            val txId = if (idIdx >= 0 && idIdx < row.size) row[idIdx].trim() else ""
             val rawCat = row[categoryIdx].trim()
-            if (txId.isEmpty() || rawCat.isEmpty()) { skipped++; continue }
+            if (rawCat.isEmpty()) { skipped++; continue }
 
             val categoryId = resolveCategoryId(rawCat, byId, byName, byAr)
             if (categoryId == null) {
@@ -74,9 +82,22 @@ internal class MerchantBulkImporter @Inject constructor(
                 continue
             }
 
-            val tx = transactions.get(txId)
+            val tx = resolveTransaction(
+                txId = txId,
+                row = row,
+                stableKeyIdx = stableKeyIdx,
+                sourceRefIdx = sourceRefIdx,
+                merchantIdx = merchantIdx,
+                merchantNormIdx = merchantNormIdx,
+                amountIdx = amountIdx,
+                currencyIdx = currencyIdx,
+                typeIdx = typeIdx,
+                dateIdx = dateIdx,
+                byStableKey = byStableKey,
+                byContentKey = byContentKey,
+            )
             if (tx == null) {
-                Timber.w("CSV row %d skipped: no transaction with id %s", rowIndex + 2, txId)
+                Timber.w("CSV row %d skipped: no matching transaction for id/stable key", rowIndex + 2)
                 skipped++
                 continue
             }
@@ -119,6 +140,102 @@ internal class MerchantBulkImporter @Inject constructor(
         )
     }
 
+    private suspend fun resolveTransaction(
+        txId: String,
+        row: List<String>,
+        stableKeyIdx: Int,
+        sourceRefIdx: Int,
+        merchantIdx: Int,
+        merchantNormIdx: Int,
+        amountIdx: Int,
+        currencyIdx: Int,
+        typeIdx: Int,
+        dateIdx: Int,
+        byStableKey: Map<String, com.athar.core.domain.model.Transaction>,
+        byContentKey: Map<String, com.athar.core.domain.model.Transaction>,
+    ): com.athar.core.domain.model.Transaction? {
+        if (txId.isNotEmpty()) {
+            transactions.get(txId)?.let { return it }
+        }
+
+        val exportedStableKey = row.getOrNull(stableKeyIdx)?.trim().orEmpty()
+        if (exportedStableKey.isNotEmpty()) {
+            byStableKey[exportedStableKey]?.let { return it }
+        }
+
+        val rowSourceAware = rowSourceAwareKey(
+            row,
+            sourceRefIdx,
+            merchantIdx,
+            merchantNormIdx,
+            amountIdx,
+            currencyIdx,
+            typeIdx,
+            dateIdx,
+        )
+        rowSourceAware?.let { byStableKey[it] }?.let { return it }
+
+        val rowContentKey = rowContentKey(row, merchantIdx, merchantNormIdx, amountIdx, currencyIdx, typeIdx, dateIdx)
+        return rowContentKey?.let { byContentKey[it] }
+    }
+
+    private fun rowSourceAwareKey(
+        row: List<String>,
+        sourceRefIdx: Int,
+        merchantIdx: Int,
+        merchantNormIdx: Int,
+        amountIdx: Int,
+        currencyIdx: Int,
+        typeIdx: Int,
+        dateIdx: Int,
+    ): String? {
+        val sourceRef = row.getOrNull(sourceRefIdx)?.trim().orEmpty()
+        if (sourceRef.isEmpty()) return null
+        return MerchantBulkStableKey.sourceAware(
+            sourceRefId = sourceRef,
+            merchantNormalized = rowMerchantNormalized(row, merchantIdx, merchantNormIdx) ?: return null,
+            amount = row.getOrNull(amountIdx)?.trim()?.takeIf { it.isNotEmpty() } ?: return null,
+            currency = row.getOrNull(currencyIdx)?.trim()?.takeIf { it.isNotEmpty() } ?: return null,
+            type = row.getOrNull(typeIdx)?.trim()?.takeIf { it.isNotEmpty() } ?: return null,
+            date = row.getOrNull(dateIdx)?.trim()?.takeIf { it.isNotEmpty() } ?: return null,
+        )
+    }
+
+    private fun rowContentKey(
+        row: List<String>,
+        merchantIdx: Int,
+        merchantNormIdx: Int,
+        amountIdx: Int,
+        currencyIdx: Int,
+        typeIdx: Int,
+        dateIdx: Int,
+    ): String? {
+        return MerchantBulkStableKey.contentOnly(
+            merchantNormalized = rowMerchantNormalized(row, merchantIdx, merchantNormIdx) ?: return null,
+            amount = row.getOrNull(amountIdx)?.trim()?.takeIf { it.isNotEmpty() } ?: return null,
+            currency = row.getOrNull(currencyIdx)?.trim()?.takeIf { it.isNotEmpty() } ?: return null,
+            type = row.getOrNull(typeIdx)?.trim()?.takeIf { it.isNotEmpty() } ?: return null,
+            date = row.getOrNull(dateIdx)?.trim()?.takeIf { it.isNotEmpty() } ?: return null,
+        )
+    }
+
+    private fun rowMerchantNormalized(row: List<String>, merchantIdx: Int, merchantNormIdx: Int): String? {
+        val normalized = row.getOrNull(merchantNormIdx)?.lowercase()?.trim().orEmpty()
+        if (normalized.isNotEmpty()) return normalized
+        return row.getOrNull(merchantIdx)?.lowercase()?.trim()?.takeIf { it.isNotEmpty() }
+    }
+
+    private fun uniqueBy(
+        transactions: List<com.athar.core.domain.model.Transaction>,
+        keyOf: (com.athar.core.domain.model.Transaction) -> String,
+    ): Map<String, com.athar.core.domain.model.Transaction> =
+        transactions.groupBy(keyOf)
+            .filterValues { it.size == 1 }
+            .mapValues { it.value.single() }
+
+    private fun requiredMaxIndex(vararg indexes: Int): Int =
+        indexes.filter { it >= 0 }.maxOrNull() ?: -1
+
     private fun resolveCategoryId(
         raw: String,
         byId: Map<String, com.athar.core.domain.model.Category>,
@@ -131,24 +248,33 @@ internal class MerchantBulkImporter @Inject constructor(
         return byName[raw.lowercase()]?.id
     }
 
-    private fun parseRow(line: String): List<String> {
+    private fun parseRows(text: String): List<List<String>> {
+        val rows = mutableListOf<List<String>>()
         val out = mutableListOf<String>()
         val cur = StringBuilder()
         var inQuotes = false
         var i = 0
-        while (i < line.length) {
-            val c = line[i]
+        while (i < text.length) {
+            val c = text[i]
             when {
-                inQuotes && c == '"' && i + 1 < line.length && line[i + 1] == '"' -> {
+                inQuotes && c == '"' && i + 1 < text.length && text[i + 1] == '"' -> {
                     cur.append('"'); i++
                 }
                 c == '"' -> inQuotes = !inQuotes
                 c == ',' && !inQuotes -> { out.add(cur.toString()); cur.clear() }
+                (c == '\n' || c == '\r') && !inQuotes -> {
+                    out.add(cur.toString())
+                    rows.add(out.toList())
+                    out.clear()
+                    cur.clear()
+                    if (c == '\r' && i + 1 < text.length && text[i + 1] == '\n') i++
+                }
                 else -> cur.append(c)
             }
             i += 1
         }
         out.add(cur.toString())
-        return out
+        if (out.size > 1 || out.firstOrNull()?.isNotEmpty() == true) rows.add(out.toList())
+        return rows
     }
 }
