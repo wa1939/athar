@@ -16,6 +16,13 @@ class BankNotificationPackageMatcherTest {
         assertThat(BankNotificationPackageMatcher.isBankPackage("com.wf.wellsfargomobile")).isTrue()
         assertThat(BankNotificationPackageMatcher.isBankPackage("com.google.android.apps.nbu.paisa.user")).isTrue()
         assertThat(BankNotificationPackageMatcher.isBankPackage("com.samsung.android.spay")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("uk.co.hsbc.hsbcukmobilebanking")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.barclays.android.barclaysmobilebanking")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.lloydsbank.mobilebank")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.natwest.mobile")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.usbank.mobilebanking")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.pnc.ecommerce.mobile")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.sofi.mobile")).isTrue()
     }
 
     @Test

@@ -126,8 +126,11 @@ class GenericBankNotificationTemplate : BankTemplate {
         }
 
         val merchant = when (type) {
-            TxType.EXPENSE -> cleanParty(atHint.find(normalized)?.groupValues?.get(1)
-                ?: toHint.find(normalized)?.groupValues?.get(1))
+            TxType.EXPENSE -> cleanParty(toHint.find(normalized)?.groupValues?.get(1)
+                ?: atHint.find(normalized)?.groupValues?.get(1)
+                ?: byHint.find(normalized)?.groupValues?.get(1)
+                ?: fromHint.find(normalized)?.groupValues?.get(1))
+                ?: partyBeforeAmount(normalized, amountMatch)
             TxType.INCOME -> null
             TxType.TRANSFER -> null
         }
@@ -174,13 +177,35 @@ class GenericBankNotificationTemplate : BankTemplate {
     private fun MatchResult.hasCurrency(): Boolean =
         groups["lead"]?.value?.isNotBlank() == true || groups["trail"]?.value?.isNotBlank() == true
 
+    private fun partyBeforeAmount(body: String, amountMatch: MatchResult): String? {
+        val beforeAmount = body
+            .substring(0, amountMatch.range.first)
+            .lineSequence()
+            .lastOrNull()
+            .orEmpty()
+            .trim()
+        val patterns = listOf(
+            Regex("""\b(?:you\s+)?paid\s+(.+)$""", RegexOption.IGNORE_CASE),
+            Regex(
+                """\b(?:debit\s+card\s+transaction|debit\s+card\s+purchase|card\s+purchase|purchase)\s+(.+)$""",
+                RegexOption.IGNORE_CASE,
+            ),
+            Regex("""\b(?:was\s+charged\s+by|were\s+charged\s+by|charged\s+by)\s+(.+)$""", RegexOption.IGNORE_CASE),
+        )
+        return patterns
+            .asSequence()
+            .mapNotNull { it.find(beforeAmount)?.groupValues?.get(1) }
+            .mapNotNull(::cleanParty)
+            .firstOrNull()
+    }
+
     private fun cleanParty(raw: String?): String? {
         if (raw.isNullOrBlank()) return null
         val cleaned = raw
             .lineSequence()
             .firstOrNull()
             ?.replace(amountWithCurrency, "")
-            ?.replace(Regex("""\b(?:for|using|card|ending|منتهية|البطاقة)\b.*$""", RegexOption.IGNORE_CASE), "")
+            ?.replace(Regex("""\b(?:for|using|with|via|card|ending|منتهية|البطاقة)\b.*$""", RegexOption.IGNORE_CASE), "")
             ?.trim(' ', '.', ',', '-', '·', ':')
             ?.take(48)
             ?.trim()
@@ -189,7 +214,7 @@ class GenericBankNotificationTemplate : BankTemplate {
 
     private companion object {
         val BankPackagePattern = Regex(
-            """^notification:.*(alrajhi|stcpay|stcbank|d360|barq|alinma|riyad|snb|alahli|anb|albilad|bsf|saib|jazira|wise|revolut|chase|capitalone|mercury|monzo|n26|starling|walletnfcrel|paisa|samsung\.android\.spay|paypal|venmo|squareup\.cash|americanexpress|amex|bankofamerica|wellsfargo|citimobile|usaa).*""",
+            """^notification:.*(alrajhi|stcpay|stcbank|d360|barq|alinma|riyad|snb|alahli|anb|albilad|bsf|saib|jazira|wise|revolut|chase|capitalone|mercury|monzo|n26|starling|hsbc|barclays|lloyds|natwest|santander|halifax|usbank|pnc|sofi|walletnfcrel|paisa|samsung\.android\.spay|paypal|venmo|squareup\.cash|americanexpress|amex|bankofamerica|bofa|wellsfargo|citimobile|usaa).*""",
             RegexOption.IGNORE_CASE,
         )
     }

@@ -198,6 +198,54 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses card charged by merchant notification`() {
+        val result = parser.parse(
+            event("notification:com.capitalone.mobile", "Your card was charged $8.99 by Netflix"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("8.99"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Netflix")
+    }
+
+    @Test
+    fun `parses debit card transaction from merchant notification`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Debit card transaction from Trader Joe's for $23.10"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("23.10"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Trader Joe's")
+    }
+
+    @Test
+    fun `parses paid merchant before amount notification`() {
+        val result = parser.parse(
+            event("notification:com.revolut.revolut", "You paid Apple Services $9.99"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("9.99"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Apple Services")
+    }
+
+    @Test
+    fun `strips wallet suffix from paid-to merchant notification`() {
+        val result = parser.parse(
+            event("notification:com.usbank.mobilebanking", "You paid $9.99 to Apple Services with Apple Pay"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("9.99"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Apple Services")
+    }
+
+    @Test
     fun `prefers currency marked amount over card last four`() {
         val result = parser.parse(
             event("notification:com.google.android.apps.walletnfcrel", "Card ending 1234 purchase at Amazon SAR 56.35"),
