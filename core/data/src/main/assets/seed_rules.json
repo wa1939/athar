@@ -2754,6 +2754,341 @@
       "pattern": "حامد بن علي الغامدى",
       "categoryId": "cat-side-income",
       "priority": 60
+    },
+    {
+      "pattern": "%arabica",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "agoda",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "al baik",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "aldi",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "alrazi",
+      "categoryId": "cat-medical",
+      "priority": 90
+    },
+    {
+      "pattern": "anthropic",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "apple.com",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "applebee",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "appstore",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "bindawood",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "burger & lobster",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "burger king",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "cafe nero",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "centrepoint",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "coursera",
+      "categoryId": "cat-education",
+      "priority": 90
+    },
+    {
+      "pattern": "emirates",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "etihad",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "expedia",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "fitness time",
+      "categoryId": "cat-gym",
+      "priority": 90
+    },
+    {
+      "pattern": "flat iron",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "google play",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "h & m",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "h&m",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "hello bike",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "home centre",
+      "categoryId": "cat-home-maintenance",
+      "priority": 90
+    },
+    {
+      "pattern": "homecentre",
+      "categoryId": "cat-home-maintenance",
+      "priority": 90
+    },
+    {
+      "pattern": "icloud",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "joe & the juice",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "jollychic",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "kudu",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "lebara",
+      "categoryId": "cat-telecom",
+      "priority": 90
+    },
+    {
+      "pattern": "lidl",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "longchamp",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "lufthansa",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "max fashion",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "nando",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "national water",
+      "categoryId": "cat-utilities",
+      "priority": 90
+    },
+    {
+      "pattern": "nesto",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "netflix",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "openai",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "operation falafel",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "papa john",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "penny market",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "petromin",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "pizza hut",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "qatar airways",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "sainsbury",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "sarawat",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "saudi aramco",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "shahid",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "shake shack",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "shein",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "spotify",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "starzplay",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "tesco",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "texas roadhouse",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "tfl",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "tgi fri",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "the cheesecake",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "tim hortons",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "turkish airlines",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "udemy",
+      "categoryId": "cat-education",
+      "priority": 90
+    },
+    {
+      "pattern": "united pharmacy",
+      "categoryId": "cat-medical",
+      "priority": 90
+    },
+    {
+      "pattern": "virgin mobile",
+      "categoryId": "cat-telecom",
+      "priority": 90
+    },
+    {
+      "pattern": "waitrose",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "water company",
+      "categoryId": "cat-utilities",
+      "priority": 90
+    },
+    {
+      "pattern": "youtube premium",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
     }
   ]
 }

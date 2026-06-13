@@ -31,7 +31,7 @@
 
 ---
 
-> **أثر · Athar** is a local-first Android app — an open-source, privacy-first replacement for the popular **"The Measure of a Plan" (TMOAP) personal finance Excel workbook**. It reads your bank SMS, parses every transaction, auto-categorizes against a 551+ merchant rule catalog plus local user-learned rules, and replaces a complex Excel budget workbook with three calm screens: **Today** · **Trends** · **Plan**. Arabic + English. Multi-currency (18 codes). Encrypted on-device. No cloud. No ads. No telemetry. Ever.
+> **أثر · Athar** is a local-first Android app — an open-source, privacy-first replacement for the popular **"The Measure of a Plan" (TMOAP) personal finance Excel workbook**. It reads your bank SMS, parses every transaction, auto-categorizes against a 618+ merchant rule catalog plus local user-learned rules, and replaces a complex Excel budget workbook with three calm screens: **Today** · **Trends** · **Plan**. Arabic + English. Multi-currency (18 codes). Encrypted on-device. No cloud. No ads. No telemetry. Ever.
 
 ## Why · Replacing TMOAP
 
@@ -96,7 +96,7 @@ Other tools force a trade-off:
 - ✅ **Self-transfer detection** — moves to your own savings account flagged as "Own account move" (savings), not expense
 - ✅ **Auto-detected recurring patterns** — scans your confirmed history, surfaces "Same merchant, same amount, 3+ distinct months at similar day-of-month" candidates as suggestions you confirm with one tap
 - ✅ **90-day historical SMS backfill** on first install
-- ✅ Rule engine with **551 merchant seed rules** across 22 categories (beta.17 — expanded from 44 curated rules with 507 high-confidence AI-categorized patterns extracted from a 1,000-message real-world AlRajhi corpus + a friend's SMS history; rules auto-refresh on app upgrade)
+- ✅ Rule engine with **618 merchant seed rules** across 22 categories (beta.17+R-05 — expanded from 44 curated rules with AI-categorized patterns plus a reviewed priority-90 catalog batch; rules auto-refresh on app upgrade)
 - ✅ "Always categorize X as Y?" **learn-from-correction** loop — **as of beta.18 the learned rule is backfilled to every existing PENDING + DISMISSED row** matching the merchant pattern, not just future SMS. Picking "Always" for one Hemmah charge fixes every stranded Hemmah in one tap
 - ✅ **Local category rule learning** — after three confirmed transactions for the exact same merchant all share one category, Athar creates an exact local rule so future matches stop asking. Explicit "Always" rules still win; ambiguous merchants are ignored
 - ✅ Source of every categorization is **explainable** (rule id, confidence)
