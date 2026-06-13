@@ -24,10 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SMS audit now includes parse-rate and sender-health diagnostics so users can identify failing bank senders or spammy sources after a rescan.
 - History now filters transactions by source (SMS, notification, manual, import, recurring, share) and shows each row's source in the subtitle.
 - SMS rescan-and-clean now shows the current pending count and requires confirmation before clearing pending transactions and rereading the SMS log.
-- In-place Confirm / Dismiss / Categorize buttons on the Pending widget (currently a tap opens the app). Needs HiltWorker + WorkManager+Hilt wiring.
 - Recurring rules now auto-materialize through a Hilt WorkManager worker on app startup and a daily periodic schedule, so due subscriptions appear in the pending tray without visiting Settings → Recurring transactions → Run now. When the worker creates rows, it refreshes all Athar home-screen widgets immediately.
-- In-place Confirm / Dismiss / Categorize buttons on the Pending widget (currently a tap opens the app). WorkManager + Hilt wiring now exists; the remaining work is widget action callbacks and per-action workers.
 - App-triggered widget refresh (`updateAll(context)`) after in-app Confirm/Dismiss so the widget syncs within seconds instead of the system's 30-minute cadence.
+- Integrated the recovered dev stack (#11–#30) into `dev/integration-recovered-stack`; JVM tests, both debug APK builds, and both app lint variants pass. Device E2E remains pending until an Android device or accelerated emulator is available.
 
 ## [0.1.0-beta.23] — 2026-05-27
 

@@ -8,6 +8,18 @@ Tier 1 — required to ship as a global app — is **complete**. Tiers 2–4 are
 
 > **For future AI / developers:** every shipped row below carries a *Why* and a *How* line so you can read this in 2 minutes and understand the entire design rationale without re-reading the diffs. When you ship something new, add `Why:` and `How:` to its row — the next person to touch this will thank you.
 
+## Recovery / integration status — 2026-06-13
+
+The recovered branch stack from PRs #11–#30 has been integrated locally on `dev/integration-recovered-stack`. See [`docs/RECOVERY_2026-06-13.md`](RECOVERY_2026-06-13.md) for the recovered goal, merge order, conflict resolutions, validation command, and runtime QA blocker.
+
+Validation is green for JVM tests, both debug APK builds, and both app lint variants:
+
+```powershell
+.\gradlew.bat --console=plain test :app:assemblePersonalFullSmsDebug :app:assembleStoreSafeDebug :app:lintPersonalFullSmsDebug :app:lintStoreSafeDebug
+```
+
+Device E2E and screenshot UI audit remain blocked on this PC because no Android device is attached and the local AVD cannot boot while firmware virtualization is disabled.
+
 Below is the prioritized gap list, in delivery order.
 
 ---
@@ -169,18 +181,12 @@ Real-user testing on top of imported SMS history surfaced bugs and one architect
 | **post-beta.23** | **Per-account ingestion routing** — account sender/card aliases route new SMS and notification transactions to the right account. | The pipeline previously hardcoded every bank message to `MANUAL_ACCOUNT_ID`, so multi-account users could not trust net worth without manual cleanup. Accounts now store routing aliases from the add/edit form. Numeric card/account tails beat shared sender aliases; zero or ambiguous matches safely fall back instead of guessing. | [docs/ACCOUNT_ROUTING.md](ACCOUNT_ROUTING.md) |
 | **post-beta.23** | **Recurring-rule auto-run** — due subscriptions materialize without opening Settings. | Recurring rules previously worked only when the user remembered to tap "Run now", which undermined the minimal-interaction vision. The app now configures Hilt WorkManager, schedules a startup run after data initialization, and keeps a daily periodic worker. The worker delegates to the existing idempotent `RecurringRuleRepository.materializeDue(today)` path and refreshes all widgets when it creates pending rows. | — |
 
-### Known issue carried forward
+### Current known issues / validation blockers
 
 | ID | What | Fix path |
 |---|---|---|
 | R-05 (P2) | ~228 rules in the AI-extracted set had no category assigned (`"category": null`) because the AI flagged them low-confidence — these merchants stay UNKNOWN. `AI template and output Categorization/athar_first_user_unknown_merchant_review.json` lists them for manual review. | Open the review file, assign categories by hand (or run a second AI pass with the categorized neighbours as in-context examples), append to `seed_rules.json`. Estimated 2–3 hours of human review per 100 rules. **Note (beta.18):** the new "Bulk categorize with AI" Settings card makes this a self-service flow now — the user can export their own unknowns, send to ChatGPT, and re-import. R-05 stays here as a backlog item for *shipping* an expanded curated seed to all users. |
-| R-06 (P1) | Backup-file decryption requires the user's passphrase — we have no offline tooling to inspect an athar-backup file without it. Limits our ability to triage user-reported data issues. | Two paths: (a) ship an opt-in "Export unencrypted snapshot for support" Settings action that writes plaintext JSON only with the user's explicit consent; (b) ask users to share an unencrypted CSV export instead. Path (b) needs no code. |
-| R-07 (P2) ✅ | Bulk-categorize CSV no longer depends only on `id` as the row key. | **Why:** The external-AI categorization loop is central to building each user's permanent merchant library. If the user exports, rescans SMS, then imports, regenerated UUIDs should not make the AI work useless. **How:** Export now includes `stable_key` + `source_ref_id`; import matches by live id first, exported stable key second, source/content fingerprint fallback third. The importer also parses quoted multiline `raw_body` fields correctly, so real SMS bodies do not split rows. Covered by `MerchantBulkCsvTest`. |
-| R-06 (P1) | Backup-file decryption requires the user's passphrase — full support snapshots are intentionally unavailable without user secrets. | Addressed by an opt-in redacted support diagnostics export instead of an unencrypted full snapshot. Settings writes counts, pseudonymous sender hashes, body-shape fingerprints/flags, failed-template groups, and redacted parser errors only; no raw SMS bodies, balances, card numbers, or account numbers. |
-| R-07 (P2) | Bulk-categorize CSV uses `id` as the row key — if a user re-runs the SMS backfill between export and import, transaction IDs change and the import skips everything. | Either persist a stable hash (merchant_normalized + amount + date + sourceRefId) and match on that, or block re-backfill while a bulk-categorize export is "in flight". Low priority since the typical loop is minutes long. |
-| R-08 (P1) | Pending widget's [Confirm] / [Dismiss] / [Categorize] action buttons not implemented in beta.21 — tap currently just opens the app. | Hilt WorkManager configuration now exists for recurring-rule auto-run. Next step: create `ConfirmPendingWorker`, `DismissPendingWorker` (each calls `TransactionRepository.setStatus` then `AtharWidgets.updateAll(context)`). Action buttons in `PendingWidget` use `actionRunCallback<ConfirmPendingAction>` with the tx id in `ActionParameters`. Estimated 0.5 day. |
-| R-09 (P2) | Widget refresh after in-app data changes runs only at the 30-min system cadence — confirming a pending tx in the app doesn't update the widget for up to 30 minutes. | Add a thin `WidgetRefresher` interface in `core/domain` (no-op default in `core/data`); `feature:widgets` provides the real implementation that calls `updateAll(context)` for all three widgets. `TransactionRepositoryImpl.upsert/setStatus/delete` calls `widgetRefresher.refresh()`. Estimated 1 hour. |
-| R-07 (P2) | Bulk-categorize CSV uses `id` as the row key — if a user re-runs the SMS backfill between export and import, transaction IDs change and the import skips everything. | Either persist a stable hash (merchant_normalized + amount + date + sourceRefId) and match on that, or block re-backfill while a bulk-categorize export is "in flight". Low priority since the typical loop is minutes long. |
+| QA-01 (P0 before release) | Device E2E and screenshot UI audit could not run on 2026-06-13 because no Android device was attached and the AVD cannot boot without hardware acceleration. | Enable virtualization / Android Emulator hypervisor driver or connect a physical Android device with USB debugging, then run the smoke flows listed in [`docs/RECOVERY_2026-06-13.md`](RECOVERY_2026-06-13.md). |
 
 ## Tier 1 retrospective — what we shipped
 
@@ -194,15 +200,15 @@ The current Saudi-specialized features (SMS parser, AlRajhi/STC/D360/Barq templa
 
 | # | Feature | Effort | Why |
 |---|---|---|---|
-| 1 | G-7 bills calendar | 2 days | Recurring rules already exist; calendar view unlocks the value |
-| 2 | G-8 manual transaction UX follow-ups | 1.5 days | Voice entry + local encrypted receipt photos; recent merchants/quick-add shipped in G-08 |
-| 3 | G-10 savings-rate goals | 2 days | TMOAP doesn't have it — clear differentiator + matches FIRE/financial-independence crowd |
-| 2 | G-8 manual transaction UX | 2 days | Friction for non-Saudi users (no SMS) — autocomplete, quick-add chips |
-| 3 | G-10 Today goals nudge | 0.5 day | Plan goals are live; add a quiet Today progress cue without turning it into gamification |
-| 4 | G-11 broader notification handlers | 3 days | Play-Store eligibility for non-Saudi (Wise, Revolut, Chase, Mercury, etc.) |
-| 5 | G-5b residual seed/SMS strings | 0.5 day | Inject `@ApplicationContext` into `SmsIngestionPipeline` for new self-transfer transactions; convert seed account name to a sentinel resolved at render |
+| 1 | QA-01 runtime E2E + UI audit | 0.5–1 day | The integrated stack is build/lint green, but release readiness still needs real device/emulator launch, screenshots, and smoke flows |
+| 2 | G-7 bill reminders | 1.5 days | Bills calendar first slice shipped; reminders need notification permission copy, anti-nag rules, and scheduling |
+| 3 | G-8 manual transaction UX follow-ups | 1.5 days | Voice entry + local encrypted receipt photos; recent merchants/quick-add already shipped |
+| 4 | G-10 Today goals nudge | 0.5 day | Plan goals are live; add a quiet Today progress cue without gamification |
+| 5 | G-11 app-specific notification handlers | 3 days | Broaden Play-Store-safe ingestion for Wise, Revolut, Chase, Capital One, Mercury, Apple/Google Wallet, etc. |
+| 6 | G-12 import wizard | 3 days | CSV auto-detect shipped; preview, manual mapping, OFX/QFX/MT940, and multi-currency statement UX remain |
+| 7 | R-05 curated seed review | 2–3 hours per 100 rules | Ship more high-confidence merchant coverage to all users |
 
-Total: ~9.5 person-days.
+Total: ~10–11 person-days plus the R-05 review batch size.
 
 ## How to continue this work (for any AI or developer)
 

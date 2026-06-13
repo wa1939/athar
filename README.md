@@ -31,7 +31,7 @@
 
 ---
 
-> **أثر · Athar** is a local-first Android app — an open-source, privacy-first replacement for the popular **"The Measure of a Plan" (TMOAP) personal finance Excel workbook**. It reads your bank SMS, parses every transaction, auto-categorizes against a 195-entry merchant dictionary, and replaces a complex Excel budget workbook with three calm screens: **Today** · **Trends** · **Plan**. Arabic + English. Multi-currency (18 codes). Encrypted on-device. No cloud. No ads. No telemetry. Ever.
+> **أثر · Athar** is a local-first Android app — an open-source, privacy-first replacement for the popular **"The Measure of a Plan" (TMOAP) personal finance Excel workbook**. It reads your bank SMS, parses every transaction, auto-categorizes against a 551+ merchant rule catalog plus local user-learned rules, and replaces a complex Excel budget workbook with three calm screens: **Today** · **Trends** · **Plan**. Arabic + English. Multi-currency (18 codes). Encrypted on-device. No cloud. No ads. No telemetry. Ever.
 
 ## Why · Replacing TMOAP
 
@@ -238,15 +238,17 @@ Two flavors:
 ## Tests
 
 ```bash
-./gradlew test                                   # all JVM unit tests (53 tests across 10 classes)
+./gradlew test                                   # all JVM unit tests
 ./gradlew :ml:categorizer:test                   # one module
+./gradlew :app:assemblePersonalFullSmsDebug :app:assembleStoreSafeDebug
+./gradlew :app:lintPersonalFullSmsDebug :app:lintStoreSafeDebug
 ./gradlew connectedAndroidTest                   # instrumented (needs emulator/device)
 maestro test .maestro/flows/                     # 10 E2E flows
 ```
 
 ## Roadmap
 
-### Shipped in v0.1.0-beta.1 → beta.8 (current)
+### Shipped in v0.1.0-beta.1 → current
 
 **Foundations (beta.1):**
 - ✅ Phase 0 foundations · 15 Gradle modules · build-logic convention plugins
@@ -266,7 +268,7 @@ maestro test .maestro/flows/                     # 10 E2E flows
 - ✅ User-defined SMS templates (W-4) — onboard your bank without code
 - ✅ Spam-resistant ingestion pipeline (ADR-006): sender allow-list + `-AD` block + 40 ignore patterns
 - ✅ Date extraction from SMS body (7 formats) so historical SMS sit in their correct months
-- ✅ Auto-confirm by category · auto-dismiss low confidence · bulk pending actions
+- ✅ Auto-confirm by category when confidence is high; uncertain parsed transactions stay in Pending for explicit user review
 - ✅ Self-transfer / own-account detection
 - ✅ Investment percentage-based returns + delete pool/contributor
 - ✅ TMOAP-seeded private build (gitignored) for the developer's own data — public APK stays clean
@@ -297,25 +299,22 @@ maestro test .maestro/flows/                     # 10 E2E flows
 - ✅ **Fail-safe ingestion (beta.15, [ADR-008](docs/adr/ADR-008-ingestion-fail-safe.md))** — auto-dismiss removed entirely from the pipeline. Anything that successfully parses as a transaction lands in CONFIRMED (categorizer matched) or PENDING (user must decide). Never DISMISSED automatically. Money no longer silently disappears. One-tap **"Recover dismissed transactions"** Settings action moves every legacy DISMISSED row back to PENDING for existing users.
 - ✅ **AI triage workflow (R-02, [docs/AI_SMS_TRIAGE_PROMPT.md](docs/AI_SMS_TRIAGE_PROMPT.md))** — copy-paste prompt teaches an external AI (ChatGPT/Claude/Gemini) to read a bulk SMS export and return JSON with `transactions` + new `parser_templates` + new `categorization_rules`. Developer pastes JSON back, merges into `seed_rules.json` and per-bank template files. Lets the user expand bank coverage from any device's SMS without code changes per batch.
 
-### Known issues
+### Current validation status
 
-- **R-01 (P0):** On first big SMS backfill (>100 messages), Today / History flows don't reflect the inserts until the activity is recreated. Likely cause: `RawIngestDispatcher` launches one coroutine per event → Room's invalidation tracker gets saturated. Fix is a batched Channel-based ingestion pipeline; not a same-evening patch. Workaround: restart the app once after a big backfill.
+- ✅ The recovered PR stack (#11–#30) is integrated locally on `dev/integration-recovered-stack`; details are in [`docs/RECOVERY_2026-06-13.md`](docs/RECOVERY_2026-06-13.md).
+- ✅ JVM tests, both debug APK builds, and both app lint variants pass with JDK 17.
+- ⏳ Device E2E and screenshot UI audit still need a physical Android device or a working accelerated emulator. On 2026-06-13 the local AVD could not boot because firmware virtualization was disabled.
 
 ### In flight / remaining
 
 | ID | Feature | Status | Effort | Notes |
 |---|---|---|---|---|
-| G-7 | Bills calendar | ⏳ | 2 days | "Upcoming bills" view + push notifications 2 days before each bill |
-| G-8 | Manual transaction UX upgrades | ◐ | 2 days | ✅ Recent-merchant autocomplete + quick-add chips · ⏳ voice entry · receipt photo |
-| G-7 | Bills calendar | ◐ | 2 days | Plan → Bills upcoming view shipped; push reminders remain follow-up |
-| G-8 | Manual transaction UX upgrades | ⏳ | 2 days | Recent-merchant autocomplete · quick-add chips · voice entry · receipt photo |
-| G-10 | Savings-rate goals + emergency fund | ⏳ | 2 days | Plan → Goals tab with target progress |
-| G-8 | Manual transaction UX upgrades | ⏳ | 2 days | Recent-merchant autocomplete · quick-add chips · voice entry · receipt photo |
-| G-10 | Savings-rate goals + emergency fund | ◐ | 2 days | ✅ Plan → Goals tab with target progress · ⏳ Today progress/nudge |
-| G-11 | Broader notification handlers | ⏳ | 3 days | Apple Wallet, Google Pay, Revolut, Wise, Chase, Capital One, Mercury (Play-Store flavor) |
-| G-11 | Broader notification handlers | ◐ | 3 days | Generic bank-app push parser shipped for common alerts; app-specific handlers remain follow-up |
-| G-12 | Bank statement / CSV / OFX / QFX import wizard | ⏳ | 3 days | Auto-detect format, column mapping, multi-currency statements |
-| G-12 | Bank statement / CSV / OFX / QFX import wizard | ◐ | 3 days | CSV header auto-detect shipped for common statement layouts; preview, manual mapping, OFX/QFX still planned |
+| QA-01 | Runtime E2E + UI audit | ⏳ | 0.5–1 day | Needs physical Android device or accelerated emulator |
+| G-7 | Bill reminders | ⏳ | 1.5 days | Plan → Bills upcoming view shipped; push reminders remain follow-up |
+| G-8 | Manual transaction UX upgrades | ◐ | 1.5 days | ✅ Recent-merchant autocomplete + quick-add chips · ⏳ voice entry · receipt photo |
+| G-10 | Savings-rate goals + emergency fund | ◐ | 0.5 day | ✅ Plan → Goals tab · ⏳ Today progress/nudge |
+| G-11 | Broader notification handlers | ◐ | 3 days | Generic bank-app push parser shipped; app-specific handlers remain follow-up |
+| G-12 | Bank statement / CSV / OFX / QFX import wizard | ◐ | 3 days | CSV header auto-detect shipped; preview, manual mapping, OFX/QFX/MT940 still planned |
 | G-13 | Zero-knowledge sync to companion devices | ⏳ | 5 days | E2E-encrypted via Dropbox / Drive / iCloud / WebDAV / S3 — user holds the key |
 | G-14 | Tax-export PDF for accountants | ✅ | 2 days | Annual category totals + transaction list in user's locale |
 
@@ -326,10 +325,6 @@ Full gap analysis: [`docs/ROADMAP_GLOBAL.md`](docs/ROADMAP_GLOBAL.md).
 - ⏳ TFLite merchant classifier (rule engine handles ~90% of cases)
 - ⏳ Paparazzi snapshot baselines (need to record on a real machine)
 - ⏳ Macrobenchmarks (need a device)
-- ✅ Per-account SMS/notification routing by sender alias or card/account tail (S-20)
-- ⏳ WorkManager auto-trigger for recurring rules (manual "Run now" works today)
-- ⏳ Per-bank account routing (S-20)
-- ✅ WorkManager auto-trigger for recurring rules (manual "Run now" remains available)
 - ⏳ XLSX direct import (CSV path covers the migration today)
 
 ## Privacy
