@@ -59,7 +59,7 @@ Other tools force a trade-off:
 - ✅ **Ember attention banner** when pending > 0 — "%d transactions awaiting review · Tap to review →" — impossible to miss above the net-flow number. Dust-color secondary banner appears below it when today had any auto-dismissed transactions, so parser false-negatives never go unnoticed.
 - ✅ **Fail-safe ingestion (beta.15):** SMS that parse as transactions are NEVER auto-dismissed; if the categorizer is uncertain, the transaction lands in PENDING for explicit user review. Money never silently disappears. See `docs/adr/ADR-008-ingestion-fail-safe.md` for rationale.
 - ✅ Auto-confirm transactions when category is already known (CategoryRule match); user fixes are recorded as new rules so the same merchant auto-confirms next time
-- ✅ FAB to add a manual transaction in seconds
+- ✅ FAB to add a manual transaction in seconds, with recent-merchant quick-add chips that prefill merchant, amount, type, and category from your own history
 
 #### Trends (النمط) — TMOAP-depth analysis
 - ✅ Period selector: **month · 3 months · year · period-vs-prior · custom range**
@@ -293,7 +293,7 @@ maestro test .maestro/flows/                     # 10 E2E flows
 | ID | Feature | Status | Effort | Notes |
 |---|---|---|---|---|
 | G-7 | Bills calendar | ⏳ | 2 days | "Upcoming bills" view + push notifications 2 days before each bill |
-| G-8 | Manual transaction UX upgrades | ⏳ | 2 days | Recent-merchant autocomplete · quick-add chips · voice entry · receipt photo |
+| G-8 | Manual transaction UX upgrades | ◐ | 2 days | ✅ Recent-merchant autocomplete + quick-add chips · ⏳ voice entry · receipt photo |
 | G-10 | Savings-rate goals + emergency fund | ⏳ | 2 days | Plan → Goals tab with target progress |
 | G-11 | Broader notification handlers | ⏳ | 3 days | Apple Wallet, Google Pay, Revolut, Wise, Chase, Capital One, Mercury (Play-Store flavor) |
 | G-12 | Bank statement / CSV / OFX / QFX import wizard | ⏳ | 3 days | Auto-detect format, column mapping, multi-currency statements |

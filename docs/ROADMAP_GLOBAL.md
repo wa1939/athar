@@ -60,11 +60,11 @@ Below is the prioritized gap list, in delivery order.
 - Push notifications 2 days before each bill, on the bill day, and once if missed (per brief: no guilt-trip nags — single reminder, no streak shaming).
 
 ### G-8 — Manual transaction UX improvements
-**Status:** AddTransactionSheet exists but is barebones.
+**Status:** Partially shipped — recent merchants autocomplete + quick-add chips.
 **Gap:** Users without SMS need to enter every transaction by hand. Friction must be minimal.
 **Fix:**
-- Recent merchants autocomplete (top 20 by frequency).
-- Quick-add chips: "Coffee 25" → expense, restaurant category, current account.
+- Recent merchants autocomplete (top 20 by frequency). ✅
+- Quick-add chips: "Coffee 25" → expense, restaurant category. ✅
 - Receipt photo attachment (local-only, encrypted).
 - Voice entry ("Spent 50 on lunch at McDonalds").
 
@@ -162,6 +162,7 @@ Real-user testing on top of imported SMS history surfaced bugs and one architect
 | **beta.23** | **Update-availability nudge via Obtainium delegation** — Settings → "تابع التحديثات / Stay up to date" card with **Add to Obtainium** (deep link `obtainium://app/{percent-encoded-json}` that pre-fills Athar's GitHub URL in the Obtainium "Add app" flow), **Install Obtainium** fallback (opens `obtainium.imranr.dev`), and **Releases page** (opens `github.com/wa1939/athar/releases`). | User asked how he and future users would know a new release dropped. Athar has no `INTERNET` permission — adding one to poll GitHub would broaden the trust surface and contradict Master Brief §2.2's offline-first commitment. Standard pattern in the privacy-respecting sideload ecosystem (F-Droid clients, Obtainium, FFUpdater): the update-tracker app polls feeds on the user's behalf in *its* process space. We hand off to Obtainium via a deep link. Fallback chain: `runCatching { startActivity(obtainium://...) }` → if `ActivityNotFoundException` (Obtainium not installed), show toast + open browser to install page. Verified end-to-end on emulator: tap → `START result code=-91` (no handler) → Toast window opened → Chrome launched to `obtainium.imranr.dev`. No new permissions; no new dependencies; no Athar-side polling. Update-checking responsibility lives in the sideload manager forever. | [ADR-009](adr/ADR-009-update-delivery-via-obtainium.md) |
 | **beta.24** | **R-01 queued SMS ingestion dispatcher** — backfill/live SMS now enter a singleton Channel queue drained by one ingestion worker. | First big SMS imports could enqueue thousands of messages and start thousands of concurrent `pipeline.process(event)` coroutines. Room invalidation then fell behind, making Today/History look stale until Activity recreate. The new `QueuedRawIngestDispatcher` keeps receiver enqueue non-blocking but serializes parser/audit/transaction writes, preserving content-provider order and preventing DB-write fan-out. Per-event failures are logged without killing the queue. Follow-up transactional batching remains available if real-device traces show drain time needs more work. | [R-01](specs/R-01-queued-sms-dispatcher.md) |
 | **beta.24** | **R-08/R-09 Pending widget actions + fresh widgets** — Pending widget rows now expose Confirm / Dismiss / Categorize controls, and transaction mutations request widget refreshes. | The beta.21 widgets were useful at a glance but not actionable: pending rows only opened the app, and widget counts could stay stale until the 30-minute system refresh. Confirm/Dismiss now enqueue a Hilt `CoroutineWorker` that calls `TransactionRepository.setStatus`; Categorize opens Athar because category choice still needs the full edit + "Always categorize" learning flow. A new `WidgetRefresher` domain interface lets `core:data` request refreshes without depending on Glance; the concrete widget implementation debounces bursts so SMS imports and bulk actions do not spam `updateAll(context)`. | [R-08/R-09](specs/R-08-R-09-widget-actions-refresh.md) |
+| **beta.24** | **G-8 manual entry quick-add** — Add Transaction now shows recent merchant chips that prefill merchant, amount when currency-safe, type, and category from the user's own confirmed history. | Non-SMS users and users with unsupported banks still need manual entry, so the add sheet must remember their routine transactions. Suggestions are built locally from confirmed, non-reconciliation rows, ranked by merchant frequency, filtered as the user types, and split by Expense/Income. No backend and no cloud prediction. Voice entry and receipt photos stay as the remaining G-8 follow-ups. | [G-08](specs/G-08-manual-entry-quick-add.md) |
 
 ### Known issue carried forward
 
@@ -187,7 +188,7 @@ The current Saudi-specialized features (SMS parser, AlRajhi/STC/D360/Barq templa
 | # | Feature | Effort | Why |
 |---|---|---|---|
 | 1 | G-7 bills calendar | 2 days | Recurring rules already exist; calendar view unlocks the value |
-| 2 | G-8 manual transaction UX | 2 days | Friction for non-Saudi users (no SMS) — autocomplete, quick-add chips |
+| 2 | G-8 manual transaction UX follow-ups | 1.5 days | Voice entry + local encrypted receipt photos; recent merchants/quick-add shipped in G-08 |
 | 3 | G-10 savings-rate goals | 2 days | TMOAP doesn't have it — clear differentiator + matches FIRE/financial-independence crowd |
 | 4 | G-11 broader notification handlers | 3 days | Play-Store eligibility for non-Saudi (Wise, Revolut, Chase, Mercury, etc.) |
 | 5 | G-5b residual seed/SMS strings | 0.5 day | Inject `@ApplicationContext` into `SmsIngestionPipeline` for new self-transfer transactions; convert seed account name to a sentinel resolved at render |

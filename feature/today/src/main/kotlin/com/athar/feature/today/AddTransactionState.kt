@@ -15,11 +15,26 @@ data class AddTransactionState(
     val selectedCategoryId: String?,
     val expenseCategories: ImmutableList<Category>,
     val incomeCategories: ImmutableList<Category>,
+    val merchantSuggestions: ImmutableList<ManualEntrySuggestion>,
     val isSaving: Boolean,
     val validationError: ValidationError?,
 ) {
     val categoriesForType: ImmutableList<Category>
         get() = if (type == TxType.INCOME) incomeCategories else expenseCategories
+
+    val visibleMerchantSuggestions: List<ManualEntrySuggestion>
+        get() {
+            val query = merchant.trim().lowercase()
+            val sameType = merchantSuggestions.filter { it.type == type }
+            return (if (query.isBlank()) {
+                sameType
+            } else {
+                sameType.filter {
+                    it.merchant.lowercase().contains(query) ||
+                        it.merchantNormalized.contains(query)
+                }
+            }).take(if (query.isBlank()) QUICK_ADD_LIMIT else AUTOCOMPLETE_LIMIT)
+        }
 
     companion object {
         fun initial(today: LocalDate): AddTransactionState = AddTransactionState(
@@ -31,9 +46,13 @@ data class AddTransactionState(
             selectedCategoryId = null,
             expenseCategories = persistentListOf(),
             incomeCategories = persistentListOf(),
+            merchantSuggestions = persistentListOf(),
             isSaving = false,
             validationError = null,
         )
+
+        private const val QUICK_ADD_LIMIT = 6
+        private const val AUTOCOMPLETE_LIMIT = 8
     }
 }
 
@@ -51,5 +70,6 @@ sealed interface AddTransactionEvent {
     data class SetType(val type: TxType) : AddTransactionEvent
     data class SetDate(val date: LocalDate) : AddTransactionEvent
     data class SelectCategory(val categoryId: String) : AddTransactionEvent
+    data class ApplySuggestion(val suggestion: ManualEntrySuggestion) : AddTransactionEvent
     data object Save : AddTransactionEvent
 }
