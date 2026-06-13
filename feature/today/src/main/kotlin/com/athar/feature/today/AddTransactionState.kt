@@ -18,6 +18,10 @@ data class AddTransactionState(
     val merchantSuggestions: ImmutableList<ManualEntrySuggestion>,
     val quickEntry: String,
     val quickEntryError: QuickEntryError?,
+    val receiptName: String?,
+    val receiptSizeBytes: Long?,
+    val isReceiptLoading: Boolean,
+    val receiptError: ReceiptAttachmentError?,
     val isSaving: Boolean,
     val validationError: ValidationError?,
 ) {
@@ -51,6 +55,10 @@ data class AddTransactionState(
             merchantSuggestions = persistentListOf(),
             quickEntry = "",
             quickEntryError = null,
+            receiptName = null,
+            receiptSizeBytes = null,
+            isReceiptLoading = false,
+            receiptError = null,
             isSaving = false,
             validationError = null,
         )
@@ -72,6 +80,13 @@ enum class QuickEntryError {
     VOICE_UNAVAILABLE,
 }
 
+enum class ReceiptAttachmentError {
+    READ_FAILED,
+    TOO_LARGE,
+    UNSUPPORTED_TYPE,
+    SAVE_FAILED,
+}
+
 sealed interface AddTransactionEvent {
     data class SetAmount(val value: String) : AddTransactionEvent
     data class SetMerchant(val value: String) : AddTransactionEvent
@@ -80,6 +95,7 @@ sealed interface AddTransactionEvent {
     data object ApplyQuickEntry : AddTransactionEvent
     data class ApplyVoiceTranscript(val value: String) : AddTransactionEvent
     data object VoiceUnavailable : AddTransactionEvent
+    data object RemoveReceipt : AddTransactionEvent
     data class SetType(val type: TxType) : AddTransactionEvent
     data class SetDate(val date: LocalDate) : AddTransactionEvent
     data class SelectCategory(val categoryId: String) : AddTransactionEvent

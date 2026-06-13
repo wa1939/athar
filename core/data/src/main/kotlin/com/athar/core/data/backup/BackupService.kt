@@ -72,11 +72,13 @@ class BackupService @Inject internal constructor(
         investmentPools = db.investmentDao().allPools().map { it.toBackup() },
         investmentContributions = db.investmentDao().allContributions().map { it.toBackup() },
         smsAudit = db.smsMessageDao().all().map { it.toBackup() },
+        receiptAttachments = db.transactionReceiptDao().all().map { it.toBackup() },
     )
 
     private suspend fun restore(snapshot: BackupSnapshot) {
         db.withTransaction {
             // Replace strategy: clear children before parents to satisfy FKs, then re-insert.
+            db.transactionReceiptDao().clear()
             db.transactionDao().clear()
             db.categoryRuleDao().clear()
             db.wishlistDao().clear()
@@ -94,6 +96,7 @@ class BackupService @Inject internal constructor(
             snapshot.investmentPools.forEach { db.investmentDao().upsertPool(it.toEntity()) }
             snapshot.investmentContributions.forEach { db.investmentDao().upsertContribution(it.toEntity()) }
             snapshot.smsAudit.forEach { db.smsMessageDao().upsert(it.toEntity()) }
+            snapshot.receiptAttachments.forEach { db.transactionReceiptDao().upsert(it.toEntity()) }
         }
     }
 }

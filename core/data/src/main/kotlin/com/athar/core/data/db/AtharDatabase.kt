@@ -13,6 +13,7 @@ import com.athar.core.data.db.dao.InvestmentDao
 import com.athar.core.data.db.dao.RecurringRuleDao
 import com.athar.core.data.db.dao.SmsMessageDao
 import com.athar.core.data.db.dao.TransactionDao
+import com.athar.core.data.db.dao.TransactionReceiptDao
 import com.athar.core.data.db.dao.UserTemplateDao
 import com.athar.core.data.db.dao.WishlistDao
 import com.athar.core.data.db.entity.AccountEntity
@@ -24,11 +25,12 @@ import com.athar.core.data.db.entity.InvestmentPoolEntity
 import com.athar.core.data.db.entity.RecurringRuleEntity
 import com.athar.core.data.db.entity.SmsMessageEntity
 import com.athar.core.data.db.entity.TransactionEntity
+import com.athar.core.data.db.entity.TransactionReceiptEntity
 import com.athar.core.data.db.entity.UserTemplateEntity
 import com.athar.core.data.db.entity.WishlistEntity
 
 @Database(
-    version = 5,
+    version = 6,
     exportSchema = true,
     entities = [
         AccountEntity::class,
@@ -42,6 +44,7 @@ import com.athar.core.data.db.entity.WishlistEntity
         ActivityLogEntity::class,
         UserTemplateEntity::class,
         RecurringRuleEntity::class,
+        TransactionReceiptEntity::class,
     ],
 )
 @TypeConverters(Converters::class)
@@ -56,6 +59,7 @@ internal abstract class AtharDatabase : RoomDatabase() {
     abstract fun activityLogDao(): ActivityLogDao
     abstract fun userTemplateDao(): UserTemplateDao
     abstract fun recurringRuleDao(): RecurringRuleDao
+    abstract fun transactionReceiptDao(): TransactionReceiptDao
 
     companion object {
         internal const val NAME: String = "athar.db"
@@ -170,6 +174,37 @@ internal abstract class AtharDatabase : RoomDatabase() {
                 )
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_account_archivedAt ON account(archivedAt)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_account_sortOrder ON account(sortOrder)")
+            }
+        }
+
+        /**
+         * v5 → v6: encrypted receipt attachments for manual transactions (G-8).
+         *
+         * The payload is stored as a BLOB in the SQLCipher database, so receipt photos
+         * inherit the same local-at-rest encryption as ledger data.
+         */
+        internal val MIGRATION_5_6: Migration = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS transaction_receipt (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        transactionId TEXT NOT NULL,
+                        mimeType TEXT NOT NULL,
+                        originalName TEXT,
+                        sizeBytes INTEGER NOT NULL,
+                        payload BLOB NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        FOREIGN KEY(transactionId) REFERENCES transactions(id) ON DELETE CASCADE
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE UNIQUE INDEX IF NOT EXISTS index_transaction_receipt_transactionId
+                    ON transaction_receipt(transactionId)
+                    """.trimIndent(),
+                )
             }
         }
     }

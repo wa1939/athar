@@ -5,7 +5,9 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -54,8 +57,12 @@ fun AddTransactionSheet(
     modifier: Modifier = Modifier,
     viewModel: AddTransactionViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val receiptLauncher = rememberLauncherForActivityResult(PickVisualMedia()) { uri ->
+        uri?.let { viewModel.attachReceipt(context.contentResolver, it) }
+    }
     val voiceLauncher = rememberLauncherForActivityResult(StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             result.data
@@ -81,6 +88,9 @@ fun AddTransactionSheet(
         AddTransactionForm(
             state = state,
             onEvent = viewModel::onEvent,
+            onReceiptClick = {
+                receiptLauncher.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
+            },
             onVoiceClick = {
                 val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
                     .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
@@ -105,6 +115,7 @@ fun AddTransactionSheet(
 private fun AddTransactionForm(
     state: AddTransactionState,
     onEvent: (AddTransactionEvent) -> Unit,
+    onReceiptClick: () -> Unit,
     onVoiceClick: () -> Unit,
     contentPadding: PaddingValues,
 ) {
@@ -188,12 +199,100 @@ private fun AddTransactionForm(
             singleLine = false,
         )
 
+        ReceiptAttachmentRow(
+            name = state.receiptName,
+            sizeBytes = state.receiptSizeBytes,
+            isLoading = state.isReceiptLoading,
+            error = state.receiptError,
+            onAttachClick = onReceiptClick,
+            onRemoveClick = { onEvent(AddTransactionEvent.RemoveReceipt) },
+        )
+
         SaveButton(
             isSaving = state.isSaving,
             onClick = { onEvent(AddTransactionEvent.Save) },
         )
     }
 }
+
+@Composable
+private fun ReceiptAttachmentRow(
+    name: String?,
+    sizeBytes: Long?,
+    isLoading: Boolean,
+    error: ReceiptAttachmentError?,
+    onAttachClick: () -> Unit,
+    onRemoveClick: () -> Unit,
+) {
+    val theme = AtharTheme
+    Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+        AtharText(
+            text = stringResource(R.string.add_tx_receipt_title),
+            style = theme.typography.caption,
+            color = theme.colors.muted,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            val status = when {
+                isLoading -> stringResource(R.string.add_tx_receipt_loading)
+                name != null && sizeBytes != null -> stringResource(
+                    R.string.add_tx_receipt_attached,
+                    name,
+                    formatReceiptSize(sizeBytes),
+                )
+                else -> stringResource(R.string.add_tx_receipt_empty)
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = MinTouchTarget)
+                    .clip(RoundedCornerShape(theme.spacing.s))
+                    .background(theme.colors.surface)
+                    .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                AtharText(
+                    text = status,
+                    style = theme.typography.caption,
+                    color = if (name != null) theme.colors.ink else theme.colors.muted,
+                    maxLines = 1,
+                )
+            }
+            CompactActionButton(
+                text = stringResource(if (name == null) R.string.add_tx_receipt_attach else R.string.add_tx_receipt_change),
+                enabled = !isLoading,
+                onClick = onAttachClick,
+            )
+            if (name != null) {
+                CompactActionButton(
+                    text = stringResource(R.string.add_tx_receipt_remove),
+                    enabled = !isLoading,
+                    onClick = onRemoveClick,
+                )
+            }
+        }
+        val errorText = when (error) {
+            ReceiptAttachmentError.READ_FAILED -> stringResource(R.string.add_tx_receipt_error_read)
+            ReceiptAttachmentError.TOO_LARGE -> stringResource(R.string.add_tx_receipt_error_too_large)
+            ReceiptAttachmentError.UNSUPPORTED_TYPE -> stringResource(R.string.add_tx_receipt_error_unsupported)
+            ReceiptAttachmentError.SAVE_FAILED -> stringResource(R.string.add_tx_receipt_error_save)
+            null -> null
+        }
+        errorText?.let {
+            AtharText(text = it, style = theme.typography.caption, color = theme.colors.crimson)
+        }
+    }
+}
+
+private fun formatReceiptSize(bytes: Long): String =
+    if (bytes >= 1024 * 1024) {
+        String.format(Locale.getDefault(), "%.1f MB", bytes / 1024f / 1024f)
+    } else {
+        "${((bytes + 1023) / 1024).coerceAtLeast(1)} KB"
+    }
 
 @Composable
 private fun QuickEntryRow(

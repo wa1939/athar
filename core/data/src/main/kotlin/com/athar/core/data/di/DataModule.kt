@@ -11,6 +11,7 @@ import com.athar.core.data.db.dao.CategoryRuleDao
 import com.athar.core.data.db.dao.InvestmentDao
 import com.athar.core.data.db.dao.SmsMessageDao
 import com.athar.core.data.db.dao.TransactionDao
+import com.athar.core.data.db.dao.TransactionReceiptDao
 import com.athar.core.data.db.dao.UserTemplateDao
 import com.athar.core.data.db.dao.WishlistDao
 import com.athar.core.data.backup.BackupService
@@ -28,6 +29,7 @@ import com.athar.core.data.repo.InvestmentRepositoryImpl
 import com.athar.core.data.repo.SmsAuditRepositoryImpl
 import com.athar.core.data.prefs.UserPreferencesRepositoryImpl
 import com.athar.core.data.repo.TransactionRepositoryImpl
+import com.athar.core.data.repo.ReceiptAttachmentRepositoryImpl
 import com.athar.core.data.repo.UserTemplateRepositoryImpl
 import com.athar.core.data.repo.WishlistRepositoryImpl
 import com.athar.core.data.support.SupportDiagnosticsExporter
@@ -46,6 +48,7 @@ import com.athar.core.domain.repo.SmsAuditRepository
 import com.athar.core.domain.repo.SupportDiagnosticsExportTrigger
 import com.athar.core.domain.repo.TaxExportTrigger
 import com.athar.core.domain.repo.TransactionRepository
+import com.athar.core.domain.repo.ReceiptAttachmentRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
 import com.athar.core.domain.repo.UserTemplateRepository
 import com.athar.core.domain.repo.WishlistRepository
@@ -97,6 +100,7 @@ internal object DatabaseModule {
                     AtharDatabase.MIGRATION_2_3,
                     AtharDatabase.MIGRATION_3_4,
                     AtharDatabase.MIGRATION_4_5,
+                    AtharDatabase.MIGRATION_5_6,
                 )
                 .fallbackToDestructiveMigrationOnDowngrade()
                 .build()
@@ -117,6 +121,7 @@ internal object DatabaseModule {
     @Provides fun provideAccountDao(db: AtharDatabase): AccountDao = db.accountDao()
     @Provides fun provideCategoryDao(db: AtharDatabase): CategoryDao = db.categoryDao()
     @Provides fun provideTransactionDao(db: AtharDatabase): TransactionDao = db.transactionDao()
+    @Provides fun provideTransactionReceiptDao(db: AtharDatabase): TransactionReceiptDao = db.transactionReceiptDao()
     @Provides fun provideCategoryRuleDao(db: AtharDatabase): CategoryRuleDao = db.categoryRuleDao()
     @Provides fun provideWishlistDao(db: AtharDatabase): WishlistDao = db.wishlistDao()
     @Provides fun provideInvestmentDao(db: AtharDatabase): InvestmentDao = db.investmentDao()
@@ -136,6 +141,9 @@ internal abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindTransactionRepository(impl: TransactionRepositoryImpl): TransactionRepository
+
+    @Binds @Singleton
+    abstract fun bindReceiptAttachmentRepository(impl: ReceiptAttachmentRepositoryImpl): ReceiptAttachmentRepository
 
     @Binds @Singleton
     abstract fun bindCategoryRepository(impl: CategoryRepositoryImpl): CategoryRepository

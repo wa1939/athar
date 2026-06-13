@@ -1,19 +1,25 @@
 package com.athar.feature.today
 
+import android.content.ContentResolver
+import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.athar.core.common.money.Money
 import com.athar.core.domain.model.CategoryKind
 import com.athar.core.domain.model.IngestSource
 import com.athar.core.domain.model.MANUAL_ACCOUNT_ID
+import com.athar.core.domain.model.ReceiptAttachment
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRepository
+import com.athar.core.domain.repo.ReceiptAttachmentRepository
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -24,9 +30,12 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import java.math.BigDecimal
 import java.util.UUID
 import javax.inject.Inject
@@ -34,6 +43,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AddTransactionViewModel @Inject constructor(
     private val transactions: TransactionRepository,
+    private val receipts: ReceiptAttachmentRepository,
     private val categories: CategoryRepository,
     private val prefs: UserPreferencesRepository,
     private val clock: Clock,
@@ -44,6 +54,8 @@ class AddTransactionViewModel @Inject constructor(
 
     private val _events = MutableSharedFlow<AddTransactionResult>(extraBufferCapacity = 1)
     val events: SharedFlow<AddTransactionResult> = _events.asSharedFlow()
+
+    private var pendingReceipt: PendingReceipt? = null
 
     init {
         viewModelScope.launch {
@@ -79,6 +91,17 @@ class AddTransactionViewModel @Inject constructor(
             AddTransactionEvent.VoiceUnavailable -> _state.update {
                 it.copy(quickEntryError = QuickEntryError.VOICE_UNAVAILABLE)
             }
+            AddTransactionEvent.RemoveReceipt -> {
+                pendingReceipt = null
+                _state.update {
+                    it.copy(
+                        receiptName = null,
+                        receiptSizeBytes = null,
+                        isReceiptLoading = false,
+                        receiptError = null,
+                    )
+                }
+            }
             is AddTransactionEvent.SetType -> _state.update {
                 it.copy(type = event.type, selectedCategoryId = null, validationError = null)
             }
@@ -99,6 +122,34 @@ class AddTransactionViewModel @Inject constructor(
         }
     }
 
+    fun attachReceipt(resolver: ContentResolver, uri: Uri) {
+        viewModelScope.launch {
+            _state.update { it.copy(isReceiptLoading = true, receiptError = null) }
+            val result = runCatching {
+                withContext(Dispatchers.IO) { readReceipt(resolver, uri) }
+            }
+            result.onSuccess { receipt ->
+                pendingReceipt = receipt
+                _state.update {
+                    it.copy(
+                        receiptName = receipt.originalName ?: RECEIPT_FALLBACK_NAME,
+                        receiptSizeBytes = receipt.bytes.size.toLong(),
+                        isReceiptLoading = false,
+                        receiptError = null,
+                    )
+                }
+            }.onFailure { throwable ->
+                _state.update {
+                    it.copy(
+                        isReceiptLoading = false,
+                        receiptError = (throwable as? ReceiptReadFailure)?.error
+                            ?: ReceiptAttachmentError.READ_FAILED,
+                    )
+                }
+            }
+        }
+    }
+
     private fun save() {
         val s = _state.value
         val validation = validate(s)
@@ -110,8 +161,9 @@ class AddTransactionViewModel @Inject constructor(
             _state.update { it.copy(isSaving = true) }
             val now = clock.now()
             val currency = prefs.displayCurrency().first()
+            val txId = UUID.randomUUID().toString()
             val tx = Transaction(
-                id = UUID.randomUUID().toString(),
+                id = txId,
                 accountId = MANUAL_ACCOUNT_ID,
                 type = s.type,
                 amount = Money.of(BigDecimal(s.amount), currency),
@@ -128,14 +180,35 @@ class AddTransactionViewModel @Inject constructor(
                 createdAt = now,
                 updatedAt = now,
             )
-            transactions.upsert(tx)
-            _events.tryEmit(AddTransactionResult.Saved)
-            _state.update {
-                AddTransactionState.initial(today()).copy(
-                    expenseCategories = s.expenseCategories,
-                    incomeCategories = s.incomeCategories,
-                    merchantSuggestions = s.merchantSuggestions,
-                )
+            val receipt = pendingReceipt
+            val result = runCatching {
+                transactions.upsert(tx)
+                if (receipt != null) {
+                    receipts.upsert(
+                        ReceiptAttachment(
+                            id = UUID.randomUUID().toString(),
+                            transactionId = txId,
+                            mimeType = receipt.mimeType,
+                            originalName = receipt.originalName,
+                            sizeBytes = receipt.bytes.size.toLong(),
+                            payload = receipt.bytes,
+                            createdAt = now,
+                        ),
+                    )
+                }
+            }
+            result.onSuccess {
+                pendingReceipt = null
+                _events.tryEmit(AddTransactionResult.Saved)
+                _state.update {
+                    AddTransactionState.initial(today()).copy(
+                        expenseCategories = s.expenseCategories,
+                        incomeCategories = s.incomeCategories,
+                        merchantSuggestions = s.merchantSuggestions,
+                    )
+                }
+            }.onFailure {
+                _state.update { it.copy(isSaving = false, receiptError = ReceiptAttachmentError.SAVE_FAILED) }
             }
         }
     }
@@ -150,6 +223,56 @@ class AddTransactionViewModel @Inject constructor(
     }
 
     private fun today() = clock.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+    private fun readReceipt(resolver: ContentResolver, uri: Uri): PendingReceipt {
+        val mimeType = resolver.getType(uri)?.lowercase()?.takeIf { it.isNotBlank() } ?: "image/*"
+        if (!mimeType.startsWith("image/")) {
+            throw ReceiptReadFailure(ReceiptAttachmentError.UNSUPPORTED_TYPE)
+        }
+        val bytes = resolver.openInputStream(uri)?.use { it.readReceiptBytes() }
+            ?: throw ReceiptReadFailure(ReceiptAttachmentError.READ_FAILED)
+        if (bytes.isEmpty()) throw ReceiptReadFailure(ReceiptAttachmentError.READ_FAILED)
+        return PendingReceipt(
+            bytes = bytes,
+            mimeType = mimeType,
+            originalName = queryDisplayName(resolver, uri),
+        )
+    }
+
+    private fun InputStream.readReceiptBytes(): ByteArray {
+        val out = ByteArrayOutputStream()
+        val buffer = ByteArray(8 * 1024)
+        var total = 0
+        while (true) {
+            val read = read(buffer)
+            if (read == -1) break
+            total += read
+            if (total > MAX_RECEIPT_BYTES) {
+                throw ReceiptReadFailure(ReceiptAttachmentError.TOO_LARGE)
+            }
+            out.write(buffer, 0, read)
+        }
+        return out.toByteArray()
+    }
+
+    private fun queryDisplayName(resolver: ContentResolver, uri: Uri): String? =
+        resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+            val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (index >= 0 && cursor.moveToFirst()) cursor.getString(index) else null
+        }?.takeIf { it.isNotBlank() }
+
+    private class ReceiptReadFailure(val error: ReceiptAttachmentError) : RuntimeException()
+
+    private data class PendingReceipt(
+        val bytes: ByteArray,
+        val mimeType: String,
+        val originalName: String?,
+    )
+
+    private companion object {
+        const val MAX_RECEIPT_BYTES = 5 * 1024 * 1024
+        const val RECEIPT_FALLBACK_NAME = "receipt"
+    }
 }
 
 sealed interface AddTransactionResult {

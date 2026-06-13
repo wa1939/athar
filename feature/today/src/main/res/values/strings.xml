@@ -104,6 +104,17 @@
     <string name="add_tx_label_category">التصنيف</string>
     <string name="add_tx_error_category_required">اختر تصنيفًا</string>
     <string name="add_tx_label_notes">ملاحظات</string>
+    <string name="add_tx_receipt_title">الإيصال</string>
+    <string name="add_tx_receipt_empty">لا يوجد إيصال</string>
+    <string name="add_tx_receipt_loading">جارٍ الاستيراد…</string>
+    <string name="add_tx_receipt_attached" formatted="true">%1$s · %2$s</string>
+    <string name="add_tx_receipt_attach">إرفاق</string>
+    <string name="add_tx_receipt_change">تغيير</string>
+    <string name="add_tx_receipt_remove">إزالة</string>
+    <string name="add_tx_receipt_error_read">تعذرت قراءة هذا الإيصال</string>
+    <string name="add_tx_receipt_error_too_large">يجب ألا يتجاوز الإيصال 5 م.ب</string>
+    <string name="add_tx_receipt_error_unsupported">اختر صورة إيصال</string>
+    <string name="add_tx_receipt_error_save">فشل حفظ الحركة أثناء إرفاق الإيصال</string>
     <string name="add_tx_save">حفظ</string>
     <string name="add_tx_saving">جارٍ الحفظ…</string>
 
