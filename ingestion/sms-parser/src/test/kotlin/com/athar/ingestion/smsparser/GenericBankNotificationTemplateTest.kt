@@ -654,6 +654,60 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `ignores temporary authorization hold notifications with merchant hints`() {
+        assertThat(
+            parser.parse(
+                event(
+                    "notification:com.capitalone.mobile",
+                    "Temporary authorization hold of USD 50.00 at Grand Hotel",
+                ),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores pre authorization notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.wise.android", "Pre-authorization of SAR 1.00 at Apple Services"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores pending authorization notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.emiratesnbd.android", "Pending authorization AED 200.00 with Booking.com"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores Arabic temporary hold notifications with merchant hints`() {
+        assertThat(
+            parser.parse(
+                event(
+                    "notification:com.alrajhibank.alrajhimobile",
+                    "تم حجز مبلغ ٥٠٠ ر.س مؤقتاً لدى فندق الرياض",
+                ),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `parses posted card transaction notifications despite authorization hold guards`() {
+        val result = parser.parse(
+            event("notification:com.capitalone.mobile", "Card transaction SAR 50.00 at Grand Hotel posted"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("50.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Grand Hotel")
+    }
+
+    @Test
     fun `ignores marketing cashback notifications`() {
         assertThat(
             parser.parse(event("notification:com.revolut.revolut", "Earn 10 SAR cashback this weekend")),
