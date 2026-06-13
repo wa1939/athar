@@ -25,7 +25,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val expenseWords = Regex(
-        """\b(?:spent|purchase|paid|payment|debit|debited|charged|card\s+purchase|withdrawal|pos|خصم|شراء|دفع|سحب)\b""",
+        """(?:\b(?:spent|purchase|paid|payment|debit|debited|charged|card\s+purchase|withdrawal|pos)\b|خصم|شراء|دفع|سحب)""",
         RegexOption.IGNORE_CASE,
     )
     private val expensePhrases = Regex(
@@ -74,6 +74,14 @@ class GenericBankNotificationTemplate : BankTemplate {
     )
     private val balanceWords = Regex(
         """\b(?:balance|available|رصيد|المتاح)\b""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val balanceAmountContext = Regex(
+        """(?:\b(?:balance|available|remaining\s+balance|current\s+balance)\b|رصيد|الرصيد|المتاح|الرصيد\s+المتبقي)""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val trailingCurrencyContext = Regex(
+        """^\s*(?:CA\$|C\$|AU\$|A\$|[\$€£﷼₹¥₺]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|CNY|HKD|SGD|SEK|NOK|DKK|ZAR|BRL|MXN|THB|IDR|MYR|PHP|VND|KRW|ر\.?\s*س|د\.?\s*إ)""",
         RegexOption.IGNORE_CASE,
     )
     private val merchantLabelHint = Regex(
@@ -130,8 +138,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             return ParseResult.Ignored
         }
 
-        val amountMatch = amountWithCurrency.findAll(normalized).firstOrNull { it.hasCurrency() }
-            ?: amountWithCurrency.find(normalized)
+        val amountMatch = selectTransactionAmount(normalized)
             ?: return ParseResult.Failed("notification amount not found", listOf(id))
         val amountRaw = amountMatch.groups["num"]?.value
             ?: return ParseResult.Failed("notification amount missing", listOf(id))
@@ -203,8 +210,48 @@ class GenericBankNotificationTemplate : BankTemplate {
             fromHint.containsMatchIn(body) ||
             forHint.containsMatchIn(body)
 
+    private fun selectTransactionAmount(body: String): MatchResult? {
+        val matches = amountWithCurrency.findAll(body).toList()
+        if (matches.isEmpty()) return null
+        val currencyMatches = matches.filter { it.hasCurrencyMarker(body) }
+        val candidates = currencyMatches.ifEmpty { matches }
+        val actionStart = firstActionIndex(body)
+        val afterAction = actionStart?.let { index -> candidates.filter { it.range.first >= index } }.orEmpty()
+        afterAction.firstOrNull { !it.isBalanceAmount(body) }?.let { return it }
+        afterAction.firstOrNull()?.let { return it }
+        return candidates.firstOrNull { !it.isBalanceAmount(body) } ?: candidates.firstOrNull()
+    }
+
+    private fun firstActionIndex(body: String): Int? = listOfNotNull(
+        expenseWords.find(body)?.range?.first,
+        expensePhrases.find(body)?.range?.first,
+        incomeWords.find(body)?.range?.first,
+        incomePhrases.find(body)?.range?.first,
+        transferWords.find(body)?.range?.first,
+    ).minOrNull()
+
+    private fun MatchResult.isBalanceAmount(body: String): Boolean {
+        val prefixStart = (range.first - AmountPrefixWindow).coerceAtLeast(0)
+        val suffixEnd = (range.last + AmountSuffixWindow + 1).coerceAtMost(body.length)
+        val prefix = body.substring(prefixStart, range.first)
+        val suffix = body.substring(range.last + 1, suffixEnd)
+        return hasBalanceAmountContext(prefix) || hasBalanceAmountContext(suffix)
+    }
+
+    private fun hasBalanceAmountContext(text: String): Boolean {
+        return balanceAmountContext.containsMatchIn(text) ||
+            ArabicBalanceTerms.any { text.contains(it) }
+    }
+
     private fun MatchResult.hasCurrency(): Boolean =
         groups["lead"]?.value?.isNotBlank() == true || groups["trail"]?.value?.isNotBlank() == true
+
+    private fun MatchResult.hasCurrencyMarker(body: String): Boolean {
+        if (hasCurrency()) return true
+        val suffixEnd = (range.last + CurrencySuffixWindow + 1).coerceAtMost(body.length)
+        val suffix = body.substring(range.last + 1, suffixEnd)
+        return trailingCurrencyContext.containsMatchIn(suffix)
+    }
 
     private fun partyBeforeAmount(body: String, amountMatch: MatchResult): String? {
         val beforeAmount = body
@@ -245,6 +292,11 @@ class GenericBankNotificationTemplate : BankTemplate {
     }
 
     private companion object {
+        private const val AmountPrefixWindow = 32
+        private const val AmountSuffixWindow = 24
+        private const val CurrencySuffixWindow = 12
+        private val ArabicBalanceTerms = listOf("رصيد", "الرصيد", "المتاح", "الرصيد المتبقي")
+
         val BankPackagePattern = Regex(
             """^notification:.*(alrajhi|stcpay|stcbank|d360|barq|alinma|riyad|snb|alahli|anb|albilad|bsf|saib|jazira|emiratesnbd|adcb|mashreq|bankfab|qnb|boubyan|kfh|bankmuscat|wise|transferwise|revolut|chase|capitalone|mercury|monzo|n26|starling|hsbc|barclays|lloyds|natwest|santander|halifax|usbank|pnc|sofi|walletnfcrel|paisa|samsung\.android\.spay|paypal|venmo|squareup\.cash|americanexpress|amex|bankofamerica|bofa|wellsfargo|citimobile|usaa|discoverfinancial|truist|citizensbank|payoneer|remitly|westernunion|bunq|nubank|bbva|scotiabank|tdbank|rbc|commbank|westpac|nab\.mobile|anz\.android|dbsmbanking|ocbc|uob|maybank|cimb|hdfcbank|icici|axisbank|kotak).*""",
             RegexOption.IGNORE_CASE,

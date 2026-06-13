@@ -39,6 +39,33 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `prefers transaction amount when balance appears before English spend amount`() {
+        val result = parser.parse(
+            event(
+                "notification:com.wise.android",
+                "Available balance: SAR 1,234.56. You spent SAR 42.00 at Starbucks",
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Starbucks")
+    }
+
+    @Test
+    fun `prefers transaction amount when Arabic balance appears before debit amount`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "رصيدك ١٬٠٠٠٫٠٠ ر.س بعد خصم ٣٥٫٥٠ ر.س لدى كارفور"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("35.50"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("كارفور")
+    }
+
+    @Test
     fun `parses income notification`() {
         val result = parser.parse(
             event("notification:com.revolut.revolut", "You received USD 250.00 from ACME Payroll"),
