@@ -91,7 +91,7 @@ Other tools force a trade-off:
 - ✅ **User-defined templates** — paste a sample SMS from your bank, mark the anchor strings around the amount/merchant, and confirm the live parse preview before saving (W-4)
 - ✅ **Spam-resistant pipeline** — `-AD` suffix block (CITC convention), sender allow-list, ~40 ignore patterns for OTP/promo/marketing (Tasaheal, "Buy X Get Y", "Earn 10,000")
 - ✅ **Sender-ID tolerant parsing** — built-in bank sender matching trims edge whitespace and ignores casing drift, while known bank/wallet maintenance, fee, fraud-awareness, migration, and account-admin notices are ignored instead of becoming failed parses or pending transactions
-- ✅ **Notification listener** path for Play-Store-safe distribution, with generic bank-app push parsing plus wallet/card-app phrases for card-used, card-payment, direct-debit, payment-from, paid-you, and ACH-credit alerts
+- ✅ **Notification listener** path for Play-Store-safe distribution, with generic bank-app push parsing plus wallet/card-app phrases, peer-payment `sent you`/`got paid` income, CAD/AUD/CHF notification currencies, and Google Pay/Samsung Pay package variants
 - ✅ **Multi-currency capture** — foreign-card spend keeps both the original amount and the SAR equivalent
 - ✅ **Self-transfer detection** — moves to your own savings account flagged as "Own account move" (savings), not expense
 - ✅ **Auto-detected recurring patterns** — scans your confirmed history, surfaces "Same merchant, same amount, 3+ distinct months at similar day-of-month" candidates as suggestions you confirm with one tap
@@ -311,6 +311,7 @@ maestro test .maestro/flows/                     # 10 E2E flows
 - ✅ The scoped `dev/sender-matching-reliability` branch passes `:ingestion:sms-parser:test` and the full JVM test/build/lint stack after hardening sender matching and adding sanitized corpus tests. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`.
 - ✅ The scoped `dev/notification-phrase-coverage` branch passes `:ingestion:sms-parser:test`, `:ingestion:notification-listener:test`, and the full JVM test/build/lint stack after adding wallet/card-app notification phrase coverage. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`.
 - ✅ The scoped `dev/csv-import-preview-confirm` branch passes `:core:data:test`, `:feature:settings:test`, and the full JVM test/build/lint stack after adding CSV import preview/confirm. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`.
+- ✅ The scoped `dev/notification-app-handlers` branch passes `:ingestion:sms-parser:test`, `:ingestion:notification-listener:test`, and the full JVM test/build/lint stack after adding peer-payment, global-currency, Google Pay, and Samsung Pay notification coverage. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`.
 - ⏳ Device E2E, screenshot UI audit, and notification tap-through still need a physical Android device or a working accelerated emulator. On 2026-06-13 the local AVD could not boot because firmware virtualization was disabled, and `adb devices -l` still returned no attached devices during this branch validation.
 
 ### In flight / remaining
@@ -321,7 +322,7 @@ maestro test .maestro/flows/                     # 10 E2E flows
 | G-7 | Bill reminders | ✅ | — | Bills calendar + opt-in reminders shipped; runtime notification QA remains under QA-01 |
 | G-8 | Manual transaction UX upgrades | ◐ | 1.5 days | ✅ Recent-merchant autocomplete + quick-add chips · ⏳ voice entry · receipt photo |
 | G-10 | Savings-rate goals + emergency fund | ✅ | — | Plan → Goals tab plus Today Goals check shipped; device visual QA remains under QA-01 |
-| G-11 | Broader notification handlers | ◐ | 3 days | Generic bank-app push parser shipped; app-specific handlers remain follow-up |
+| G-11 | Broader notification handlers | ◐ | 3 days | Generic parser, wallet/card phrases, and first app-specific peer-payment/global-currency handlers shipped; more bank-specific copy remains |
 | G-12 | Bank statement / CSV / OFX / QFX import wizard | ◐ | 3 days | CSV header auto-detect + preview/confirm shipped; manual mapping, OFX/QFX/MT940 still planned |
 | G-13 | Zero-knowledge sync to companion devices | ⏳ | 5 days | E2E-encrypted via Dropbox / Drive / iCloud / WebDAV / S3 — user holds the key |
 | G-14 | Tax-export PDF for accountants | ✅ | 2 days | Annual category totals + transaction list in user's locale |

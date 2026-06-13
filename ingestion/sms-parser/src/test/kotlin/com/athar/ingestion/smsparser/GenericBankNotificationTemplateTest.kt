@@ -126,6 +126,54 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses sent-you peer payment as income`() {
+        val result = parser.parse(
+            event("notification:com.squareup.cash", "John Appleseed sent you $25.00"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("25.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.counterparty).isEqualTo("John Appleseed")
+    }
+
+    @Test
+    fun `parses got-paid by counterparty notification`() {
+        val result = parser.parse(
+            event("notification:com.mercury", "You got paid USD 250.00 by ACME Payroll"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("250.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.counterparty).isEqualTo("ACME Payroll")
+    }
+
+    @Test
+    fun `parses wider global currency codes`() {
+        val result = parser.parse(
+            event("notification:com.wise.android", "You spent CAD 12.34 at Tim Hortons"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("12.34"))
+        assertThat(result.amount.currency).isEqualTo("CAD")
+        assertThat(result.merchant).isEqualTo("Tim Hortons")
+    }
+
+    @Test
+    fun `parses Google Pay India payment package`() {
+        val result = parser.parse(
+            event("notification:com.google.android.apps.nbu.paisa.user", "Paid INR 450.00 to Swiggy"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("450.00"))
+        assertThat(result.amount.currency).isEqualTo("INR")
+        assertThat(result.merchant).isEqualTo("Swiggy")
+    }
+
+    @Test
     fun `prefers currency marked amount over card last four`() {
         val result = parser.parse(
             event("notification:com.google.android.apps.walletnfcrel", "Card ending 1234 purchase at Amazon SAR 56.35"),
@@ -153,6 +201,13 @@ class GenericBankNotificationTemplateTest {
     fun `ignores transfer limit notifications with amounts`() {
         assertThat(
             parser.parse(event("notification:com.chase.sig.android", "Your daily transfer limit is now AED 5,000")),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores peer payment requests with amounts`() {
+        assertThat(
+            parser.parse(event("notification:com.venmo", "John Appleseed requested $25.00")),
         ).isEqualTo(ParseResult.Ignored)
     }
 

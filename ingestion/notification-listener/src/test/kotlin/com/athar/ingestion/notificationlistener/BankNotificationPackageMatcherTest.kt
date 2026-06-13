@@ -14,6 +14,8 @@ class BankNotificationPackageMatcherTest {
         assertThat(BankNotificationPackageMatcher.isBankPackage("com.paypal.android.p2pmobile")).isTrue()
         assertThat(BankNotificationPackageMatcher.isBankPackage("com.squareup.cash")).isTrue()
         assertThat(BankNotificationPackageMatcher.isBankPackage("com.wf.wellsfargomobile")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.google.android.apps.nbu.paisa.user")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.samsung.android.spay")).isTrue()
     }
 
     @Test
@@ -22,5 +24,6 @@ class BankNotificationPackageMatcherTest {
         assertThat(BankNotificationPackageMatcher.isBankPackage("com.social.chat")).isFalse()
         assertThat(BankNotificationPackageMatcher.isBankPackage("com.citymapper.app")).isFalse()
         assertThat(BankNotificationPackageMatcher.isBankPackage("com.random.cashback")).isFalse()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.random.wallet")).isFalse()
     }
 }
