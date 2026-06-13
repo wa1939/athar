@@ -66,13 +66,14 @@ internal class CsvImporter @Inject constructor(
             return buildMt940Plan(text, accountId)
         }
 
-        val header = parseRow(lines[0])
-        val columns = StatementCsvMapper.detect(header)
-        if (columns == null) {
+        val format = detectCsvFormat(lines[0])
+        if (format == null) {
             return CsvPlanResult.Failed(
-                "CSV must include date, merchant/description, and either amount or debit/credit columns.",
+                "Delimited statement file must include date, merchant/description, and either amount or debit/credit columns.",
             )
         }
+        val header = format.header
+        val columns = format.columns
 
         val cats = categories.observeAll(kind = null, includeArchived = false).first()
         val categoryByName = cats.associateBy { it.name.lowercase().trim() }
@@ -83,7 +84,7 @@ internal class CsvImporter @Inject constructor(
         val skippedRows = mutableListOf<CsvImportSkippedRow>()
         for ((rowIndex, line) in lines.drop(1).withIndex()) {
             val rowNumber = rowIndex + 2 // +1 for header, +1 to make 1-based
-            val row = parseRow(line)
+            val row = parseRow(line, format.delimiter)
             val mapped = mapRow(
                 rowIndex = rowNumber,
                 row = row,
@@ -305,8 +306,21 @@ internal class CsvImporter @Inject constructor(
     private fun headerName(header: List<String>, index: Int): String =
         header.getOrNull(index)?.takeIf { it.isNotBlank() } ?: "Column ${index + 1}"
 
-    /** RFC 4180-ish CSV row parser. Handles `"a,b"`, `""` escapes, trailing empties. */
-    private fun parseRow(line: String): List<String> {
+    private fun detectCsvFormat(headerLine: String): CsvFormat? =
+        CsvDelimiters
+            .mapNotNull { delimiter ->
+                val header = parseRow(headerLine, delimiter)
+                val columns = StatementCsvMapper.detect(header) ?: return@mapNotNull null
+                CsvFormat(
+                    delimiter = delimiter,
+                    header = header,
+                    columns = columns,
+                )
+            }
+            .maxByOrNull { it.header.size }
+
+    /** RFC 4180-ish delimited row parser. Handles quoted delimiters, `""` escapes, trailing empties. */
+    private fun parseRow(line: String, delimiter: Char = ','): List<String> {
         val out = mutableListOf<String>()
         val cur = StringBuilder()
         var inQuotes = false
@@ -318,7 +332,7 @@ internal class CsvImporter @Inject constructor(
                     cur.append('"'); i++
                 }
                 c == '"' -> inQuotes = !inQuotes
-                c == ',' && !inQuotes -> { out.add(cur.toString()); cur.clear() }
+                c == delimiter && !inQuotes -> { out.add(cur.toString()); cur.clear() }
                 else -> cur.append(c)
             }
             i += 1
@@ -338,6 +352,12 @@ internal class CsvImporter @Inject constructor(
         val skippedRows: List<CsvImportSkippedRow>,
     )
 
+    private data class CsvFormat(
+        val delimiter: Char,
+        val header: List<String>,
+        val columns: StatementCsvColumns,
+    )
+
     private data class CsvPlanTransaction(
         val rowNumber: Int,
         val transaction: Transaction,
@@ -351,5 +371,6 @@ internal class CsvImporter @Inject constructor(
 
     private companion object {
         const val PREVIEW_ROW_LIMIT = 5
+        val CsvDelimiters = listOf(',', ';', '\t')
     }
 }

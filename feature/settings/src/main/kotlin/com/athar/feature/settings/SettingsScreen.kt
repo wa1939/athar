@@ -196,6 +196,7 @@ fun SettingsScreen(
                         arrayOf(
                             "text/csv",
                             "text/comma-separated-values",
+                            "text/tab-separated-values",
                             "text/plain",
                             "application/x-ofx",
                             "application/vnd.intu.qfx",

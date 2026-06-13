@@ -81,6 +81,47 @@ class CsvImporterTest {
     }
 
     @Test
+    fun `preview supports semicolon delimited statement csv`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            clock = FixedClock,
+        )
+
+        val result = importer.preview(ByteArrayInputStream(statementSemicolonCsv.toByteArray()))
+
+        val preview = (result as CsvImportPreviewResult.Done).preview
+        assertThat(preview.importable).isEqualTo(2)
+        assertThat(preview.skipped).isEqualTo(1)
+        assertThat(preview.columns.date).isEqualTo("Date")
+        assertThat(preview.columns.merchant).isEqualTo("Description")
+        assertThat(preview.columns.debit).isEqualTo("Debit")
+        assertThat(preview.sampleRows.first().amount).isEqualTo("18.50")
+        assertThat(preview.sampleRows.first().currency).isEqualTo("EUR")
+        assertThat(preview.sampleRows.first().category).isEqualTo("Coffee")
+        assertThat(preview.skippedRows.single().rowNumber).isEqualTo(3)
+        assertThat(transactions.upserts).isEmpty()
+    }
+
+    @Test
+    fun `import supports tab delimited statement csv`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(emptyList()),
+            clock = FixedClock,
+        )
+
+        val result = importer.import(ByteArrayInputStream(statementTabCsv.toByteArray()))
+
+        assertThat(result).isEqualTo(CsvImportResult.Done(imported = 2, skipped = 0))
+        assertThat(transactions.upserts.map { it.merchant }).containsExactly("Coffee Shop", "Salary").inOrder()
+        assertThat(transactions.upserts.map { it.type }).containsExactly(TxType.EXPENSE, TxType.INCOME).inOrder()
+        assertThat(transactions.upserts.map { it.amount.currency }).containsExactly("GBP", "GBP").inOrder()
+    }
+
+    @Test
     fun `preview reports ofx transactions without committing`() = runTest {
         val transactions = FakeTransactionRepository()
         val importer = CsvImporter(
@@ -219,6 +260,19 @@ class CsvImporterTest {
             not-a-date,Broken row,9.00,,SAR,Coffee
             2026-06-02,Salary,,1000.00,SAR,
         """.trimIndent()
+
+        val statementSemicolonCsv = """
+            Date;Description;Debit;Credit;Currency;Category
+            2026-06-01;Starbucks;18,50;;EUR;Coffee
+            not-a-date;Broken row;9,00;;EUR;Coffee
+            2026-06-02;Salary;;1000,00;EUR;
+        """.trimIndent()
+
+        val statementTabCsv = listOf(
+            "Date\tNarrative\tAmount\tCurrency",
+            "2026-06-01\tCoffee Shop\t-12.25\tGBP",
+            "2026-06-02\tSalary\t1000.00\tGBP",
+        ).joinToString("\n")
 
         val statementOfx = """
             OFXHEADER:100

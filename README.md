@@ -105,7 +105,7 @@ Other tools force a trade-off:
 - ✅ **Multi-currency display** — pick from 18 ISO-4217 codes (USD · EUR · GBP · AED · EGP · INR · PKR · TRY · SAR · KWD · QAR · BHD · OMR · JOD · CAD · AUD · CHF · JPY) with Arabic + English currency labels
 - ✅ **Per-account ingestion routing** — add SMS sender aliases or card/account tails to each account so new bank messages land on the right checking, savings, or credit-card account instead of the manual seed account
 - ✅ **AES-256-GCM encrypted backup** (Argon2-equivalent KDF, passphrase-protected)
-- ✅ **Statement import + CSV export** for Excel and bank-statement interop — preview detected fields and sample rows, choose the destination account, then import TMOAP/Athar CSVs, common statement CSVs with description/amount or debit/credit columns, OFX/QFX, or MT940 files; export annual data for your accountant
+- ✅ **Statement import + CSV export** for Excel and bank-statement interop — preview detected fields and sample rows, choose the destination account, then import TMOAP/Athar CSVs, common statement CSVs/TSVs with description/amount or debit/credit columns, OFX/QFX, or MT940 files; export annual data for your accountant
 - ✅ **Annual accountant/tax PDF export** — pick a year in Settings and export income/expense totals, category totals, and the confirmed transaction list
 - ✅ **First-run CSV import** — new users can bring a TMOAP / Excel transaction log into Athar during onboarding instead of hunting for the Settings exchange later
 - ✅ **SQLCipher** database encryption at rest, key wrapped via Android Keystore
@@ -314,6 +314,7 @@ maestro test .maestro/flows/                     # 10 E2E flows
 - ✅ The scoped `dev/ofx-qfx-import-preview` branch passes `:core:data:test`, `:feature:settings:test`, and the full JVM test/build/lint stack after adding OFX/QFX statement import through the preview-confirm path. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`.
 - ✅ The scoped `dev/mt940-import-preview` branch passes `:core:data:test`, `:feature:settings:test`, and the full JVM test/build/lint stack after adding MT940 statement import through the preview-confirm path. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`.
 - ✅ The scoped `dev/import-account-selection` branch passes `:core:data:test`, `:feature:settings:test`, and the full JVM test/build/lint stack after adding destination-account selection to statement import confirmation. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`.
+- ✅ The scoped `dev/csv-delimiter-detection` branch passes `:core:data:test`, `:feature:settings:test`, and the full JVM test/build/lint stack after adding comma/semicolon/tab delimiter detection to statement CSV import. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`.
 - ⏳ Device E2E, screenshot UI audit, and notification tap-through still need a physical Android device or a working accelerated emulator. On 2026-06-13 the local AVD could not boot because firmware virtualization was disabled, and `adb devices -l` still returned no attached devices during this branch validation.
 
 ### In flight / remaining
@@ -325,7 +326,7 @@ maestro test .maestro/flows/                     # 10 E2E flows
 | G-8 | Manual transaction UX upgrades | ◐ | 1.5 days | ✅ Recent-merchant autocomplete + quick-add chips · ⏳ voice entry · receipt photo |
 | G-10 | Savings-rate goals + emergency fund | ✅ | — | Plan → Goals tab plus Today Goals check shipped; device visual QA remains under QA-01 |
 | G-11 | Broader notification handlers | ◐ | 3 days | Generic parser, wallet/card phrases, and first app-specific peer-payment/global-currency handlers shipped; more bank-specific copy remains |
-| G-12 | Bank statement / CSV / OFX / QFX / MT940 import wizard | ◐ | 3 days | CSV header auto-detect + preview/confirm, OFX/QFX, MT940, and destination-account selection shipped; manual mapping and richer row editing still planned |
+| G-12 | Bank statement / CSV / OFX / QFX / MT940 import wizard | ◐ | 3 days | CSV/TSV delimiter + header auto-detect, preview/confirm, OFX/QFX, MT940, and destination-account selection shipped; manual mapping and richer row editing still planned |
 | G-13 | Zero-knowledge sync to companion devices | ⏳ | 5 days | E2E-encrypted via Dropbox / Drive / iCloud / WebDAV / S3 — user holds the key |
 | G-14 | Tax-export PDF for accountants | ✅ | 2 days | Annual category totals + transaction list in user's locale |
 

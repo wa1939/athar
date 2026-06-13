@@ -6,7 +6,8 @@ import java.io.InputStream
 /**
  * Parses statement-style transaction files and bulk-inserts them as confirmed manual entries.
  *
- * Supported CSV columns (header row, case-insensitive, any order):
+ * Supported delimited text columns (CSV/TSV header row, case-insensitive, any order):
+ *   - delimiters — comma, semicolon, or tab; quoted delimiters and `""` escapes are supported
  *   - **date** — `YYYY-MM-DD`, `DD/MM/YYYY`, or `MM/DD/YYYY`
  *   - **vendor**, **merchant**, **description**, **details**, **narrative**, or Arabic equivalents — text
  *   - **amount** — positive decimal for Athar/TMOAP exports, or signed decimal for statement-like files
