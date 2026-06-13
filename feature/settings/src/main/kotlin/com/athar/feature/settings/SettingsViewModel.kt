@@ -17,6 +17,8 @@ import com.athar.core.domain.repo.MerchantBulkExportTrigger
 import com.athar.core.domain.repo.MerchantBulkImportResult
 import com.athar.core.domain.repo.MerchantBulkImportTrigger
 import com.athar.core.domain.repo.SmsBackfillTrigger
+import com.athar.core.domain.repo.TaxExportResult
+import com.athar.core.domain.repo.TaxExportTrigger
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,6 +28,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Locale
 import javax.inject.Inject
 
 sealed interface BackupStatus {
@@ -84,6 +87,18 @@ sealed interface CommunityShareStatus {
     data class Failed(val reason: String) : CommunityShareStatus
 }
 
+sealed interface TaxExportStatus {
+    data object Idle : TaxExportStatus
+    data object Working : TaxExportStatus
+    data class Exported(
+        val year: Int,
+        val transactions: Int,
+        val categoryTotals: Int,
+        val excludedReconciliations: Int,
+    ) : TaxExportStatus
+    data class Failed(val reason: String) : TaxExportStatus
+}
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val backup: BackupRepository,
@@ -93,6 +108,7 @@ class SettingsViewModel @Inject constructor(
     private val bulkExporter: MerchantBulkExportTrigger,
     private val bulkImporter: MerchantBulkImportTrigger,
     private val communityShare: CommunityRulesShareTrigger,
+    private val taxExport: TaxExportTrigger,
     private val prefs: UserPreferencesRepository,
     private val transactions: TransactionRepository,
 ) : ViewModel() {
@@ -114,6 +130,9 @@ class SettingsViewModel @Inject constructor(
 
     private val _communityShare = MutableStateFlow<CommunityShareStatus>(CommunityShareStatus.Idle)
     val communityShareStatus: StateFlow<CommunityShareStatus> = _communityShare.asStateFlow()
+
+    private val _taxExport = MutableStateFlow<TaxExportStatus>(TaxExportStatus.Idle)
+    val taxExportStatus: StateFlow<TaxExportStatus> = _taxExport.asStateFlow()
 
     val backfillProgress: StateFlow<BackfillProgress> = backfillTrigger.progress
 
@@ -204,6 +223,27 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun exportTaxReport(resolver: ContentResolver, uri: Uri, year: Int) {
+        viewModelScope.launch {
+            _taxExport.value = TaxExportStatus.Working
+            val output = resolver.openOutputStream(uri)
+            if (output == null) {
+                _taxExport.value = TaxExportStatus.Failed("Couldn't open PDF destination.")
+                return@launch
+            }
+            val localeTag = appLocale.value.ifBlank { Locale.getDefault().toLanguageTag() }
+            _taxExport.value = when (val result = taxExport.exportAnnual(output, year, localeTag)) {
+                is TaxExportResult.Done -> TaxExportStatus.Exported(
+                    year = result.year,
+                    transactions = result.transactions,
+                    categoryTotals = result.categoryTotals,
+                    excludedReconciliations = result.excludedReconciliations,
+                )
+                is TaxExportResult.Failed -> TaxExportStatus.Failed(result.reason)
+            }
+        }
+    }
+
     fun runBackfill() {
         viewModelScope.launch { backfillTrigger.backfill() }
     }
@@ -251,6 +291,10 @@ class SettingsViewModel @Inject constructor(
 
     fun clearCsvStatus() {
         _csv.value = CsvStatus.Idle
+    }
+
+    fun clearTaxExportStatus() {
+        _taxExport.value = TaxExportStatus.Idle
     }
 
     /**

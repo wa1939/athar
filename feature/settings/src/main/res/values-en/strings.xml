@@ -74,6 +74,14 @@
     <string name="settings_csv_action_import">Import</string>
     <string name="settings_csv_action_export">Export</string>
 
+    <!-- Tax export card -->
+    <string name="settings_tax_title">Export for taxes and accountant</string>
+    <string name="settings_tax_body">Create an annual PDF with income/expense summary, category totals, and the confirmed transaction list. Balance reconciliation adjustments are excluded because they are not real income or spending.</string>
+    <string name="settings_tax_year_label">Year</string>
+    <string name="settings_tax_exported" formatted="true">Exported %1$d report: %2$d transactions · %3$d category totals.</string>
+    <string name="settings_tax_excluded_reconciliations" formatted="true">Excluded %1$d balance reconciliation adjustments.</string>
+    <string name="settings_tax_action_export">Export PDF</string>
+
     <!-- Updates via Obtainium (beta.22) -->
     <string name="settings_updates_title">Stay up to date</string>
     <string name="settings_updates_body">Athar is fully offline — it can\'t check for updates on its own. Add Athar to Obtainium and it will watch the GitHub releases page for you and notify you whenever a new build ships.</string>

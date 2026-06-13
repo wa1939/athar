@@ -19,6 +19,7 @@ import com.athar.core.data.csv.CsvExporter
 import com.athar.core.data.csv.CsvImporter
 import com.athar.core.data.csv.MerchantBulkExporter
 import com.athar.core.data.csv.MerchantBulkImporter
+import com.athar.core.data.report.TaxPdfExporter
 import com.athar.core.data.repo.AccountRepositoryImpl
 import com.athar.core.data.repo.ActivityLogRepositoryImpl
 import com.athar.core.data.repo.CategoryRepositoryImpl
@@ -41,6 +42,7 @@ import com.athar.core.domain.repo.MerchantBulkExportTrigger
 import com.athar.core.domain.repo.MerchantBulkImportTrigger
 import com.athar.core.domain.repo.InvestmentRepository
 import com.athar.core.domain.repo.SmsAuditRepository
+import com.athar.core.domain.repo.TaxExportTrigger
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
 import com.athar.core.domain.repo.UserTemplateRepository
@@ -178,6 +180,9 @@ internal abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindCommunityRulesShareTrigger(impl: CommunityRulesShareExporter): CommunityRulesShareTrigger
+
+    @Binds @Singleton
+    abstract fun bindTaxExportTrigger(impl: TaxPdfExporter): TaxExportTrigger
 
     @Binds @Singleton
     abstract fun bindActivityLogRepository(impl: ActivityLogRepositoryImpl): ActivityLogRepository

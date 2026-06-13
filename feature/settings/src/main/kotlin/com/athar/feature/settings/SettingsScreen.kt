@@ -114,6 +114,11 @@ fun SettingsScreen(
         if (uri != null) viewModel.exportLearnedRules(context.contentResolver, uri)
     }
     val communityShareStatus by viewModel.communityShareStatus.collectAsStateWithLifecycle()
+    var taxYear by remember { mutableStateOf(java.time.Year.now().value) }
+    val taxStatus by viewModel.taxExportStatus.collectAsStateWithLifecycle()
+    val taxExportLauncher = rememberLauncherForActivityResult(CreateDocument("application/pdf")) { uri ->
+        if (uri != null) viewModel.exportTaxReport(context.contentResolver, uri, taxYear)
+    }
 
     Box(
         modifier = modifier
@@ -173,6 +178,14 @@ fun SettingsScreen(
                 onImport = { csvLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "*/*")) },
                 onExport = { csvExportLauncher.launch("athar-transactions.csv") },
                 onClear = viewModel::clearCsvStatus,
+            )
+
+            TaxExportCard(
+                year = taxYear,
+                status = taxStatus,
+                onYearChange = { year -> taxYear = year.coerceIn(2000, 2100) },
+                onExport = { taxExportLauncher.launch("athar-tax-$taxYear.pdf") },
+                onClear = viewModel::clearTaxExportStatus,
             )
 
             BulkCategorizeCard(
@@ -632,6 +645,96 @@ private fun CsvImportCard(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun TaxExportCard(
+    year: Int,
+    status: TaxExportStatus,
+    onYearChange: (Int) -> Unit,
+    onExport: () -> Unit,
+    onClear: () -> Unit,
+) {
+    val theme = AtharTheme
+    AtharCard {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = stringResource(R.string.settings_tax_title), style = theme.typography.headline)
+            AtharText(
+                text = stringResource(R.string.settings_tax_body),
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SecondaryButton(text = "-", onClick = { onYearChange(year - 1) }, modifier = Modifier.weight(0.7f))
+                Column(
+                    modifier = Modifier.weight(1.6f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    AtharText(
+                        text = stringResource(R.string.settings_tax_year_label),
+                        style = theme.typography.caption,
+                        color = theme.colors.muted,
+                    )
+                    AtharText(text = year.toString(), style = theme.typography.headline)
+                }
+                SecondaryButton(text = "+", onClick = { onYearChange(year + 1) }, modifier = Modifier.weight(0.7f))
+            }
+
+            when (val s = status) {
+                TaxExportStatus.Idle -> Unit
+                TaxExportStatus.Working -> AtharText(
+                    text = stringResource(R.string.settings_status_working),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+                is TaxExportStatus.Exported -> {
+                    AtharText(
+                        text = stringResource(
+                            R.string.settings_tax_exported,
+                            s.year,
+                            s.transactions,
+                            s.categoryTotals,
+                        ),
+                        style = theme.typography.caption,
+                        color = theme.colors.olive,
+                    )
+                    if (s.excludedReconciliations > 0) {
+                        AtharText(
+                            text = stringResource(
+                                R.string.settings_tax_excluded_reconciliations,
+                                s.excludedReconciliations,
+                            ),
+                            style = theme.typography.caption,
+                            color = theme.colors.muted,
+                        )
+                    }
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
+                }
+                is TaxExportStatus.Failed -> {
+                    AtharText(text = s.reason, style = theme.typography.caption, color = theme.colors.crimson)
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
+                }
+            }
+
+            val isWorking = status is TaxExportStatus.Working
+            PrimaryButton(
+                text = if (isWorking) {
+                    stringResource(R.string.settings_status_in_progress)
+                } else {
+                    stringResource(R.string.settings_tax_action_export)
+                },
+                onClick = { if (!isWorking) onExport() },
+            )
         }
     }
 }
