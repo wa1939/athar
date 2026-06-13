@@ -639,6 +639,88 @@ class SmsCorpusTest {
         assertThat(parser().parse(event("BSF", body))).isEqualTo(ParseResult.Ignored)
     }
 
+    @Test fun `Arabic beneficiary add and activation notices are Ignored`() {
+        assertThat(
+            parser().parse(event("AlRajhiBank", "تمت اضافة المستفيد: مستفيد تجريبي")),
+        ).isEqualTo(ParseResult.Ignored)
+        assertThat(
+            parser().parse(event("AlRajhiBank", "تم تنشيط المستفيد:مستفيد تجريبي")),
+        ).isEqualTo(ParseResult.Ignored)
+        assertThat(
+            parser().parse(event("SNB-AlAhli", "تم إضافة مستفيد-داخل البنك المستفيد مستفيد تجريبي")),
+        ).isEqualTo(ParseResult.Ignored)
+        assertThat(
+            parser().parse(
+                event(
+                    "SNB-AlAhli",
+                    """
+                    تم تنشيط مستفيد - بنك محلي
+                    الاسم مستفيد تجريبي
+                    """.trimIndent(),
+                ),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `Arabic mobile login and biometric notices are Ignored`() {
+        assertThat(
+            parser().parse(event("AlRajhiBank", "اشعار:تم تسجيل جهاز جديد للدخول لتطبيق الراجحي باستخدام البصمة")),
+        ).isEqualTo(ParseResult.Ignored)
+        assertThat(
+            parser().parse(event("AlRajhiBank", "اشعار:تم تفعيل خدمة الدخول السريع لتطبيق الراجحي")),
+        ).isEqualTo(ParseResult.Ignored)
+        assertThat(
+            parser().parse(event("SNB-AlAhli", "تم تسجيل الدخول إلى حسابك عبر تطبيق الأهلي موبايل باستخدام جهاز جديد")),
+        ).isEqualTo(ParseResult.Ignored)
+        assertThat(
+            parser().parse(event("SNB-AlAhli", "تم التسجيل في خاصية الدخول السريع للأهلي موبايل")),
+        ).isEqualTo(ParseResult.Ignored)
+        assertThat(
+            parser().parse(event("SNB-AlAhli", "تم إلغاء خاصية البصمة للأهلي موبايل")),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `card product and inactive card notices are Ignored`() {
+        val creditApproval = """
+            عزيزي العميل، تمت الموافقة على طلبكم لمنتج بطاقة الائتمان والحد الائتماني هو 0،
+            ويمكنك تنفيذ العقد واصدار البطاقة من خلال تطبيق البنك.
+        """.trimIndent()
+        assertThat(parser().parse(event("AlRajhiBank", creditApproval))).isEqualTo(ParseResult.Ignored)
+
+        val cardTerms = "عميلنا العزيز، تم تحديث شروط استبدال البطاقة البلاستيكية التالفة أو المفقودة في صفحة التعرفة البنكية."
+        assertThat(parser().parse(event("D360 Bank", cardTerms))).isEqualTo(ParseResult.Ignored)
+
+        val inactiveCard = "عملية مرفوضة: بطاقتك غير مفعلة، الرجاء الدخول للتطبيق ثم الضغط على إدارة البطاقة ثم التفعيل."
+        assertThat(parser().parse(event("D360 Bank", inactiveCard))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `bank promo app migration document and fraud notices are Ignored`() {
+        val savingsPromo = """
+            مبروك، حساب سنابل حقق لك أول ربح يومي!
+            افتح التطبيق وشيّك على أرباحك وتابع نمو مدخراتك.
+        """.trimIndent()
+        assertThat(parser().parse(event("D360 Bank", savingsPromo))).isEqualTo(ParseResult.Ignored)
+        assertThat(
+            parser().parse(event("D360 Bank", "تم تفعيل الرمز الترويجي على حسابك الادخاري، استمتع بعرضك الآن!")),
+        ).isEqualTo(ParseResult.Ignored)
+
+        val migration = """
+            عزيزي العميل،
+            خلال الأيام القادمة سيتم تحويل جميع الخدمات المصرفية الى تطبيق بنك الجزيرة الجديد.
+            حمّل التطبيق الآن لتجربة مصرفية متكاملة.
+        """.trimIndent()
+        assertThat(parser().parse(event("AlJaziraSMS", migration))).isEqualTo(ParseResult.Ignored)
+
+        val documentNotice = "Dear customer, you can view and download your document through AlJazira Online by navigating to the Bank Documents menu."
+        assertThat(parser().parse(event("AlJaziraSMS", documentNotice))).isEqualTo(ParseResult.Ignored)
+
+        val fraudNotice = """
+            عزيزي العميل، احذر من المكالمات التي تدعي أنها جهة رسمية
+            وتطلب منك شراء بطاقات إهداء ثم تزويدها برموز هذه البطاقات.
+        """.trimIndent()
+        assertThat(parser().parse(event("AlJaziraSMS", fraudNotice))).isEqualTo(ParseResult.Ignored)
+    }
+
     // ─── Cross-cutting: unknown sender ────────────────────────────────────
 
     @Test fun `unknown sender with money figure is Ignored — NOT a transaction`() {

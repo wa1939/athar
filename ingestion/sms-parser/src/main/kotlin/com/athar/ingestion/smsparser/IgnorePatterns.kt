@@ -39,12 +39,21 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""\bBeneficiary\s+activated\b""", RegexOption.IGNORE_CASE),
         Regex("""تمت\s+إضافة\s+مستفيد"""),
         Regex("""تم\s+تفعيل\s+المستفيد"""),
+        Regex("""تمت?\s+ا(?:ضافة|ضافه)\s+المستفيد"""),
+        Regex("""تم\s+تنشيط\s+المستفيد"""),
+        Regex("""تم\s+إ?ضافة\s+مستفيد\s*[-–]"""),
+        Regex("""تم\s+تنشيط\s+مستفيد\s*[-–]"""),
 
         // Card management (activation, digital wallet provisioning, renewal)
         Regex("""\bcard\s+(?:has\s+been\s+)?added\s+to\s+(?:digital\s+wallet|wallet)""", RegexOption.IGNORE_CASE),
         Regex("""\bcomplete\s+the\s+card\s+activation""", RegexOption.IGNORE_CASE),
         Regex("""\bThank\s+you\s+for\s+activating\s+your\s+card""", RegexOption.IGNORE_CASE),
         Regex("""\bcard\s+renewal\b""", RegexOption.IGNORE_CASE),
+        Regex("""الموافقة\s+على\s+طلبكم[^\n\r]{0,80}منتج\s+بطاقة\s+الائتمان"""),
+        Regex("""سندات\s+الأمر[^\n\r]{0,120}البطاقات\s+الائتمانية"""),
+        Regex("""تحديث\s+شروط\s+استبدال\s+البطاقة"""),
+        Regex("""البطاقة\s+البلاستيكية\s+التالفة\s+أو\s+المفقودة"""),
+        Regex("""عملية\s+مرفوضة[^\n\r]{0,80}بطاقتك\s+غير\s+مفعلة"""),
 
         // System / scheduled maintenance / service announcements
         Regex("""\bscheduled\s+(?:update|maintenance)\b""", RegexOption.IGNORE_CASE),
@@ -93,8 +102,13 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""تقسيط|التقسيط"""),
         Regex("""موافقة\s+فورية"""),
         Regex("""خصومات?\s+(?:تصل|كبيرة)"""),
+        Regex("""مبروك[^\n\r]{0,80}حساب\s+سنابل[^\n\r]{0,80}(?:ربح|أرباح)"""),
+        Regex("""افتح\s+التطبيق[^\n\r]{0,80}أرباحك"""),
+        Regex("""الرمز\s+الترويجي"""),
+        Regex("""استمتع\s+بعرضك"""),
         Regex("""احذر\s+المحتالين|ينتحلون\s+هوية"""),
         Regex("""بطاقة\s+هدية"""),
+        Regex("""بطاقات\s+إهداء"""),
         Regex("""فرصة\s+استثمارية"""),
         Regex("""رمز\s+الريال\s+السعودي"""),
 
@@ -105,6 +119,12 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""تم\s+(?:إلغاء\s+)?ربط\s+جهاز"""),
         Regex("""تم\s+إنشاء\s+(?:كلمة\s+المرور|حساب)"""),
         Regex("""تم\s+تحديث\s+نموذج\s+معلومات\s+العميل"""),
+        Regex("""تم\s+تسجيل\s+جهاز\s+جديد"""),
+        Regex("""تم\s+تسجيل\s+الدخول[^\n\r]{0,80}جهاز\s+جديد"""),
+        Regex("""تم\s+تفعيل\s+خدمة\s+الدخول\s+السريع"""),
+        Regex("""تم\s+التسجيل\s+في\s+خاصية\s+(?:البصمة|الدخول\s+السريع)"""),
+        Regex("""تم\s+إلغاء\s+خاصية\s+البصمة"""),
+        Regex("""تفعيل\s+خدمة\s+الدخول[^\n\r]{0,80}بصمة"""),
 
         // Account request acknowledgement
         Regex("""تم\s+تسجيل\s+طلبكم"""),
@@ -123,6 +143,11 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""كل\s+خدماتك\s+انتقلت\s+لتطبيق\s+STC\s+Bank""", RegexOption.IGNORE_CASE),
         Regex("""إيقاف\s+خدمات\s+تطبيق\s+stc\s*pay""", RegexOption.IGNORE_CASE),
         Regex("""حمّل\s+تطبيق\s+STC\s+Bank""", RegexOption.IGNORE_CASE),
+        Regex("""تحويل\s+جميع\s+الخدمات\s+المصرفية\s+الى\s+تطبيق"""),
+        Regex("""حمّل\s+التطبيق\s+الآن"""),
+        Regex("""\bview\s+and\s+download\s+your\s+document\b""", RegexOption.IGNORE_CASE),
+        Regex("""\bBank\s+Documents\s+menu\b""", RegexOption.IGNORE_CASE),
+        Regex("""المكالمات\s+التي\s+تدعي\s+أنها\s+جهة\s+رسمية"""),
     )
 
     override fun tryParse(body: String, receivedAt: Instant): ParseResult {
