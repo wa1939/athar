@@ -643,6 +643,51 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `ignores reward-only cashback notifications with card purchase wording`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.revolut.revolut", "Earn 10 SAR cashback on your next card purchase"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores card purchase cashback notifications without posted spend amount`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.capitalone.mobile", "Your card purchase at Carrefour earned SAR 5 cashback"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `prefers posted spend amount over cashback reward amount`() {
+        val result = parser.parse(
+            event(
+                "notification:com.revolut.revolut",
+                "You spent SAR 42.00 at Starbucks and earned SAR 5.00 cashback",
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Starbucks")
+    }
+
+    @Test
+    fun `parses cashback credited as income`() {
+        val result = parser.parse(
+            event("notification:com.revolut.revolut", "Cashback credited SAR 10.00 from Rewards"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("10.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.counterparty).isEqualTo("Rewards")
+    }
+
+    @Test
     fun `ignores transfer limit notifications with amounts`() {
         assertThat(
             parser.parse(event("notification:com.chase.sig.android", "Your daily transfer limit is now AED 5,000")),

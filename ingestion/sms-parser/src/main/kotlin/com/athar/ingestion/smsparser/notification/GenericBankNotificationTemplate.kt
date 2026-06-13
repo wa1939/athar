@@ -76,6 +76,14 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\b(?:offer|promo|cashback|points|reward|earn|win|discount|save|coupon|deal)\b|عرض|عروض|خصومات|تخفيض|تخفيضات|كوبون|قسيمة|وفر|اكسب|اربح|نقاط|مكافأة|استرداد\s+نقدي|كاش\s*باك|خصم\s*(?:حتى\s*)?\d+(?:[.,]\d+)?\s*[%٪])""",
         RegexOption.IGNORE_CASE,
     )
+    private val rewardWords = Regex(
+        """(?:\b(?:cashback|cash\s+back|points?|reward|rewards?|earned|earn|win|save)\b|نقاط|مكافأة|مكافآت|استرداد\s+نقدي|كاش\s*باك|اكسب|اربح|وفر)""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val rewardAmountContext = Regex(
+        """(?:\b(?:cashback|cash\s+back|points?|reward|rewards?|earned|earn|win|save)\b|نقاط|مكافأة|مكافآت|استرداد\s+نقدي|كاش\s*باك|اكسب|اربح|وفر)""",
+        RegexOption.IGNORE_CASE,
+    )
     private val postedTransactionEvidence = Regex(
         """(?:\b(?:you\s+(?:spent|paid|received|sent)|card\s+(?:ending\s+\d{2,4}\s+)?(?:was\s+)?used|card\s+(?:purchase|payment|transaction|charge)|debit(?:ed)?|charged|credited|deposit(?:ed)?|direct\s+debit|payment\s+(?:from|to)|money\s+(?:received|added)|transfer\s+(?:sent|received)|sent\s+you|paid\s+you|got\s+paid)\b|تم\s+خصم|بعد\s+خصم|تم\s+دفع|تمت\s+عملية|عملية\s+(?:شراء|دفع|سحب)|دفع\s+فاتورة|تم\s+سحب|تم\s+إيداع|تم\s+ايداع|وارد|استلمت|تحويل|حوالة)""",
         RegexOption.IGNORE_CASE,
@@ -133,6 +141,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         val normalized = Normalize.digits(body)
         val hasAction = hasAction(normalized)
 
+        if (isRewardOnlyNotification(normalized)) return ParseResult.Ignored
         if (isMarketingOnlyPromotion(normalized)) return ParseResult.Ignored
         if (declinedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (statementWords.containsMatchIn(normalized)) return ParseResult.Ignored
@@ -222,11 +231,20 @@ class GenericBankNotificationTemplate : BankTemplate {
     private fun isMarketingOnlyPromotion(body: String): Boolean =
         marketingOnlyWords.containsMatchIn(body) && !postedTransactionEvidence.containsMatchIn(body)
 
+    private fun isRewardOnlyNotification(body: String): Boolean {
+        if (!rewardWords.containsMatchIn(body) || hasIncomeAction(body)) return false
+        val currencyAmounts = amountWithCurrency.findAll(body)
+            .filter { it.hasCurrencyMarker(body) }
+            .toList()
+        return currencyAmounts.isNotEmpty() && currencyAmounts.all { it.isRewardAmount(body) }
+    }
+
     private fun selectTransactionAmount(body: String): MatchResult? {
         val matches = amountWithCurrency.findAll(body).toList()
         if (matches.isEmpty()) return null
         val currencyMatches = matches.filter { it.hasCurrencyMarker(body) }
         val candidates = currencyMatches.ifEmpty { matches }
+            .let { amountCandidates -> amountCandidates.filterNot { it.isRewardAmount(body) }.ifEmpty { amountCandidates } }
         val actionStart = firstActionIndex(body)
         val afterAction = actionStart?.let { index -> candidates.filter { it.range.first >= index } }.orEmpty()
         afterAction.firstOrNull { !it.isBalanceAmount(body) }?.let { return it }
@@ -248,6 +266,14 @@ class GenericBankNotificationTemplate : BankTemplate {
         val prefix = body.substring(prefixStart, range.first)
         val suffix = body.substring(range.last + 1, suffixEnd)
         return hasBalanceAmountContext(prefix) || hasBalanceAmountContext(suffix)
+    }
+
+    private fun MatchResult.isRewardAmount(body: String): Boolean {
+        val prefixStart = (range.first - RewardPrefixWindow).coerceAtLeast(0)
+        val suffixEnd = (range.last + RewardSuffixWindow + 1).coerceAtMost(body.length)
+        val prefix = body.substring(prefixStart, range.first)
+        val suffix = body.substring(range.last + 1, suffixEnd)
+        return rewardAmountContext.containsMatchIn(prefix) || rewardAmountContext.containsMatchIn(suffix)
     }
 
     private fun hasBalanceAmountContext(text: String): Boolean {
@@ -296,6 +322,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             .lineSequence()
             .firstOrNull()
             ?.replace(amountWithCurrency, "")
+            ?.replace(Regex("""\s+\band\s+earned\b.*$""", RegexOption.IGNORE_CASE), "")
             ?.replace(Regex("""\b(?:for|using|with|via|card|ending|منتهية|البطاقة)\b.*$""", RegexOption.IGNORE_CASE), "")
             ?.trim(' ', '.', ',', '-', '·', ':')
             ?.take(48)
@@ -306,6 +333,8 @@ class GenericBankNotificationTemplate : BankTemplate {
     private companion object {
         private const val AmountPrefixWindow = 32
         private const val AmountSuffixWindow = 24
+        private const val RewardPrefixWindow = 24
+        private const val RewardSuffixWindow = 16
         private const val CurrencySuffixWindow = 12
         private val ArabicBalanceTerms = listOf("رصيد", "الرصيد", "المتاح", "الرصيد المتبقي")
 
