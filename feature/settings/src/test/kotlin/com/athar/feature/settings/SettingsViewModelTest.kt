@@ -16,6 +16,10 @@ import com.athar.core.domain.repo.MerchantBulkExportTrigger
 import com.athar.core.domain.repo.MerchantBulkImportResult
 import com.athar.core.domain.repo.MerchantBulkImportTrigger
 import com.athar.core.domain.repo.SmsBackfillTrigger
+import com.athar.core.domain.repo.SupportDiagnosticsExportResult
+import com.athar.core.domain.repo.SupportDiagnosticsExportTrigger
+import com.athar.core.domain.repo.TaxExportResult
+import com.athar.core.domain.repo.TaxExportTrigger
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
 import com.athar.core.testing.Fixtures
@@ -100,6 +104,8 @@ class SettingsViewModelTest {
         bulkExporter = FakeMerchantBulkExportTrigger,
         bulkImporter = FakeMerchantBulkImportTrigger,
         communityShare = FakeCommunityRulesShareTrigger,
+        supportDiagnostics = FakeSupportDiagnosticsExportTrigger,
+        taxExport = FakeTaxExportTrigger,
         prefs = FakeUserPreferencesRepository(),
         transactions = transactions,
     )
@@ -167,6 +173,16 @@ private object FakeCommunityRulesShareTrigger : CommunityRulesShareTrigger {
         CommunityRulesShareResult.Empty
 }
 
+private object FakeSupportDiagnosticsExportTrigger : SupportDiagnosticsExportTrigger {
+    override suspend fun exportDiagnostics(out: OutputStream): SupportDiagnosticsExportResult =
+        SupportDiagnosticsExportResult.Done(auditRows = 0, parsed = 0, failed = 0, ignored = 0)
+}
+
+private object FakeTaxExportTrigger : TaxExportTrigger {
+    override suspend fun exportAnnual(output: OutputStream, year: Int, localeTag: String): TaxExportResult =
+        TaxExportResult.Done(year = year, transactions = 0, categoryTotals = 0, excludedReconciliations = 0)
+}
+
 private class FakeUserPreferencesRepository : UserPreferencesRepository {
     override fun onboardingComplete(): Flow<Boolean> = flowOf(false)
     override suspend fun setOnboardingComplete(complete: Boolean) = Unit
@@ -180,4 +196,8 @@ private class FakeUserPreferencesRepository : UserPreferencesRepository {
     override suspend fun setDisplayCurrency(currency: String) = Unit
     override fun appLocale(): Flow<String> = flowOf("")
     override suspend fun setAppLocale(languageTag: String) = Unit
+    override fun savingsRateTargetPercent(): Flow<Int> = flowOf(20)
+    override suspend fun setSavingsRateTargetPercent(percent: Int) = Unit
+    override fun emergencyFundTargetMonths(): Flow<Int> = flowOf(6)
+    override suspend fun setEmergencyFundTargetMonths(months: Int) = Unit
 }
