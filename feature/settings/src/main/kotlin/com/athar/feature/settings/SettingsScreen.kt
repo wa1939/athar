@@ -46,6 +46,7 @@ import com.athar.core.domain.model.Account
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CsvImportColumnMapping
 import com.athar.core.domain.repo.CsvImportColumnRole
+import com.athar.core.domain.repo.CsvImportCurrencySummary
 import com.athar.core.domain.repo.CsvImportPreview
 import com.athar.core.domain.repo.CsvImportPreviewRow
 import com.athar.core.designsystem.component.AtharCard
@@ -53,6 +54,7 @@ import com.athar.core.designsystem.component.AtharText
 import com.athar.core.designsystem.component.AtharTextField
 import com.athar.core.designsystem.display.CurrencyCatalog
 import com.athar.core.designsystem.theme.AtharTheme
+import java.math.BigDecimal
 
 @Composable
 fun SettingsScreen(
@@ -993,6 +995,25 @@ private fun CsvPreviewSummary(
             style = theme.typography.caption,
             color = theme.colors.muted,
         )
+        if (preview.currencySummaries.isNotEmpty()) {
+            AtharText(
+                text = stringResource(R.string.settings_csv_preview_currency_title),
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+            preview.currencySummaries.forEach { summary ->
+                AtharText(
+                    text = summary.previewLine(
+                        rowLabel = stringResource(R.string.settings_csv_preview_currency_rows),
+                        expenseLabel = stringResource(R.string.settings_csv_preview_type_expense),
+                        incomeLabel = stringResource(R.string.settings_csv_preview_type_income),
+                        transferLabel = stringResource(R.string.settings_csv_preview_type_transfer),
+                    ),
+                    style = theme.typography.caption,
+                    color = theme.colors.ink,
+                )
+            }
+        }
         preview.sampleRows.forEach { row ->
             CsvPreviewRowToggle(
                 row = row,
@@ -1071,6 +1092,25 @@ private fun CsvImportPreview.columnSummary(
         columns.category?.let { "$categoryLabel=$it" },
     ).joinToString(" · ")
 }
+
+private fun CsvImportCurrencySummary.previewLine(
+    rowLabel: String,
+    expenseLabel: String,
+    incomeLabel: String,
+    transferLabel: String,
+): String {
+    val totals = listOfNotNull(
+        expenseTotal.nonZero()?.let { "$expenseLabel ${it.toPlainString()}" },
+        incomeTotal.nonZero()?.let { "$incomeLabel ${it.toPlainString()}" },
+        transferTotal.nonZero()?.let { "$transferLabel ${it.toPlainString()}" },
+    )
+    return listOf("$currency · $rows $rowLabel", totals.joinToString(" · ").takeIf { it.isNotBlank() })
+        .filterNotNull()
+        .joinToString(" · ")
+}
+
+private fun BigDecimal.nonZero(): BigDecimal? =
+    takeIf { compareTo(BigDecimal.ZERO) != 0 }
 
 private fun CsvImportPreviewRow.previewLine(
     expenseLabel: String,

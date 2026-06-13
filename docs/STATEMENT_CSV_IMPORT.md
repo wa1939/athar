@@ -28,4 +28,5 @@ Athar/TMOAP-style CSV and common bank-statement CSV exports.
 
 The G-12 slices now include OFX/QFX/MT940 parsing, safe preview/confirm, account
 selection, duplicate-safe stable references, manual CSV column mapping, and preview-row
-exclusion. Field-level row editing remains planned for the full import wizard.
+exclusion. Preview also summarizes importable rows by currency with expense, income, and
+transfer totals. Field-level row editing remains planned for the full import wizard.

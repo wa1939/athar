@@ -85,6 +85,8 @@
     <string name="settings_csv_preview_first_skip" formatted="true">First skipped row: #%1$d · %2$s</string>
     <string name="settings_csv_preview_row_included">This row will import</string>
     <string name="settings_csv_preview_row_excluded">Excluded from import</string>
+    <string name="settings_csv_preview_currency_title">Currency review before import</string>
+    <string name="settings_csv_preview_currency_rows">rows</string>
     <string name="settings_csv_preview_column_date">date</string>
     <string name="settings_csv_preview_column_merchant">merchant</string>
     <string name="settings_csv_preview_column_money">money</string>

@@ -9,6 +9,7 @@ import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.CsvImportColumnMapping
+import com.athar.core.domain.repo.CsvImportCurrencySummary
 import com.athar.core.domain.repo.CsvImportDetectedColumns
 import com.athar.core.domain.repo.CsvImportPreview
 import com.athar.core.domain.repo.CsvImportPreviewResult
@@ -358,6 +359,7 @@ internal class CsvImporter @Inject constructor(
         skipped = skippedRows.size,
         columns = columns,
         availableColumns = availableColumns,
+        currencySummaries = transactions.currencySummaries(),
         sampleRows = previewRows.take(PREVIEW_ROW_LIMIT).map { row ->
             CsvImportPreviewRow(
                 rowNumber = row.rowNumber,
@@ -372,6 +374,23 @@ internal class CsvImporter @Inject constructor(
         },
         skippedRows = skippedRows.take(PREVIEW_ROW_LIMIT),
     )
+
+    private fun List<CsvPlanTransaction>.currencySummaries(): List<CsvImportCurrencySummary> =
+        groupBy { it.transaction.amount.currency.uppercase().trim() }
+            .map { (currency, rows) ->
+                CsvImportCurrencySummary(
+                    currency = currency,
+                    rows = rows.size,
+                    expenseTotal = rows.totalFor(TxType.EXPENSE),
+                    incomeTotal = rows.totalFor(TxType.INCOME),
+                    transferTotal = rows.totalFor(TxType.TRANSFER),
+                )
+            }
+            .sortedBy { it.currency }
+
+    private fun List<CsvPlanTransaction>.totalFor(type: TxType): BigDecimal =
+        filter { it.transaction.type == type }
+            .fold(BigDecimal.ZERO) { total, row -> total + row.transaction.amount.amount }
 
     private fun detectedColumns(header: List<String>, columns: StatementCsvColumns): CsvImportDetectedColumns =
         CsvImportDetectedColumns(

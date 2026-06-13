@@ -2,6 +2,7 @@ package com.athar.core.domain.repo
 
 import com.athar.core.domain.model.MANUAL_ACCOUNT_ID
 import java.io.InputStream
+import java.math.BigDecimal
 
 /**
  * Parses statement-style transaction files and bulk-inserts them as confirmed manual entries.
@@ -69,8 +70,17 @@ data class CsvImportPreview(
     val skipped: Int,
     val columns: CsvImportDetectedColumns,
     val availableColumns: List<String> = emptyList(),
+    val currencySummaries: List<CsvImportCurrencySummary> = emptyList(),
     val sampleRows: List<CsvImportPreviewRow>,
     val skippedRows: List<CsvImportSkippedRow>,
+)
+
+data class CsvImportCurrencySummary(
+    val currency: String,
+    val rows: Int,
+    val expenseTotal: BigDecimal,
+    val incomeTotal: BigDecimal,
+    val transferTotal: BigDecimal,
 )
 
 data class CsvImportColumnMapping(

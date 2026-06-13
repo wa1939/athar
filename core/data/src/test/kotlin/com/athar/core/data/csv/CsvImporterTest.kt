@@ -49,6 +49,10 @@ class CsvImporterTest {
         assertThat(preview.sampleRows.first().merchant).isEqualTo("Starbucks")
         assertThat(preview.sampleRows.first().type).isEqualTo(TxType.EXPENSE)
         assertThat(preview.sampleRows.first().category).isEqualTo("Coffee")
+        assertThat(preview.currencySummaries.map { it.currency }).containsExactly("SAR")
+        assertThat(preview.currencySummaries.single().rows).isEqualTo(2)
+        assertThat(preview.currencySummaries.single().expenseTotal.compareTo(BigDecimal("18.50"))).isEqualTo(0)
+        assertThat(preview.currencySummaries.single().incomeTotal.compareTo(BigDecimal("1000.00"))).isEqualTo(0)
         assertThat(preview.skippedRows.single().rowNumber).isEqualTo(3)
         assertThat(transactions.upserts).isEmpty()
     }
@@ -95,8 +99,35 @@ class CsvImporterTest {
         assertThat(preview.sampleRows.map { it.rowNumber }).containsExactly(2, 4).inOrder()
         assertThat(preview.sampleRows.first().included).isFalse()
         assertThat(preview.skippedRows.map { it.reason }).contains("Excluded from import")
+        assertThat(preview.currencySummaries.single().expenseTotal.compareTo(BigDecimal.ZERO)).isEqualTo(0)
+        assertThat(preview.currencySummaries.single().incomeTotal.compareTo(BigDecimal("1000.00"))).isEqualTo(0)
         assertThat(imported).isEqualTo(CsvImportResult.Done(imported = 1, skipped = 2))
         assertThat(transactions.upserts.map { it.merchant }).containsExactly("Salary")
+    }
+
+    @Test
+    fun `preview summarizes importable rows by currency and type`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(emptyList()),
+            clock = FixedClock,
+        )
+
+        val result = importer.preview(ByteArrayInputStream(statementMixedCurrencyCsv.toByteArray()))
+
+        val preview = (result as CsvImportPreviewResult.Done).preview
+        assertThat(preview.importable).isEqualTo(4)
+        assertThat(preview.currencySummaries.map { it.currency }).containsExactly("SAR", "USD").inOrder()
+        val sar = preview.currencySummaries.first { it.currency == "SAR" }
+        assertThat(sar.rows).isEqualTo(2)
+        assertThat(sar.expenseTotal.compareTo(BigDecimal("2500.00"))).isEqualTo(0)
+        assertThat(sar.transferTotal.compareTo(BigDecimal("500.00"))).isEqualTo(0)
+        val usd = preview.currencySummaries.first { it.currency == "USD" }
+        assertThat(usd.rows).isEqualTo(2)
+        assertThat(usd.expenseTotal.compareTo(BigDecimal("18.50"))).isEqualTo(0)
+        assertThat(usd.incomeTotal.compareTo(BigDecimal("1000.00"))).isEqualTo(0)
+        assertThat(transactions.upserts).isEmpty()
     }
 
     @Test
@@ -474,6 +505,14 @@ class CsvImporterTest {
             Booking Date,Narrative,Amount,D/C,Currency
             2026-06-01,Train ticket,42.00,D,GBP
             2026-06-02,Refund,15.25,C,GBP
+        """.trimIndent()
+
+        val statementMixedCurrencyCsv = """
+            Date,Description,Amount,Currency,Type
+            2026-06-01,Coffee,-18.50,USD,Expense
+            2026-06-02,Salary,1000.00,USD,Income
+            2026-06-03,Rent,-2500.00,SAR,Expense
+            2026-06-04,Savings move,500.00,SAR,Transfer
         """.trimIndent()
 
         val statementUnknownHeadersCsv = """
