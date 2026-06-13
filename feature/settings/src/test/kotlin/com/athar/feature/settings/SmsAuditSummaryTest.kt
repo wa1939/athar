@@ -47,6 +47,22 @@ class SmsAuditSummaryTest {
         assertThat(state.senderHealth).hasSize(5)
     }
 
+    @Test
+    fun `status filters are built from full audit history before visible row limit`() {
+        val rows = buildList {
+            repeat(205) { add(entry("Parsed-$it", SmsParseStatus.PARSED)) }
+            add(entry("LateFailed", SmsParseStatus.FAILED))
+            add(entry("LateIgnored", SmsParseStatus.IGNORED))
+        }
+
+        val state = buildSmsAuditState(rows)
+
+        assertThat(state.entries).hasSize(200)
+        assertThat(state.entriesFor(SmsParseStatus.FAILED).map { it.sender }).containsExactly("LateFailed")
+        assertThat(state.entriesFor(SmsParseStatus.IGNORED).map { it.sender }).containsExactly("LateIgnored")
+        assertThat(state.entriesFor(SmsParseStatus.PARSED)).hasSize(200)
+    }
+
     private fun entry(sender: String, status: SmsParseStatus) = SmsAuditEntry(
         id = "$sender-$status-${counter++}",
         sender = sender,

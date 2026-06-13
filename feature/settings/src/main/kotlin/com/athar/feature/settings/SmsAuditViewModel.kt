@@ -19,6 +19,9 @@ import javax.inject.Inject
 @Immutable
 data class SmsAuditState(
     val entries: ImmutableList<SmsAuditEntry>,
+    val parsedEntries: ImmutableList<SmsAuditEntry>,
+    val failedEntries: ImmutableList<SmsAuditEntry>,
+    val ignoredEntries: ImmutableList<SmsAuditEntry>,
     val totalParsed: Int,
     val totalFailed: Int,
     val totalIgnored: Int,
@@ -29,6 +32,9 @@ data class SmsAuditState(
     companion object {
         fun initial(): SmsAuditState = SmsAuditState(
             entries = persistentListOf(),
+            parsedEntries = persistentListOf(),
+            failedEntries = persistentListOf(),
+            ignoredEntries = persistentListOf(),
             totalParsed = 0,
             totalFailed = 0,
             totalIgnored = 0,
@@ -36,6 +42,13 @@ data class SmsAuditState(
             senderHealth = persistentListOf(),
             isLoading = true,
         )
+    }
+
+    fun entriesFor(filter: SmsParseStatus?): ImmutableList<SmsAuditEntry> = when (filter) {
+        null -> entries
+        SmsParseStatus.PARSED -> parsedEntries
+        SmsParseStatus.FAILED -> failedEntries
+        SmsParseStatus.IGNORED -> ignoredEntries
     }
 }
 
@@ -83,6 +96,9 @@ internal fun buildSmsAuditState(all: List<SmsAuditEntry>): SmsAuditState {
 
     return SmsAuditState(
         entries = all.take(MAX_VISIBLE).toImmutableList(),
+        parsedEntries = all.filter { it.status == SmsParseStatus.PARSED }.take(MAX_VISIBLE).toImmutableList(),
+        failedEntries = all.filter { it.status == SmsParseStatus.FAILED }.take(MAX_VISIBLE).toImmutableList(),
+        ignoredEntries = all.filter { it.status == SmsParseStatus.IGNORED }.take(MAX_VISIBLE).toImmutableList(),
         totalParsed = parsed,
         totalFailed = failed,
         totalIgnored = ignored,

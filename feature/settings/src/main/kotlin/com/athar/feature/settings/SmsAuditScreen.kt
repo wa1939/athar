@@ -45,12 +45,7 @@ fun SmsAuditScreen(
     val theme = AtharTheme
     var filter by remember { mutableStateOf<SmsParseStatus?>(null) }
 
-    val filtered = remember(state.entries, filter) {
-        when (filter) {
-            null -> state.entries
-            else -> state.entries.filter { it.status == filter }
-        }
-    }
+    val filtered = state.entriesFor(filter)
 
     Box(modifier = modifier
         .fillMaxSize()
