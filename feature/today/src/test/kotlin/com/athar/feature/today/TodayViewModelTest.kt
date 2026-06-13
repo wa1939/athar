@@ -148,6 +148,10 @@ private class FakeUserPreferencesRepository(
     override suspend fun setSavingsRateTargetPercent(percent: Int) = Unit
     override fun emergencyFundTargetMonths(): Flow<Int> = flowOf(emergencyMonths)
     override suspend fun setEmergencyFundTargetMonths(months: Int) = Unit
+    override fun billRemindersEnabled(): Flow<Boolean> = flowOf(false)
+    override suspend fun setBillRemindersEnabled(enabled: Boolean) = Unit
+    override fun billReminderSentKeys(): Flow<Set<String>> = flowOf(emptySet())
+    override suspend fun setBillReminderSentKeys(keys: Set<String>) = Unit
 }
 
 private class FakeAccountRepository(

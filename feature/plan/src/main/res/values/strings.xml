@@ -59,6 +59,14 @@
     <string name="plan_bills_overdue">متأخر</string>
     <string name="plan_bills_today">اليوم</string>
     <string name="plan_bills_in_days_short" formatted="true">%1$d ي</string>
+    <string name="plan_bills_reminders_title">تذكيرات الفواتير</string>
+    <string name="plan_bills_reminders_body">تنبيه هادئ قبل يومين، وفي يوم الاستحقاق، ومرة واحدة إذا بقيت فاتورة متكررة بانتظار المراجعة.</string>
+    <string name="plan_bills_reminders_on_title">تذكيرات الفواتير مفعّلة</string>
+    <string name="plan_bills_reminders_on_body">سيذكّرك أثر بالمصاريف المتكررة القادمة بدون أحكام على الصرف أو تنبيهات مزعجة.</string>
+    <string name="plan_bills_reminders_permission_title">التنبيهات تحتاج إذنًا</string>
+    <string name="plan_bills_reminders_permission_body">التذكيرات مفعّلة، لكن إذن إشعارات أندرويد غير مفعل. فعّله لاستقبال تذكيرات الفواتير.</string>
+    <string name="plan_bills_reminders_enable">تفعيل التذكيرات</string>
+    <string name="plan_bills_reminders_disable">إيقاف التذكيرات</string>
 
     <!-- Target editor sheet -->
     <string name="plan_target_editor_title_suffix"> · هدف شهري</string>

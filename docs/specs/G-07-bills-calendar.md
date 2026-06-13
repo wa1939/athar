@@ -18,8 +18,10 @@ Add a `Bills` section under Plan for the first G-7 slice:
 - Add a compact 14-day calendar strip with dots on due days.
 - Show a due-now plus next-30-days outgoing total for recurring expense rules.
 
-No notifications are added in this slice. Push reminders remain the G-7 follow-up because they need
-notification scheduling, permission copy, and anti-nag rules.
+No notifications were added in this first slice. Push reminders were left as the G-7 follow-up
+because they needed notification scheduling, permission copy, and anti-nag rules.
+
+That follow-up is now specified separately in [`G-07-bill-reminders.md`](G-07-bill-reminders.md).
 
 ## Acceptance Criteria
 

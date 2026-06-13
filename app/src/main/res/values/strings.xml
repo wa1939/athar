@@ -18,6 +18,16 @@
     <string name="action_apply">تطبيق</string>
     <string name="action_done">تم</string>
 
+    <string name="bill_reminders_channel_name">تذكيرات الفواتير</string>
+    <string name="bill_reminders_channel_description">تنبيهات هادئة للمصاريف المتكررة القادمة.</string>
+    <string name="bill_reminder_title_upcoming">فاتورة بعد يومين</string>
+    <string name="bill_reminder_title_due_today">فاتورة مستحقة اليوم</string>
+    <string name="bill_reminder_title_missed">فاتورة بانتظار المراجعة</string>
+    <string name="bill_reminder_body_upcoming" formatted="true">%1$s · %2$s بعد يومين.</string>
+    <string name="bill_reminder_body_due_today" formatted="true">%1$s · %2$s اليوم.</string>
+    <string name="bill_reminder_body_missed" formatted="true">%1$s · %2$s لا تزال معلقة.</string>
+    <string name="bill_reminder_fallback_label">فاتورة</string>
+
     <string name="settings_language_title">اللغة · Language</string>
     <string name="settings_language_subtitle">اختر لغة عرض التطبيق. سيتم إعادة تحميل الشاشة لتطبيق اللغة الجديدة.</string>
     <string name="settings_language_system">نظام الجهاز</string>

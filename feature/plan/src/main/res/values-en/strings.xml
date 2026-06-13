@@ -59,6 +59,14 @@
     <string name="plan_bills_overdue">Late</string>
     <string name="plan_bills_today">Today</string>
     <string name="plan_bills_in_days_short" formatted="true">%1$d d</string>
+    <string name="plan_bills_reminders_title">Bill reminders</string>
+    <string name="plan_bills_reminders_body">Quiet reminders 2 days before, on the due date, and once if a recurring bill is still waiting for review.</string>
+    <string name="plan_bills_reminders_on_title">Bill reminders on</string>
+    <string name="plan_bills_reminders_on_body">Athar will remind you about upcoming recurring expenses without sending spending judgment or streak alerts.</string>
+    <string name="plan_bills_reminders_permission_title">Notifications need permission</string>
+    <string name="plan_bills_reminders_permission_body">Reminders are enabled, but Android notification permission is off. Turn it on to receive bill reminders.</string>
+    <string name="plan_bills_reminders_enable">Enable reminders</string>
+    <string name="plan_bills_reminders_disable">Turn off reminders</string>
 
     <!-- Target editor sheet -->
     <string name="plan_target_editor_title_suffix"> · Monthly target</string>

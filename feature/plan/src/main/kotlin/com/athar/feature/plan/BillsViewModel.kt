@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
@@ -28,7 +29,7 @@ import javax.inject.Inject
 class BillsViewModel @Inject constructor(
     rules: RecurringRuleRepository,
     transactions: TransactionRepository,
-    prefs: UserPreferencesRepository,
+    private val prefs: UserPreferencesRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -37,15 +38,25 @@ class BillsViewModel @Inject constructor(
             rules.observeAll(),
             transactions.observePending(),
             prefs.displayCurrency(),
-        ) { recurringRules, pending, currency ->
-            derive(recurringRules, pending, currency)
+            prefs.billRemindersEnabled(),
+        ) { recurringRules, pending, currency, remindersEnabled ->
+            derive(recurringRules, pending, currency, remindersEnabled)
         }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BillsState.initial())
+
+    fun onEvent(event: BillsEvent) {
+        viewModelScope.launch {
+            when (event) {
+                is BillsEvent.SetRemindersEnabled -> prefs.setBillRemindersEnabled(event.enabled)
+            }
+        }
+    }
 
     private fun derive(
         recurringRules: List<RecurringRule>,
         pending: List<Transaction>,
         currency: String,
+        remindersEnabled: Boolean,
     ): BillsState {
         val today = clock.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
         val horizonEnd = today.plus(DatePeriod(days = HORIZON_DAYS))
@@ -104,6 +115,7 @@ class BillsViewModel @Inject constructor(
             outgoingNext30Days = outgoingNext30,
             calendarDays = buildCalendarDays(today, items).toImmutableList(),
             items = items.toImmutableList(),
+            remindersEnabled = remindersEnabled,
             isLoading = false,
         )
     }

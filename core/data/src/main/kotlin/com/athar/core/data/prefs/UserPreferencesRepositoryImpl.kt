@@ -30,6 +30,8 @@ internal class UserPreferencesRepositoryImpl @Inject constructor(
     private val appLocaleKey = stringPreferencesKey("app_locale_tag")
     private val savingsRateTargetPercentKey = intPreferencesKey("savings_rate_target_percent")
     private val emergencyFundTargetMonthsKey = intPreferencesKey("emergency_fund_target_months")
+    private val billRemindersEnabledKey = booleanPreferencesKey("bill_reminders_enabled")
+    private val billReminderSentKeysKey = stringPreferencesKey("bill_reminder_sent_keys_csv")
 
     override fun onboardingComplete(): Flow<Boolean> =
         context.userPrefs.data.map { it[onboardingKey] ?: false }
@@ -95,5 +97,41 @@ internal class UserPreferencesRepositoryImpl @Inject constructor(
     override suspend fun setEmergencyFundTargetMonths(months: Int) {
         require(months in 1..120) { "Emergency-fund target must be in 1..120 months, got $months" }
         context.userPrefs.edit { it[emergencyFundTargetMonthsKey] = months }
+    }
+
+    override fun billRemindersEnabled(): Flow<Boolean> =
+        context.userPrefs.data.map { it[billRemindersEnabledKey] ?: false }
+
+    override suspend fun setBillRemindersEnabled(enabled: Boolean) {
+        context.userPrefs.edit {
+            it[billRemindersEnabledKey] = enabled
+            if (!enabled) it.remove(billReminderSentKeysKey)
+        }
+    }
+
+    override fun billReminderSentKeys(): Flow<Set<String>> =
+        context.userPrefs.data.map { prefs ->
+            prefs[billReminderSentKeysKey]
+                .orEmpty()
+                .split(',')
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .toSet()
+        }
+
+    override suspend fun setBillReminderSentKeys(keys: Set<String>) {
+        context.userPrefs.edit { prefs ->
+            val encoded = keys
+                .asSequence()
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .sorted()
+                .joinToString(",")
+            if (encoded.isBlank()) {
+                prefs.remove(billReminderSentKeysKey)
+            } else {
+                prefs[billReminderSentKeysKey] = encoded
+            }
+        }
     }
 }

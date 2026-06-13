@@ -63,4 +63,19 @@ interface UserPreferencesRepository {
      */
     fun emergencyFundTargetMonths(): Flow<Int>
     suspend fun setEmergencyFundTargetMonths(months: Int)
+
+    /**
+     * Explicit opt-in for quiet bill reminders. Runtime notification permission alone is not
+     * treated as consent because Athar avoids unsolicited money notifications.
+     */
+    fun billRemindersEnabled(): Flow<Boolean>
+    suspend fun setBillRemindersEnabled(enabled: Boolean)
+
+    /**
+     * Reminder keys already sent for the currently relevant recurring bill windows. The worker
+     * prunes this set as windows pass so it prevents duplicate daily notifications without
+     * becoming an unbounded event log.
+     */
+    fun billReminderSentKeys(): Flow<Set<String>>
+    suspend fun setBillReminderSentKeys(keys: Set<String>)
 }

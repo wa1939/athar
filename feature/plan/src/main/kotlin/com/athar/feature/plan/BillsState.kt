@@ -13,6 +13,7 @@ data class BillsState(
     val outgoingNext30Days: Money,
     val calendarDays: ImmutableList<BillCalendarDay>,
     val items: ImmutableList<BillItem>,
+    val remindersEnabled: Boolean,
     val isLoading: Boolean,
 ) {
     companion object {
@@ -22,6 +23,7 @@ data class BillsState(
             outgoingNext30Days = Money.zero(),
             calendarDays = persistentListOf(),
             items = persistentListOf(),
+            remindersEnabled = false,
             isLoading = true,
         )
     }
@@ -60,4 +62,8 @@ enum class BillCadenceLabel {
     MONTHLY,
     WEEKLY,
     YEARLY,
+}
+
+sealed interface BillsEvent {
+    data class SetRemindersEnabled(val enabled: Boolean) : BillsEvent
 }

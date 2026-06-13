@@ -79,6 +79,7 @@ Other tools force a trade-off:
 - ✅ **Editable monthly targets** — tap any row, type the number, save
 - ✅ **Goals tab** — savings-rate target and emergency-fund target, computed from confirmed history and liquid accounts
 - ✅ **Bills calendar** — Plan → Bills projects recurring rules 60 days ahead, highlights overdue items, and folds uncategorized pending transactions into the same scannable list
+- ✅ **Bill reminders** — opt-in, quiet reminders 2 days before, on due date, and once if a recurring expense remains pending
 - ✅ **Wishlist** with savings-capacity math (NOW / WAIT until YYYY-MM / INFEASIBLE)
 - ✅ **Wishlist** with TMOAP-style savings-capacity math — start month, desired horizon, remaining amount, needed/month, and NOW / WAIT until YYYY-MM / INFEASIBLE status
 - ✅ **Family investments pool** with **percentage-based return entry**, proportional share %, delete pool/contributor
@@ -305,14 +306,15 @@ maestro test .maestro/flows/                     # 10 E2E flows
 - ✅ The recovered PR stack (#11–#30) is integrated locally on `dev/integration-recovered-stack`; details are in [`docs/RECOVERY_2026-06-13.md`](docs/RECOVERY_2026-06-13.md).
 - ✅ JVM tests, both debug APK builds, and both app lint variants pass with JDK 17.
 - ✅ The scoped `dev/today-goals-nudge` branch also passes `:feature:today:test` plus the full JVM test/build/lint stack after adding the Today Goals check.
-- ⏳ Device E2E and screenshot UI audit still need a physical Android device or a working accelerated emulator. On 2026-06-13 the local AVD could not boot because firmware virtualization was disabled, and `adb devices -l` still returned no attached devices during this branch validation.
+- ✅ The scoped `dev/bill-reminders` branch passes `:core:domain:test`, `:feature:plan:compileDebugKotlin`, `:app:compilePersonalFullSmsDebugKotlin`, and the full JVM test/build/lint stack after adding opt-in bill reminders. The full lint stack was run with `--max-workers=1` because parallel lint analysis intermittently crashed inside Android lint's Kotlin FIR resolver on existing unit tests.
+- ⏳ Device E2E, screenshot UI audit, and notification tap-through still need a physical Android device or a working accelerated emulator. On 2026-06-13 the local AVD could not boot because firmware virtualization was disabled, and `adb devices -l` still returned no attached devices during this branch validation.
 
 ### In flight / remaining
 
 | ID | Feature | Status | Effort | Notes |
 |---|---|---|---|---|
 | QA-01 | Runtime E2E + UI audit | ⏳ | 0.5–1 day | Needs physical Android device or accelerated emulator |
-| G-7 | Bill reminders | ⏳ | 1.5 days | Plan → Bills upcoming view shipped; push reminders remain follow-up |
+| G-7 | Bill reminders | ✅ | — | Bills calendar + opt-in reminders shipped; runtime notification QA remains under QA-01 |
 | G-8 | Manual transaction UX upgrades | ◐ | 1.5 days | ✅ Recent-merchant autocomplete + quick-add chips · ⏳ voice entry · receipt photo |
 | G-10 | Savings-rate goals + emergency fund | ✅ | — | Plan → Goals tab plus Today Goals check shipped; device visual QA remains under QA-01 |
 | G-11 | Broader notification handlers | ◐ | 3 days | Generic bank-app push parser shipped; app-specific handlers remain follow-up |

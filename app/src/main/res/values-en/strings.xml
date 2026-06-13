@@ -22,6 +22,16 @@
     <string name="action_apply">Apply</string>
     <string name="action_done">Done</string>
 
+    <string name="bill_reminders_channel_name">Bill reminders</string>
+    <string name="bill_reminders_channel_description">Quiet reminders for upcoming recurring expenses.</string>
+    <string name="bill_reminder_title_upcoming">Bill in 2 days</string>
+    <string name="bill_reminder_title_due_today">Bill due today</string>
+    <string name="bill_reminder_title_missed">Bill waiting for review</string>
+    <string name="bill_reminder_body_upcoming" formatted="true">%1$s · %2$s in 2 days.</string>
+    <string name="bill_reminder_body_due_today" formatted="true">%1$s · %2$s today.</string>
+    <string name="bill_reminder_body_missed" formatted="true">%1$s · %2$s is still pending.</string>
+    <string name="bill_reminder_fallback_label">Bill</string>
+
     <string name="settings_language_title">Language · اللغة</string>
     <string name="settings_language_subtitle">Choose the app language. The screen reloads to apply the new language.</string>
     <string name="settings_language_system">Follow system</string>
