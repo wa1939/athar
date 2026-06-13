@@ -8,13 +8,15 @@ support that proof without asking the user to upload financial images to a cloud
 
 ## Decision
 
-Add one optional image receipt to the Add Transaction sheet.
+Add one optional image receipt to the Add Transaction sheet. The follow-up
+multiple-receipts slice generalizes the same encrypted table and UI to several
+images per transaction without changing the privacy model.
 
 - The sheet uses Android's system image picker, so Athar does not request broad photo-library
   permissions.
 - The selected image is copied immediately into memory while the picker URI permission is still
   valid.
-- On save, the image bytes are stored in a `transaction_receipt` Room table linked one-to-one to
+- On save, the image bytes are stored in a `transaction_receipt` Room table linked to
   the created transaction.
 - Receipt payloads are BLOBs in the SQLCipher database, so they inherit Athar's encrypted local
   at-rest storage.
@@ -46,4 +48,5 @@ Follow-up receipt polish exposes saved receipts from the existing transaction ed
 ## Out Of Scope
 
 - OCR / amount extraction from receipts.
-- Multiple receipts per transaction.
+- Multiple receipts per transaction in the first receipt slice; see
+  [G-08 multiple receipts](G-08-multiple-receipts.md) for the shipped follow-up.

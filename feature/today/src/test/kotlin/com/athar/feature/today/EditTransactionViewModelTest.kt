@@ -41,26 +41,26 @@ class EditTransactionViewModelTest {
 
     @Test
     fun `load exposes receipt metadata without loading payload`() = runTest(mainDispatcher) {
-        val receipts = FakeReceiptAttachmentRepository(receipt())
+        val receipts = FakeReceiptAttachmentRepository(listOf(receipt()))
         val viewModel = EditTransactionViewModel(FakeCategoryRepository, receipts)
 
         viewModel.load(Fixtures.transaction(id = "tx-1"))
         advanceUntilIdle()
 
         val state = viewModel.state.value
-        assertThat(state?.receiptMeta?.originalName).isEqualTo("coffee.jpg")
-        assertThat(state?.receiptMeta?.sizeBytes).isEqualTo(3)
+        assertThat(state?.receiptMetas?.map { it.originalName }).containsExactly("coffee.jpg")
+        assertThat(state?.receiptMetas?.single()?.sizeBytes).isEqualTo(3)
         assertThat(state?.receiptPreview).isNull()
     }
 
     @Test
     fun `viewer loads the stored receipt payload`() = runTest(mainDispatcher) {
-        val receipts = FakeReceiptAttachmentRepository(receipt(payload = byteArrayOf(9, 8, 7)))
+        val receipts = FakeReceiptAttachmentRepository(listOf(receipt(payload = byteArrayOf(9, 8, 7))))
         val viewModel = EditTransactionViewModel(FakeCategoryRepository, receipts)
 
         viewModel.load(Fixtures.transaction(id = "tx-1"))
         advanceUntilIdle()
-        viewModel.openReceiptViewer()
+        viewModel.openReceiptViewer("receipt-1")
         advanceUntilIdle()
 
         val preview = viewModel.state.value?.receiptPreview
@@ -69,21 +69,26 @@ class EditTransactionViewModelTest {
     }
 
     @Test
-    fun `delete receipt clears metadata and preview without touching transaction state`() = runTest(mainDispatcher) {
-        val receipts = FakeReceiptAttachmentRepository(receipt())
+    fun `delete receipt clears only that metadata and preview without touching transaction state`() = runTest(mainDispatcher) {
+        val receipts = FakeReceiptAttachmentRepository(
+            listOf(
+                receipt(id = "receipt-1", payload = byteArrayOf(1, 2, 3)),
+                receipt(id = "receipt-2", payload = byteArrayOf(4, 5)),
+            ),
+        )
         val viewModel = EditTransactionViewModel(FakeCategoryRepository, receipts)
 
         viewModel.load(Fixtures.transaction(id = "tx-1"))
         advanceUntilIdle()
-        viewModel.openReceiptViewer()
+        viewModel.openReceiptViewer("receipt-1")
         advanceUntilIdle()
-        viewModel.deleteReceipt()
+        viewModel.deleteReceipt("receipt-1")
         advanceUntilIdle()
 
         val state = viewModel.state.value
-        assertThat(receipts.current).isNull()
+        assertThat(receipts.current.map { it.id }).containsExactly("receipt-2")
         assertThat(state?.original?.id).isEqualTo("tx-1")
-        assertThat(state?.receiptMeta).isNull()
+        assertThat(state?.receiptMetas?.map { it.id }).containsExactly("receipt-2")
         assertThat(state?.receiptPreview).isNull()
         assertThat(state?.receiptStatus).isEqualTo(EditReceiptStatus.Deleted)
     }
@@ -100,10 +105,11 @@ class EditTransactionViewModelTest {
     }
 
     private fun receipt(
+        id: String = "receipt-1",
         transactionId: String = "tx-1",
         payload: ByteArray = byteArrayOf(1, 2, 3),
     ): ReceiptAttachment = ReceiptAttachment(
-        id = "receipt-1",
+        id = id,
         transactionId = transactionId,
         mimeType = "image/jpeg",
         originalName = "coffee.jpg",
@@ -136,28 +142,41 @@ private object FakeCategoryRepository : CategoryRepository {
 }
 
 private class FakeReceiptAttachmentRepository(
-    var current: ReceiptAttachment?,
+    initial: List<ReceiptAttachment>,
 ) : ReceiptAttachmentRepository {
+    val current = initial.toMutableList()
+
     override suspend fun upsert(attachment: ReceiptAttachment) {
-        current = attachment
+        current.removeIf { it.id == attachment.id }
+        current += attachment
     }
+
+    override suspend fun get(id: String): ReceiptAttachment? =
+        current.firstOrNull { it.id == id }
 
     override suspend fun getForTransaction(transactionId: String): ReceiptAttachment? =
-        current?.takeIf { it.transactionId == transactionId }
+        current.firstOrNull { it.transactionId == transactionId }
+
+    override suspend fun metadataListForTransaction(transactionId: String): List<ReceiptAttachmentMeta> =
+        current.filter { it.transactionId == transactionId }.map { it.toMeta() }
 
     override suspend fun metadataForTransaction(transactionId: String): ReceiptAttachmentMeta? =
-        getForTransaction(transactionId)?.let {
-            ReceiptAttachmentMeta(
-                id = it.id,
-                transactionId = it.transactionId,
-                mimeType = it.mimeType,
-                originalName = it.originalName,
-                sizeBytes = it.sizeBytes,
-                createdAt = it.createdAt,
-            )
-        }
+        metadataListForTransaction(transactionId).firstOrNull()
+
+    override suspend fun delete(id: String) {
+        current.removeIf { it.id == id }
+    }
 
     override suspend fun deleteForTransaction(transactionId: String) {
-        if (current?.transactionId == transactionId) current = null
+        current.removeIf { it.transactionId == transactionId }
     }
+
+    private fun ReceiptAttachment.toMeta(): ReceiptAttachmentMeta = ReceiptAttachmentMeta(
+        id = id,
+        transactionId = transactionId,
+        mimeType = mimeType,
+        originalName = originalName,
+        sizeBytes = sizeBytes,
+        createdAt = createdAt,
+    )
 }

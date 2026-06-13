@@ -17,7 +17,7 @@ import kotlinx.datetime.Instant
         ),
     ],
     indices = [
-        Index(value = ["transactionId"], unique = true),
+        Index(value = ["transactionId"]),
     ],
 )
 internal data class TransactionReceiptEntity(

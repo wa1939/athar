@@ -30,7 +30,7 @@ import com.athar.core.data.db.entity.UserTemplateEntity
 import com.athar.core.data.db.entity.WishlistEntity
 
 @Database(
-    version = 6,
+    version = 7,
     exportSchema = true,
     entities = [
         AccountEntity::class,
@@ -202,6 +202,25 @@ internal abstract class AtharDatabase : RoomDatabase() {
                 db.execSQL(
                     """
                     CREATE UNIQUE INDEX IF NOT EXISTS index_transaction_receipt_transactionId
+                    ON transaction_receipt(transactionId)
+                    """.trimIndent(),
+                )
+            }
+        }
+
+        /**
+         * v6 → v7: allows multiple encrypted receipt attachments per transaction (G-8).
+         *
+         * Existing receipt rows are preserved; the transaction lookup index changes from
+         * unique to non-unique so users can keep an itemized receipt plus card slip, invoice
+         * pages, or other proof images on one ledger transaction.
+         */
+        internal val MIGRATION_6_7: Migration = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP INDEX IF EXISTS index_transaction_receipt_transactionId")
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS index_transaction_receipt_transactionId
                     ON transaction_receipt(transactionId)
                     """.trimIndent(),
                 )

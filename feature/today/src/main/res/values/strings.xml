@@ -109,10 +109,11 @@
     <string name="add_tx_label_category">التصنيف</string>
     <string name="add_tx_error_category_required">اختر تصنيفًا</string>
     <string name="add_tx_label_notes">ملاحظات</string>
-    <string name="add_tx_receipt_title">الإيصال</string>
+    <string name="add_tx_receipt_title">الإيصالات</string>
     <string name="add_tx_receipt_empty">لا يوجد إيصال</string>
     <string name="add_tx_receipt_loading">جارٍ الاستيراد…</string>
     <string name="add_tx_receipt_attached" formatted="true">%1$s · %2$s</string>
+    <string name="add_tx_receipt_count" formatted="true">%1$d إيصالات مرفقة</string>
     <string name="add_tx_receipt_attach">إرفاق</string>
     <string name="add_tx_receipt_change">تغيير</string>
     <string name="add_tx_receipt_remove">إزالة</string>

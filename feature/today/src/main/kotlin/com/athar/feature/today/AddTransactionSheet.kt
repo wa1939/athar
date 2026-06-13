@@ -200,12 +200,11 @@ private fun AddTransactionForm(
         )
 
         ReceiptAttachmentRow(
-            name = state.receiptName,
-            sizeBytes = state.receiptSizeBytes,
+            receipts = state.receipts,
             isLoading = state.isReceiptLoading,
             error = state.receiptError,
             onAttachClick = onReceiptClick,
-            onRemoveClick = { onEvent(AddTransactionEvent.RemoveReceipt) },
+            onRemoveClick = { onEvent(AddTransactionEvent.RemoveReceipt(it)) },
         )
 
         SaveButton(
@@ -217,12 +216,11 @@ private fun AddTransactionForm(
 
 @Composable
 private fun ReceiptAttachmentRow(
-    name: String?,
-    sizeBytes: Long?,
+    receipts: List<PendingReceiptUi>,
     isLoading: Boolean,
     error: ReceiptAttachmentError?,
     onAttachClick: () -> Unit,
-    onRemoveClick: () -> Unit,
+    onRemoveClick: (String) -> Unit,
 ) {
     val theme = AtharTheme
     Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
@@ -238,11 +236,7 @@ private fun ReceiptAttachmentRow(
         ) {
             val status = when {
                 isLoading -> stringResource(R.string.add_tx_receipt_loading)
-                name != null && sizeBytes != null -> stringResource(
-                    R.string.add_tx_receipt_attached,
-                    name,
-                    formatReceiptSize(sizeBytes),
-                )
+                receipts.isNotEmpty() -> stringResource(R.string.add_tx_receipt_count, receipts.size)
                 else -> stringResource(R.string.add_tx_receipt_empty)
             }
             Box(
@@ -257,20 +251,46 @@ private fun ReceiptAttachmentRow(
                 AtharText(
                     text = status,
                     style = theme.typography.caption,
-                    color = if (name != null) theme.colors.ink else theme.colors.muted,
+                    color = if (receipts.isNotEmpty()) theme.colors.ink else theme.colors.muted,
                     maxLines = 1,
                 )
             }
             CompactActionButton(
-                text = stringResource(if (name == null) R.string.add_tx_receipt_attach else R.string.add_tx_receipt_change),
+                text = stringResource(R.string.add_tx_receipt_attach),
                 enabled = !isLoading,
                 onClick = onAttachClick,
             )
-            if (name != null) {
+        }
+        receipts.forEach { receipt ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = MinTouchTarget)
+                        .clip(RoundedCornerShape(theme.spacing.s))
+                        .background(theme.colors.surface)
+                        .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    AtharText(
+                        text = stringResource(
+                            R.string.add_tx_receipt_attached,
+                            receipt.name,
+                            formatReceiptSize(receipt.sizeBytes),
+                        ),
+                        style = theme.typography.caption,
+                        color = theme.colors.ink,
+                        maxLines = 1,
+                    )
+                }
                 CompactActionButton(
                     text = stringResource(R.string.add_tx_receipt_remove),
                     enabled = !isLoading,
-                    onClick = onRemoveClick,
+                    onClick = { onRemoveClick(receipt.id) },
                 )
             }
         }

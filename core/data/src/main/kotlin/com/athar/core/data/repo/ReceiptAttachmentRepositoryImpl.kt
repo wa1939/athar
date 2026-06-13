@@ -18,11 +18,21 @@ internal class ReceiptAttachmentRepositoryImpl @Inject constructor(
         dao.upsert(attachment.toEntity())
     }
 
+    override suspend fun get(id: String): ReceiptAttachment? =
+        dao.get(id)?.toDomain()
+
     override suspend fun getForTransaction(transactionId: String): ReceiptAttachment? =
         dao.getForTransaction(transactionId)?.toDomain()
 
+    override suspend fun metadataListForTransaction(transactionId: String): List<ReceiptAttachmentMeta> =
+        dao.metadataListForTransaction(transactionId).map { it.toDomain() }
+
     override suspend fun metadataForTransaction(transactionId: String): ReceiptAttachmentMeta? =
         dao.metadataForTransaction(transactionId)?.toDomain()
+
+    override suspend fun delete(id: String) {
+        dao.delete(id)
+    }
 
     override suspend fun deleteForTransaction(transactionId: String) {
         dao.deleteForTransaction(transactionId)

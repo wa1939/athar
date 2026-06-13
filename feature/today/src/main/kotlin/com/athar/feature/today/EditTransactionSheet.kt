@@ -55,6 +55,7 @@ import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.ReceiptAttachmentRepository
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -83,7 +84,7 @@ data class EditTransactionState(
     val selectedCategoryId: String?,
     val expenseCategories: ImmutableList<Category>,
     val incomeCategories: ImmutableList<Category>,
-    val receiptMeta: ReceiptAttachmentMeta?,
+    val receiptMetas: ImmutableList<ReceiptAttachmentMeta>,
     val receiptPreview: ReceiptAttachment?,
     val isReceiptWorking: Boolean,
     val receiptStatus: EditReceiptStatus?,
@@ -92,7 +93,7 @@ data class EditTransactionState(
         get() = when (type) {
             TxType.INCOME -> incomeCategories
             TxType.EXPENSE -> expenseCategories
-            TxType.TRANSFER -> kotlinx.collections.immutable.persistentListOf()
+            TxType.TRANSFER -> persistentListOf()
         }
 
     val categoryChanged: Boolean
@@ -135,15 +136,15 @@ class EditTransactionViewModel @Inject constructor(
             notes = tx.notes.orEmpty(),
             type = tx.type,
             selectedCategoryId = tx.categoryId,
-            expenseCategories = kotlinx.collections.immutable.persistentListOf(),
-            incomeCategories = kotlinx.collections.immutable.persistentListOf(),
-            receiptMeta = null,
+            expenseCategories = persistentListOf(),
+            incomeCategories = persistentListOf(),
+            receiptMetas = persistentListOf(),
             receiptPreview = null,
             isReceiptWorking = false,
             receiptStatus = null,
         )
         loadJob = viewModelScope.launch {
-            refreshReceiptMeta(tx.id, clearStatus = true)
+            refreshReceiptMetas(tx.id, clearStatus = true)
             categories.observeAll().collect { all ->
                 val expense = all.filter { it.kind == CategoryKind.EXPENSE }.toImmutableList()
                 val income = all.filter { it.kind == CategoryKind.INCOME }.toImmutableList()
@@ -158,12 +159,12 @@ class EditTransactionViewModel @Inject constructor(
     fun setType(t: TxType) = _state.update { it?.copy(type = t, selectedCategoryId = null) }
     fun selectCategory(id: String) = _state.update { it?.copy(selectedCategoryId = id) }
 
-    fun openReceiptViewer() {
+    fun openReceiptViewer(receiptId: String) {
         val txId = _state.value?.original?.id ?: return
         viewModelScope.launch {
             _state.update { it?.copy(isReceiptWorking = true, receiptStatus = null) }
             val result = runCatching {
-                receipts.getForTransaction(txId)
+                receipts.get(receiptId)
             }
             _state.update { state ->
                 if (state?.original?.id != txId) {
@@ -174,7 +175,7 @@ class EditTransactionViewModel @Inject constructor(
                         state.copy(isReceiptWorking = false, receiptStatus = EditReceiptStatus.ViewFailed)
                     } else {
                         state.copy(
-                            receiptMeta = receipt.toMeta(),
+                            receiptMetas = mergeReceiptMeta(state.receiptMetas, receipt.toMeta()),
                             receiptPreview = receipt,
                             isReceiptWorking = false,
                             receiptStatus = null,
@@ -189,13 +190,13 @@ class EditTransactionViewModel @Inject constructor(
         _state.update { it?.copy(receiptPreview = null) }
     }
 
-    fun exportReceipt(resolver: ContentResolver, uri: Uri) {
+    fun exportReceipt(receiptId: String, resolver: ContentResolver, uri: Uri) {
         val txId = _state.value?.original?.id ?: return
         viewModelScope.launch {
             _state.update { it?.copy(isReceiptWorking = true, receiptStatus = null) }
             val result = runCatching {
                 withContext(Dispatchers.IO) {
-                    val receipt = receipts.getForTransaction(txId) ?: error("Receipt missing")
+                    val receipt = receipts.get(receiptId) ?: error("Receipt missing")
                     resolver.openOutputStream(uri)?.use { out ->
                         out.write(receipt.payload)
                     } ?: error("Receipt destination unavailable")
@@ -209,7 +210,7 @@ class EditTransactionViewModel @Inject constructor(
                     result.fold(
                         onSuccess = { receipt ->
                             state.copy(
-                                receiptMeta = receipt.toMeta(),
+                                receiptMetas = mergeReceiptMeta(state.receiptMetas, receipt.toMeta()),
                                 isReceiptWorking = false,
                                 receiptStatus = EditReceiptStatus.Exported,
                             )
@@ -226,20 +227,20 @@ class EditTransactionViewModel @Inject constructor(
         }
     }
 
-    fun deleteReceipt() {
+    fun deleteReceipt(receiptId: String) {
         val txId = _state.value?.original?.id ?: return
         viewModelScope.launch {
             _state.update { it?.copy(isReceiptWorking = true, receiptStatus = null) }
             val result = runCatching {
-                receipts.deleteForTransaction(txId)
+                receipts.delete(receiptId)
             }
             _state.update { state ->
                 if (state?.original?.id != txId) {
                     state
                 } else if (result.isSuccess) {
                     state.copy(
-                        receiptMeta = null,
-                        receiptPreview = null,
+                        receiptMetas = state.receiptMetas.filterNot { it.id == receiptId }.toImmutableList(),
+                        receiptPreview = state.receiptPreview?.takeUnless { it.id == receiptId },
                         isReceiptWorking = false,
                         receiptStatus = EditReceiptStatus.Deleted,
                     )
@@ -257,15 +258,17 @@ class EditTransactionViewModel @Inject constructor(
         _state.update { it?.copy(receiptStatus = null) }
     }
 
-    private suspend fun refreshReceiptMeta(transactionId: String, clearStatus: Boolean) {
-        val meta = runCatching {
-            receipts.metadataForTransaction(transactionId)
-        }.getOrNull()
+    private suspend fun refreshReceiptMetas(transactionId: String, clearStatus: Boolean) {
+        val metas = runCatching {
+            receipts.metadataListForTransaction(transactionId).toImmutableList()
+        }.getOrDefault(persistentListOf())
         _state.update { state ->
             if (state?.original?.id == transactionId) {
                 state.copy(
-                    receiptMeta = meta,
-                    receiptPreview = if (meta == null) null else state.receiptPreview,
+                    receiptMetas = metas,
+                    receiptPreview = state.receiptPreview?.takeIf { preview ->
+                        metas.any { it.id == preview.id }
+                    },
                     receiptStatus = if (clearStatus) null else state.receiptStatus,
                 )
             } else {
@@ -273,6 +276,14 @@ class EditTransactionViewModel @Inject constructor(
             }
         }
     }
+
+    private fun mergeReceiptMeta(
+        current: ImmutableList<ReceiptAttachmentMeta>,
+        updated: ReceiptAttachmentMeta,
+    ): ImmutableList<ReceiptAttachmentMeta> =
+        (current.filterNot { it.id == updated.id } + updated)
+            .sortedByDescending { it.createdAt }
+            .toImmutableList()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -288,8 +299,13 @@ fun EditTransactionSheet(
     val theme = AtharTheme
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var pendingLearn by remember { mutableStateOf<EditTransactionState?>(null) }
+    var pendingReceiptExport by remember { mutableStateOf<ReceiptAttachmentMeta?>(null) }
     val receiptExportLauncher = rememberLauncherForActivityResult(CreateDocument("image/*")) { uri ->
-        uri?.let { viewModel.exportReceipt(context.contentResolver, it) }
+        val meta = pendingReceiptExport
+        if (uri != null && meta != null) {
+            viewModel.exportReceipt(meta.id, context.contentResolver, uri)
+        }
+        pendingReceiptExport = null
     }
 
     LaunchedEffect(transaction.id) { viewModel.load(transaction) }
@@ -362,12 +378,13 @@ fun EditTransactionSheet(
             )
 
             EditReceiptRow(
-                meta = s.receiptMeta,
+                metas = s.receiptMetas,
                 isWorking = s.isReceiptWorking,
                 status = s.receiptStatus,
                 onView = viewModel::openReceiptViewer,
-                onExport = {
-                    s.receiptMeta?.let { receiptExportLauncher.launch(receiptExportFileName(it)) }
+                onExport = { meta ->
+                    pendingReceiptExport = meta
+                    receiptExportLauncher.launch(receiptExportFileName(meta))
                 },
                 onDelete = viewModel::deleteReceipt,
                 onClearStatus = viewModel::clearReceiptStatus,
@@ -435,7 +452,9 @@ fun EditTransactionSheet(
             receipt = receipt,
             onDismiss = viewModel::dismissReceiptViewer,
             onExport = {
-                receiptExportLauncher.launch(receiptExportFileName(receipt.toMeta()))
+                val meta = receipt.toMeta()
+                pendingReceiptExport = meta
+                receiptExportLauncher.launch(receiptExportFileName(meta))
             },
         )
     }
@@ -460,12 +479,12 @@ private fun commit(
 
 @Composable
 private fun EditReceiptRow(
-    meta: ReceiptAttachmentMeta?,
+    metas: List<ReceiptAttachmentMeta>,
     isWorking: Boolean,
     status: EditReceiptStatus?,
-    onView: () -> Unit,
-    onExport: () -> Unit,
-    onDelete: () -> Unit,
+    onView: (String) -> Unit,
+    onExport: (ReceiptAttachmentMeta) -> Unit,
+    onDelete: (String) -> Unit,
     onClearStatus: () -> Unit,
 ) {
     val theme = AtharTheme
@@ -477,11 +496,7 @@ private fun EditReceiptRow(
         )
         val statusText = when {
             isWorking -> stringResource(R.string.add_tx_receipt_loading)
-            meta != null -> stringResource(
-                R.string.add_tx_receipt_attached,
-                meta.originalName ?: receiptExportFileName(meta),
-                formatReceiptSize(meta.sizeBytes),
-            )
+            metas.isNotEmpty() -> stringResource(R.string.add_tx_receipt_count, metas.size)
             else -> stringResource(R.string.edit_tx_receipt_missing)
         }
         Box(
@@ -496,11 +511,31 @@ private fun EditReceiptRow(
             AtharText(
                 text = statusText,
                 style = theme.typography.caption,
-                color = if (meta == null) theme.colors.muted else theme.colors.ink,
+                color = if (metas.isEmpty()) theme.colors.muted else theme.colors.ink,
                 maxLines = 1,
             )
         }
-        if (meta != null) {
+        metas.forEach { meta ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = MinTouchTarget)
+                    .clip(RoundedCornerShape(theme.spacing.s))
+                    .background(theme.colors.surface)
+                    .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                AtharText(
+                    text = stringResource(
+                        R.string.add_tx_receipt_attached,
+                        meta.originalName ?: receiptExportFileName(meta),
+                        formatReceiptSize(meta.sizeBytes),
+                    ),
+                    style = theme.typography.caption,
+                    color = theme.colors.ink,
+                    maxLines = 1,
+                )
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
@@ -508,19 +543,19 @@ private fun EditReceiptRow(
                 ReceiptActionButton(
                     text = stringResource(R.string.edit_tx_receipt_view),
                     enabled = !isWorking,
-                    onClick = onView,
+                    onClick = { onView(meta.id) },
                     modifier = Modifier.weight(1f),
                 )
                 ReceiptActionButton(
                     text = stringResource(R.string.edit_tx_receipt_export),
                     enabled = !isWorking,
-                    onClick = onExport,
+                    onClick = { onExport(meta) },
                     modifier = Modifier.weight(1f),
                 )
                 ReceiptActionButton(
                     text = stringResource(R.string.add_tx_receipt_remove),
                     enabled = !isWorking,
-                    onClick = onDelete,
+                    onClick = { onDelete(meta.id) },
                     modifier = Modifier.weight(1f),
                 )
             }

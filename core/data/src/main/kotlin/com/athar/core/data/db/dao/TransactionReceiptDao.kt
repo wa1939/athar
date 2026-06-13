@@ -13,6 +13,12 @@ internal interface TransactionReceiptDao {
     @Query("SELECT * FROM transaction_receipt WHERE transactionId = :transactionId LIMIT 1")
     suspend fun getForTransaction(transactionId: String): TransactionReceiptEntity?
 
+    @Query("SELECT * FROM transaction_receipt WHERE id = :id LIMIT 1")
+    suspend fun get(id: String): TransactionReceiptEntity?
+
+    @Query("SELECT * FROM transaction_receipt WHERE transactionId = :transactionId ORDER BY createdAt DESC")
+    suspend fun listForTransaction(transactionId: String): List<TransactionReceiptEntity>
+
     @Query(
         """
         SELECT id, transactionId, mimeType, originalName, sizeBytes, createdAt
@@ -23,11 +29,24 @@ internal interface TransactionReceiptDao {
     )
     suspend fun metadataForTransaction(transactionId: String): TransactionReceiptMetaRow?
 
+    @Query(
+        """
+        SELECT id, transactionId, mimeType, originalName, sizeBytes, createdAt
+        FROM transaction_receipt
+        WHERE transactionId = :transactionId
+        ORDER BY createdAt DESC
+        """,
+    )
+    suspend fun metadataListForTransaction(transactionId: String): List<TransactionReceiptMetaRow>
+
     @Query("SELECT * FROM transaction_receipt ORDER BY createdAt DESC")
     suspend fun all(): List<TransactionReceiptEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: TransactionReceiptEntity)
+
+    @Query("DELETE FROM transaction_receipt WHERE id = :id")
+    suspend fun delete(id: String)
 
     @Query("DELETE FROM transaction_receipt WHERE transactionId = :transactionId")
     suspend fun deleteForTransaction(transactionId: String)

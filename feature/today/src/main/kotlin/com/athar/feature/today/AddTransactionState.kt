@@ -18,8 +18,7 @@ data class AddTransactionState(
     val merchantSuggestions: ImmutableList<ManualEntrySuggestion>,
     val quickEntry: String,
     val quickEntryError: QuickEntryError?,
-    val receiptName: String?,
-    val receiptSizeBytes: Long?,
+    val receipts: ImmutableList<PendingReceiptUi>,
     val isReceiptLoading: Boolean,
     val receiptError: ReceiptAttachmentError?,
     val isSaving: Boolean,
@@ -55,8 +54,7 @@ data class AddTransactionState(
             merchantSuggestions = persistentListOf(),
             quickEntry = "",
             quickEntryError = null,
-            receiptName = null,
-            receiptSizeBytes = null,
+            receipts = persistentListOf(),
             isReceiptLoading = false,
             receiptError = null,
             isSaving = false,
@@ -67,6 +65,12 @@ data class AddTransactionState(
         private const val AUTOCOMPLETE_LIMIT = 8
     }
 }
+
+data class PendingReceiptUi(
+    val id: String,
+    val name: String,
+    val sizeBytes: Long,
+)
 
 enum class ValidationError {
     AMOUNT_REQUIRED,
@@ -95,7 +99,7 @@ sealed interface AddTransactionEvent {
     data object ApplyQuickEntry : AddTransactionEvent
     data class ApplyVoiceTranscript(val value: String) : AddTransactionEvent
     data object VoiceUnavailable : AddTransactionEvent
-    data object RemoveReceipt : AddTransactionEvent
+    data class RemoveReceipt(val id: String) : AddTransactionEvent
     data class SetType(val type: TxType) : AddTransactionEvent
     data class SetDate(val date: LocalDate) : AddTransactionEvent
     data class SelectCategory(val categoryId: String) : AddTransactionEvent

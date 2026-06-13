@@ -55,7 +55,7 @@ class AddTransactionViewModel @Inject constructor(
     private val _events = MutableSharedFlow<AddTransactionResult>(extraBufferCapacity = 1)
     val events: SharedFlow<AddTransactionResult> = _events.asSharedFlow()
 
-    private var pendingReceipt: PendingReceipt? = null
+    private var pendingReceipts: List<PendingReceipt> = emptyList()
 
     init {
         viewModelScope.launch {
@@ -91,12 +91,11 @@ class AddTransactionViewModel @Inject constructor(
             AddTransactionEvent.VoiceUnavailable -> _state.update {
                 it.copy(quickEntryError = QuickEntryError.VOICE_UNAVAILABLE)
             }
-            AddTransactionEvent.RemoveReceipt -> {
-                pendingReceipt = null
+            is AddTransactionEvent.RemoveReceipt -> {
+                pendingReceipts = pendingReceipts.filterNot { it.id == event.id }
                 _state.update {
                     it.copy(
-                        receiptName = null,
-                        receiptSizeBytes = null,
+                        receipts = it.receipts.filterNot { receipt -> receipt.id == event.id }.toImmutableList(),
                         isReceiptLoading = false,
                         receiptError = null,
                     )
@@ -129,11 +128,10 @@ class AddTransactionViewModel @Inject constructor(
                 withContext(Dispatchers.IO) { readReceipt(resolver, uri) }
             }
             result.onSuccess { receipt ->
-                pendingReceipt = receipt
+                pendingReceipts = pendingReceipts + receipt
                 _state.update {
                     it.copy(
-                        receiptName = receipt.originalName ?: RECEIPT_FALLBACK_NAME,
-                        receiptSizeBytes = receipt.bytes.size.toLong(),
+                        receipts = (it.receipts + receipt.toUi()).toImmutableList(),
                         isReceiptLoading = false,
                         receiptError = null,
                     )
@@ -180,13 +178,13 @@ class AddTransactionViewModel @Inject constructor(
                 createdAt = now,
                 updatedAt = now,
             )
-            val receipt = pendingReceipt
+            val receiptsToSave = pendingReceipts
             val result = runCatching {
                 transactions.upsert(tx)
-                if (receipt != null) {
+                receiptsToSave.forEach { receipt ->
                     receipts.upsert(
                         ReceiptAttachment(
-                            id = UUID.randomUUID().toString(),
+                            id = receipt.id,
                             transactionId = txId,
                             mimeType = receipt.mimeType,
                             originalName = receipt.originalName,
@@ -198,7 +196,7 @@ class AddTransactionViewModel @Inject constructor(
                 }
             }
             result.onSuccess {
-                pendingReceipt = null
+                pendingReceipts = emptyList()
                 _events.tryEmit(AddTransactionResult.Saved)
                 _state.update {
                     AddTransactionState.initial(today()).copy(
@@ -233,11 +231,18 @@ class AddTransactionViewModel @Inject constructor(
             ?: throw ReceiptReadFailure(ReceiptAttachmentError.READ_FAILED)
         if (bytes.isEmpty()) throw ReceiptReadFailure(ReceiptAttachmentError.READ_FAILED)
         return PendingReceipt(
+            id = UUID.randomUUID().toString(),
             bytes = bytes,
             mimeType = mimeType,
             originalName = queryDisplayName(resolver, uri),
         )
     }
+
+    private fun PendingReceipt.toUi(): PendingReceiptUi = PendingReceiptUi(
+        id = id,
+        name = originalName ?: RECEIPT_FALLBACK_NAME,
+        sizeBytes = bytes.size.toLong(),
+    )
 
     private fun InputStream.readReceiptBytes(): ByteArray {
         val out = ByteArrayOutputStream()
@@ -264,6 +269,7 @@ class AddTransactionViewModel @Inject constructor(
     private class ReceiptReadFailure(val error: ReceiptAttachmentError) : RuntimeException()
 
     private data class PendingReceipt(
+        val id: String,
         val bytes: ByteArray,
         val mimeType: String,
         val originalName: String?,

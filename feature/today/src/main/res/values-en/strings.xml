@@ -108,10 +108,11 @@
     <string name="add_tx_label_category">Category</string>
     <string name="add_tx_error_category_required">Pick a category</string>
     <string name="add_tx_label_notes">Notes</string>
-    <string name="add_tx_receipt_title">Receipt</string>
+    <string name="add_tx_receipt_title">Receipts</string>
     <string name="add_tx_receipt_empty">No receipt</string>
     <string name="add_tx_receipt_loading">Importing…</string>
     <string name="add_tx_receipt_attached" formatted="true">%1$s · %2$s</string>
+    <string name="add_tx_receipt_count" formatted="true">%1$d receipts attached</string>
     <string name="add_tx_receipt_attach">Attach</string>
     <string name="add_tx_receipt_change">Change</string>
     <string name="add_tx_receipt_remove">Remove</string>
