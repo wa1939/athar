@@ -25,11 +25,11 @@ class GenericBankNotificationTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val expenseWords = Regex(
-        """\b(?:spent|purchase|paid|payment|debit|charged|card\s+purchase|withdrawal|pos|خصم|شراء|دفع|سحب)\b""",
+        """\b(?:spent|purchase|paid|payment|debit|debited|charged|card\s+purchase|withdrawal|pos|خصم|شراء|دفع|سحب)\b""",
         RegexOption.IGNORE_CASE,
     )
     private val expensePhrases = Regex(
-        """\b(?:card\s+(?:ending\s+\d{2,4}\s+)?(?:was\s+)?used|card\s+payment|card\s+transaction|card\s+charge|debit\s+card\s+transaction|direct\s+debit|payment\s+to|transaction\s+at|transaction\s+with|purchase\s+from|charged\s+(?:your\s+card|you))\b""",
+        """\b(?:card\s+(?:ending\s+\d{2,4}\s+)?(?:was\s+)?used|card\s+payment|card\s+transaction|card\s+charge|debit\s+card\s+transaction|direct\s+debit|payment\s+to|transaction\s+at|transaction\s+with|new\s+(?:card\s+)?transaction|purchase\s+from|charged\s+(?:your\s+card|you))\b""",
         RegexOption.IGNORE_CASE,
     )
     private val incomeWords = Regex(
@@ -37,7 +37,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val incomePhrases = Regex(
-        """\b(?:paid\s+you|sent\s+you|got\s+paid|was\s+paid|were\s+paid|payment\s+from|direct\s+deposit|direct\s+credit|ach\s+credit|credit\s+from|money\s+received)\b""",
+        """\b(?:paid\s+you|sent\s+you|got\s+paid|was\s+paid|were\s+paid|payment\s+from|direct\s+deposit|direct\s+credit|ach\s+credit|credit\s+(?:of|from)|money\s+received|money\s+added|cash\s+in)\b""",
         RegexOption.IGNORE_CASE,
     )
     private val transferWords = Regex(
@@ -77,7 +77,11 @@ class GenericBankNotificationTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val atHint = Regex(
-        """(?:\bat\b|\bwith\b|لدى|عند)\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\bat\b|\bwith\b|\bon\b|لدى|عند|في)\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
+    )
+    private val forHint = Regex(
+        """(?:\bfor\b|مقابل|عن)\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val toHint = Regex(
@@ -134,6 +138,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             TxType.EXPENSE -> cleanParty(toHint.find(normalized)?.groupValues?.get(1)
                 ?: atHint.find(normalized)?.groupValues?.get(1)
                 ?: byHint.find(normalized)?.groupValues?.get(1)
+                ?: forHint.find(normalized)?.groupValues?.get(1)
                 ?: fromHint.find(normalized)?.groupValues?.get(1))
                 ?: partyBeforeAmount(normalized, amountMatch)
             TxType.INCOME -> null
@@ -177,7 +182,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         incomeWords.containsMatchIn(body) || incomePhrases.containsMatchIn(body)
 
     private fun hasMerchantHint(body: String): Boolean =
-        atHint.containsMatchIn(body) || toHint.containsMatchIn(body) || fromHint.containsMatchIn(body)
+        atHint.containsMatchIn(body) ||
+            toHint.containsMatchIn(body) ||
+            fromHint.containsMatchIn(body) ||
+            forHint.containsMatchIn(body)
 
     private fun MatchResult.hasCurrency(): Boolean =
         groups["lead"]?.value?.isNotBlank() == true || groups["trail"]?.value?.isNotBlank() == true
@@ -190,6 +198,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             .orEmpty()
             .trim()
         val patterns = listOf(
+            Regex("""\b(?:new\s+(?:card\s+)?transaction|transaction)\s*[:\-]\s*(.+)$""", RegexOption.IGNORE_CASE),
             Regex("""\b(?:you\s+)?paid\s+(.+)$""", RegexOption.IGNORE_CASE),
             Regex("""^(?!your\s+card\b)(.+?)\s+charged(?:\s+(?:your\s+card|you|card))?$""", RegexOption.IGNORE_CASE),
             Regex(

@@ -270,6 +270,66 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses paid-for merchant after amount notification`() {
+        val result = parser.parse(
+            event("notification:com.monzo", "You paid $9.99 for Netflix"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("9.99"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Netflix")
+    }
+
+    @Test
+    fun `parses on merchant hint notification`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Debit of USD 23.10 on Trader Joe's"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("23.10"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Trader Joe's")
+    }
+
+    @Test
+    fun `parses new transaction merchant before amount notification`() {
+        val result = parser.parse(
+            event("notification:com.transferwise.android", "New transaction: Starbucks SGD 6.40"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("6.40"))
+        assertThat(result.amount.currency).isEqualTo("SGD")
+        assertThat(result.merchant).isEqualTo("Starbucks")
+    }
+
+    @Test
+    fun `parses Arabic fi merchant hint notification`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم خصم ٣٥٫٥٠ ر.س في كارفور"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("35.50"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("كارفور")
+    }
+
+    @Test
+    fun `parses credit-of income notification`() {
+        val result = parser.parse(
+            event("notification:com.mercury", "Credit of USD 250.00 from ACME Payroll"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("250.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.counterparty).isEqualTo("ACME Payroll")
+    }
+
+    @Test
     fun `strips wallet suffix from paid-to merchant notification`() {
         val result = parser.parse(
             event("notification:com.usbank.mobilebanking", "You paid $9.99 to Apple Services with Apple Pay"),
