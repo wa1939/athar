@@ -119,6 +119,10 @@ fun SettingsScreen(
     val taxExportLauncher = rememberLauncherForActivityResult(CreateDocument("application/pdf")) { uri ->
         if (uri != null) viewModel.exportTaxReport(context.contentResolver, uri, taxYear)
     }
+    val supportDiagnosticsLauncher = rememberLauncherForActivityResult(CreateDocument("application/json")) { uri ->
+        if (uri != null) viewModel.exportSupportDiagnostics(context.contentResolver, uri)
+    }
+    val supportDiagnosticsStatus by viewModel.supportDiagnosticsStatus.collectAsStateWithLifecycle()
 
     Box(
         modifier = modifier
@@ -215,6 +219,12 @@ fun SettingsScreen(
                     }
                 },
                 onClear = viewModel::clearCommunityShareStatus,
+            )
+
+            SupportDiagnosticsCard(
+                status = supportDiagnosticsStatus,
+                onExport = { supportDiagnosticsLauncher.launch("athar-support-diagnostics.json") },
+                onClear = viewModel::clearSupportDiagnosticsStatus,
             )
 
             DisplayCurrencyCard(
@@ -433,6 +443,64 @@ private fun CommunityRulesShareCard(
                     onClick = { if (!isWorking) onExport() },
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun SupportDiagnosticsCard(
+    status: SupportDiagnosticsStatus,
+    onExport: () -> Unit,
+    onClear: () -> Unit,
+) {
+    val theme = AtharTheme
+    AtharCard {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = stringResource(R.string.settings_support_diagnostics_title), style = theme.typography.headline)
+            AtharText(
+                text = stringResource(R.string.settings_support_diagnostics_body),
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
+            when (val s = status) {
+                SupportDiagnosticsStatus.Idle -> Unit
+                SupportDiagnosticsStatus.Working -> AtharText(
+                    text = stringResource(R.string.settings_status_working),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+                is SupportDiagnosticsStatus.Exported -> {
+                    AtharText(
+                        text = stringResource(
+                            R.string.settings_support_diagnostics_exported,
+                            s.auditRows,
+                            s.parsed,
+                            s.failed,
+                            s.ignored,
+                        ),
+                        style = theme.typography.caption,
+                        color = theme.colors.olive,
+                    )
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
+                }
+                is SupportDiagnosticsStatus.Failed -> {
+                    AtharText(text = s.reason, style = theme.typography.caption, color = theme.colors.crimson)
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
+                }
+            }
+            val isWorking = status is SupportDiagnosticsStatus.Working
+            PrimaryButton(
+                text = if (isWorking) {
+                    stringResource(R.string.settings_status_in_progress)
+                } else {
+                    stringResource(R.string.settings_support_diagnostics_action_export)
+                },
+                onClick = { if (!isWorking) onExport() },
+            )
         }
     }
 }

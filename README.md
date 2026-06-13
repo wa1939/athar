@@ -105,6 +105,7 @@ Other tools force a trade-off:
 - ✅ **Annual accountant/tax PDF export** — pick a year in Settings and export income/expense totals, category totals, and the confirmed transaction list
 - ✅ **SQLCipher** database encryption at rest, key wrapped via Android Keystore
 - ✅ **SMS audit log** — every parsed/failed/ignored SMS retained, never deleted
+- ✅ **Support diagnostics export** — Settings writes a redacted JSON report with SMS parse counts, pseudonymous sender hashes, body-shape fingerprints/flags, failed-template groups, and redacted parser errors. No raw SMS body, sender, balance, card, or account numbers are included
 - ✅ **Activity log** — every transaction edit, with timestamp
 - ✅ **All transactions history (H-01, beta.12)** — searchable list of every transaction across all time, filter chips for status (All / Confirmed / Pending / Dismissed) and type (Expenses / Income / Transfers), tap any row to edit category or delete. Reachable from Settings → "All transactions"
 - ✅ **Recover dismissed (beta.15)** — one-tap action moves every DISMISSED transaction back to PENDING so users on older builds can recover what was hidden by the now-removed auto-dismiss policy
@@ -119,6 +120,8 @@ Other tools force a trade-off:
 - ✅ **Reconcile to bank balance (beta.19)** — per-account "تسوية / Reconcile" chip. Enter your bank's actual balance; Athar inserts one manual adjustment transaction so the running balance matches. No silent history rewrite, full audit trail
 - ✅ **Share your rules with the community (beta.20)** — Settings → "Help others · share your rules" exports only your "Always categorize X" merchant→category mappings as JSON, then opens a pre-filled GitHub issue. Maintainer reviews; accepted rules ship in the next release's seed for every user. Zero transaction data leaves your device
 - ✅ **Home-screen widgets (beta.21+)** — three Glance widgets: Month summary (net + Income/Expense/Net-worth pills), Today snapshot (today's net + pending count), and Pending list (top-3 pending transactions with Confirm / Dismiss / Categorize shortcuts). Long-press home screen → Widgets → Athar
+- ✅ **Support diagnostics export** — Settings → "Support diagnostics" creates `athar-support-diagnostics.json`, a bounded redacted parser report for maintainers. It includes counts, sender hashes, body-shape fingerprints/flags, failed-template groups, and redacted errors only — no raw SMS bodies, balances, or account/card numbers
+- ✅ **Home-screen widgets (beta.21)** — three Glance widgets: Month summary (net + Income/Expense/Net-worth pills), Today snapshot (today's net + pending count), and Pending list (top-3 pending transactions). Long-press home screen → Widgets → Athar
 - ✅ **Reconciliation no longer inflates expenses (beta.22)** — manual adjustment transactions (`تسوية يدوية`) still move net worth but are excluded from monthly spend/income totals, Trends bars, Plan actuals, and widget snapshots
 - ✅ **Update-availability nudge via Obtainium (beta.23)** — Settings → "تابع التحديثات / Stay up to date" hands off update-tracking to Obtainium via a deep link. Athar stays fully offline (no INTERNET permission); Obtainium watches the GitHub releases page and notifies you when a new build ships
 - ✅ **Recurring rules management** with "Run now" trigger + auto-detected suggestions

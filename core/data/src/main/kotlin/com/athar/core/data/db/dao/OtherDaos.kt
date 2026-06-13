@@ -130,6 +130,12 @@ internal interface SmsMessageDao {
     @Query("SELECT * FROM sms_message ORDER BY receivedAt DESC")
     suspend fun all(): List<SmsMessageEntity>
 
+    @Query("SELECT * FROM sms_message ORDER BY receivedAt DESC LIMIT :limit")
+    suspend fun recent(limit: Int): List<SmsMessageEntity>
+
+    @Query("SELECT parseStatus AS status, COUNT(*) AS count FROM sms_message GROUP BY parseStatus")
+    suspend fun statusCounts(): List<SmsStatusCount>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIgnoreOnDup(entity: SmsMessageEntity): Long
 
@@ -142,6 +148,11 @@ internal interface SmsMessageDao {
     @Query("DELETE FROM sms_message")
     suspend fun clear()
 }
+
+internal data class SmsStatusCount(
+    val status: String,
+    val count: Int,
+)
 
 @Dao
 internal interface RecurringRuleDao {

@@ -98,6 +98,12 @@
     <string name="settings_community_action_export">تصدير قواعدي</string>
     <string name="settings_community_action_open_issue">افتح صفحة GitHub</string>
 
+    <!-- Support diagnostics export -->
+    <string name="settings_support_diagnostics_title">تشخيص الدعم</string>
+    <string name="settings_support_diagnostics_body">صدّر تقرير JSON منقّحًا لمساعدة الدعم في تحسين قراءة الرسائل: أعداد الرسائل، بصمات مرسلين مجهولة، شكل نص الرسالة، مجموعات القوالب الفاشلة، وأخطاء منقّحة. لا يحتوي على نص الرسائل الخام أو الأرصدة أو أرقام البطاقات أو الحسابات.</string>
+    <string name="settings_support_diagnostics_exported" formatted="true">تم تصدير تشخيص %1$d رسالة (%2$d ناجحة · %3$d فاشلة · %4$d متجاهلة).</string>
+    <string name="settings_support_diagnostics_action_export">تصدير التشخيص</string>
+
     <!-- Bulk-categorize via AI (Issue #5a) -->
     <string name="settings_bulk_cat_title">تصنيف بالذكاء الاصطناعي · مجمّع</string>
     <string name="settings_bulk_cat_body">صدّر كل الحركات غير المصنّفة كملف CSV، اعطه لـ ChatGPT/Claude مع موجّه التصنيف، ثم استورد الملف المعبّأ. كل تصنيف يُحدّث الحركة ويضيف قاعدة تربط التاجر بالفئة حتى تستفيد الحركات القادمة تلقائياً.</string>

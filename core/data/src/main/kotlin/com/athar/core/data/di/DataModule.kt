@@ -30,6 +30,7 @@ import com.athar.core.data.prefs.UserPreferencesRepositoryImpl
 import com.athar.core.data.repo.TransactionRepositoryImpl
 import com.athar.core.data.repo.UserTemplateRepositoryImpl
 import com.athar.core.data.repo.WishlistRepositoryImpl
+import com.athar.core.data.support.SupportDiagnosticsExporter
 import com.athar.core.domain.repo.AccountRepository
 import com.athar.core.domain.repo.ActivityLogRepository
 import com.athar.core.domain.repo.BackupRepository
@@ -42,6 +43,7 @@ import com.athar.core.domain.repo.MerchantBulkExportTrigger
 import com.athar.core.domain.repo.MerchantBulkImportTrigger
 import com.athar.core.domain.repo.InvestmentRepository
 import com.athar.core.domain.repo.SmsAuditRepository
+import com.athar.core.domain.repo.SupportDiagnosticsExportTrigger
 import com.athar.core.domain.repo.TaxExportTrigger
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
@@ -183,6 +185,9 @@ internal abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindTaxExportTrigger(impl: TaxPdfExporter): TaxExportTrigger
+
+    @Binds @Singleton
+    abstract fun bindSupportDiagnosticsExportTrigger(impl: SupportDiagnosticsExporter): SupportDiagnosticsExportTrigger
 
     @Binds @Singleton
     abstract fun bindActivityLogRepository(impl: ActivityLogRepositoryImpl): ActivityLogRepository
