@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -119,6 +121,11 @@ private fun AddTransactionForm(
             supportingText = if (state.validationError == ValidationError.MERCHANT_REQUIRED) stringResource(R.string.add_tx_error_merchant_required) else null,
         )
 
+        SuggestionStrip(
+            suggestions = state.visibleMerchantSuggestions,
+            onSelect = { onEvent(AddTransactionEvent.ApplySuggestion(it)) },
+        )
+
         AtharText(
             text = if (state.validationError == ValidationError.CATEGORY_REQUIRED) stringResource(R.string.add_tx_error_category_required) else stringResource(R.string.add_tx_label_category),
             style = theme.typography.caption,
@@ -148,6 +155,60 @@ private fun AddTransactionForm(
             isSaving = state.isSaving,
             onClick = { onEvent(AddTransactionEvent.Save) },
         )
+    }
+}
+
+@Composable
+private fun SuggestionStrip(
+    suggestions: List<ManualEntrySuggestion>,
+    onSelect: (ManualEntrySuggestion) -> Unit,
+) {
+    if (suggestions.isEmpty()) return
+    val theme = AtharTheme
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        items(
+            items = suggestions,
+            key = { it.key },
+        ) { suggestion ->
+            SuggestionChip(
+                suggestion = suggestion,
+                onClick = { onSelect(suggestion) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SuggestionChip(
+    suggestion: ManualEntrySuggestion,
+    onClick: () -> Unit,
+) {
+    val theme = AtharTheme
+    Box(
+        modifier = Modifier
+            .heightIn(min = MinTouchTarget)
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(theme.colors.surface)
+            .clickable(onClick = onClick)
+            .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            AtharText(
+                text = suggestion.merchant,
+                style = theme.typography.body,
+                color = theme.colors.ink,
+            )
+            suggestion.amountInput?.let { amount ->
+                AtharText(
+                    text = amount,
+                    style = theme.typography.caption,
+                    color = if (suggestion.type == TxType.INCOME) theme.colors.olive else theme.colors.ember,
+                )
+            }
+        }
     }
 }
 

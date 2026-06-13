@@ -60,11 +60,11 @@ Below is the prioritized gap list, in delivery order.
 - Push notifications 2 days before each bill, on the bill day, and once if missed (per brief: no guilt-trip nags — single reminder, no streak shaming).
 
 ### G-8 — Manual transaction UX improvements
-**Status:** AddTransactionSheet exists but is barebones.
+**Status:** Partially shipped — recent merchants autocomplete + quick-add chips.
 **Gap:** Users without SMS need to enter every transaction by hand. Friction must be minimal.
 **Fix:**
-- Recent merchants autocomplete (top 20 by frequency).
-- Quick-add chips: "Coffee 25" → expense, restaurant category, current account.
+- Recent merchants autocomplete (top 20 by frequency). ✅
+- Quick-add chips: "Coffee 25" → expense, restaurant category. ✅
 - Receipt photo attachment (local-only, encrypted).
 - Voice entry ("Spent 50 on lunch at McDonalds").
 
@@ -160,6 +160,7 @@ Real-user testing on top of imported SMS history surfaced bugs and one architect
 | **beta.21** | **Three Glance home-screen widgets** — Athar · Month (3×2), Athar · Today (2×1), Athar · Pending (3×3). | User wanted home-screen widgets so they can see their numbers without opening the app. Glance (not RemoteViews) because Athar is 100% Compose — reuses Athar's parchment + ember palette directly. New `feature:widgets` module; new `WidgetDataLoader` with Hilt `@EntryPoint` since Glance widgets have no lifecycle owner. One-shot `Flow.first()` per snapshot since widgets re-render on each Glance composition (no long-lived subscriptions from widget code). Tap opens the app via `actionStartActivity(componentName)` resolved flavor-agnostically through `PackageManager`. Pending widget's in-place Confirm/Dismiss action buttons deferred to next release — needs HiltWorker + Hilt-WorkManager wiring that doubled the change footprint. System refreshes widgets at 30-min cadence (`updatePeriodMillis = 1800000`) to handle midnight rollover. | — |
 | **beta.22** | **Reconciliation no longer inflates expenses** — `Transaction.isReconciliation()` filter applied to Today, Trends, Plan, and widget aggregations. | A user reconciling a ~50k SAR balance gap was seeing the gap appear as a single 50k EXPENSE row, blowing up the monthly spend total to misleading numbers (e.g. −260,287 SAR). The transaction was correctly affecting net worth (the entire point) but was also being counted as real operating spend, which it is not. Industry pattern (YNAB calls them "Reconciliation Balance Adjustment", Mint "Adjust balance") is to exclude them from spend/income reports while still letting them drive the account balance. Detection uses the existing `sourceRefId = "reconcile-…"` sentinel that `AccountRepository.reconcile()` already set in beta.19 — no schema migration, just filter logic in 4 aggregation sites. Reconciliation transactions remain visible in History and per-account ledger so the audit trail is intact. | — |
 | **beta.23** | **Update-availability nudge via Obtainium delegation** — Settings → "تابع التحديثات / Stay up to date" card with **Add to Obtainium** (deep link `obtainium://app/{percent-encoded-json}` that pre-fills Athar's GitHub URL in the Obtainium "Add app" flow), **Install Obtainium** fallback (opens `obtainium.imranr.dev`), and **Releases page** (opens `github.com/wa1939/athar/releases`). | User asked how he and future users would know a new release dropped. Athar has no `INTERNET` permission — adding one to poll GitHub would broaden the trust surface and contradict Master Brief §2.2's offline-first commitment. Standard pattern in the privacy-respecting sideload ecosystem (F-Droid clients, Obtainium, FFUpdater): the update-tracker app polls feeds on the user's behalf in *its* process space. We hand off to Obtainium via a deep link. Fallback chain: `runCatching { startActivity(obtainium://...) }` → if `ActivityNotFoundException` (Obtainium not installed), show toast + open browser to install page. Verified end-to-end on emulator: tap → `START result code=-91` (no handler) → Toast window opened → Chrome launched to `obtainium.imranr.dev`. No new permissions; no new dependencies; no Athar-side polling. Update-checking responsibility lives in the sideload manager forever. | [ADR-009](adr/ADR-009-update-delivery-via-obtainium.md) |
+| **beta.24** | **G-8 manual entry quick-add** — Add Transaction now shows recent merchant chips that prefill merchant, amount when currency-safe, type, and category from the user's own confirmed history. | Non-SMS users and users with unsupported banks still need manual entry, so the add sheet must remember their routine transactions. Suggestions are built locally from confirmed, non-reconciliation rows, ranked by merchant frequency, filtered as the user types, and split by Expense/Income. No backend and no cloud prediction. Voice entry and receipt photos stay as the remaining G-8 follow-ups. | [G-08](specs/G-08-manual-entry-quick-add.md) |
 
 ### Known issue carried forward
 
@@ -185,7 +186,7 @@ The current Saudi-specialized features (SMS parser, AlRajhi/STC/D360/Barq templa
 | # | Feature | Effort | Why |
 |---|---|---|---|
 | 1 | G-7 bills calendar | 2 days | Recurring rules already exist; calendar view unlocks the value |
-| 2 | G-8 manual transaction UX | 2 days | Friction for non-Saudi users (no SMS) — autocomplete, quick-add chips |
+| 2 | G-8 manual transaction UX follow-ups | 1.5 days | Voice entry + local encrypted receipt photos; recent merchants/quick-add shipped in G-08 |
 | 3 | G-10 savings-rate goals | 2 days | TMOAP doesn't have it — clear differentiator + matches FIRE/financial-independence crowd |
 | 4 | G-11 broader notification handlers | 3 days | Play-Store eligibility for non-Saudi (Wise, Revolut, Chase, Mercury, etc.) |
 | 5 | G-5b residual seed/SMS strings | 0.5 day | Inject `@ApplicationContext` into `SmsIngestionPipeline` for new self-transfer transactions; convert seed account name to a sentinel resolved at render |

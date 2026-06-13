@@ -12,7 +12,6 @@ import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
-import kotlinx.coroutines.flow.first
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -21,6 +20,8 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -52,6 +53,13 @@ class AddTransactionViewModel @Inject constructor(
                 _state.update { it.copy(expenseCategories = expense, incomeCategories = income) }
             }
         }
+        viewModelScope.launch {
+            combine(transactions.observeAll(), prefs.displayCurrency()) { all, currency ->
+                ManualEntrySuggestionBuilder.build(all, displayCurrency = currency).toImmutableList()
+            }.collect { suggestions ->
+                _state.update { it.copy(merchantSuggestions = suggestions) }
+            }
+        }
     }
 
     fun onEvent(event: AddTransactionEvent) {
@@ -65,6 +73,15 @@ class AddTransactionViewModel @Inject constructor(
             is AddTransactionEvent.SetDate -> _state.update { it.copy(date = event.date) }
             is AddTransactionEvent.SelectCategory -> _state.update {
                 it.copy(selectedCategoryId = event.categoryId, validationError = null)
+            }
+            is AddTransactionEvent.ApplySuggestion -> _state.update {
+                it.copy(
+                    amount = event.suggestion.amountInput ?: it.amount,
+                    merchant = event.suggestion.merchant,
+                    type = event.suggestion.type,
+                    selectedCategoryId = event.suggestion.categoryId,
+                    validationError = null,
+                )
             }
             AddTransactionEvent.Save -> save()
         }
@@ -101,7 +118,13 @@ class AddTransactionViewModel @Inject constructor(
             )
             transactions.upsert(tx)
             _events.tryEmit(AddTransactionResult.Saved)
-            _state.update { AddTransactionState.initial(today()).copy(expenseCategories = s.expenseCategories, incomeCategories = s.incomeCategories) }
+            _state.update {
+                AddTransactionState.initial(today()).copy(
+                    expenseCategories = s.expenseCategories,
+                    incomeCategories = s.incomeCategories,
+                    merchantSuggestions = s.merchantSuggestions,
+                )
+            }
         }
     }
 
