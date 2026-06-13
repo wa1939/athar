@@ -68,14 +68,20 @@
     <string name="plan_wishlist_empty_text">No wishes yet.</string>
     <string name="plan_wishlist_empty_subtle">Add what you want to buy. We will tell you when it fits without strain.</string>
     <string name="plan_wishlist_saved_label">saved </string>
+    <string name="plan_wishlist_remaining_label">left </string>
+    <string name="plan_wishlist_required_monthly">needed/mo </string>
+    <string name="plan_wishlist_target_month" formatted="true">target · %1$s</string>
     <string name="plan_wishlist_status_now">Available now</string>
     <string name="plan_wishlist_status_wait_until" formatted="true">In %1$d months · %2$s</string>
     <string name="plan_wishlist_status_infeasible">Not feasible yet</string>
+    <string name="plan_wishlist_status_target_infeasible">Needs more capacity for target</string>
     <string name="plan_wishlist_editor_title_new">New wish</string>
     <string name="plan_wishlist_editor_title_edit">Edit wish</string>
     <string name="plan_wishlist_label_name">Name</string>
     <string name="plan_wishlist_label_cost">Cost</string>
     <string name="plan_wishlist_label_saved">Saved so far</string>
+    <string name="plan_wishlist_label_start_month">Plan starts</string>
+    <string name="plan_wishlist_label_desired_months">Desired months (optional)</string>
     <string name="plan_wishlist_label_notes">Notes</string>
     <string name="plan_wishlist_action_delete">Delete</string>
     <string name="plan_wishlist_action_save">Save</string>

@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.athar.core.common.money.Money
@@ -143,9 +144,33 @@ private fun WishlistRowView(row: WishlistRow, onClick: () -> Unit) {
                     style = theme.typography.caption,
                     color = statusColor(row),
                 )
+                if (row.targetMonth != null) {
+                    AtharText(
+                        text = stringResource(R.string.plan_wishlist_target_month, formatMonth(row.targetMonth)),
+                        style = theme.typography.caption,
+                        color = theme.colors.muted,
+                    )
+                }
+                row.monthlyRequired?.let { required ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        AtharText(
+                            text = stringResource(R.string.plan_wishlist_required_monthly),
+                            style = theme.typography.caption,
+                            color = if (row.targetFeasible == false) theme.colors.crimson else theme.colors.muted,
+                        )
+                        AtharNumber(
+                            money = required,
+                            color = if (row.targetFeasible == false) theme.colors.crimson else theme.colors.olive,
+                        )
+                    }
+                }
             }
             Column(horizontalAlignment = Alignment.End) {
                 AtharNumber(money = row.item.cost)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AtharText(text = stringResource(R.string.plan_wishlist_remaining_label), style = theme.typography.caption, color = theme.colors.muted)
+                    AtharNumber(money = row.remaining, color = theme.colors.ember)
+                }
                 if (!row.item.currentSaved.isZero()) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         AtharText(text = stringResource(R.string.plan_wishlist_saved_label), style = theme.typography.caption, color = theme.colors.muted)
@@ -175,7 +200,11 @@ private fun statusLabel(row: WishlistRow): String = when (val s = row.status) {
         row.monthsNeeded ?: 0,
         "${s.month.year}/${s.month.monthValue}",
     )
-    WishlistStatus.Infeasible -> stringResource(R.string.plan_wishlist_status_infeasible)
+    WishlistStatus.Infeasible -> if (row.targetMonth != null) {
+        stringResource(R.string.plan_wishlist_status_target_infeasible)
+    } else {
+        stringResource(R.string.plan_wishlist_status_infeasible)
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -191,6 +220,8 @@ private fun WishlistEditor(
     var name by remember(initial?.id) { mutableStateOf(initial?.name ?: "") }
     var cost by remember(initial?.id) { mutableStateOf(initial?.cost?.amount?.toPlainString() ?: "") }
     var saved by remember(initial?.id) { mutableStateOf(initial?.currentSaved?.amount?.toPlainString() ?: "0") }
+    var desiredMonths by remember(initial?.id) { mutableStateOf(initial?.desiredMonths?.toString().orEmpty()) }
+    var startMonth by remember(initial?.id) { mutableStateOf(initial?.startMonth ?: YearMonth.now()) }
     var notes by remember(initial?.id) { mutableStateOf(initial?.notes.orEmpty()) }
 
     ModalBottomSheet(
@@ -227,6 +258,50 @@ private fun WishlistEditor(
                 label = stringResource(R.string.plan_wishlist_label_saved),
                 modifier = Modifier.fillMaxWidth(),
             )
+            Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+                AtharText(
+                    text = stringResource(R.string.plan_wishlist_label_start_month),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    SheetButton(
+                        text = "-",
+                        background = theme.colors.divider,
+                        textColor = theme.colors.ink,
+                        onClick = { startMonth = startMonth.minusMonths(1) },
+                        modifier = Modifier.weight(0.7f),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(1.6f)
+                            .clip(RoundedCornerShape(theme.spacing.s))
+                            .background(theme.colors.divider)
+                            .padding(theme.spacing.m),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        AtharText(text = formatMonth(startMonth), style = theme.typography.headline)
+                    }
+                    SheetButton(
+                        text = "+",
+                        background = theme.colors.divider,
+                        textColor = theme.colors.ink,
+                        onClick = { startMonth = startMonth.plusMonths(1) },
+                        modifier = Modifier.weight(0.7f),
+                    )
+                }
+            }
+            AtharTextField(
+                value = desiredMonths,
+                onValueChange = { desiredMonths = it.filter(Char::isDigit).take(3) },
+                label = stringResource(R.string.plan_wishlist_label_desired_months),
+                modifier = Modifier.fillMaxWidth(),
+                keyboardType = KeyboardType.Number,
+            )
             AtharTextField(
                 value = notes,
                 onValueChange = { notes = it },
@@ -254,21 +329,26 @@ private fun WishlistEditor(
                     onClick = {
                         val parsedCost = runCatching { BigDecimal(cost) }.getOrNull()
                         val parsedSaved = runCatching { BigDecimal(saved) }.getOrNull() ?: BigDecimal.ZERO
-                        if (parsedCost != null && name.isNotBlank() && parsedCost.signum() > 0) {
+                        val parsedDesiredMonths = desiredMonths.trim().takeIf { it.isNotBlank() }?.toIntOrNull()
+                        val desiredMonthsIsValid = desiredMonths.isBlank() || parsedDesiredMonths?.let { it > 0 } == true
+                        if (parsedCost != null && name.isNotBlank() && parsedCost.signum() > 0 && desiredMonthsIsValid) {
+                            val safeSaved = if (parsedSaved.signum() < 0) BigDecimal.ZERO else parsedSaved
                             val base = initial ?: WishlistItem(
                                 id = UUID.randomUUID().toString(),
                                 name = name,
                                 cost = Money.of(parsedCost),
-                                currentSaved = Money.of(parsedSaved),
+                                currentSaved = Money.of(safeSaved),
                                 desiredMonths = null,
-                                startMonth = YearMonth.now(),
+                                startMonth = startMonth,
                                 notes = null,
                             )
                             onSave(
                                 base.copy(
                                     name = name.trim(),
                                     cost = Money.of(parsedCost),
-                                    currentSaved = Money.of(parsedSaved),
+                                    currentSaved = Money.of(safeSaved),
+                                    desiredMonths = parsedDesiredMonths,
+                                    startMonth = startMonth,
                                     notes = notes.takeIf { it.isNotBlank() },
                                 ),
                             )
@@ -280,6 +360,8 @@ private fun WishlistEditor(
         }
     }
 }
+
+private fun formatMonth(month: YearMonth): String = "${month.year}/${month.monthValue}"
 
 @Composable
 private fun SheetButton(

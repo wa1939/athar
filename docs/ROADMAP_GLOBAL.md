@@ -73,7 +73,7 @@ Below is the prioritized gap list, in delivery order.
 **How:** Three vertically-stacked `AtharMonthlyChartWithLines` instances on Trends — one each for income (olive bars), expenses (ember bars), and savings (ink bars). Each shows last-12-months with a dashed average line and (for expenses) a solid target line if the user has set one in Plan. Per-category drill-down on tap: opens a sheet with a 12-month bar mini-chart for that category alone + top-5 merchants. Pie charts remain banned per Master Brief §2.4 — `AtharProportionBar` is the categorical-breakdown component (horizontal stacked bar with segment labels).
 
 ### G-10 — Savings rate goals + emergency fund
-**Status:** Wishlist exists. No "savings rate" goal, no "emergency fund" goal.
+**Status:** Wishlist exists and now uses start-month + desired-horizon feasibility math. No "savings rate" goal, no "emergency fund" goal.
 **Gap:** A common budgeting practice is "I want to save 20% of my income" or "I want 6 months of expenses in emergency fund."
 **Fix:**
 - Plan → Goals tab (new): savings-rate target, emergency-fund target.

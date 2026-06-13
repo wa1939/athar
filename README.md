@@ -76,7 +76,7 @@ Other tools force a trade-off:
 #### Plan (الخطة)
 - ✅ **Budget targets** per category with variance pills (over/under)
 - ✅ **Editable monthly targets** — tap any row, type the number, save
-- ✅ **Wishlist** with savings-capacity math (NOW / WAIT until YYYY-MM / INFEASIBLE)
+- ✅ **Wishlist** with TMOAP-style savings-capacity math — start month, desired horizon, remaining amount, needed/month, and NOW / WAIT until YYYY-MM / INFEASIBLE status
 - ✅ **Family investments pool** with **percentage-based return entry**, proportional share %, delete pool/contributor
 - ✅ **Recurring transactions** — define rent / salary / Netflix / utilities once; rules materialize into PENDING transactions on their due date
 

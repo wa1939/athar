@@ -1,9 +1,12 @@
 package com.athar.core.domain.calc
 
 import com.athar.core.common.money.Money
+import com.athar.core.domain.model.WishlistItem
+import com.athar.core.domain.model.WishlistStatus
 import com.google.common.truth.Truth.assertThat
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.time.YearMonth
 
 class WishlistCalcTest {
 
@@ -73,4 +76,74 @@ class WishlistCalcTest {
         )
         assertThat(months).isEqualTo(2)
     }
+
+    @Test
+    fun `projection respects future start month`() {
+        val projection = WishlistCalc.project(
+            item = wish(
+                cost = Money.of("500"),
+                saved = Money.zero(),
+                startMonth = YearMonth.of(2026, 4),
+            ),
+            capacity = Money.of("100"),
+            currentMonth = YearMonth.of(2026, 1),
+        )
+
+        assertThat(projection.status).isEqualTo(WishlistStatus.WaitUntil(YearMonth.of(2026, 9)))
+        assertThat(projection.monthsNeeded).isEqualTo(8)
+        assertThat(projection.remaining.amount).isEqualTo(BigDecimal("500"))
+    }
+
+    @Test
+    fun `projection marks desired horizon infeasible when monthly requirement exceeds capacity`() {
+        val projection = WishlistCalc.project(
+            item = wish(
+                cost = Money.of("1200"),
+                saved = Money.zero(),
+                desiredMonths = 6,
+                startMonth = YearMonth.of(2026, 1),
+            ),
+            capacity = Money.of("100"),
+            currentMonth = YearMonth.of(2026, 1),
+        )
+
+        assertThat(projection.status).isEqualTo(WishlistStatus.Infeasible)
+        assertThat(projection.targetMonth).isEqualTo(YearMonth.of(2026, 7))
+        assertThat(projection.monthlyRequired!!.amount).isEqualTo(BigDecimal("200.00"))
+        assertThat(projection.targetFeasible).isFalse()
+    }
+
+    @Test
+    fun `projection accepts desired horizon when capacity reaches target month`() {
+        val projection = WishlistCalc.project(
+            item = wish(
+                cost = Money.of("600"),
+                saved = Money.of("100"),
+                desiredMonths = 5,
+                startMonth = YearMonth.of(2026, 1),
+            ),
+            capacity = Money.of("100"),
+            currentMonth = YearMonth.of(2026, 1),
+        )
+
+        assertThat(projection.status).isEqualTo(WishlistStatus.WaitUntil(YearMonth.of(2026, 6)))
+        assertThat(projection.monthsNeeded).isEqualTo(5)
+        assertThat(projection.monthlyRequired!!.amount).isEqualTo(BigDecimal("100.00"))
+        assertThat(projection.targetFeasible).isTrue()
+    }
+
+    private fun wish(
+        cost: Money,
+        saved: Money,
+        desiredMonths: Int? = null,
+        startMonth: YearMonth = YearMonth.of(2026, 1),
+    ): WishlistItem = WishlistItem(
+        id = "wish",
+        name = "Wish",
+        cost = cost,
+        currentSaved = saved,
+        desiredMonths = desiredMonths,
+        startMonth = startMonth,
+        notes = null,
+    )
 }
