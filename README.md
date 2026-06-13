@@ -116,7 +116,7 @@ Other tools force a trade-off:
 - ✅ **Home-screen widgets (beta.21)** — three Glance widgets: Month summary (net + Income/Expense/Net-worth pills), Today snapshot (today's net + pending count), and Pending list (top-3 pending transactions). Long-press home screen → Widgets → Athar
 - ✅ **Reconciliation no longer inflates expenses (beta.22)** — manual adjustment transactions (`تسوية يدوية`) still move net worth but are excluded from monthly spend/income totals, Trends bars, Plan actuals, and widget snapshots
 - ✅ **Update-availability nudge via Obtainium (beta.23)** — Settings → "تابع التحديثات / Stay up to date" hands off update-tracking to Obtainium via a deep link. Athar stays fully offline (no INTERNET permission); Obtainium watches the GitHub releases page and notifies you when a new build ships
-- ✅ **Recurring rules management** with "Run now" trigger + auto-detected suggestions
+- ✅ **Recurring rules management** with auto-detected suggestions, manual "Run now", and WorkManager auto-run so due subscriptions land in Pending without visiting Settings
 - ✅ Categories management (rename, archive, reorder, custom adds)
 
 ## Screenshots
@@ -308,7 +308,7 @@ Full gap analysis: [`docs/ROADMAP_GLOBAL.md`](docs/ROADMAP_GLOBAL.md).
 - ⏳ Paparazzi snapshot baselines (need to record on a real machine)
 - ⏳ Macrobenchmarks (need a device)
 - ⏳ Per-bank account routing (S-20)
-- ⏳ WorkManager auto-trigger for recurring rules (manual "Run now" works today)
+- ✅ WorkManager auto-trigger for recurring rules (manual "Run now" remains available)
 - ⏳ XLSX direct import (CSV path covers the migration today)
 
 ## Privacy
