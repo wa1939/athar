@@ -1,6 +1,8 @@
 package com.athar
 
 import android.app.Application
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
 import com.athar.core.data.AppDataInitializer
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -18,9 +20,15 @@ import java.util.Locale
 import javax.inject.Inject
 
 @HiltAndroidApp
-class AtharApplication : Application() {
+class AtharApplication : Application(), Configuration.Provider {
 
     @Inject lateinit var dataInitializer: AppDataInitializer
+    @Inject lateinit var workerFactory: HiltWorkerFactory
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
 
     private val initErrorHandler = CoroutineExceptionHandler { _, t ->
         Timber.e(t, "AppDataInitializer failed")
