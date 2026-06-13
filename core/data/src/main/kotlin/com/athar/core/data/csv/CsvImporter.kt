@@ -51,9 +51,13 @@ internal class CsvImporter @Inject constructor(
 
     private suspend fun buildPlan(input: InputStream): CsvPlanResult {
         val text = runCatching { input.bufferedReader().use { it.readText() } }
-            .getOrElse { return CsvPlanResult.Failed("Couldn't read CSV file: ${it.message}") }
+            .getOrElse { return CsvPlanResult.Failed("Couldn't read import file: ${it.message}") }
         val lines = text.lineSequence().filter { it.isNotBlank() }.toList()
-        if (lines.isEmpty()) return CsvPlanResult.Failed("Empty CSV file.")
+        if (lines.isEmpty()) return CsvPlanResult.Failed("Empty import file.")
+
+        if (StatementOfxMapper.looksLikeOfx(text)) {
+            return buildOfxPlan(text)
+        }
 
         val header = parseRow(lines[0])
         val columns = StatementCsvMapper.detect(header)
@@ -97,8 +101,64 @@ internal class CsvImporter @Inject constructor(
 
         return CsvPlanResult.Done(
             CsvImportPlan(
-                header = header,
-                columns = columns,
+                columns = detectedColumns(header, columns),
+                transactions = transactions,
+                skippedRows = skippedRows,
+            ),
+        )
+    }
+
+    private suspend fun buildOfxPlan(text: String): CsvPlanResult {
+        val parsed = when (val result = StatementOfxMapper.parse(text)) {
+            is StatementOfxParseResult.Done -> result
+            is StatementOfxParseResult.Failed -> return CsvPlanResult.Failed(result.reason)
+        }
+
+        val now = clock.now()
+        val transactions = parsed.rows.map { row ->
+            CsvPlanTransaction(
+                rowNumber = row.rowNumber,
+                transaction = Transaction(
+                    id = UUID.randomUUID().toString(),
+                    accountId = MANUAL_ACCOUNT_ID,
+                    type = row.type,
+                    amount = Money.of(row.amount, row.currency),
+                    date = row.date,
+                    occurredAt = null,
+                    merchant = row.merchant,
+                    merchantNormalized = row.merchant.lowercase().trim(),
+                    categoryId = null,
+                    notes = row.notes,
+                    source = IngestSource.IMPORT,
+                    sourceRefId = row.sourceRefId ?: "ofx-row-${row.rowNumber}",
+                    status = TxStatus.CONFIRMED,
+                    confidence = 1.0f,
+                    createdAt = now,
+                    updatedAt = now,
+                ),
+                categoryPreview = null,
+            )
+        }
+        val skippedRows = parsed.skippedRowNumbers.map { skippedRowNumber ->
+            CsvImportSkippedRow(
+                rowNumber = skippedRowNumber,
+                reason = "Unparseable OFX/QFX transaction",
+            )
+        }
+
+        return CsvPlanResult.Done(
+            CsvImportPlan(
+                columns = CsvImportDetectedColumns(
+                    date = "OFX DTPOSTED",
+                    merchant = "OFX NAME/MEMO",
+                    amount = "OFX TRNAMT",
+                    debit = null,
+                    credit = null,
+                    currency = "OFX CURDEF",
+                    category = null,
+                    type = "OFX TRNTYPE",
+                    notes = "OFX MEMO/FITID",
+                ),
                 transactions = transactions,
                 skippedRows = skippedRows,
             ),
@@ -148,17 +208,7 @@ internal class CsvImporter @Inject constructor(
     private fun CsvImportPlan.toPreview(): CsvImportPreview = CsvImportPreview(
         importable = transactions.size,
         skipped = skippedRows.size,
-        columns = CsvImportDetectedColumns(
-            date = headerName(header, columns.dateIdx),
-            merchant = headerName(header, columns.merchantIdx),
-            amount = columns.amountIdx?.let { headerName(header, it) },
-            debit = columns.debitIdx?.let { headerName(header, it) },
-            credit = columns.creditIdx?.let { headerName(header, it) },
-            currency = columns.currencyIdx?.let { headerName(header, it) },
-            category = columns.categoryIdx?.let { headerName(header, it) },
-            type = columns.typeIdx?.let { headerName(header, it) },
-            notes = columns.notesIdx?.let { headerName(header, it) },
-        ),
+        columns = columns,
         sampleRows = transactions.take(PREVIEW_ROW_LIMIT).map { row ->
             CsvImportPreviewRow(
                 rowNumber = row.rowNumber,
@@ -172,6 +222,19 @@ internal class CsvImporter @Inject constructor(
         },
         skippedRows = skippedRows.take(PREVIEW_ROW_LIMIT),
     )
+
+    private fun detectedColumns(header: List<String>, columns: StatementCsvColumns): CsvImportDetectedColumns =
+        CsvImportDetectedColumns(
+            date = headerName(header, columns.dateIdx),
+            merchant = headerName(header, columns.merchantIdx),
+            amount = columns.amountIdx?.let { headerName(header, it) },
+            debit = columns.debitIdx?.let { headerName(header, it) },
+            credit = columns.creditIdx?.let { headerName(header, it) },
+            currency = columns.currencyIdx?.let { headerName(header, it) },
+            category = columns.categoryIdx?.let { headerName(header, it) },
+            type = columns.typeIdx?.let { headerName(header, it) },
+            notes = columns.notesIdx?.let { headerName(header, it) },
+        )
 
     private fun headerName(header: List<String>, index: Int): String =
         header.getOrNull(index)?.takeIf { it.isNotBlank() } ?: "Column ${index + 1}"
@@ -204,8 +267,7 @@ internal class CsvImporter @Inject constructor(
     }
 
     private data class CsvImportPlan(
-        val header: List<String>,
-        val columns: StatementCsvColumns,
+        val columns: CsvImportDetectedColumns,
         val transactions: List<CsvPlanTransaction>,
         val skippedRows: List<CsvImportSkippedRow>,
     )

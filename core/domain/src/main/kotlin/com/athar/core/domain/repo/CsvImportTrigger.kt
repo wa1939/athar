@@ -3,7 +3,7 @@ package com.athar.core.domain.repo
 import java.io.InputStream
 
 /**
- * Parses a CSV file of transactions and bulk-inserts them as confirmed manual entries.
+ * Parses statement-style transaction files and bulk-inserts them as confirmed manual entries.
  *
  * Supported CSV columns (header row, case-insensitive, any order):
  *   - **date** — `YYYY-MM-DD`, `DD/MM/YYYY`, or `MM/DD/YYYY`
@@ -15,10 +15,18 @@ import java.io.InputStream
  *   - **type** — `EXPENSE` (default), `INCOME`, `TRANSFER`, or debit/credit synonyms
  *   - **notes** — optional
  *
+ * Supported OFX/QFX fields:
+ *   - `DTPOSTED` / `DTUSER` — transaction date
+ *   - `TRNAMT` — signed amount; negative imports as expense unless `TRNTYPE` says otherwise
+ *   - `NAME`, `PAYEE`, or `MEMO` — merchant/counterparty
+ *   - `TRNTYPE` — expense, income, or transfer hint
+ *   - `CURDEF` / `CURSYM` — optional ISO-4217 currency; defaults to SAR when missing
+ *   - `FITID` — stable import reference when present
+ *
  * The importer is conservative: a row with a parse error is skipped and counted in
  * [CsvImportResult.skipped] rather than aborting the whole batch.
  *
- * Master Brief / Backlog M-14 and roadmap G-12 (CSV portion).
+ * Master Brief / Backlog M-14 and roadmap G-12.
  */
 interface CsvImportTrigger {
     suspend fun preview(input: InputStream): CsvImportPreviewResult

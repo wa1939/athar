@@ -71,12 +71,12 @@
     <string name="settings_backup_passphrase_import_confirm">Restore</string>
     <string name="settings_backup_passphrase_label">Passphrase</string>
 
-    <!-- CSV card -->
-    <string name="settings_csv_title">CSV exchange</string>
-    <string name="settings_csv_body">Import from an old Excel sheet or a bank-statement CSV. Supports date/description/amount or debit/credit columns with optional currency, and exports transactions for accounting.</string>
+    <!-- Statement exchange card -->
+    <string name="settings_csv_title">Statement exchange</string>
+    <string name="settings_csv_body">Import from an old Excel sheet, bank-statement CSV, OFX, or QFX. Preview detected fields before import; export transactions as CSV for accounting.</string>
     <string name="settings_csv_done" formatted="true">Imported %1$d transactions. (Skipped %2$d rows.)</string>
     <string name="settings_csv_exported" formatted="true">Exported %1$d transactions.</string>
-    <string name="settings_csv_action_import">Import</string>
+    <string name="settings_csv_action_import">Import statement</string>
     <string name="settings_csv_action_export">Export</string>
     <string name="settings_csv_preview_summary" formatted="true">Ready to import %1$d rows. %2$d rows will be skipped.</string>
     <string name="settings_csv_preview_confirm">Confirm import</string>

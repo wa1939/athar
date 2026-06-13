@@ -226,7 +226,7 @@ class SettingsViewModel @Inject constructor(
             val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
             if (bytes == null) {
                 pendingCsvImportBytes = null
-                _csv.value = CsvStatus.Failed("Couldn't open CSV file.")
+                _csv.value = CsvStatus.Failed("Couldn't open import file.")
                 return@launch
             }
             previewCsvImportBytes(bytes)
@@ -253,7 +253,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val bytes = pendingCsvImportBytes
             if (bytes == null) {
-                _csv.value = CsvStatus.Failed("No CSV preview is ready to import.")
+                _csv.value = CsvStatus.Failed("No import preview is ready to import.")
                 return@launch
             }
             _csv.value = CsvStatus.Working

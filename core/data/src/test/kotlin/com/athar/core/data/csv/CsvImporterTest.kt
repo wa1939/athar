@@ -18,6 +18,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
+import java.math.BigDecimal
 
 class CsvImporterTest {
 
@@ -64,6 +65,55 @@ class CsvImporterTest {
         assertThat(transactions.upserts.map { it.type }).containsExactly(TxType.EXPENSE, TxType.INCOME).inOrder()
     }
 
+    @Test
+    fun `preview reports ofx transactions without committing`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(emptyList()),
+            clock = FixedClock,
+        )
+
+        val result = importer.preview(ByteArrayInputStream(statementOfx.toByteArray()))
+
+        val preview = (result as CsvImportPreviewResult.Done).preview
+        assertThat(preview.importable).isEqualTo(2)
+        assertThat(preview.skipped).isEqualTo(1)
+        assertThat(preview.columns.date).isEqualTo("OFX DTPOSTED")
+        assertThat(preview.columns.amount).isEqualTo("OFX TRNAMT")
+        assertThat(preview.sampleRows.map { it.rowNumber }).containsExactly(1, 2).inOrder()
+        assertThat(preview.sampleRows.first().date).isEqualTo("2026-06-01")
+        assertThat(preview.sampleRows.first().merchant).isEqualTo("Starbucks")
+        assertThat(preview.sampleRows.first().amount).isEqualTo("18.50")
+        assertThat(preview.sampleRows.first().currency).isEqualTo("USD")
+        assertThat(preview.sampleRows.first().type).isEqualTo(TxType.EXPENSE)
+        assertThat(preview.sampleRows[1].type).isEqualTo(TxType.INCOME)
+        assertThat(preview.skippedRows.single().rowNumber).isEqualTo(3)
+        assertThat(transactions.upserts).isEmpty()
+    }
+
+    @Test
+    fun `import commits ofx transactions through same preview path`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(emptyList()),
+            clock = FixedClock,
+        )
+
+        val result = importer.import(ByteArrayInputStream(statementOfx.toByteArray()))
+
+        assertThat(result).isEqualTo(CsvImportResult.Done(imported = 2, skipped = 1))
+        assertThat(transactions.upserts).hasSize(2)
+        assertThat(transactions.upserts.map { it.merchant }).containsExactly("Starbucks", "Acme Payroll").inOrder()
+        assertThat(transactions.upserts.map { it.type }).containsExactly(TxType.EXPENSE, TxType.INCOME).inOrder()
+        assertThat(transactions.upserts.map { it.amount.amount })
+            .containsExactly(BigDecimal("18.50"), BigDecimal("1000.00"))
+            .inOrder()
+        assertThat(transactions.upserts.map { it.amount.currency }).containsExactly("USD", "USD").inOrder()
+        assertThat(transactions.upserts.map { it.sourceRefId }).containsExactly("ofx-fit-1", "ofx-fit-2").inOrder()
+    }
+
     private class FakeTransactionRepository : TransactionRepository {
         val upserts = mutableListOf<Transaction>()
 
@@ -103,6 +153,42 @@ class CsvImporterTest {
             2026-06-01,Starbucks,18.50,,SAR,Coffee
             not-a-date,Broken row,9.00,,SAR,Coffee
             2026-06-02,Salary,,1000.00,SAR,
+        """.trimIndent()
+
+        val statementOfx = """
+            OFXHEADER:100
+            DATA:OFXSGML
+            <OFX>
+            <BANKMSGSRSV1>
+            <STMTTRNRS>
+            <STMTRS>
+            <CURDEF>USD
+            <BANKTRANLIST>
+            <STMTTRN>
+            <TRNTYPE>DEBIT
+            <DTPOSTED>20260601120000[-5:EST]
+            <TRNAMT>-18.50
+            <FITID>fit-1
+            <NAME>Starbucks
+            <MEMO>Card purchase
+            </STMTTRN>
+            <STMTTRN>
+            <TRNTYPE>CREDIT
+            <DTPOSTED>20260602120000
+            <TRNAMT>1000.00
+            <FITID>fit-2
+            <NAME>Acme Payroll
+            </STMTTRN>
+            <STMTTRN>
+            <TRNTYPE>DEBIT
+            <TRNAMT>-9.00
+            <NAME>Broken Row
+            </STMTTRN>
+            </BANKTRANLIST>
+            </STMTRS>
+            </STMTTRNRS>
+            </BANKMSGSRSV1>
+            </OFX>
         """.trimIndent()
 
         fun coffeeCategory(): Category = Category(

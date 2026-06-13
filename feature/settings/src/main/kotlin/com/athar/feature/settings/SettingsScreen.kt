@@ -185,7 +185,18 @@ fun SettingsScreen(
 
             CsvImportCard(
                 status = csvStatus,
-                onImport = { csvLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "*/*")) },
+                onImport = {
+                    csvLauncher.launch(
+                        arrayOf(
+                            "text/csv",
+                            "text/comma-separated-values",
+                            "application/x-ofx",
+                            "application/vnd.intu.qfx",
+                            "application/octet-stream",
+                            "*/*",
+                        ),
+                    )
+                },
                 onConfirmImport = viewModel::confirmCsvImport,
                 onCancelPreview = viewModel::cancelCsvImportPreview,
                 onExport = { csvExportLauncher.launch("athar-transactions.csv") },
