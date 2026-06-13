@@ -13,7 +13,7 @@ Saudi path even when the notification copy is already parseable.
 
 ## Decision
 
-Extend the known-finance package allow-list with conservative package
+Extend both known-finance package allow-lists with conservative package
 identifiers for:
 
 - MENA banks: Emirates NBD, ADCB, Mashreq, FAB, QNB, Boubyan, KFH, Bank Muscat.
@@ -27,10 +27,18 @@ amount, action, and merchant/counterparty checks, and all existing ignores for
 security, marketing, statements, limits, declined transactions, requests, and
 scheduled payments stay ahead of amount extraction.
 
+This slice covers both gates in the store-safe path:
+
+- `BankNotificationPackageMatcher`, which decides whether Android notification
+  events are enqueued at all.
+- `GenericBankNotificationTemplate`, which decides whether a notification-shaped
+  raw event can enter the transaction parser.
+
 ## Acceptance
 
 - Notifications from representative MENA, Australian, Indian, and US package
-  identifiers parse with the existing transaction grammar.
+  identifiers pass the Android notification package filter and parse with the
+  existing transaction grammar.
 - Random non-finance packages still do not run through the parser.
 - Existing notification false-positive guards remain covered by tests.
 
@@ -42,7 +50,8 @@ scheduled payments stay ahead of amount extraction.
 
 ## Validation
 
-- 2026-06-13: `:ingestion:sms-parser:test` passed with JDK 17,
+- 2026-06-13: `:ingestion:notification-listener:test` and
+  `:ingestion:sms-parser:test` passed with JDK 17,
   `--no-daemon`, and `--max-workers=1`.
 - 2026-06-13: Full gate passed with `test`,
   `:app:assemblePersonalFullSmsDebug`, `:app:assembleStoreSafeDebug`,

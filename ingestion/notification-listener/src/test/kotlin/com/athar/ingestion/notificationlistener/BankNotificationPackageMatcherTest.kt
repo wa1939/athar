@@ -29,6 +29,18 @@ class BankNotificationPackageMatcherTest {
         assertThat(BankNotificationPackageMatcher.isBankPackage("com.bunq.android")).isTrue()
         assertThat(BankNotificationPackageMatcher.isBankPackage("com.nu.production.nubank")).isTrue()
         assertThat(BankNotificationPackageMatcher.isBankPackage("com.bbva.bbvacontigo")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.emiratesnbd.android")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.adcb.bank")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.bankfab.mobile")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.discoverfinancial.mobile")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.truist.mobile")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.commbank.netbank")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("au.com.nab.mobile")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.anz.android.gomoney")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.dbsmbanking.mobile")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.hdfcbank.mobilebanking")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.icici.bank.imobile")).isTrue()
+        assertThat(BankNotificationPackageMatcher.isBankPackage("com.axisbank.mobile")).isTrue()
     }
 
     @Test
