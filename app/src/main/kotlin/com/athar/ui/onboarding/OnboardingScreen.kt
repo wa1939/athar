@@ -348,7 +348,13 @@ private val SMS_PERMISSIONS = arrayOf(
     Manifest.permission.READ_SMS,
 )
 
-private val CSV_MIME_TYPES = arrayOf("text/csv", "text/comma-separated-values", "*/*")
+private val CSV_MIME_TYPES = arrayOf(
+    "text/csv",
+    "text/comma-separated-values",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-excel",
+    "*/*",
+)
 
 private fun hasSmsPermissions(context: Context): Boolean = SMS_PERMISSIONS.all {
     ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED

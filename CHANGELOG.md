@@ -36,19 +36,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CSV import now previews detected columns, importable/skipped row counts, sample parsed rows, and the first skipped row before the user confirms the import.
 - Statement import now accepts OFX/QFX files through the same preview-confirm path, mapping `DTPOSTED`, `TRNAMT`, `NAME`/`MEMO`, `TRNTYPE`, `CURDEF`, and `FITID` while skipping malformed statement transactions instead of aborting the batch.
 - Statement import now accepts MT940 files through the same preview-confirm path, mapping `:61:` date/debit-credit/amount/reference data with `:86:` merchant details and statement currency from balance records.
-- Statement import confirmation now lets users choose the destination account, so CSV/OFX/QFX/MT940 rows no longer have to land in the manual Cash account.
+- Statement import confirmation now lets users choose the destination account, so XLSX/CSV/OFX/QFX/MT940 rows no longer have to land in the manual Cash account.
 - Statement import now uses account-scoped stable row references and skips rows already imported for the selected account, preventing repeat CSV/OFX/MT940 imports from duplicating or replacing older imported ledger entries.
 - Statement import preview rows can now be excluded before confirmation; excluded rows stay visible, count as skipped, and are not inserted.
 - Statement import preview now summarizes importable rows by currency with expense, income, and transfer totals before confirmation.
-- Statement import preview rows can now be edited before confirmation. Date, merchant, amount, currency, type, category, and notes overrides re-run preview immediately and are applied to the same CSV/OFX/QFX/MT940 confirmation path.
+- Statement import preview rows can now be edited before confirmation. Date, merchant, amount, currency, type, category, and notes overrides re-run preview immediately and are applied to the same XLSX/CSV/OFX/QFX/MT940 confirmation path.
 - Statement import preview rows can now be assigned to a different active account before confirmation. Row-level account overrides are included in duplicate checks and stable import references, so split-account statements stay duplicate-safe.
+- Statement import now accepts transaction-grid XLSX workbooks through the same preview-confirm path, including TMOAP-style Expenses and Income sheets that use positive Amount columns.
 - Curated seed rules now include 116 more active high-confidence merchants from catalog and aggregate-only private-audit review, bringing `seed_rules.json` from 551 to 667 rules with asset tests for category validity, duplicate patterns, and the R-05 batches.
 - Settings now includes an annual **Export for taxes/accountant** PDF. The report includes income/expense totals, category totals, and the confirmed transaction list for the selected year, while excluding reconciliation adjustments from operating totals.
 - Wishlist planning now uses the full TMOAP-style model: start month and desired-month horizon are editable, each wish shows remaining amount and needed monthly saving, target misses are flagged, and rows sort by practical priority.
 - Redacted support diagnostics export from Settings. Users can save `athar-support-diagnostics.json` for parser triage; it contains SMS audit counts, pseudonymous sender hashes, body-shape fingerprints/flags, failed-template groups, and redacted parser errors without raw SMS bodies, balances, card numbers, or account numbers.
 - Local category rule learning: after three confirmed non-transfer, non-reconciliation transactions for the exact same normalized merchant all share one category, Athar creates a private exact-match priority-150 rule so future ingests can auto-categorize that merchant. Ambiguous merchants remove/skip auto rules; explicit "Always categorize X" rules still win.
 - Per-account ingestion routing: Accounts now accept SMS routing aliases (sender names or card/account tails), and SMS/notification ingestion links parsed transactions to the one active account that matches. Ambiguous or missing matches safely fall back to the manual seed account.
-- First-run onboarding now includes an optional CSV import step, so spreadsheet/TMOAP users can seed their transaction history before landing in the app.
+- First-run onboarding now includes an optional XLSX/CSV import step, so spreadsheet/TMOAP users can seed their transaction history before landing in the app.
 - Bank template creation now shows a live parse preview and blocks saving templates that cannot read the pasted sample SMS.
 - SMS audit now includes parse-rate and sender-health diagnostics so users can identify failing bank senders or spammy sources after a rescan.
 - History now filters transactions by source (SMS, notification, manual, import, recurring, share) and shows each row's source in the subtitle.
@@ -281,7 +282,7 @@ The first build that's actually usable as a daily driver. Built across 24 discip
 
 See [ADR-004](docs/adr/ADR-004-mvp-status.md). Notably:
 
-- XLSX direct import deferred (CSV path is the migration route today).
+- XLSX direct import was deferred in beta.21; transaction-grid XLSX import is now supported in Unreleased.
 - TFLite merchant classifier deferred (rule engine covers ~90% of cases).
 - Locale toggle deferred (Arabic-first per brief).
 - Paparazzi snapshot baselines need a first record run.

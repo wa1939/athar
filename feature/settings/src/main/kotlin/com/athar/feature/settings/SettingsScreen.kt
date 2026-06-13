@@ -204,6 +204,8 @@ fun SettingsScreen(
                             "text/comma-separated-values",
                             "text/tab-separated-values",
                             "text/plain",
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            "application/vnd.ms-excel",
                             "application/x-ofx",
                             "application/vnd.intu.qfx",
                             "application/x-mt940",

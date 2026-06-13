@@ -80,8 +80,16 @@ internal class CsvImporter @Inject constructor(
         rowDecisions: List<CsvImportRowDecision> = emptyList(),
         rowEdits: List<CsvImportRowEdit> = emptyList(),
     ): CsvPlanResult {
-        val text = runCatching { input.bufferedReader().use { it.readText() } }
+        val bytes = runCatching { input.use { it.readBytes() } }
             .getOrElse { return CsvPlanResult.Failed("Couldn't read import file: ${it.message}") }
+        if (StatementXlsxMapper.looksLikeXlsx(bytes)) {
+            val decisions = rowDecisions.shouldImportByRowNumber()
+            val edits = rowEdits.byRowNumber()
+            val categoryLookup = categoryLookup()
+            return buildXlsxPlan(bytes, accountId, mapping, decisions, edits, categoryLookup)
+        }
+
+        val text = bytes.toString(Charsets.UTF_8)
         val lines = text.lineSequence().filter { it.isNotBlank() }.toList()
         if (lines.isEmpty()) return CsvPlanResult.Failed("Empty import file.")
 
@@ -164,6 +172,92 @@ internal class CsvImporter @Inject constructor(
                 transactions = transactions,
                 previewRows = previewRows,
                 skippedRows = skippedRows,
+            ),
+        )
+    }
+
+    private suspend fun buildXlsxPlan(
+        bytes: ByteArray,
+        accountId: String,
+        mapping: CsvImportColumnMapping?,
+        decisions: Map<Int, Boolean>,
+        edits: Map<Int, CsvImportRowEdit>,
+        categoryLookup: CategoryLookup,
+    ): CsvPlanResult {
+        val parsed = when (val result = StatementXlsxMapper.parse(bytes, mapping)) {
+            is StatementXlsxParseResult.Done -> result
+            is StatementXlsxParseResult.MappingRequired -> {
+                return CsvPlanResult.MappingRequired(result.columns, result.reason)
+            }
+            is StatementXlsxParseResult.Failed -> return CsvPlanResult.Failed(result.reason)
+        }
+
+        val now = clock.now()
+        val duplicates = ImportDuplicatePlan(format = "xlsx")
+        val transactions = mutableListOf<CsvPlanTransaction>()
+        val previewRows = mutableListOf<CsvPlanTransaction>()
+        val skippedRows = parsed.skippedRowNumbers.map { skippedRowNumber ->
+            CsvImportSkippedRow(
+                rowNumber = skippedRowNumber,
+                reason = "Unparseable XLSX row",
+            )
+        }.toMutableList()
+
+        parsed.rows.forEach { row ->
+            val categoryId = row.category?.let(categoryLookup::categoryIdFor)
+            val transactionWithoutRef = Transaction(
+                id = UUID.randomUUID().toString(),
+                accountId = accountId,
+                type = row.type,
+                amount = Money.of(row.amount, row.currency),
+                date = row.date,
+                occurredAt = null,
+                merchant = row.merchant,
+                merchantNormalized = row.merchant.lowercase().trim(),
+                categoryId = categoryId,
+                notes = row.notes,
+                source = IngestSource.IMPORT,
+                sourceRefId = null,
+                status = TxStatus.CONFIRMED,
+                confidence = 1.0f,
+                createdAt = now,
+                updatedAt = now,
+            )
+            val mapped = CsvMappedTransaction(
+                transaction = transactionWithoutRef,
+                categoryPreview = row.category,
+                edited = false,
+            )
+            val edited = when (val editResult = mapped.applyEdit(edits[row.rowNumber], categoryLookup)) {
+                is RowEditResult.Done -> editResult.row
+                is RowEditResult.Invalid -> {
+                    skippedRows += CsvImportSkippedRow(rowNumber = row.rowNumber, reason = editResult.reason)
+                    return@forEach
+                }
+            }
+            val duplicate = duplicates.nextForContent(edited.transaction)
+            val transaction = edited.transaction.withStableSourceRef(duplicate.identity.sourceRefId)
+            addImportableOrDuplicateSkip(
+                rowNumber = row.rowNumber,
+                transaction = transaction,
+                identity = duplicate.identity,
+                categoryPreview = edited.categoryPreview,
+                edited = edited.edited,
+                decisions = decisions,
+                existingImports = duplicate.existingImports,
+                transactions = transactions,
+                previewRows = previewRows,
+                skippedRows = skippedRows,
+            )
+        }
+
+        return CsvPlanResult.Done(
+            CsvImportPlan(
+                columns = parsed.columns,
+                availableColumns = parsed.availableColumns,
+                transactions = transactions,
+                previewRows = previewRows,
+                skippedRows = skippedRows.sortedBy { it.rowNumber },
             ),
         )
     }

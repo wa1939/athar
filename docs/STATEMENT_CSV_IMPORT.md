@@ -1,7 +1,8 @@
-# Statement CSV Import
+# Statement Import
 
-Athar's Settings -> CSV exchange importer now accepts both the original
-Athar/TMOAP-style CSV and common bank-statement CSV exports.
+Athar's Settings -> Statement exchange importer accepts the original
+Athar/TMOAP-style CSV, common bank-statement CSV/TSV exports, transaction-grid
+XLSX workbooks, OFX/QFX, and MT940 files.
 
 ## Supported layouts
 
@@ -13,6 +14,10 @@ Athar/TMOAP-style CSV and common bank-statement CSV exports.
   columns. Debit rows import as expenses; credit rows import as income.
 - Currency: optional ISO-4217 code such as `SAR`, `USD`, `GBP`, or `AED`.
   Missing currency defaults to `SAR`.
+- XLSX: OpenXML `.xlsx` workbooks are scanned for transaction-like worksheet
+  headers and use the same mapper as CSV. TMOAP-style separate `Expenses` and
+  `Income` sheets preserve positive Amount columns as expenses/income from the
+  sheet name when no explicit type column exists.
 
 ## Conservative rules
 
@@ -26,8 +31,8 @@ Athar/TMOAP-style CSV and common bank-statement CSV exports.
   import as expenses.
 - Category names still resolve against Athar's English or Arabic category names.
 
-The G-12 slices now include OFX/QFX/MT940 parsing, safe preview/confirm, account
-selection, duplicate-safe stable references, manual CSV column mapping, preview-row
+The G-12 slices now include XLSX/CSV/TSV/OFX/QFX/MT940 parsing, safe preview/confirm,
+account selection, duplicate-safe stable references, manual column mapping, preview-row
 exclusion, per-currency totals, field-level preview row editing, and per-row account
 review. Users can correct date, merchant, amount, currency, type, category, notes, and
 the target account before confirmation; the same edited plan is used for duplicate

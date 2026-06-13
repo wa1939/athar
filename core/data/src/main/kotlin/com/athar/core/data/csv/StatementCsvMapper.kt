@@ -64,10 +64,14 @@ internal object StatementCsvMapper {
         )
     }
 
-    fun map(row: List<String>, columns: StatementCsvColumns): StatementCsvMappedRow? {
+    fun map(
+        row: List<String>,
+        columns: StatementCsvColumns,
+        positiveAmountFallbackType: TxType? = null,
+    ): StatementCsvMappedRow? {
         val date = parseDate(cell(row, columns.dateIdx)) ?: return null
         val merchant = cell(row, columns.merchantIdx).trim().takeIf { it.isNotBlank() } ?: return null
-        val amountWithType = amountWithType(row, columns) ?: return null
+        val amountWithType = amountWithType(row, columns, positiveAmountFallbackType) ?: return null
         val currency = parseCurrency(cell(row, columns.currencyIdx))
             ?: parseCurrency(amountWithType.raw)
             ?: Money.SAR
@@ -85,7 +89,11 @@ internal object StatementCsvMapper {
         )
     }
 
-    private fun amountWithType(row: List<String>, columns: StatementCsvColumns): AmountWithType? {
+    private fun amountWithType(
+        row: List<String>,
+        columns: StatementCsvColumns,
+        positiveAmountFallbackType: TxType?,
+    ): AmountWithType? {
         val explicitType = parseType(cell(row, columns.typeIdx))
 
         val debit = columns.debitIdx?.let { idx ->
@@ -114,6 +122,7 @@ internal object StatementCsvMapper {
         val parsed = parseAmount(raw) ?: return null
         val type = explicitType ?: parseType(raw) ?: when {
             parsed.amount.signum() < 0 -> TxType.EXPENSE
+            parsed.amount.signum() > 0 && positiveAmountFallbackType != null -> positiveAmountFallbackType
             parsed.amount.signum() > 0 && columns.signedPositiveAmount -> TxType.INCOME
             else -> TxType.EXPENSE
         }
@@ -189,6 +198,14 @@ internal object StatementCsvMapper {
         }
         if (s.length == 8 && s.all(Char::isDigit)) {
             runCatching { return LocalDate(s.take(4).toInt(), s.substring(4, 6).toInt(), s.takeLast(2).toInt()) }
+        }
+        s.toDoubleOrNull()?.let { serial ->
+            if (serial in 36526.0..73050.0) {
+                return runCatching {
+                    val date = java.time.LocalDate.of(1899, 12, 30).plusDays(serial.toLong())
+                    LocalDate(date.year, date.monthValue, date.dayOfMonth)
+                }.getOrNull()
+            }
         }
 
         val parts = s.split("/", "-", ".")

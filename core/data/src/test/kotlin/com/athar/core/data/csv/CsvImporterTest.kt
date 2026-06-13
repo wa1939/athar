@@ -23,8 +23,11 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import org.junit.jupiter.api.Test
+import java.io.ByteArrayOutputStream
 import java.io.ByteArrayInputStream
 import java.math.BigDecimal
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 class CsvImporterTest {
 
@@ -501,6 +504,122 @@ class CsvImporterTest {
     }
 
     @Test
+    fun `preview supports xlsx statement workbook without committing`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            clock = FixedClock,
+        )
+
+        val result = importer.preview(ByteArrayInputStream(statementXlsx))
+
+        val preview = (result as CsvImportPreviewResult.Done).preview
+        assertThat(preview.importable).isEqualTo(2)
+        assertThat(preview.skipped).isEqualTo(1)
+        assertThat(preview.columns.date).isEqualTo("XLSX Date")
+        assertThat(preview.columns.merchant).isEqualTo("XLSX Description")
+        assertThat(preview.columns.debit).isEqualTo("XLSX Debit")
+        assertThat(preview.columns.credit).isEqualTo("XLSX Credit")
+        assertThat(preview.sampleRows.map { it.rowNumber }).containsExactly(1, 3).inOrder()
+        assertThat(preview.sampleRows.first().merchant).isEqualTo("Starbucks")
+        assertThat(preview.sampleRows.first().type).isEqualTo(TxType.EXPENSE)
+        assertThat(preview.sampleRows.first().category).isEqualTo("Coffee")
+        assertThat(preview.currencySummaries.single().currency).isEqualTo("SAR")
+        assertThat(preview.currencySummaries.single().expenseTotal.compareTo(BigDecimal("18.50"))).isEqualTo(0)
+        assertThat(preview.currencySummaries.single().incomeTotal.compareTo(BigDecimal("1000.00"))).isEqualTo(0)
+        assertThat(preview.skippedRows.single().rowNumber).isEqualTo(2)
+        assertThat(transactions.upserts).isEmpty()
+    }
+
+    @Test
+    fun `import commits xlsx transactions through duplicate-safe source refs`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(emptyList()),
+            clock = FixedClock,
+        )
+
+        val first = importer.import(ByteArrayInputStream(statementXlsx), accountId = "acc-checking")
+        val secondPreview = importer.preview(ByteArrayInputStream(statementXlsx), accountId = "acc-checking")
+
+        assertThat(first).isEqualTo(CsvImportResult.Done(imported = 2, skipped = 1))
+        assertThat(transactions.upserts).hasSize(2)
+        assertThat(transactions.upserts.map { it.merchant }).containsExactly("Starbucks", "Salary").inOrder()
+        assertThat(transactions.upserts.mapNotNull { it.sourceRefId }.all { it.startsWith("import:xlsx:") }).isTrue()
+        val preview = (secondPreview as CsvImportPreviewResult.Done).preview
+        assertThat(preview.importable).isEqualTo(0)
+        assertThat(preview.skippedRows.map { it.reason })
+            .containsExactly("Already imported", "Unparseable XLSX row", "Already imported")
+            .inOrder()
+    }
+
+    @Test
+    fun `xlsx tmoap-style expenses and income sheets preserve positive amount direction`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            clock = FixedClock,
+        )
+
+        val result = importer.preview(ByteArrayInputStream(tmoapStyleXlsx))
+
+        val preview = (result as CsvImportPreviewResult.Done).preview
+        assertThat(preview.importable).isEqualTo(2)
+        assertThat(preview.sampleRows.map { it.merchant }).containsExactly("Starbucks", "Salary").inOrder()
+        assertThat(preview.sampleRows.map { it.type }).containsExactly(TxType.EXPENSE, TxType.INCOME).inOrder()
+        assertThat(preview.sampleRows.map { it.amount }).containsExactly("18.50", "1000.00").inOrder()
+    }
+
+    @Test
+    fun `xlsx unknown headers request mapping and then import with manual mapping`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            clock = FixedClock,
+        )
+
+        val first = importer.preview(ByteArrayInputStream(statementUnknownHeadersXlsx))
+
+        val required = first as CsvImportPreviewResult.MappingRequired
+        assertThat(required.columns).containsExactly("Booked", "Counterparty text", "Out", "In", "ISO", "Bucket")
+
+        val mapping = CsvImportColumnMapping(
+            date = "Booked",
+            merchant = "Counterparty text",
+            debit = "Out",
+            credit = "In",
+            currency = "ISO",
+            category = "Bucket",
+        )
+        val preview = importer.preview(
+            input = ByteArrayInputStream(statementUnknownHeadersXlsx),
+            mapping = mapping,
+        ) as CsvImportPreviewResult.Done
+        val imported = importer.import(
+            input = ByteArrayInputStream(statementUnknownHeadersXlsx),
+            mapping = mapping,
+        )
+
+        assertThat(preview.preview.importable).isEqualTo(2)
+        assertThat(preview.preview.availableColumns).containsExactly(
+            "Booked",
+            "Counterparty text",
+            "Out",
+            "In",
+            "ISO",
+            "Bucket",
+        ).inOrder()
+        assertThat(preview.preview.sampleRows.map { it.type }).containsExactly(TxType.EXPENSE, TxType.INCOME).inOrder()
+        assertThat(imported).isEqualTo(CsvImportResult.Done(imported = 2, skipped = 0))
+        assertThat(transactions.upserts.map { it.merchant }).containsExactly("Unknown Coffee", "Payroll").inOrder()
+        assertThat(transactions.upserts.map { it.amount.currency }).containsExactly("USD", "USD").inOrder()
+    }
+
+    @Test
     fun `statement import skips rows already imported for same account`() = runTest {
         val transactions = FakeTransactionRepository()
         val importer = CsvImporter(
@@ -728,6 +847,46 @@ class CsvImporterTest {
             -}
         """.trimIndent()
 
+        val statementXlsx = xlsxWorkbook(
+            XlsxSheet(
+                name = "Checking",
+                rows = listOf(
+                    listOf("Date", "Description", "Debit", "Credit", "Currency", "Category"),
+                    listOf("2026-06-01", "Starbucks", "18.50", "", "SAR", "Coffee"),
+                    listOf("not-a-date", "Broken row", "9.00", "", "SAR", "Coffee"),
+                    listOf("2026-06-02", "Salary", "", "1000.00", "SAR", ""),
+                ),
+            ),
+        )
+
+        val tmoapStyleXlsx = xlsxWorkbook(
+            XlsxSheet(
+                name = "Expenses",
+                rows = listOf(
+                    listOf("Date", "Vendor", "Amount", "Category", "Notes"),
+                    listOf("2026-06-01", "Starbucks", "18.50", "Coffee", "Morning"),
+                ),
+            ),
+            XlsxSheet(
+                name = "Income",
+                rows = listOf(
+                    listOf("Date", "Vendor", "Amount", "Category", "Notes"),
+                    listOf("2026-06-02", "Salary", "1000.00", "", "June payroll"),
+                ),
+            ),
+        )
+
+        val statementUnknownHeadersXlsx = xlsxWorkbook(
+            XlsxSheet(
+                name = "Statement",
+                rows = listOf(
+                    listOf("Booked", "Counterparty text", "Out", "In", "ISO", "Bucket"),
+                    listOf("2026-06-01", "Unknown Coffee", "18.50", "", "USD", "Coffee"),
+                    listOf("2026-06-02", "Payroll", "", "1000.00", "USD", ""),
+                ),
+            ),
+        )
+
         fun coffeeCategory(): Category = Category(
             id = "cat-coffee",
             name = "Coffee",
@@ -766,5 +925,112 @@ class CsvImporterTest {
         )
 
         fun unsupported(): Nothing = throw UnsupportedOperationException("not used in this test")
+
+        private fun xlsxWorkbook(vararg sheets: XlsxSheet): ByteArray {
+            val out = ByteArrayOutputStream()
+            ZipOutputStream(out).use { zip ->
+                zip.putText(
+                    "[Content_Types].xml",
+                    """
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+                      <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+                      <Default Extension="xml" ContentType="application/xml"/>
+                      <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+                      ${sheets.indices.joinToString("\n") { i ->
+                        """<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>"""
+                    }}
+                    </Types>
+                    """.trimIndent(),
+                )
+                zip.putText(
+                    "_rels/.rels",
+                    """
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+                      <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+                    </Relationships>
+                    """.trimIndent(),
+                )
+                zip.putText(
+                    "xl/workbook.xml",
+                    """
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+                              xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+                      <sheets>
+                        ${sheets.mapIndexed { i, sheet ->
+                        """<sheet name="${sheet.name.xmlEscape()}" sheetId="${i + 1}" r:id="rId${i + 1}"/>"""
+                    }.joinToString("\n")}
+                      </sheets>
+                    </workbook>
+                    """.trimIndent(),
+                )
+                zip.putText(
+                    "xl/_rels/workbook.xml.rels",
+                    """
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+                      ${sheets.indices.joinToString("\n") { i ->
+                        """<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>"""
+                    }}
+                    </Relationships>
+                    """.trimIndent(),
+                )
+                sheets.forEachIndexed { index, sheet ->
+                    zip.putText("xl/worksheets/sheet${index + 1}.xml", sheet.toWorksheetXml())
+                }
+            }
+            return out.toByteArray()
+        }
+
+        private fun ZipOutputStream.putText(name: String, text: String) {
+            putNextEntry(ZipEntry(name))
+            write(text.toByteArray(Charsets.UTF_8))
+            closeEntry()
+        }
+
+        private fun XlsxSheet.toWorksheetXml(): String {
+            val body = rows.mapIndexed { rowIndex, row ->
+                val cells = row.mapIndexedNotNull { columnIndex, value ->
+                    value.takeIf { it.isNotBlank() }?.let {
+                        val ref = "${columnName(columnIndex)}${rowIndex + 1}"
+                        """<c r="$ref" t="inlineStr"><is><t>${it.xmlEscape()}</t></is></c>"""
+                    }
+                }.joinToString("")
+                """<row r="${rowIndex + 1}">$cells</row>"""
+            }.joinToString("\n")
+            return """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+                  <sheetData>
+                    $body
+                  </sheetData>
+                </worksheet>
+            """.trimIndent()
+        }
+
+        private fun columnName(index: Int): String {
+            var value = index + 1
+            val chars = ArrayDeque<Char>()
+            while (value > 0) {
+                value -= 1
+                chars.addFirst(('A'.code + (value % 26)).toChar())
+                value /= 26
+            }
+            return chars.joinToString("")
+        }
+
+        private fun String.xmlEscape(): String =
+            replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&apos;")
+
+        private data class XlsxSheet(
+            val name: String,
+            val rows: List<List<String>>,
+        )
     }
 }

@@ -41,5 +41,6 @@ specialized parser paths and do not expose CSV mapping controls.
 ## Non-goals
 
 - Per-row editing in the preview table remains a future G-12 follow-up.
-- XLSX direct import remains deferred; CSV export from Excel is still the supported migration path.
+- At the time of this CSV mapping slice, XLSX direct import was deferred; post-beta.24
+  G-12 now supports transaction-grid `.xlsx` files through the same preview path.
 - Do not infer categories with cloud services or upload statement contents.

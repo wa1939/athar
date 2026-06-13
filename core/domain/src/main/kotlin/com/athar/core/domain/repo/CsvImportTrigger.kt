@@ -8,7 +8,7 @@ import java.math.BigDecimal
 /**
  * Parses statement-style transaction files and bulk-inserts them as confirmed manual entries.
  *
- * Supported delimited text columns (CSV/TSV header row, case-insensitive, any order):
+ * Supported XLSX / delimited text columns (XLSX worksheet or CSV/TSV header row, case-insensitive, any order):
  *   - delimiters — comma, semicolon, or tab; quoted delimiters and `""` escapes are supported
  *   - **date** — `YYYY-MM-DD`, `DD/MM/YYYY`, or `MM/DD/YYYY`
  *   - **vendor**, **merchant**, **description**, **details**, **narrative**, or Arabic equivalents — text
@@ -35,6 +35,11 @@ import java.math.BigDecimal
  *   - `:61:` — date, debit/credit mark, amount, transaction code, and optional reference
  *   - `:86:` — merchant/counterparty details
  *   - `:60F:` / `:60M:` / `:62F:` / `:62M:` — optional statement currency; defaults to SAR when missing
+ *
+ * XLSX workbooks are parsed conservatively from transaction-grid sheets and then
+ * passed through the same preview/confirm path as CSV. TMOAP-style separate
+ * `Expenses` and `Income` sheets keep positive Amount columns in the correct direction
+ * when the file has no explicit type column.
  *
  * The importer is conservative: a row with a parse error or a row already imported
  * for the selected account is skipped and counted in [CsvImportResult.skipped]

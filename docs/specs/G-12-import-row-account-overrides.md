@@ -41,6 +41,7 @@ Checking-scoped import reference.
 
 ## Non-goals
 
-- No direct XLSX import.
+- No full-file spreadsheet grid editor; transaction-grid `.xlsx` import shipped later
+  in the G-12 XLSX preview slice.
 - No FX conversion.
 - No full-file spreadsheet grid editor.
