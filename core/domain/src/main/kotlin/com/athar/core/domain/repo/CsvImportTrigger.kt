@@ -21,8 +21,49 @@ import java.io.InputStream
  * Master Brief / Backlog M-14 and roadmap G-12 (CSV portion).
  */
 interface CsvImportTrigger {
+    suspend fun preview(input: InputStream): CsvImportPreviewResult
     suspend fun import(input: InputStream): CsvImportResult
 }
+
+sealed interface CsvImportPreviewResult {
+    data class Done(val preview: CsvImportPreview) : CsvImportPreviewResult
+    data class Failed(val reason: String) : CsvImportPreviewResult
+}
+
+data class CsvImportPreview(
+    val importable: Int,
+    val skipped: Int,
+    val columns: CsvImportDetectedColumns,
+    val sampleRows: List<CsvImportPreviewRow>,
+    val skippedRows: List<CsvImportSkippedRow>,
+)
+
+data class CsvImportDetectedColumns(
+    val date: String,
+    val merchant: String,
+    val amount: String?,
+    val debit: String?,
+    val credit: String?,
+    val currency: String?,
+    val category: String?,
+    val type: String?,
+    val notes: String?,
+)
+
+data class CsvImportPreviewRow(
+    val rowNumber: Int,
+    val date: String,
+    val merchant: String,
+    val amount: String,
+    val currency: String,
+    val type: com.athar.core.domain.model.TxType,
+    val category: String?,
+)
+
+data class CsvImportSkippedRow(
+    val rowNumber: Int,
+    val reason: String,
+)
 
 sealed interface CsvImportResult {
     data class Done(val imported: Int, val skipped: Int) : CsvImportResult

@@ -9,6 +9,10 @@ import com.athar.core.domain.repo.CommunityRulesShareResult
 import com.athar.core.domain.repo.CommunityRulesShareTrigger
 import com.athar.core.domain.repo.CsvExportResult
 import com.athar.core.domain.repo.CsvExportTrigger
+import com.athar.core.domain.repo.CsvImportDetectedColumns
+import com.athar.core.domain.repo.CsvImportPreview
+import com.athar.core.domain.repo.CsvImportPreviewResult
+import com.athar.core.domain.repo.CsvImportPreviewRow
 import com.athar.core.domain.repo.CsvImportResult
 import com.athar.core.domain.repo.CsvImportTrigger
 import com.athar.core.domain.repo.MerchantBulkExportResult
@@ -93,13 +97,28 @@ class SettingsViewModelTest {
         assertThat(viewModel.rescanStatus.value).isEqualTo(RescanStatus.Done(clearedPending = 7))
     }
 
+    @Test
+    fun `confirm csv import imports the previewed bytes`() = runTest(mainDispatcher) {
+        val csv = RecordingCsvImportTrigger()
+        val viewModel = settingsViewModel(csvImporter = csv)
+
+        viewModel.previewCsvImportBytes("previewed csv".toByteArray())
+        advanceUntilIdle()
+        viewModel.confirmCsvImport()
+        advanceUntilIdle()
+
+        assertThat(csv.importedBytes.map { it.decodeToString() }).containsExactly("previewed csv")
+        assertThat(viewModel.csvStatus.value).isEqualTo(CsvStatus.Done(imported = 3, skipped = 1))
+    }
+
     private fun settingsViewModel(
         backfill: SmsBackfillTrigger = FakeSmsBackfillTrigger(),
+        csvImporter: CsvImportTrigger = FakeCsvImportTrigger,
         transactions: TransactionRepository = FakeTransactionRepository(),
     ) = SettingsViewModel(
         backup = FakeBackupRepository,
         backfillTrigger = backfill,
-        csvImporter = FakeCsvImportTrigger,
+        csvImporter = csvImporter,
         csvExporter = FakeCsvExportTrigger,
         bulkExporter = FakeMerchantBulkExportTrigger,
         bulkImporter = FakeMerchantBulkImportTrigger,
@@ -151,8 +170,51 @@ private object FakeBackupRepository : BackupRepository {
 }
 
 private object FakeCsvImportTrigger : CsvImportTrigger {
+    override suspend fun preview(input: InputStream): CsvImportPreviewResult =
+        CsvImportPreviewResult.Done(emptyPreview())
+
     override suspend fun import(input: InputStream): CsvImportResult = CsvImportResult.Done(imported = 0, skipped = 0)
 }
+
+private class RecordingCsvImportTrigger : CsvImportTrigger {
+    val importedBytes = mutableListOf<ByteArray>()
+
+    override suspend fun preview(input: InputStream): CsvImportPreviewResult =
+        CsvImportPreviewResult.Done(emptyPreview())
+
+    override suspend fun import(input: InputStream): CsvImportResult {
+        importedBytes += input.readBytes()
+        return CsvImportResult.Done(imported = 3, skipped = 1)
+    }
+}
+
+private fun emptyPreview(): CsvImportPreview = CsvImportPreview(
+    importable = 0,
+    skipped = 0,
+    columns = CsvImportDetectedColumns(
+        date = "date",
+        merchant = "merchant",
+        amount = "amount",
+        debit = null,
+        credit = null,
+        currency = null,
+        category = null,
+        type = null,
+        notes = null,
+    ),
+    sampleRows = listOf(
+        CsvImportPreviewRow(
+            rowNumber = 2,
+            date = "2026-06-13",
+            merchant = "Sample",
+            amount = "0",
+            currency = "SAR",
+            type = com.athar.core.domain.model.TxType.EXPENSE,
+            category = null,
+        ),
+    ),
+    skippedRows = emptyList(),
+)
 
 private object FakeCsvExportTrigger : CsvExportTrigger {
     override suspend fun exportAll(output: OutputStream): CsvExportResult = CsvExportResult.Done(exported = 0)

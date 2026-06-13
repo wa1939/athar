@@ -78,6 +78,18 @@
     <string name="settings_csv_exported" formatted="true">تم تصدير %1$d حركة.</string>
     <string name="settings_csv_action_import">استيراد</string>
     <string name="settings_csv_action_export">تصدير</string>
+    <string name="settings_csv_preview_summary" formatted="true">جاهز لاستيراد %1$d صف. سيتم تخطي %2$d صف.</string>
+    <string name="settings_csv_preview_confirm">تأكيد الاستيراد</string>
+    <string name="settings_csv_preview_cancel">إلغاء</string>
+    <string name="settings_csv_preview_first_skip" formatted="true">أول صف متخطى: #%1$d · %2$s</string>
+    <string name="settings_csv_preview_column_date">التاريخ</string>
+    <string name="settings_csv_preview_column_merchant">التاجر</string>
+    <string name="settings_csv_preview_column_money">المبلغ</string>
+    <string name="settings_csv_preview_column_currency">العملة</string>
+    <string name="settings_csv_preview_column_category">الفئة</string>
+    <string name="settings_csv_preview_type_expense">مصروف</string>
+    <string name="settings_csv_preview_type_income">دخل</string>
+    <string name="settings_csv_preview_type_transfer">تحويل</string>
 
     <!-- Tax export card -->
     <string name="settings_tax_title">تصدير للمحاسب والضرائب</string>

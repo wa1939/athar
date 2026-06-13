@@ -105,7 +105,7 @@ Other tools force a trade-off:
 - ✅ **Multi-currency display** — pick from 18 ISO-4217 codes (USD · EUR · GBP · AED · EGP · INR · PKR · TRY · SAR · KWD · QAR · BHD · OMR · JOD · CAD · AUD · CHF · JPY) with Arabic + English currency labels
 - ✅ **Per-account ingestion routing** — add SMS sender aliases or card/account tails to each account so new bank messages land on the right checking, savings, or credit-card account instead of the manual seed account
 - ✅ **AES-256-GCM encrypted backup** (Argon2-equivalent KDF, passphrase-protected)
-- ✅ **CSV import + export** for Excel and bank-statement interop — import TMOAP/Athar CSVs or common statement layouts with description/amount or debit/credit columns; export annual data for your accountant
+- ✅ **CSV import + export** for Excel and bank-statement interop — preview detected columns and sample rows before importing TMOAP/Athar CSVs or common statement layouts with description/amount or debit/credit columns; export annual data for your accountant
 - ✅ **CSV import + export** for Excel interop — drop in your TMOAP transaction log to import; export annual data for your accountant
 - ✅ **Annual accountant/tax PDF export** — pick a year in Settings and export income/expense totals, category totals, and the confirmed transaction list
 - ✅ **First-run CSV import** — new users can bring a TMOAP / Excel transaction log into Athar during onboarding instead of hunting for the Settings exchange later
@@ -310,6 +310,7 @@ maestro test .maestro/flows/                     # 10 E2E flows
 - ✅ The scoped `dev/bill-reminders` branch passes `:core:domain:test`, `:feature:plan:compileDebugKotlin`, `:app:compilePersonalFullSmsDebugKotlin`, and the full JVM test/build/lint stack after adding opt-in bill reminders. The full lint stack was run with `--max-workers=1` because parallel lint analysis intermittently crashed inside Android lint's Kotlin FIR resolver on existing unit tests.
 - ✅ The scoped `dev/sender-matching-reliability` branch passes `:ingestion:sms-parser:test` and the full JVM test/build/lint stack after hardening sender matching and adding sanitized corpus tests. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`.
 - ✅ The scoped `dev/notification-phrase-coverage` branch passes `:ingestion:sms-parser:test`, `:ingestion:notification-listener:test`, and the full JVM test/build/lint stack after adding wallet/card-app notification phrase coverage. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`.
+- ✅ The scoped `dev/csv-import-preview-confirm` branch passes `:core:data:test`, `:feature:settings:test`, and the full JVM test/build/lint stack after adding CSV import preview/confirm. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`.
 - ⏳ Device E2E, screenshot UI audit, and notification tap-through still need a physical Android device or a working accelerated emulator. On 2026-06-13 the local AVD could not boot because firmware virtualization was disabled, and `adb devices -l` still returned no attached devices during this branch validation.
 
 ### In flight / remaining
@@ -321,7 +322,7 @@ maestro test .maestro/flows/                     # 10 E2E flows
 | G-8 | Manual transaction UX upgrades | ◐ | 1.5 days | ✅ Recent-merchant autocomplete + quick-add chips · ⏳ voice entry · receipt photo |
 | G-10 | Savings-rate goals + emergency fund | ✅ | — | Plan → Goals tab plus Today Goals check shipped; device visual QA remains under QA-01 |
 | G-11 | Broader notification handlers | ◐ | 3 days | Generic bank-app push parser shipped; app-specific handlers remain follow-up |
-| G-12 | Bank statement / CSV / OFX / QFX import wizard | ◐ | 3 days | CSV header auto-detect shipped; preview, manual mapping, OFX/QFX/MT940 still planned |
+| G-12 | Bank statement / CSV / OFX / QFX import wizard | ◐ | 3 days | CSV header auto-detect + preview/confirm shipped; manual mapping, OFX/QFX/MT940 still planned |
 | G-13 | Zero-knowledge sync to companion devices | ⏳ | 5 days | E2E-encrypted via Dropbox / Drive / iCloud / WebDAV / S3 — user holds the key |
 | G-14 | Tax-export PDF for accountants | ✅ | 2 days | Annual category totals + transaction list in user's locale |
 

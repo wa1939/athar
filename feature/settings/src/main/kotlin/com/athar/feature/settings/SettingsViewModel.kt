@@ -10,6 +10,8 @@ import com.athar.core.domain.repo.CommunityRulesShareResult
 import com.athar.core.domain.repo.CommunityRulesShareTrigger
 import com.athar.core.domain.repo.CsvExportResult
 import com.athar.core.domain.repo.CsvExportTrigger
+import com.athar.core.domain.repo.CsvImportPreview
+import com.athar.core.domain.repo.CsvImportPreviewResult
 import com.athar.core.domain.repo.CsvImportResult
 import com.athar.core.domain.repo.CsvImportTrigger
 import com.athar.core.domain.repo.MerchantBulkExportResult
@@ -46,6 +48,7 @@ sealed interface BackupStatus {
 sealed interface CsvStatus {
     data object Idle : CsvStatus
     data object Working : CsvStatus
+    data class Preview(val preview: CsvImportPreview) : CsvStatus
     data class Done(val imported: Int, val skipped: Int) : CsvStatus
     data class Exported(val count: Int) : CsvStatus
     data class Failed(val reason: String) : CsvStatus
@@ -140,6 +143,7 @@ class SettingsViewModel @Inject constructor(
 
     private val _csv = MutableStateFlow<CsvStatus>(CsvStatus.Idle)
     val csvStatus: StateFlow<CsvStatus> = _csv.asStateFlow()
+    private var pendingCsvImportBytes: ByteArray? = null
 
     private val _bulkCategorize = MutableStateFlow<BulkCategorizeStatus>(BulkCategorizeStatus.Idle)
     val bulkCategorizeStatus: StateFlow<BulkCategorizeStatus> = _bulkCategorize.asStateFlow()
@@ -216,19 +220,54 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun importCsv(resolver: ContentResolver, uri: Uri) {
+    fun previewCsvImport(resolver: ContentResolver, uri: Uri) {
         viewModelScope.launch {
             _csv.value = CsvStatus.Working
-            val input = resolver.openInputStream(uri)
-            if (input == null) {
+            val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+            if (bytes == null) {
+                pendingCsvImportBytes = null
                 _csv.value = CsvStatus.Failed("Couldn't open CSV file.")
                 return@launch
             }
-            _csv.value = when (val result = csvImporter.import(input)) {
+            previewCsvImportBytes(bytes)
+        }
+    }
+
+    internal fun previewCsvImportBytes(bytes: ByteArray) {
+        viewModelScope.launch {
+            _csv.value = CsvStatus.Working
+            _csv.value = when (val result = csvImporter.preview(bytes.inputStream())) {
+                is CsvImportPreviewResult.Done -> {
+                    pendingCsvImportBytes = bytes
+                    CsvStatus.Preview(result.preview)
+                }
+                is CsvImportPreviewResult.Failed -> {
+                    pendingCsvImportBytes = null
+                    CsvStatus.Failed(result.reason)
+                }
+            }
+        }
+    }
+
+    fun confirmCsvImport() {
+        viewModelScope.launch {
+            val bytes = pendingCsvImportBytes
+            if (bytes == null) {
+                _csv.value = CsvStatus.Failed("No CSV preview is ready to import.")
+                return@launch
+            }
+            _csv.value = CsvStatus.Working
+            _csv.value = when (val result = csvImporter.import(bytes.inputStream())) {
                 is CsvImportResult.Done -> CsvStatus.Done(result.imported, result.skipped)
                 is CsvImportResult.Failed -> CsvStatus.Failed(result.reason)
             }
+            pendingCsvImportBytes = null
         }
+    }
+
+    fun cancelCsvImportPreview() {
+        pendingCsvImportBytes = null
+        _csv.value = CsvStatus.Idle
     }
 
     fun exportCsv(resolver: ContentResolver, uri: Uri) {
@@ -313,6 +352,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun clearCsvStatus() {
+        pendingCsvImportBytes = null
         _csv.value = CsvStatus.Idle
     }
 

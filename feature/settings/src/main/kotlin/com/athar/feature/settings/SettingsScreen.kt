@@ -41,6 +41,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.athar.core.domain.model.TxType
+import com.athar.core.domain.repo.CsvImportPreview
+import com.athar.core.domain.repo.CsvImportPreviewRow
 import com.athar.core.designsystem.component.AtharCard
 import com.athar.core.designsystem.component.AtharText
 import com.athar.core.designsystem.component.AtharTextField
@@ -100,7 +103,7 @@ fun SettingsScreen(
         if (uri != null) pendingImportUri = uri
     }
     val csvLauncher = rememberLauncherForActivityResult(OpenDocument()) { uri ->
-        if (uri != null) viewModel.importCsv(context.contentResolver, uri)
+        if (uri != null) viewModel.previewCsvImport(context.contentResolver, uri)
     }
     val csvExportLauncher = rememberLauncherForActivityResult(CreateDocument("text/csv")) { uri ->
         if (uri != null) viewModel.exportCsv(context.contentResolver, uri)
@@ -183,6 +186,8 @@ fun SettingsScreen(
             CsvImportCard(
                 status = csvStatus,
                 onImport = { csvLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "*/*")) },
+                onConfirmImport = viewModel::confirmCsvImport,
+                onCancelPreview = viewModel::cancelCsvImportPreview,
                 onExport = { csvExportLauncher.launch("athar-transactions.csv") },
                 onClear = viewModel::clearCsvStatus,
             )
@@ -644,6 +649,8 @@ private fun BulkCategorizeCard(
 private fun CsvImportCard(
     status: CsvStatus,
     onImport: () -> Unit,
+    onConfirmImport: () -> Unit,
+    onCancelPreview: () -> Unit,
     onExport: () -> Unit,
     onClear: () -> Unit,
 ) {
@@ -663,6 +670,25 @@ private fun CsvImportCard(
                     style = theme.typography.caption,
                     color = theme.colors.muted,
                 )
+                is CsvStatus.Preview -> {
+                    CsvPreviewSummary(preview = s.preview)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+                    ) {
+                        PrimaryButton(
+                            text = stringResource(R.string.settings_csv_preview_confirm),
+                            onClick = onConfirmImport,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Box(modifier = Modifier.weight(1f)) {
+                            SecondaryButton(
+                                text = stringResource(R.string.settings_csv_preview_cancel),
+                                onClick = onCancelPreview,
+                            )
+                        }
+                    }
+                }
                 is CsvStatus.Done -> {
                     AtharText(
                         text = stringResource(R.string.settings_csv_done, s.imported, s.skipped),
@@ -691,44 +717,118 @@ private fun CsvImportCard(
                 }
             }
             val isWorking = status is CsvStatus.Working
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
-            ) {
-                Box(modifier = Modifier.weight(1f)) {
-                    PrimaryButton(
-                        text = if (isWorking) {
-                            stringResource(R.string.settings_status_in_progress)
-                        } else {
-                            stringResource(R.string.settings_csv_action_import)
-                        },
-                        onClick = { if (!isWorking) onImport() },
-                    )
-                }
-                Box(modifier = Modifier.weight(1f)) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(theme.spacing.s))
-                            .background(theme.colors.divider)
-                            .clickable(enabled = !isWorking) { onExport() }
-                            .padding(theme.spacing.m),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        AtharText(
+            if (status !is CsvStatus.Preview) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        PrimaryButton(
                             text = if (isWorking) {
                                 stringResource(R.string.settings_status_in_progress)
                             } else {
-                                stringResource(R.string.settings_csv_action_export)
+                                stringResource(R.string.settings_csv_action_import)
                             },
-                            style = theme.typography.headline,
-                            color = theme.colors.ink,
+                            onClick = { if (!isWorking) onImport() },
                         )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(theme.spacing.s))
+                                .background(theme.colors.divider)
+                                .clickable(enabled = !isWorking) { onExport() }
+                                .padding(theme.spacing.m),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            AtharText(
+                                text = if (isWorking) {
+                                    stringResource(R.string.settings_status_in_progress)
+                                } else {
+                                    stringResource(R.string.settings_csv_action_export)
+                                },
+                                style = theme.typography.headline,
+                                color = theme.colors.ink,
+                            )
+                        }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun CsvPreviewSummary(preview: CsvImportPreview) {
+    val theme = AtharTheme
+    Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+        AtharText(
+            text = stringResource(R.string.settings_csv_preview_summary, preview.importable, preview.skipped),
+            style = theme.typography.caption,
+            color = theme.colors.olive,
+        )
+        AtharText(
+            text = preview.columnSummary(
+                dateLabel = stringResource(R.string.settings_csv_preview_column_date),
+                merchantLabel = stringResource(R.string.settings_csv_preview_column_merchant),
+                moneyLabel = stringResource(R.string.settings_csv_preview_column_money),
+                currencyLabel = stringResource(R.string.settings_csv_preview_column_currency),
+                categoryLabel = stringResource(R.string.settings_csv_preview_column_category),
+            ),
+            style = theme.typography.caption,
+            color = theme.colors.muted,
+        )
+        preview.sampleRows.take(3).forEach { row ->
+            AtharText(
+                text = row.previewLine(
+                    expenseLabel = stringResource(R.string.settings_csv_preview_type_expense),
+                    incomeLabel = stringResource(R.string.settings_csv_preview_type_income),
+                    transferLabel = stringResource(R.string.settings_csv_preview_type_transfer),
+                ),
+                style = theme.typography.caption,
+                color = theme.colors.ink,
+            )
+        }
+        preview.skippedRows.firstOrNull()?.let { skipped ->
+            AtharText(
+                text = stringResource(R.string.settings_csv_preview_first_skip, skipped.rowNumber, skipped.reason),
+                style = theme.typography.caption,
+                color = theme.colors.crimson,
+            )
+        }
+    }
+}
+
+private fun CsvImportPreview.columnSummary(
+    dateLabel: String,
+    merchantLabel: String,
+    moneyLabel: String,
+    currencyLabel: String,
+    categoryLabel: String,
+): String {
+    val money = columns.amount ?: listOfNotNull(columns.debit, columns.credit).joinToString(" / ")
+    return listOfNotNull(
+        "$dateLabel=${columns.date}",
+        "$merchantLabel=${columns.merchant}",
+        money.takeIf { it.isNotBlank() }?.let { "$moneyLabel=$it" },
+        columns.currency?.let { "$currencyLabel=$it" },
+        columns.category?.let { "$categoryLabel=$it" },
+    ).joinToString(" · ")
+}
+
+private fun CsvImportPreviewRow.previewLine(
+    expenseLabel: String,
+    incomeLabel: String,
+    transferLabel: String,
+): String =
+    "#$rowNumber · $date · ${type.label(expenseLabel, incomeLabel, transferLabel)} · $merchant · $amount $currency" +
+        category?.let { " · $it" }.orEmpty()
+
+private fun TxType.label(expenseLabel: String, incomeLabel: String, transferLabel: String): String = when (this) {
+    TxType.EXPENSE -> expenseLabel
+    TxType.INCOME -> incomeLabel
+    TxType.TRANSFER -> transferLabel
 }
 
 @Composable
