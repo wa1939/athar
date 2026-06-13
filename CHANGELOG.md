@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- First-run onboarding now includes an optional CSV import step, so spreadsheet/TMOAP users can seed their transaction history before landing in the app.
 - In-place Confirm / Dismiss / Categorize buttons on the Pending widget (currently a tap opens the app). Needs HiltWorker + WorkManager+Hilt wiring.
 - App-triggered widget refresh (`updateAll(context)`) after in-app Confirm/Dismiss so the widget syncs within seconds instead of the system's 30-minute cadence.
 

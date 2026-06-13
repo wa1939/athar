@@ -98,6 +98,7 @@ Other tools force a trade-off:
 - ✅ **Multi-currency display** — pick from 18 ISO-4217 codes (USD · EUR · GBP · AED · EGP · INR · PKR · TRY · SAR · KWD · QAR · BHD · OMR · JOD · CAD · AUD · CHF · JPY) with Arabic + English currency labels
 - ✅ **AES-256-GCM encrypted backup** (Argon2-equivalent KDF, passphrase-protected)
 - ✅ **CSV import + export** for Excel interop — drop in your TMOAP transaction log to import; export annual data for your accountant
+- ✅ **First-run CSV import** — new users can bring a TMOAP / Excel transaction log into Athar during onboarding instead of hunting for the Settings exchange later
 - ✅ **SQLCipher** database encryption at rest, key wrapped via Android Keystore
 - ✅ **SMS audit log** — every parsed/failed/ignored SMS retained, never deleted
 - ✅ **Activity log** — every transaction edit, with timestamp
