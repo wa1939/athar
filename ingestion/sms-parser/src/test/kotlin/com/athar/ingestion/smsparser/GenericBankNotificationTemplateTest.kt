@@ -406,6 +406,102 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses labeled biller expense notification fields`() {
+        val result = parser.parse(
+            event(
+                "notification:com.alrajhibank.alrajhimobile",
+                """
+                Bill payment
+                Biller: Saudi Electricity
+                Amount: SAR 225.00
+                """.trimIndent(),
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("225.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Saudi Electricity")
+    }
+
+    @Test
+    fun `parses Arabic labeled biller expense notification fields`() {
+        val result = parser.parse(
+            event(
+                "notification:com.alrajhibank.alrajhimobile",
+                """
+                دفع فاتورة
+                المفوتر: شركة الكهرباء
+                المبلغ: ١٢٥ ر.س
+                """.trimIndent(),
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("125"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("شركة الكهرباء")
+    }
+
+    @Test
+    fun `parses payer and remitter income notification fields`() {
+        val payer = parser.parse(
+            event(
+                "notification:com.mercury",
+                """
+                Incoming transfer
+                Amount: USD 250.00
+                Payer: ACME Payroll
+                """.trimIndent(),
+            ),
+        ) as ParseResult.Success
+        val remitter = parser.parse(
+            event(
+                "notification:com.emiratesnbd.android",
+                """
+                Money received
+                Amount: AED 80.00
+                Remitter: Consulting Client
+                """.trimIndent(),
+            ),
+        ) as ParseResult.Success
+
+        assertThat(payer.type).isEqualTo(TxType.INCOME)
+        assertThat(payer.counterparty).isEqualTo("ACME Payroll")
+        assertThat(remitter.type).isEqualTo(TxType.INCOME)
+        assertThat(remitter.counterparty).isEqualTo("Consulting Client")
+    }
+
+    @Test
+    fun `parses receiver and payee transfer notification fields`() {
+        val receiver = parser.parse(
+            event(
+                "notification:com.chase.sig.android",
+                """
+                Transfer sent
+                Amount: USD 100.00
+                Receiver: Ahmed
+                """.trimIndent(),
+            ),
+        ) as ParseResult.Success
+        val payee = parser.parse(
+            event(
+                "notification:com.revolut.revolut",
+                """
+                Transfer sent
+                Amount: EUR 900.00
+                Payee: Rent Account
+                """.trimIndent(),
+            ),
+        ) as ParseResult.Success
+
+        assertThat(receiver.type).isEqualTo(TxType.TRANSFER)
+        assertThat(receiver.counterparty).isEqualTo("Ahmed")
+        assertThat(payee.type).isEqualTo(TxType.TRANSFER)
+        assertThat(payee.counterparty).isEqualTo("Rent Account")
+    }
+
+    @Test
     fun `strips wallet suffix from paid-to merchant notification`() {
         val result = parser.parse(
             event("notification:com.usbank.mobilebanking", "You paid $9.99 to Apple Services with Apple Pay"),

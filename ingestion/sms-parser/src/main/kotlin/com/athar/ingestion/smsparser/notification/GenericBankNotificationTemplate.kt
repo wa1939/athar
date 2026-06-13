@@ -77,15 +77,15 @@ class GenericBankNotificationTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val merchantLabelHint = Regex(
-        """(?:\bmerchant\b|\bstore\b|\bpayee\b|التاجر|المتجر)\s*[:\-·]\s*([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\bmerchant\b|\bstore\b|\bpayee\b|\bbiller\b|\bservice\s+provider\b|التاجر|المتجر|المفوتر)\s*[:\-·]\s*([A-Za-z\u0600-\u06FF][^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val senderLabelHint = Regex(
-        """(?:\bsender\b|المرسل)\s*[:\-·]\s*([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\bsender\b|\bpayer\b|\bremitter\b|المرسل|الدافع|المحول)\s*[:\-·]\s*([A-Za-z\u0600-\u06FF][^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val recipientLabelHint = Regex(
-        """(?:\brecipient\b|\bbeneficiary\b|المستفيد|المستلم)\s*[:\-·]\s*([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\brecipient\b|\breceiver\b|\bbeneficiary\b|\bpayee\b|المستفيد|المستلم|المحول\s+له)\s*[:\-·]\s*([A-Za-z\u0600-\u06FF][^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val atHint = Regex(
