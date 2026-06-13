@@ -103,10 +103,11 @@ Below is the prioritized gap list, in delivery order.
 - Optional. Off by default.
 
 ### G-14 — Public API for accountants / tax export
-**Status:** No API.
-**Gap:** End-of-year, a user wants to hand their CPA a clean expense report.
-**Fix:**
-- "Export for tax" produces a PDF with each category's annual total + transaction list, in the user's locale.
+**Status:** Settings can export an annual accountant/tax PDF in the user's locale.
+**Gap:** The current export is a user-triggered PDF, not a public API or accountant integration.
+**Fix shipped:**
+- "Export for taxes/accountant" produces a PDF with income/expense totals, each category's annual total, and the confirmed transaction list.
+- Reconciliation adjustments are excluded from operating totals because they are balance corrections, not real income or spending.
 
 ### G-15 — Family / shared budgets
 **Status:** No multi-user concept.

@@ -74,6 +74,14 @@
     <string name="settings_csv_action_import">استيراد</string>
     <string name="settings_csv_action_export">تصدير</string>
 
+    <!-- Tax export card -->
+    <string name="settings_tax_title">تصدير للمحاسب والضرائب</string>
+    <string name="settings_tax_body">أنشئ ملف PDF سنوي يحتوي ملخص الدخل والمصروفات، إجمالي كل فئة، وقائمة الحركات المؤكدة. تُستبعد تسويات الرصيد لأنها ليست دخلًا أو مصروفًا حقيقيًا.</string>
+    <string name="settings_tax_year_label">السنة</string>
+    <string name="settings_tax_exported" formatted="true">تم تصدير تقرير %1$d: %2$d حركة · %3$d إجمالي فئة.</string>
+    <string name="settings_tax_excluded_reconciliations" formatted="true">تم استبعاد %1$d تسوية رصيد.</string>
+    <string name="settings_tax_action_export">تصدير PDF</string>
+
     <!-- Updates via Obtainium (beta.22) -->
     <string name="settings_updates_title">تابع التحديثات</string>
     <string name="settings_updates_body">أثر يعمل دون اتصال — لا يستطيع التحقق من التحديثات بنفسه. أَضِف أثر إلى تطبيق Obtainium وسيراقب صفحة الإصدارات على GitHub نيابةً عنك، ويُنبّهك عند صدور إصدار جديد.</string>
