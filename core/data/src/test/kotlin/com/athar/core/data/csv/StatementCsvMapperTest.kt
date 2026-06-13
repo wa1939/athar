@@ -71,6 +71,48 @@ class StatementCsvMapperTest {
     }
 
     @Test
+    fun `maps positive amount with debit credit indicator column`() {
+        val columns = StatementCsvMapper.detect(
+            listOf("Booking Date", "Narrative", "Amount", "D/C", "Currency"),
+        )!!
+
+        val expense = StatementCsvMapper.map(
+            row = listOf("2026-05-03", "Train ticket", "42.00", "D", "GBP"),
+            columns = columns,
+        )
+        val income = StatementCsvMapper.map(
+            row = listOf("2026-05-04", "Refund", "15.25", "C", "GBP"),
+            columns = columns,
+        )
+
+        assertThat(expense!!.type).isEqualTo(TxType.EXPENSE)
+        assertThat(expense.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(income!!.type).isEqualTo(TxType.INCOME)
+        assertThat(income.amount).isEqualTo(BigDecimal("15.25"))
+    }
+
+    @Test
+    fun `maps Arabic debit credit indicator column`() {
+        val columns = StatementCsvMapper.detect(
+            listOf("تاريخ القيد", "البيان", "المبلغ", "مدين/دائن", "العملة"),
+        )!!
+
+        val expense = StatementCsvMapper.map(
+            row = listOf("2026-05-03", "مطعم", "42.00", "مدين", "SAR"),
+            columns = columns,
+        )
+        val income = StatementCsvMapper.map(
+            row = listOf("2026-05-04", "راتب", "1000.00", "دائن", "SAR"),
+            columns = columns,
+        )
+
+        assertThat(expense!!.type).isEqualTo(TxType.EXPENSE)
+        assertThat(expense.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(income!!.type).isEqualTo(TxType.INCOME)
+        assertThat(income.amount).isEqualTo(BigDecimal("1000.00"))
+    }
+
+    @Test
     fun `keeps positive Athar amount as expense when no type is present`() {
         val columns = StatementCsvMapper.detect(listOf("date", "vendor", "amount"))!!
 

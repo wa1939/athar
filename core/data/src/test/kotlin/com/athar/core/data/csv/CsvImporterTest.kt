@@ -122,6 +122,26 @@ class CsvImporterTest {
     }
 
     @Test
+    fun `preview supports positive amount with debit credit indicator column`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(emptyList()),
+            clock = FixedClock,
+        )
+
+        val result = importer.preview(ByteArrayInputStream(statementIndicatorCsv.toByteArray()))
+
+        val preview = (result as CsvImportPreviewResult.Done).preview
+        assertThat(preview.importable).isEqualTo(2)
+        assertThat(preview.skipped).isEqualTo(0)
+        assertThat(preview.columns.amount).isEqualTo("Amount")
+        assertThat(preview.columns.type).isEqualTo("D/C")
+        assertThat(preview.sampleRows.map { it.type }).containsExactly(TxType.EXPENSE, TxType.INCOME).inOrder()
+        assertThat(preview.sampleRows.map { it.amount }).containsExactly("42.00", "15.25").inOrder()
+    }
+
+    @Test
     fun `preview reports ofx transactions without committing`() = runTest {
         val transactions = FakeTransactionRepository()
         val importer = CsvImporter(
@@ -273,6 +293,12 @@ class CsvImporterTest {
             "2026-06-01\tCoffee Shop\t-12.25\tGBP",
             "2026-06-02\tSalary\t1000.00\tGBP",
         ).joinToString("\n")
+
+        val statementIndicatorCsv = """
+            Booking Date,Narrative,Amount,D/C,Currency
+            2026-06-01,Train ticket,42.00,D,GBP
+            2026-06-02,Refund,15.25,C,GBP
+        """.trimIndent()
 
         val statementOfx = """
             OFXHEADER:100

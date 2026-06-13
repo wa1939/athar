@@ -357,11 +357,34 @@ internal object StatementCsvMapper {
     )
     private val CURRENCY_HEADERS = setOf("currency", "ccy", "curr", "currency code", "عملة", "العمله")
     private val CATEGORY_HEADERS = setOf("category", "category name", "الفئه", "التصنيف")
-    private val TYPE_HEADERS = setOf("type", "transaction type", "debit credit", "dr cr", "نوع", "نوع العمليه")
+    private val TYPE_HEADERS = setOf(
+        "type",
+        "transaction type",
+        "debit credit",
+        "debit credit indicator",
+        "credit debit indicator",
+        "debit or credit",
+        "debit credit marker",
+        "d c",
+        "dc",
+        "dr cr",
+        "drcr",
+        "indicator",
+        "transaction indicator",
+        "direction",
+        "entry type",
+        "movement type",
+        "نوع",
+        "نوع العمليه",
+        "مدين دائن",
+        "اشاره",
+    )
     private val NOTES_HEADERS = setOf("notes", "note", "remarks", "reference", "ملاحظات", "ملاحظه")
     private val BALANCE_HEADERS = setOf("balance", "running balance", "available balance", "الرصيد")
 
     private val INCOME_VALUES = setOf(
+        "c",
+        "crdt",
         "income",
         "credit",
         "cr",
@@ -377,6 +400,8 @@ internal object StatementCsvMapper {
         "راتب",
     )
     private val EXPENSE_VALUES = setOf(
+        "d",
+        "dbit",
         "expense",
         "debit",
         "dr",
