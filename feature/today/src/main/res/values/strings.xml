@@ -47,6 +47,14 @@
     <string name="history_type_expense">مصاريف</string>
     <string name="history_type_income">دخل</string>
     <string name="history_type_transfer">تحويلات</string>
+    <string name="history_source_all">كل المصادر</string>
+    <string name="history_source_sms">رسائل</string>
+    <string name="history_source_notification">إشعارات</string>
+    <string name="history_source_manual">يدوي</string>
+    <string name="history_source_import">استيراد</string>
+    <string name="history_source_recurring">متكرر</string>
+    <string name="history_source_share">مشاركة</string>
+    <string name="history_row_subtitle" formatted="true">%1$s · %2$s · %3$s · %4$s</string>
     <string name="history_count" formatted="true">%1$d حركة</string>
     <string name="history_empty">لا حركات تطابق هذا البحث.</string>
 

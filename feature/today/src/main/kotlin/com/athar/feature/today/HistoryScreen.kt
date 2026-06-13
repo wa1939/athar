@@ -2,6 +2,8 @@ package com.athar.feature.today
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +32,7 @@ import com.athar.core.designsystem.component.AtharListRow
 import com.athar.core.designsystem.component.AtharText
 import com.athar.core.designsystem.component.AtharTextField
 import com.athar.core.designsystem.theme.AtharTheme
+import com.athar.core.domain.model.IngestSource
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
@@ -45,6 +48,7 @@ fun HistoryScreen(
     val query by viewModel.query.collectAsStateWithLifecycle()
     val status by viewModel.status.collectAsStateWithLifecycle()
     val type by viewModel.type.collectAsStateWithLifecycle()
+    val source by viewModel.source.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<Transaction?>(null) }
 
     Box(
@@ -100,6 +104,20 @@ fun HistoryScreen(
                 ),
                 selected = type,
                 onSelect = viewModel::setType,
+            )
+
+            FilterChipRow(
+                labels = listOf(
+                    HistorySourceFilter.ALL to stringResource(R.string.history_source_all),
+                    HistorySourceFilter.SMS to stringResource(R.string.history_source_sms),
+                    HistorySourceFilter.NOTIFICATION to stringResource(R.string.history_source_notification),
+                    HistorySourceFilter.MANUAL to stringResource(R.string.history_source_manual),
+                    HistorySourceFilter.IMPORT to stringResource(R.string.history_source_import),
+                    HistorySourceFilter.RECURRING to stringResource(R.string.history_source_recurring),
+                    HistorySourceFilter.SHARE to stringResource(R.string.history_source_share),
+                ),
+                selected = source,
+                onSelect = viewModel::setSource,
             )
 
             AtharText(
@@ -159,7 +177,13 @@ private fun TxRow(tx: Transaction, onClick: () -> Unit) {
     }
     AtharListRow(
         title = tx.merchant,
-        subtitle = "${tx.date} · $typeChip · ${tx.status.name}",
+        subtitle = stringResource(
+            R.string.history_row_subtitle,
+            tx.date.toString(),
+            typeChip,
+            statusLabel(tx.status),
+            sourceLabel(tx.source),
+        ),
         trailing = tx.amount,
         onClick = onClick,
     )
@@ -173,7 +197,9 @@ private fun <T> FilterChipRow(
 ) {
     val theme = AtharTheme
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(theme.spacing.xs),
     ) {
         labels.forEach { (key, label) ->
@@ -193,6 +219,23 @@ private fun <T> FilterChipRow(
             }
         }
     }
+}
+
+@Composable
+private fun statusLabel(status: TxStatus): String = when (status) {
+    TxStatus.CONFIRMED -> stringResource(R.string.history_filter_confirmed)
+    TxStatus.PENDING -> stringResource(R.string.history_filter_pending)
+    TxStatus.DISMISSED -> stringResource(R.string.history_filter_dismissed)
+}
+
+@Composable
+private fun sourceLabel(source: IngestSource): String = when (source) {
+    IngestSource.SMS -> stringResource(R.string.history_source_sms)
+    IngestSource.NOTIFICATION -> stringResource(R.string.history_source_notification)
+    IngestSource.MANUAL -> stringResource(R.string.history_source_manual)
+    IngestSource.IMPORT -> stringResource(R.string.history_source_import)
+    IngestSource.RECURRING -> stringResource(R.string.history_source_recurring)
+    IngestSource.SHARE -> stringResource(R.string.history_source_share)
 }
 
 @Composable

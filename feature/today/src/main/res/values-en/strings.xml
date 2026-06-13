@@ -46,6 +46,14 @@
     <string name="history_type_expense">Expenses</string>
     <string name="history_type_income">Income</string>
     <string name="history_type_transfer">Transfers</string>
+    <string name="history_source_all">All sources</string>
+    <string name="history_source_sms">SMS</string>
+    <string name="history_source_notification">Notifications</string>
+    <string name="history_source_manual">Manual</string>
+    <string name="history_source_import">Import</string>
+    <string name="history_source_recurring">Recurring</string>
+    <string name="history_source_share">Share</string>
+    <string name="history_row_subtitle" formatted="true">%1$s · %2$s · %3$s · %4$s</string>
     <string name="history_count" formatted="true">%1$d transactions</string>
     <string name="history_empty">No transactions match this filter.</string>
 

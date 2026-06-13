@@ -2,6 +2,7 @@ package com.athar.feature.today
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.athar.core.domain.model.IngestSource
 import com.athar.core.domain.model.PatternType
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
@@ -22,6 +23,7 @@ import javax.inject.Inject
 
 enum class HistoryStatusFilter { ALL, CONFIRMED, PENDING, DISMISSED }
 enum class HistoryTypeFilter { ALL, INCOME, EXPENSE, TRANSFER }
+enum class HistorySourceFilter { ALL, SMS, NOTIFICATION, MANUAL, IMPORT, RECURRING, SHARE }
 
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
@@ -39,37 +41,25 @@ class HistoryViewModel @Inject constructor(
     private val _type = MutableStateFlow(HistoryTypeFilter.ALL)
     val type: StateFlow<HistoryTypeFilter> = _type.asStateFlow()
 
+    private val _source = MutableStateFlow(HistorySourceFilter.ALL)
+    val source: StateFlow<HistorySourceFilter> = _source.asStateFlow()
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val items: StateFlow<List<Transaction>> =
-        combine(transactions.observeAll(), _query, _status, _type) { all, q, s, t ->
-            all.asSequence()
-                .filter { tx ->
-                    when (s) {
-                        HistoryStatusFilter.ALL -> true
-                        HistoryStatusFilter.CONFIRMED -> tx.status == TxStatus.CONFIRMED
-                        HistoryStatusFilter.PENDING -> tx.status == TxStatus.PENDING
-                        HistoryStatusFilter.DISMISSED -> tx.status == TxStatus.DISMISSED
-                    }
-                }
-                .filter { tx ->
-                    when (t) {
-                        HistoryTypeFilter.ALL -> true
-                        HistoryTypeFilter.INCOME -> tx.type == TxType.INCOME
-                        HistoryTypeFilter.EXPENSE -> tx.type == TxType.EXPENSE
-                        HistoryTypeFilter.TRANSFER -> tx.type == TxType.TRANSFER
-                    }
-                }
-                .filter { tx ->
-                    if (q.isBlank()) true
-                    else tx.merchant.contains(q, ignoreCase = true) ||
-                        (tx.notes?.contains(q, ignoreCase = true) == true)
-                }
-                .toList()
+        combine(transactions.observeAll(), _query, _status, _type, _source) { all, q, s, t, source ->
+            filterHistoryTransactions(
+                all = all,
+                query = q,
+                status = s,
+                type = t,
+                source = source,
+            )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun setQuery(q: String) { _query.value = q }
     fun setStatus(s: HistoryStatusFilter) { _status.value = s }
     fun setType(t: HistoryTypeFilter) { _type.value = t }
+    fun setSource(s: HistorySourceFilter) { _source.value = s }
 
     private val _lastBackfill = MutableStateFlow<BackfillEvent?>(null)
     /** Emits the count of dismissed/pending rows auto-recategorized by "Always categorize…". */
@@ -107,3 +97,50 @@ class HistoryViewModel @Inject constructor(
 
     data class BackfillEvent(val pattern: String, val count: Int)
 }
+
+internal fun filterHistoryTransactions(
+    all: List<Transaction>,
+    query: String,
+    status: HistoryStatusFilter,
+    type: HistoryTypeFilter,
+    source: HistorySourceFilter,
+): List<Transaction> =
+    all.asSequence()
+        .filter { tx ->
+            when (status) {
+                HistoryStatusFilter.ALL -> true
+                HistoryStatusFilter.CONFIRMED -> tx.status == TxStatus.CONFIRMED
+                HistoryStatusFilter.PENDING -> tx.status == TxStatus.PENDING
+                HistoryStatusFilter.DISMISSED -> tx.status == TxStatus.DISMISSED
+            }
+        }
+        .filter { tx ->
+            when (type) {
+                HistoryTypeFilter.ALL -> true
+                HistoryTypeFilter.INCOME -> tx.type == TxType.INCOME
+                HistoryTypeFilter.EXPENSE -> tx.type == TxType.EXPENSE
+                HistoryTypeFilter.TRANSFER -> tx.type == TxType.TRANSFER
+            }
+        }
+        .filter { tx ->
+            when (source) {
+                HistorySourceFilter.ALL -> true
+                HistorySourceFilter.SMS -> tx.source == IngestSource.SMS
+                HistorySourceFilter.NOTIFICATION -> tx.source == IngestSource.NOTIFICATION
+                HistorySourceFilter.MANUAL -> tx.source == IngestSource.MANUAL
+                HistorySourceFilter.IMPORT -> tx.source == IngestSource.IMPORT
+                HistorySourceFilter.RECURRING -> tx.source == IngestSource.RECURRING
+                HistorySourceFilter.SHARE -> tx.source == IngestSource.SHARE
+            }
+        }
+        .filter { tx ->
+            if (query.isBlank()) {
+                true
+            } else {
+                tx.merchant.contains(query, ignoreCase = true) ||
+                    tx.merchantNormalized.contains(query, ignoreCase = true) ||
+                    (tx.notes?.contains(query, ignoreCase = true) == true) ||
+                    (tx.sourceRefId?.contains(query, ignoreCase = true) == true)
+            }
+        }
+        .toList()

@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - First-run onboarding now includes an optional CSV import step, so spreadsheet/TMOAP users can seed their transaction history before landing in the app.
 - Bank template creation now shows a live parse preview and blocks saving templates that cannot read the pasted sample SMS.
 - SMS audit now includes parse-rate and sender-health diagnostics so users can identify failing bank senders or spammy sources after a rescan.
+- History now filters transactions by source (SMS, notification, manual, import, recurring, share) and shows each row's source in the subtitle.
 - In-place Confirm / Dismiss / Categorize buttons on the Pending widget (currently a tap opens the app). Needs HiltWorker + WorkManager+Hilt wiring.
 - Recurring rules now auto-materialize through a Hilt WorkManager worker on app startup and a daily periodic schedule, so due subscriptions appear in the pending tray without visiting Settings → Recurring transactions → Run now. When the worker creates rows, it refreshes all Athar home-screen widgets immediately.
 - In-place Confirm / Dismiss / Categorize buttons on the Pending widget (currently a tap opens the app). WorkManager + Hilt wiring now exists; the remaining work is widget action callbacks and per-action workers.
