@@ -66,6 +66,18 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses Arabic debit without offer wording`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "خصم ٣٥٫٥٠ ر.س لدى كارفور"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("35.50"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("كارفور")
+    }
+
+    @Test
     fun `parses income notification`() {
         val result = parser.parse(
             event("notification:com.revolut.revolut", "You received USD 250.00 from ACME Payroll"),
@@ -609,6 +621,24 @@ class GenericBankNotificationTemplateTest {
     fun `ignores marketing cashback notifications`() {
         assertThat(
             parser.parse(event("notification:com.revolut.revolut", "Earn 10 SAR cashback this weekend")),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores Arabic discount offer notifications with money amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.alrajhibank.alrajhimobile", "عرض خصم 20 ر.س عند استخدام بطاقتك اليوم"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores Arabic percentage discount offer notifications`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.alrajhibank.alrajhimobile", "خصم 20% لدى شركائنا عند الدفع ببطاقتك"),
+            ),
         ).isEqualTo(ParseResult.Ignored)
     }
 

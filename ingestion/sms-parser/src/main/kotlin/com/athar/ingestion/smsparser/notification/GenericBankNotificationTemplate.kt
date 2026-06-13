@@ -72,6 +72,14 @@ class GenericBankNotificationTemplate : BankTemplate {
         """\b(?:offer|promo|cashback|points|reward|earn|win|discount|عرض|خصم|نقاط|مكافأة|اكسب|اربح)\b""",
         RegexOption.IGNORE_CASE,
     )
+    private val marketingOnlyWords = Regex(
+        """(?:\b(?:offer|promo|cashback|points|reward|earn|win|discount|save|coupon|deal)\b|عرض|عروض|خصومات|تخفيض|تخفيضات|كوبون|قسيمة|وفر|اكسب|اربح|نقاط|مكافأة|استرداد\s+نقدي|كاش\s*باك|خصم\s*(?:حتى\s*)?\d+(?:[.,]\d+)?\s*[%٪])""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val postedTransactionEvidence = Regex(
+        """(?:\b(?:you\s+(?:spent|paid|received|sent)|card\s+(?:ending\s+\d{2,4}\s+)?(?:was\s+)?used|card\s+(?:purchase|payment|transaction|charge)|debit(?:ed)?|charged|credited|deposit(?:ed)?|direct\s+debit|payment\s+(?:from|to)|money\s+(?:received|added)|transfer\s+(?:sent|received)|sent\s+you|paid\s+you|got\s+paid)\b|تم\s+خصم|بعد\s+خصم|تم\s+دفع|تمت\s+عملية|عملية\s+(?:شراء|دفع|سحب)|دفع\s+فاتورة|تم\s+سحب|تم\s+إيداع|تم\s+ايداع|وارد|استلمت|تحويل|حوالة)""",
+        RegexOption.IGNORE_CASE,
+    )
     private val balanceWords = Regex(
         """\b(?:balance|available|رصيد|المتاح)\b""",
         RegexOption.IGNORE_CASE,
@@ -125,6 +133,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         val normalized = Normalize.digits(body)
         val hasAction = hasAction(normalized)
 
+        if (isMarketingOnlyPromotion(normalized)) return ParseResult.Ignored
         if (declinedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (statementWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (scheduledWords.containsMatchIn(normalized)) return ParseResult.Ignored
@@ -209,6 +218,9 @@ class GenericBankNotificationTemplate : BankTemplate {
             toHint.containsMatchIn(body) ||
             fromHint.containsMatchIn(body) ||
             forHint.containsMatchIn(body)
+
+    private fun isMarketingOnlyPromotion(body: String): Boolean =
+        marketingOnlyWords.containsMatchIn(body) && !postedTransactionEvidence.containsMatchIn(body)
 
     private fun selectTransactionAmount(body: String): MatchResult? {
         val matches = amountWithCurrency.findAll(body).toList()
