@@ -76,24 +76,36 @@ class GenericBankNotificationTemplate : BankTemplate {
         """\b(?:balance|available|رصيد|المتاح)\b""",
         RegexOption.IGNORE_CASE,
     )
+    private val merchantLabelHint = Regex(
+        """(?:\bmerchant\b|\bstore\b|\bpayee\b|التاجر|المتجر)\s*[:\-·]\s*([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
+    )
+    private val senderLabelHint = Regex(
+        """(?:\bsender\b|المرسل)\s*[:\-·]\s*([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
+    )
+    private val recipientLabelHint = Regex(
+        """(?:\brecipient\b|\bbeneficiary\b|المستفيد|المستلم)\s*[:\-·]\s*([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
+    )
     private val atHint = Regex(
-        """(?:\bat\b|\bwith\b|\bon\b|لدى|عند|في)\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\bat\b|\bwith\b|\bon\b|لدى|عند|في)\s*[:\-·]?\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val forHint = Regex(
-        """(?:\bfor\b|مقابل|عن)\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\bfor\b|مقابل|عن)\s*[:\-·]?\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val toHint = Regex(
-        """(?:\bto\b|إلى|الى|لـ)\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\bto\b|إلى|الى|لـ)\s*[:\-·]?\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val fromHint = Regex(
-        """(?:\bfrom\b|من)\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\bfrom\b|من)\s*[:\-·]?\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val byHint = Regex(
-        """(?:\bby\b)\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\bby\b)\s*[:\-·]?\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val incomingPersonHint = Regex(
@@ -135,7 +147,8 @@ class GenericBankNotificationTemplate : BankTemplate {
         }
 
         val merchant = when (type) {
-            TxType.EXPENSE -> cleanParty(toHint.find(normalized)?.groupValues?.get(1)
+            TxType.EXPENSE -> cleanParty(merchantLabelHint.find(normalized)?.groupValues?.get(1)
+                ?: toHint.find(normalized)?.groupValues?.get(1)
                 ?: atHint.find(normalized)?.groupValues?.get(1)
                 ?: byHint.find(normalized)?.groupValues?.get(1)
                 ?: forHint.find(normalized)?.groupValues?.get(1)
@@ -147,11 +160,13 @@ class GenericBankNotificationTemplate : BankTemplate {
         val counterparty = when (type) {
             TxType.EXPENSE -> null
             TxType.INCOME -> cleanParty(
-                fromHint.find(normalized)?.groupValues?.get(1)
+                senderLabelHint.find(normalized)?.groupValues?.get(1)
+                    ?: fromHint.find(normalized)?.groupValues?.get(1)
                     ?: byHint.find(normalized)?.groupValues?.get(1)
                     ?: incomingPersonHint.find(normalized)?.groupValues?.get(1),
             )
-            TxType.TRANSFER -> cleanParty(toHint.find(normalized)?.groupValues?.get(1)
+            TxType.TRANSFER -> cleanParty(recipientLabelHint.find(normalized)?.groupValues?.get(1)
+                ?: toHint.find(normalized)?.groupValues?.get(1)
                 ?: fromHint.find(normalized)?.groupValues?.get(1))
         }
 
@@ -182,7 +197,8 @@ class GenericBankNotificationTemplate : BankTemplate {
         incomeWords.containsMatchIn(body) || incomePhrases.containsMatchIn(body)
 
     private fun hasMerchantHint(body: String): Boolean =
-        atHint.containsMatchIn(body) ||
+        merchantLabelHint.containsMatchIn(body) ||
+            atHint.containsMatchIn(body) ||
             toHint.containsMatchIn(body) ||
             fromHint.containsMatchIn(body) ||
             forHint.containsMatchIn(body)
