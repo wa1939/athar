@@ -289,6 +289,15 @@
     <string name="settings_templates_anchor_merchant_hint">For purchases: the word before the merchant name (e.g. At: or لدى)</string>
     <string name="settings_templates_anchor_counterparty_label">Recipient (optional)</string>
     <string name="settings_templates_anchor_counterparty_hint">For transfers: the word before the recipient name (e.g. To: or إلى)</string>
+    <string name="settings_templates_preview_title">Parse preview</string>
+    <string name="settings_templates_preview_waiting">Paste a sample message and amount anchor to preview the result before saving.</string>
+    <string name="settings_templates_preview_amount" formatted="true">Amount Athar will read: %1$s</string>
+    <string name="settings_templates_preview_merchant" formatted="true">Merchant: %1$s</string>
+    <string name="settings_templates_preview_counterparty" formatted="true">Counterparty: %1$s</string>
+    <string name="settings_templates_preview_amount_missing">The amount anchor was not found in the message. Adjust the Before field.</string>
+    <string name="settings_templates_preview_amount_invalid">The amount anchor was found, but no valid number followed it. Adjust After or the anchor.</string>
+    <string name="settings_templates_preview_merchant_missing">A merchant anchor is set, but it was not found in the sample message.</string>
+    <string name="settings_templates_preview_counterparty_missing">A counterparty anchor is set, but it was not found in the sample message.</string>
     <string name="settings_templates_save">Save template</string>
     <string name="settings_templates_row_sender" formatted="true">Sender: %1$s · %2$s</string>
     <string name="settings_templates_row_anchor_before" formatted="true">Before amount: \"%1$s\"</string>

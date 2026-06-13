@@ -289,6 +289,15 @@
     <string name="settings_templates_anchor_merchant_hint">للمشتريات: الكلمة قبل اسم المتجر (مثلاً: At: أو لدى)</string>
     <string name="settings_templates_anchor_counterparty_label">المُحوَّل إليه (اختياري)</string>
     <string name="settings_templates_anchor_counterparty_hint">للتحويلات: الكلمة قبل اسم المستلم (مثلاً: To: أو إلى)</string>
+    <string name="settings_templates_preview_title">معاينة التحليل</string>
+    <string name="settings_templates_preview_waiting">الصق رسالة عيّنة واكتب إشارة المبلغ لرؤية النتيجة قبل الحفظ.</string>
+    <string name="settings_templates_preview_amount" formatted="true">المبلغ الذي سيُقرأ: %1$s</string>
+    <string name="settings_templates_preview_merchant" formatted="true">المتجر: %1$s</string>
+    <string name="settings_templates_preview_counterparty" formatted="true">الطرف الآخر: %1$s</string>
+    <string name="settings_templates_preview_amount_missing">لم نجد إشارة المبلغ في الرسالة. عدّل خانة \"قبل\".</string>
+    <string name="settings_templates_preview_amount_invalid">وجدنا إشارة المبلغ، لكن لم نجد رقمًا صالحًا بعدها. عدّل \"بعد\" أو الإشارة.</string>
+    <string name="settings_templates_preview_merchant_missing">إشارة المتجر موجودة في النموذج، لكنها لم تظهر في الرسالة.</string>
+    <string name="settings_templates_preview_counterparty_missing">إشارة الطرف الآخر موجودة في النموذج، لكنها لم تظهر في الرسالة.</string>
     <string name="settings_templates_save">حفظ القالب</string>
     <string name="settings_templates_row_sender" formatted="true">المرسل: %1$s · %2$s</string>
     <string name="settings_templates_row_anchor_before" formatted="true">قبل المبلغ: \"%1$s\"</string>
