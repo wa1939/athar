@@ -87,7 +87,7 @@ Other tools force a trade-off:
 - ✅ **STC Bank · Alinma · D360 · Barq** templates derived from real corpus, with date extraction so historical SMS sit in their correct months
 - ✅ **User-defined templates** — paste a sample SMS from your bank, mark the anchor strings around the amount/merchant, save (W-4)
 - ✅ **Spam-resistant pipeline** — `-AD` suffix block (CITC convention), sender allow-list, ~40 ignore patterns for OTP/promo/marketing (Tasaheal, "Buy X Get Y", "Earn 10,000")
-- ✅ **Notification listener** path for Play-Store-safe distribution
+- ✅ **Notification listener** path for Play-Store-safe distribution, with generic bank-app push parsing for common English/Arabic spend, income, and transfer alerts
 - ✅ **Multi-currency capture** — foreign-card spend keeps both the original amount and the SAR equivalent
 - ✅ **Self-transfer detection** — moves to your own savings account flagged as "Own account move" (savings), not expense
 - ✅ **Auto-detected recurring patterns** — scans your confirmed history, surfaces "Same merchant, same amount, 3+ distinct months at similar day-of-month" candidates as suggestions you confirm with one tap
@@ -302,6 +302,7 @@ maestro test .maestro/flows/                     # 10 E2E flows
 | G-8 | Manual transaction UX upgrades | ⏳ | 2 days | Recent-merchant autocomplete · quick-add chips · voice entry · receipt photo |
 | G-10 | Savings-rate goals + emergency fund | ◐ | 2 days | ✅ Plan → Goals tab with target progress · ⏳ Today progress/nudge |
 | G-11 | Broader notification handlers | ⏳ | 3 days | Apple Wallet, Google Pay, Revolut, Wise, Chase, Capital One, Mercury (Play-Store flavor) |
+| G-11 | Broader notification handlers | ◐ | 3 days | Generic bank-app push parser shipped for common alerts; app-specific handlers remain follow-up |
 | G-12 | Bank statement / CSV / OFX / QFX import wizard | ⏳ | 3 days | Auto-detect format, column mapping, multi-currency statements |
 | G-13 | Zero-knowledge sync to companion devices | ⏳ | 5 days | E2E-encrypted via Dropbox / Drive / iCloud / WebDAV / S3 — user holds the key |
 | G-14 | Tax-export PDF for accountants | ⏳ | 2 days | Annual category totals + transaction list in user's locale |
