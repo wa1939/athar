@@ -44,6 +44,7 @@ import com.athar.ingestion.smsparser.genericbank.BarqTemplate as GenericBarqTemp
 import com.athar.ingestion.smsparser.genericbank.D360Template as GenericD360Template
 import com.athar.ingestion.smsparser.genericbank.RiyadBankTemplate
 import com.athar.ingestion.smsparser.genericbank.SnbTemplate
+import com.athar.ingestion.smsparser.notification.GenericBankNotificationTemplate
 import com.athar.ingestion.smsparser.stcbank.StcBankIncomingTransferTemplate
 import com.athar.ingestion.smsparser.stcbank.StcBankOnlinePurchaseTemplate
 import com.athar.ingestion.smsparser.stcbank.StcBankOutgoingTransferTemplate
@@ -96,6 +97,8 @@ internal object IngestionModule {
     private fun builtInTemplates(): List<com.athar.ingestion.smsparser.BankTemplate> = listOf(
         // Global ignore for OTPs / beneficiary admin / marketing across ALL banks. First in line.
         GlobalBankIgnoreTemplate(),
+        // Store-safe flavor: bank-app push notifications use Android package names as senders.
+        GenericBankNotificationTemplate(),
 
         // Al Rajhi — declined first (returns Ignored, not a failed parse).
         AlRajhiDeclinedTemplate(),
