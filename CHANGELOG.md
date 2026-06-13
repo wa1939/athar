@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Store-safe notification ingestion now has a generic bank-app notification parser for common English/Arabic spend, income, and transfer pushes, plus broader bank-package matching for Saudi and global finance apps.
 - Statement CSV import now auto-detects common bank export headers: `description`/`details`/`narrative`, signed `amount`, split `debit`/`credit`, optional ISO currency, and Arabic date/description/debit/credit headers. Original Athar/TMOAP CSV imports still work, with positive `date,vendor,amount` rows kept as expenses unless `type` says otherwise.
 - Settings now includes an annual **Export for taxes/accountant** PDF. The report includes income/expense totals, category totals, and the confirmed transaction list for the selected year, while excluding reconciliation adjustments from operating totals.
+- Wishlist planning now uses the full TMOAP-style model: start month and desired-month horizon are editable, each wish shows remaining amount and needed monthly saving, target misses are flagged, and rows sort by practical priority.
 - In-place Confirm / Dismiss / Categorize buttons on the Pending widget (currently a tap opens the app). Needs HiltWorker + WorkManager+Hilt wiring.
 - App-triggered widget refresh (`updateAll(context)`) after in-app Confirm/Dismiss so the widget syncs within seconds instead of the system's 30-minute cadence.
 

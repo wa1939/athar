@@ -26,6 +26,11 @@ data class WishlistRow(
     val item: WishlistItem,
     val status: WishlistStatus,
     val monthsNeeded: Int?,
+    val remaining: Money,
+    val projectedMonth: java.time.YearMonth?,
+    val targetMonth: java.time.YearMonth?,
+    val monthlyRequired: Money?,
+    val targetFeasible: Boolean?,
 )
 
 sealed interface WishlistEvent {

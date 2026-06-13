@@ -71,6 +71,7 @@ Below is the prioritized gap list, in delivery order.
 
 ### G-10 — Savings rate goals + emergency fund
 **Status:** Partially shipped — Plan → Goals tab.
+**Status:** Wishlist exists and now uses start-month + desired-horizon feasibility math. No "savings rate" goal, no "emergency fund" goal.
 **Gap:** A common budgeting practice is "I want to save 20% of my income" or "I want 6 months of expenses in emergency fund."
 **Fix:**
 - Plan → Goals tab: savings-rate target, emergency-fund target. ✅

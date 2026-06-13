@@ -84,14 +84,20 @@
     <string name="plan_wishlist_empty_text">لا رغبات بعد.</string>
     <string name="plan_wishlist_empty_subtle">أضف ما تتمنى شراءه — سنخبرك متى يمكنك ذلك بدون أن تقع في الحفرة.</string>
     <string name="plan_wishlist_saved_label">وفّرت </string>
+    <string name="plan_wishlist_remaining_label">المتبقي </string>
+    <string name="plan_wishlist_required_monthly">المطلوب شهريًا </string>
+    <string name="plan_wishlist_target_month" formatted="true">الهدف · %1$s</string>
     <string name="plan_wishlist_status_now">متاحة الآن</string>
     <string name="plan_wishlist_status_wait_until" formatted="true">بعد %1$d أشهر · %2$s</string>
     <string name="plan_wishlist_status_infeasible">غير ممكنة حاليًا</string>
+    <string name="plan_wishlist_status_target_infeasible">تحتاج سعة أعلى للموعد</string>
     <string name="plan_wishlist_editor_title_new">رغبة جديدة</string>
     <string name="plan_wishlist_editor_title_edit">تعديل رغبة</string>
     <string name="plan_wishlist_label_name">الاسم</string>
     <string name="plan_wishlist_label_cost">السعر</string>
     <string name="plan_wishlist_label_saved">ما وفّرته حتى الآن</string>
+    <string name="plan_wishlist_label_start_month">بداية الخطة</string>
+    <string name="plan_wishlist_label_desired_months">أريدها خلال كم شهر؟ (اختياري)</string>
     <string name="plan_wishlist_label_notes">ملاحظات</string>
     <string name="plan_wishlist_action_delete">حذف</string>
     <string name="plan_wishlist_action_save">حفظ</string>

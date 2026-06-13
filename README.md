@@ -79,6 +79,7 @@ Other tools force a trade-off:
 - ✅ **Goals tab** — savings-rate target and emergency-fund target, computed from confirmed history and liquid accounts
 - ✅ **Bills calendar** — Plan → Bills projects recurring rules 60 days ahead, highlights overdue items, and folds uncategorized pending transactions into the same scannable list
 - ✅ **Wishlist** with savings-capacity math (NOW / WAIT until YYYY-MM / INFEASIBLE)
+- ✅ **Wishlist** with TMOAP-style savings-capacity math — start month, desired horizon, remaining amount, needed/month, and NOW / WAIT until YYYY-MM / INFEASIBLE status
 - ✅ **Family investments pool** with **percentage-based return entry**, proportional share %, delete pool/contributor
 - ✅ **Recurring transactions** — define rent / salary / Netflix / utilities once; rules materialize into PENDING transactions on their due date
 
