@@ -43,5 +43,5 @@ amount, date, category, or account per row.
 ## Non-goals
 
 - No field-level row editing.
-- No per-row account assignment.
+- Per-row account assignment was left to a later G-12 row account overrides slice.
 - No cloud parsing or external AI processing.

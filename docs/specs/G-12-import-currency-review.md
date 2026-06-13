@@ -41,4 +41,4 @@ duplicates, and excluded rows stay out of the totals.
 
 - No FX conversion.
 - No field-level row editing.
-- No per-row account assignment.
+- Per-row account assignment was left to a later G-12 row account overrides slice.

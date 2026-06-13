@@ -225,6 +225,65 @@ class CsvImporterTest {
     }
 
     @Test
+    fun `row account edits override preview and imported transaction accounts`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            clock = FixedClock,
+        )
+        val edits = listOf(CsvImportRowEdit(rowNumber = 2, accountId = "acc-checking"))
+
+        val result = importer.preview(
+            input = ByteArrayInputStream(statementCsv.toByteArray()),
+            accountId = "acc-cash",
+            rowEdits = edits,
+        )
+        val imported = importer.import(
+            input = ByteArrayInputStream(statementCsv.toByteArray()),
+            accountId = "acc-cash",
+            rowEdits = edits,
+        )
+
+        val preview = (result as CsvImportPreviewResult.Done).preview
+        assertThat(preview.sampleRows.map { it.accountId }).containsExactly("acc-checking", "acc-cash").inOrder()
+        assertThat(preview.sampleRows.first().edited).isTrue()
+        assertThat(imported).isEqualTo(CsvImportResult.Done(imported = 2, skipped = 1))
+        assertThat(transactions.upserts.map { it.accountId }).containsExactly("acc-checking", "acc-cash").inOrder()
+    }
+
+    @Test
+    fun `row account edits use the edited account for duplicate detection`() = runTest {
+        val transactions = FakeTransactionRepository(
+            initialRows = listOf(existingImportedStarbucks(accountId = "acc-checking")),
+        )
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            clock = FixedClock,
+        )
+
+        val result = importer.preview(
+            input = ByteArrayInputStream(statementCsv.toByteArray()),
+            accountId = "acc-cash",
+            rowEdits = listOf(CsvImportRowEdit(rowNumber = 2, accountId = "acc-checking")),
+        )
+        val imported = importer.import(
+            input = ByteArrayInputStream(statementCsv.toByteArray()),
+            accountId = "acc-cash",
+            rowEdits = listOf(CsvImportRowEdit(rowNumber = 2, accountId = "acc-checking")),
+        )
+
+        val preview = (result as CsvImportPreviewResult.Done).preview
+        assertThat(preview.importable).isEqualTo(1)
+        assertThat(preview.skipped).isEqualTo(2)
+        assertThat(preview.skippedRows.map { it.reason }).contains("Already imported")
+        assertThat(imported).isEqualTo(CsvImportResult.Done(imported = 1, skipped = 2))
+        assertThat(transactions.upserts.map { it.merchant }).containsExactly("Salary")
+        assertThat(transactions.upserts.single().accountId).isEqualTo("acc-cash")
+    }
+
+    @Test
     fun `preview supports semicolon delimited statement csv`() = runTest {
         val transactions = FakeTransactionRepository()
         val importer = CsvImporter(
@@ -545,6 +604,25 @@ class CsvImporterTest {
         override suspend fun recoverDismissedToPending(): Int = unsupported()
         override suspend fun applyCategoryToMatching(pattern: String, categoryId: String): Int = unsupported()
     }
+
+    private fun existingImportedStarbucks(accountId: String): Transaction = Transaction(
+        id = "existing-starbucks-$accountId",
+        accountId = accountId,
+        type = TxType.EXPENSE,
+        amount = Money.of(BigDecimal("18.50"), "SAR"),
+        date = LocalDate(2026, 6, 1),
+        occurredAt = null,
+        merchant = "Starbucks",
+        merchantNormalized = "starbucks",
+        categoryId = null,
+        notes = null,
+        source = IngestSource.IMPORT,
+        sourceRefId = "import:csv:existing-starbucks-$accountId",
+        status = TxStatus.CONFIRMED,
+        confidence = 1.0f,
+        createdAt = FixedInstant,
+        updatedAt = FixedInstant,
+    )
 
     private class FakeCategoryRepository(private val rows: List<Category>) : CategoryRepository {
         override fun observeAll(kind: CategoryKind?, includeArchived: Boolean): Flow<List<Category>> = flowOf(rows)

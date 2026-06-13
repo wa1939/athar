@@ -739,6 +739,8 @@ private fun CsvImportCard(
                 is CsvStatus.Preview -> {
                     CsvPreviewSummary(
                         preview = s.preview,
+                        accounts = accounts,
+                        selectedAccountId = selectedAccountId,
                         onRowIncludedChange = onRowIncludedChange,
                         onRowEditChange = onRowEditChange,
                     )
@@ -979,6 +981,8 @@ private fun CsvImportColumnRole.label(): String = when (this) {
 @Composable
 private fun CsvPreviewSummary(
     preview: CsvImportPreview,
+    accounts: List<Account>,
+    selectedAccountId: String,
     onRowIncludedChange: (Int, Boolean) -> Unit,
     onRowEditChange: (CsvImportRowEdit) -> Unit,
 ) {
@@ -1023,6 +1027,8 @@ private fun CsvPreviewSummary(
         preview.sampleRows.forEach { row ->
             CsvPreviewRowToggle(
                 row = row,
+                accountLabel = accounts.firstOrNull { it.id == row.accountId }?.name ?: row.accountId,
+                showAccount = accounts.size > 1,
                 onIncludedChange = onRowIncludedChange,
                 onEdit = { editingRow = row },
             )
@@ -1038,6 +1044,8 @@ private fun CsvPreviewSummary(
     editingRow?.let { row ->
         CsvPreviewRowEditDialog(
             row = row,
+            accounts = accounts,
+            defaultAccountId = selectedAccountId,
             onSave = { edit ->
                 onRowEditChange(edit)
                 editingRow = null
@@ -1050,6 +1058,8 @@ private fun CsvPreviewSummary(
 @Composable
 private fun CsvPreviewRowToggle(
     row: CsvImportPreviewRow,
+    accountLabel: String,
+    showAccount: Boolean,
     onIncludedChange: (Int, Boolean) -> Unit,
     onEdit: () -> Unit,
 ) {
@@ -1090,6 +1100,13 @@ private fun CsvPreviewRowToggle(
                 style = theme.typography.caption,
                 color = if (row.included) theme.colors.olive else theme.colors.crimson,
             )
+            if (showAccount) {
+                AtharText(
+                    text = stringResource(R.string.settings_csv_preview_row_account, accountLabel),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+            }
             if (row.edited) {
                 AtharText(
                     text = stringResource(R.string.settings_csv_preview_row_edited),
@@ -1110,6 +1127,8 @@ private fun CsvPreviewRowToggle(
 @Composable
 private fun CsvPreviewRowEditDialog(
     row: CsvImportPreviewRow,
+    accounts: List<Account>,
+    defaultAccountId: String,
     onSave: (CsvImportRowEdit) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -1119,6 +1138,7 @@ private fun CsvPreviewRowEditDialog(
     var amount by remember(row.rowNumber, row.amount) { mutableStateOf(row.amount) }
     var currency by remember(row.rowNumber, row.currency) { mutableStateOf(row.currency) }
     var type by remember(row.rowNumber, row.type) { mutableStateOf(row.type) }
+    var selectedAccountId by remember(row.rowNumber, row.accountId) { mutableStateOf(row.accountId) }
     var category by remember(row.rowNumber, row.category) { mutableStateOf(row.category.orEmpty()) }
     var notes by remember(row.rowNumber, row.notes) { mutableStateOf(row.notes.orEmpty()) }
 
@@ -1162,6 +1182,20 @@ private fun CsvPreviewRowEditDialog(
                     modifier = Modifier.fillMaxWidth(),
                     keyboardType = KeyboardType.Ascii,
                 )
+                if (accounts.size > 1) {
+                    AtharText(
+                        text = stringResource(R.string.settings_csv_row_edit_account),
+                        style = theme.typography.caption,
+                        color = theme.colors.muted,
+                    )
+                    accounts.forEach { account ->
+                        CsvAccountChoice(
+                            account = account,
+                            selected = selectedAccountId == account.id,
+                            onClick = { selectedAccountId = account.id },
+                        )
+                    }
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
                     CsvTypeChoice(
                         label = stringResource(R.string.settings_csv_preview_type_expense),
@@ -1203,6 +1237,7 @@ private fun CsvPreviewRowEditDialog(
                     onSave(
                         CsvImportRowEdit(
                             rowNumber = row.rowNumber,
+                            accountId = selectedAccountId.takeIf { it != defaultAccountId },
                             date = date,
                             merchant = merchant,
                             amount = amount,
@@ -1224,6 +1259,36 @@ private fun CsvPreviewRowEditDialog(
         },
         containerColor = theme.colors.parchment,
     )
+}
+
+@Composable
+private fun CsvAccountChoice(
+    account: Account,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val theme = AtharTheme
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(if (selected) theme.colors.olive else theme.colors.divider)
+            .clickable(onClick = onClick)
+            .padding(theme.spacing.s),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+            AtharText(
+                text = account.name,
+                style = theme.typography.body,
+                color = if (selected) theme.colors.parchment else theme.colors.ink,
+            )
+            AtharText(
+                text = account.currency,
+                style = theme.typography.caption,
+                color = if (selected) theme.colors.parchment else theme.colors.muted,
+            )
+        }
+    }
 }
 
 @Composable

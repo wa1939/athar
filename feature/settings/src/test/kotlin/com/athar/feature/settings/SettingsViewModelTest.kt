@@ -205,6 +205,7 @@ class SettingsViewModelTest {
         val viewModel = settingsViewModel(csvImporter = csv)
         val edit = CsvImportRowEdit(
             rowNumber = 2,
+            accountId = "acc-checking",
             merchant = "Corrected Merchant",
             amount = "20.00",
             currency = "USD",
@@ -384,6 +385,7 @@ private fun emptyPreview(): CsvImportPreview = CsvImportPreview(
     sampleRows = listOf(
         CsvImportPreviewRow(
             rowNumber = 2,
+            accountId = MANUAL_ACCOUNT_ID,
             date = "2026-06-13",
             merchant = "Sample",
             amount = "0",

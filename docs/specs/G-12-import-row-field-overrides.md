@@ -51,6 +51,6 @@ reasons instead of committing guessed data.
 
 ## Non-goals
 
-- No per-row account assignment.
+- Per-row account assignment was left to the follow-up G-12 row account overrides slice.
 - No FX conversion.
 - No spreadsheet-style editing of every row in the file.

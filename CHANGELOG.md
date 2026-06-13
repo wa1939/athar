@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Statement import preview rows can now be excluded before confirmation; excluded rows stay visible, count as skipped, and are not inserted.
 - Statement import preview now summarizes importable rows by currency with expense, income, and transfer totals before confirmation.
 - Statement import preview rows can now be edited before confirmation. Date, merchant, amount, currency, type, category, and notes overrides re-run preview immediately and are applied to the same CSV/OFX/QFX/MT940 confirmation path.
+- Statement import preview rows can now be assigned to a different active account before confirmation. Row-level account overrides are included in duplicate checks and stable import references, so split-account statements stay duplicate-safe.
 - Curated seed rules now include 93 more active high-confidence merchants from the existing catalog input, bringing `seed_rules.json` from 551 to 644 rules with asset tests for category validity, duplicate patterns, and the R-05 batches.
 - Settings now includes an annual **Export for taxes/accountant** PDF. The report includes income/expense totals, category totals, and the confirmed transaction list for the selected year, while excluding reconciliation adjustments from operating totals.
 - Wishlist planning now uses the full TMOAP-style model: start month and desired-month horizon are editable, each wish shows remaining amount and needed monthly saving, target misses are flagged, and rows sort by practical priority.

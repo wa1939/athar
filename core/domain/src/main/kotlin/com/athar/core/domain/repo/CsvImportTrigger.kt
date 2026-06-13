@@ -129,6 +129,7 @@ data class CsvImportRowDecision(
 
 data class CsvImportRowEdit(
     val rowNumber: Int,
+    val accountId: String? = null,
     val date: String? = null,
     val merchant: String? = null,
     val amount: String? = null,
@@ -164,6 +165,7 @@ data class CsvImportDetectedColumns(
 
 data class CsvImportPreviewRow(
     val rowNumber: Int,
+    val accountId: String,
     val date: String,
     val merchant: String,
     val amount: String,

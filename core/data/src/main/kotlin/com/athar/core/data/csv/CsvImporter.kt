@@ -107,8 +107,7 @@ internal class CsvImporter @Inject constructor(
         val header = format.header
         val columns = format.columns
 
-        val existingImports = existingImportIdentities(accountId)
-        val refs = StableImportRefBuilder(accountId = accountId, format = "csv")
+        val duplicates = ImportDuplicatePlan(format = "csv")
         val now = clock.now()
 
         val transactions = mutableListOf<CsvPlanTransaction>()
@@ -142,16 +141,16 @@ internal class CsvImporter @Inject constructor(
                     continue
                 }
             }
-            val identity = refs.nextForContent(edited.transaction)
-            val transaction = edited.transaction.withStableSourceRef(identity.sourceRefId)
+            val duplicate = duplicates.nextForContent(edited.transaction)
+            val transaction = edited.transaction.withStableSourceRef(duplicate.identity.sourceRefId)
             addImportableOrDuplicateSkip(
                 rowNumber = rowNumber,
                 transaction = transaction,
-                identity = identity,
+                identity = duplicate.identity,
                 categoryPreview = edited.categoryPreview,
                 edited = edited.edited,
                 decisions = decisions,
-                existingImports = existingImports,
+                existingImports = duplicate.existingImports,
                 transactions = transactions,
                 previewRows = previewRows,
                 skippedRows = skippedRows,
@@ -182,8 +181,7 @@ internal class CsvImporter @Inject constructor(
         }
 
         val now = clock.now()
-        val existingImports = existingImportIdentities(accountId)
-        val refs = StableImportRefBuilder(accountId = accountId, format = "ofx")
+        val duplicates = ImportDuplicatePlan(format = "ofx")
         val transactions = mutableListOf<CsvPlanTransaction>()
         val previewRows = mutableListOf<CsvPlanTransaction>()
         val skippedRows = parsed.skippedRowNumbers.map { skippedRowNumber ->
@@ -220,18 +218,18 @@ internal class CsvImporter @Inject constructor(
                     return@forEach
                 }
             }
-            val identity = row.sourceRefId
-                ?.let { refs.nextForExternalRef(it, edited.transaction) }
-                ?: refs.nextForContent(edited.transaction)
-            val transaction = edited.transaction.withStableSourceRef(identity.sourceRefId)
+            val duplicate = row.sourceRefId
+                ?.let { duplicates.nextForExternalRef(it, edited.transaction) }
+                ?: duplicates.nextForContent(edited.transaction)
+            val transaction = edited.transaction.withStableSourceRef(duplicate.identity.sourceRefId)
             addImportableOrDuplicateSkip(
                 rowNumber = row.rowNumber,
                 transaction = transaction,
-                identity = identity,
+                identity = duplicate.identity,
                 categoryPreview = edited.categoryPreview,
                 edited = edited.edited,
                 decisions = decisions,
-                existingImports = existingImports,
+                existingImports = duplicate.existingImports,
                 transactions = transactions,
                 previewRows = previewRows,
                 skippedRows = skippedRows,
@@ -272,8 +270,7 @@ internal class CsvImporter @Inject constructor(
         }
 
         val now = clock.now()
-        val existingImports = existingImportIdentities(accountId)
-        val refs = StableImportRefBuilder(accountId = accountId, format = "mt940")
+        val duplicates = ImportDuplicatePlan(format = "mt940")
         val transactions = mutableListOf<CsvPlanTransaction>()
         val previewRows = mutableListOf<CsvPlanTransaction>()
         val skippedRows = parsed.skippedRowNumbers.map { skippedRowNumber ->
@@ -310,18 +307,18 @@ internal class CsvImporter @Inject constructor(
                     return@forEach
                 }
             }
-            val identity = row.sourceRefId
-                ?.let { refs.nextForExternalRef(it, edited.transaction) }
-                ?: refs.nextForContent(edited.transaction)
-            val transaction = edited.transaction.withStableSourceRef(identity.sourceRefId)
+            val duplicate = row.sourceRefId
+                ?.let { duplicates.nextForExternalRef(it, edited.transaction) }
+                ?: duplicates.nextForContent(edited.transaction)
+            val transaction = edited.transaction.withStableSourceRef(duplicate.identity.sourceRefId)
             addImportableOrDuplicateSkip(
                 rowNumber = row.rowNumber,
                 transaction = transaction,
-                identity = identity,
+                identity = duplicate.identity,
                 categoryPreview = edited.categoryPreview,
                 edited = edited.edited,
                 decisions = decisions,
-                existingImports = existingImports,
+                existingImports = duplicate.existingImports,
                 transactions = transactions,
                 previewRows = previewRows,
                 skippedRows = skippedRows,
@@ -397,6 +394,7 @@ internal class CsvImporter @Inject constructor(
         sampleRows = previewRows.take(PREVIEW_ROW_LIMIT).map { row ->
             CsvImportPreviewRow(
                 rowNumber = row.rowNumber,
+                accountId = row.transaction.accountId,
                 date = row.transaction.date.toString(),
                 merchant = row.transaction.merchant,
                 amount = row.transaction.amount.amount.toPlainString(),
@@ -443,6 +441,10 @@ internal class CsvImporter @Inject constructor(
     ): RowEditResult {
         if (edit == null) return RowEditResult.Done(this)
 
+        val nextAccountId = edit.accountId?.trim()?.let { raw ->
+            raw.takeIf { it.isNotBlank() } ?: return RowEditResult.Invalid("Invalid edited account")
+        } ?: transaction.accountId
+
         val nextDate = edit.date?.trim()?.let { raw ->
             raw.takeIf { it.isNotBlank() } ?: return RowEditResult.Invalid("Invalid edited date")
             runCatching { LocalDate.parse(raw) }.getOrNull()
@@ -473,6 +475,7 @@ internal class CsvImporter @Inject constructor(
         val editedNotes = edit.notes
 
         val nextTransaction = transaction.copy(
+            accountId = nextAccountId,
             date = nextDate,
             merchant = nextMerchant,
             merchantNormalized = nextMerchant.lowercase().trim(),
@@ -512,6 +515,35 @@ internal class CsvImporter @Inject constructor(
                 .first()
                 .filter { it.accountId == accountId && it.source == IngestSource.IMPORT },
         )
+
+    private inner class ImportDuplicatePlan(
+        private val format: String,
+    ) {
+        private val refsByAccount = mutableMapOf<String, StableImportRefBuilder>()
+        private val existingByAccount = mutableMapOf<String, ExistingImportIdentities>()
+
+        suspend fun nextForContent(transaction: Transaction): ImportDuplicateMatch =
+            ImportDuplicateMatch(
+                identity = refsFor(transaction.accountId).nextForContent(transaction),
+                existingImports = existingFor(transaction.accountId),
+            )
+
+        suspend fun nextForExternalRef(raw: String, transaction: Transaction): ImportDuplicateMatch =
+            ImportDuplicateMatch(
+                identity = refsFor(transaction.accountId).nextForExternalRef(raw, transaction),
+                existingImports = existingFor(transaction.accountId),
+            )
+
+        private fun refsFor(accountId: String): StableImportRefBuilder =
+            refsByAccount.getOrPut(accountId) { StableImportRefBuilder(accountId = accountId, format = format) }
+
+        private suspend fun existingFor(accountId: String): ExistingImportIdentities {
+            existingByAccount[accountId]?.let { return it }
+            val existing = existingImportIdentities(accountId)
+            existingByAccount[accountId] = existing
+            return existing
+        }
+    }
 
     private fun addImportableOrDuplicateSkip(
         rowNumber: Int,
@@ -631,6 +663,11 @@ internal class CsvImporter @Inject constructor(
         val transaction: Transaction,
         val categoryPreview: String?,
         val edited: Boolean,
+    )
+
+    private data class ImportDuplicateMatch(
+        val identity: ImportIdentity,
+        val existingImports: ExistingImportIdentities,
     )
 
     private sealed interface RowEditResult {
