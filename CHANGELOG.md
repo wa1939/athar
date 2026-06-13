@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Local category rule learning: after three confirmed non-transfer, non-reconciliation transactions for the exact same normalized merchant all share one category, Athar creates a private exact-match priority-150 rule so future ingests can auto-categorize that merchant. Ambiguous merchants remove/skip auto rules; explicit "Always categorize X" rules still win.
 - In-place Confirm / Dismiss / Categorize buttons on the Pending widget (currently a tap opens the app). Needs HiltWorker + WorkManager+Hilt wiring.
 - App-triggered widget refresh (`updateAll(context)`) after in-app Confirm/Dismiss so the widget syncs within seconds instead of the system's 30-minute cadence.
 

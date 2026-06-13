@@ -64,8 +64,14 @@ internal interface CategoryRuleDao {
     @Query("DELETE FROM category_rule WHERE learnedFromUser = 0")
     suspend fun clearSystemRules()
 
-    @Query("SELECT COUNT(*) FROM category_rule WHERE learnedFromUser = 0")
+    @Query("SELECT COUNT(*) FROM category_rule WHERE learnedFromUser = 0 AND id NOT LIKE 'auto-local-%'")
     suspend fun countSystemRules(): Int
+
+    @Query("DELETE FROM category_rule WHERE learnedFromUser = 0 AND id NOT LIKE 'auto-local-%'")
+    suspend fun clearSeedRules()
+
+    @Query("DELETE FROM category_rule WHERE id LIKE 'auto-local-%' AND pattern = :pattern AND patternType = :patternType")
+    suspend fun deleteAutoLearnedForPattern(pattern: String, patternType: String): Int
 }
 
 @Dao

@@ -4,6 +4,8 @@ import com.athar.core.common.time.Period
 import com.athar.core.data.db.dao.TransactionDao
 import com.athar.core.data.mapper.toDomain
 import com.athar.core.data.mapper.toEntity
+import com.athar.core.data.rules.LocalCategoryRuleLearner
+import com.athar.core.domain.model.IngestSource
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.repo.ActivityAction
@@ -21,6 +23,7 @@ import javax.inject.Singleton
 internal class TransactionRepositoryImpl @Inject constructor(
     private val dao: TransactionDao,
     private val activityLog: ActivityLogRepository,
+    private val localCategoryRuleLearner: LocalCategoryRuleLearner,
     private val clock: Clock,
 ) : TransactionRepository {
 
@@ -39,6 +42,9 @@ internal class TransactionRepositoryImpl @Inject constructor(
     override suspend fun upsert(transaction: Transaction) {
         val existed = dao.get(transaction.id) != null
         dao.upsert(transaction.toEntity())
+        if (shouldAttemptLocalLearning(existed, transaction)) {
+            localCategoryRuleLearner.maybeLearnFrom(transaction)
+        }
         activityLog.record(
             ActivityLogEntry(
                 id = UUID.randomUUID().toString(),
@@ -50,6 +56,9 @@ internal class TransactionRepositoryImpl @Inject constructor(
             ),
         )
     }
+
+    private fun shouldAttemptLocalLearning(existed: Boolean, transaction: Transaction): Boolean =
+        existed || transaction.source == IngestSource.MANUAL || transaction.source == IngestSource.IMPORT
 
     override suspend fun delete(id: String) {
         val existing = dao.get(id)
