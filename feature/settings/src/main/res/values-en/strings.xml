@@ -259,6 +259,10 @@
     <string name="settings_sms_audit_filter_parsed">Parsed</string>
     <string name="settings_sms_audit_filter_failed">Failed</string>
     <string name="settings_sms_audit_filter_ignored">Ignored</string>
+    <string name="settings_sms_audit_parse_rate" formatted="true">Successful parse rate · %1$d%%</string>
+    <string name="settings_sms_audit_sender_health_title">Sender health</string>
+    <string name="settings_sms_audit_sender_health_body">Senders most in need of review. Failed means no template understood the message; ignored usually means promo or OTP noise.</string>
+    <string name="settings_sms_audit_sender_health_counts" formatted="true">%1$d parsed · %2$d failed · %3$d ignored</string>
     <string name="settings_sms_audit_empty">No messages in this filter yet.</string>
     <string name="settings_sms_audit_empty_subtle">Messages appear here as they arrive or when you rescan from Settings.</string>
 
