@@ -18,8 +18,8 @@ Add a conservative preview step before CSV import commits:
 - Cancel clears the pending bytes and returns the card to idle.
 - Existing export behavior stays unchanged.
 
-This is not the full G-12 import wizard. Manual column remapping, OFX/QFX/MT940, account selection,
-and richer per-row editing remain follow-ups.
+This is not the full G-12 import wizard. Manual column remapping, OFX/QFX/MT940,
+and richer per-row editing were left as follow-ups.
 
 ## Acceptance Criteria
 

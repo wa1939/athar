@@ -41,6 +41,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.athar.core.domain.model.Account
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CsvImportPreview
 import com.athar.core.domain.repo.CsvImportPreviewRow
@@ -95,6 +96,8 @@ fun SettingsScreen(
     val ownAccounts by viewModel.ownAccountNumbers.collectAsStateWithLifecycle()
     val displayCurrency by viewModel.displayCurrency.collectAsStateWithLifecycle()
     val appLocale by viewModel.appLocale.collectAsStateWithLifecycle()
+    val statementImportAccounts by viewModel.statementImportAccounts.collectAsStateWithLifecycle()
+    val selectedStatementImportAccountId by viewModel.selectedStatementImportAccountId.collectAsStateWithLifecycle()
 
     val exportLauncher = rememberLauncherForActivityResult(CreateDocument("application/octet-stream")) { uri ->
         if (uri != null) pendingExportUri = uri
@@ -185,6 +188,9 @@ fun SettingsScreen(
 
             CsvImportCard(
                 status = csvStatus,
+                accounts = statementImportAccounts,
+                selectedAccountId = selectedStatementImportAccountId,
+                onSelectAccount = viewModel::setStatementImportAccount,
                 onImport = {
                     csvLauncher.launch(
                         arrayOf(
@@ -661,6 +667,9 @@ private fun BulkCategorizeCard(
 @Composable
 private fun CsvImportCard(
     status: CsvStatus,
+    accounts: List<Account>,
+    selectedAccountId: String,
+    onSelectAccount: (String) -> Unit,
     onImport: () -> Unit,
     onConfirmImport: () -> Unit,
     onCancelPreview: () -> Unit,
@@ -675,6 +684,11 @@ private fun CsvImportCard(
                 text = stringResource(R.string.settings_csv_body),
                 style = theme.typography.body,
                 color = theme.colors.muted,
+            )
+            StatementImportAccountPicker(
+                accounts = accounts,
+                selectedAccountId = selectedAccountId,
+                onSelectAccount = onSelectAccount,
             )
             when (val s = status) {
                 CsvStatus.Idle -> Unit
@@ -766,6 +780,47 @@ private fun CsvImportCard(
                             )
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatementImportAccountPicker(
+    accounts: List<Account>,
+    selectedAccountId: String,
+    onSelectAccount: (String) -> Unit,
+) {
+    if (accounts.size <= 1) return
+    val theme = AtharTheme
+    Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+        AtharText(
+            text = stringResource(R.string.settings_csv_account_label),
+            style = theme.typography.caption,
+            color = theme.colors.muted,
+        )
+        accounts.forEach { account ->
+            val selected = account.id == selectedAccountId
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(theme.spacing.s))
+                    .background(if (selected) theme.colors.olive else theme.colors.divider)
+                    .clickable { onSelectAccount(account.id) }
+                    .padding(theme.spacing.s),
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+                    AtharText(
+                        text = account.name,
+                        style = theme.typography.body,
+                        color = if (selected) theme.colors.parchment else theme.colors.ink,
+                    )
+                    AtharText(
+                        text = account.currency,
+                        style = theme.typography.caption,
+                        color = if (selected) theme.colors.parchment else theme.colors.muted,
+                    )
                 }
             }
         }

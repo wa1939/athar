@@ -1,8 +1,14 @@
 package com.athar.feature.settings
 
+import com.athar.core.common.money.Money
 import com.athar.core.common.time.Period
+import com.athar.core.domain.model.Account
+import com.athar.core.domain.model.AccountBalance
+import com.athar.core.domain.model.MANUAL_ACCOUNT_ID
+import com.athar.core.domain.model.NetWorth
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
+import com.athar.core.domain.repo.AccountRepository
 import com.athar.core.domain.repo.BackfillProgress
 import com.athar.core.domain.repo.BackupRepository
 import com.athar.core.domain.repo.CommunityRulesShareResult
@@ -26,6 +32,7 @@ import com.athar.core.domain.repo.TaxExportResult
 import com.athar.core.domain.repo.TaxExportTrigger
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
+import com.athar.core.domain.repo.ReconcileResult
 import com.athar.core.testing.Fixtures
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
@@ -111,10 +118,36 @@ class SettingsViewModelTest {
         assertThat(viewModel.csvStatus.value).isEqualTo(CsvStatus.Done(imported = 3, skipped = 1))
     }
 
+    @Test
+    fun `confirm csv import uses selected statement account`() = runTest(mainDispatcher) {
+        val csv = RecordingCsvImportTrigger()
+        val accounts = FakeAccountRepository(
+            active = listOf(
+                Fixtures.account(id = MANUAL_ACCOUNT_ID, name = "Cash"),
+                Fixtures.account(id = "acc-checking", name = "Checking"),
+            ),
+        )
+        val viewModel = settingsViewModel(
+            csvImporter = csv,
+            accounts = accounts,
+        )
+
+        advanceUntilIdle()
+        viewModel.setStatementImportAccount("acc-checking")
+        viewModel.previewCsvImportBytes("selected account csv".toByteArray())
+        advanceUntilIdle()
+        viewModel.confirmCsvImport()
+        advanceUntilIdle()
+
+        assertThat(csv.importedAccountIds).containsExactly("acc-checking")
+        assertThat(csv.importedBytes.map { it.decodeToString() }).containsExactly("selected account csv")
+    }
+
     private fun settingsViewModel(
         backfill: SmsBackfillTrigger = FakeSmsBackfillTrigger(),
         csvImporter: CsvImportTrigger = FakeCsvImportTrigger,
         transactions: TransactionRepository = FakeTransactionRepository(),
+        accounts: AccountRepository = FakeAccountRepository(),
     ) = SettingsViewModel(
         backup = FakeBackupRepository,
         backfillTrigger = backfill,
@@ -127,6 +160,7 @@ class SettingsViewModelTest {
         taxExport = FakeTaxExportTrigger,
         prefs = FakeUserPreferencesRepository(),
         transactions = transactions,
+        accounts = accounts,
     )
 }
 
@@ -153,6 +187,25 @@ private class FakeTransactionRepository(
     override suspend fun applyCategoryToMatching(pattern: String, categoryId: String): Int = 0
 }
 
+private class FakeAccountRepository(
+    active: List<Account> = listOf(Fixtures.account(id = MANUAL_ACCOUNT_ID, name = "Cash")),
+) : AccountRepository {
+    private val active = MutableStateFlow(active)
+
+    override fun observeActive(): Flow<List<Account>> = active
+    override fun observeAll(includeArchived: Boolean): Flow<List<Account>> = active
+    override suspend fun get(id: String): Account? = active.value.firstOrNull { it.id == id }
+    override suspend fun upsert(account: Account) = Unit
+    override suspend fun setArchived(id: String, archived: Boolean) = Unit
+    override suspend fun delete(id: String) = Unit
+    override fun observeNetWorth(displayCurrency: String): Flow<NetWorth> =
+        flowOf(NetWorth(total = Money.zero(displayCurrency), byCurrency = emptyMap(), accounts = emptyList()))
+    override fun observeBalances(): Flow<List<AccountBalance>> = flowOf(emptyList())
+    override suspend fun resolveForIngest(sender: String, body: String, counterparty: String?): Account? = null
+    override suspend fun reconcile(accountId: String, target: Money, label: String, note: String?): ReconcileResult =
+        ReconcileResult.Failed("not used")
+}
+
 private class FakeSmsBackfillTrigger(
     private val onBackfill: () -> Unit = {},
 ) : SmsBackfillTrigger {
@@ -173,17 +226,20 @@ private object FakeCsvImportTrigger : CsvImportTrigger {
     override suspend fun preview(input: InputStream): CsvImportPreviewResult =
         CsvImportPreviewResult.Done(emptyPreview())
 
-    override suspend fun import(input: InputStream): CsvImportResult = CsvImportResult.Done(imported = 0, skipped = 0)
+    override suspend fun import(input: InputStream, accountId: String): CsvImportResult =
+        CsvImportResult.Done(imported = 0, skipped = 0)
 }
 
 private class RecordingCsvImportTrigger : CsvImportTrigger {
     val importedBytes = mutableListOf<ByteArray>()
+    val importedAccountIds = mutableListOf<String>()
 
     override suspend fun preview(input: InputStream): CsvImportPreviewResult =
         CsvImportPreviewResult.Done(emptyPreview())
 
-    override suspend fun import(input: InputStream): CsvImportResult {
+    override suspend fun import(input: InputStream, accountId: String): CsvImportResult {
         importedBytes += input.readBytes()
+        importedAccountIds += accountId
         return CsvImportResult.Done(imported = 3, skipped = 1)
     }
 }

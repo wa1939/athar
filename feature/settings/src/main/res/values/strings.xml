@@ -78,6 +78,7 @@
     <string name="settings_csv_exported" formatted="true">تم تصدير %1$d حركة.</string>
     <string name="settings_csv_action_import">استيراد كشف</string>
     <string name="settings_csv_action_export">تصدير</string>
+    <string name="settings_csv_account_label">استيراد إلى حساب</string>
     <string name="settings_csv_preview_summary" formatted="true">جاهز لاستيراد %1$d صف. سيتم تخطي %2$d صف.</string>
     <string name="settings_csv_preview_confirm">تأكيد الاستيراد</string>
     <string name="settings_csv_preview_cancel">إلغاء</string>

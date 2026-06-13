@@ -26,6 +26,7 @@ Malformed statement transactions are counted as skipped rows. No OFX/QFX row is 
 - Missing date, amount, or merchant skips only that statement transaction.
 - Existing CSV import/export behavior remains unchanged.
 - Settings copy and file picker no longer imply the import path is CSV-only.
+- Import confirmation can target a selected active account in the follow-up G-12 account-selection slice.
 
 ## Validation
 

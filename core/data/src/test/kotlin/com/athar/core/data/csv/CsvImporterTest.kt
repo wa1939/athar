@@ -66,6 +66,21 @@ class CsvImporterTest {
     }
 
     @Test
+    fun `import assigns statement rows to selected account`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            clock = FixedClock,
+        )
+
+        importer.import(ByteArrayInputStream(statementCsv.toByteArray()), accountId = "acc-checking")
+
+        assertThat(transactions.upserts).hasSize(2)
+        assertThat(transactions.upserts.map { it.accountId }).containsExactly("acc-checking", "acc-checking")
+    }
+
+    @Test
     fun `preview reports ofx transactions without committing`() = runTest {
         val transactions = FakeTransactionRepository()
         val importer = CsvImporter(

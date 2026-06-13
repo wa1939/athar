@@ -1,5 +1,6 @@
 package com.athar.core.domain.repo
 
+import com.athar.core.domain.model.MANUAL_ACCOUNT_ID
 import java.io.InputStream
 
 /**
@@ -30,12 +31,14 @@ import java.io.InputStream
  *
  * The importer is conservative: a row with a parse error is skipped and counted in
  * [CsvImportResult.skipped] rather than aborting the whole batch.
+ * Imported rows are assigned to [accountId]; callers that do not expose account selection
+ * keep using [MANUAL_ACCOUNT_ID].
  *
  * Master Brief / Backlog M-14 and roadmap G-12.
  */
 interface CsvImportTrigger {
     suspend fun preview(input: InputStream): CsvImportPreviewResult
-    suspend fun import(input: InputStream): CsvImportResult
+    suspend fun import(input: InputStream, accountId: String = MANUAL_ACCOUNT_ID): CsvImportResult
 }
 
 sealed interface CsvImportPreviewResult {

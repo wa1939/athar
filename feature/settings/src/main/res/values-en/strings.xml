@@ -78,6 +78,7 @@
     <string name="settings_csv_exported" formatted="true">Exported %1$d transactions.</string>
     <string name="settings_csv_action_import">Import statement</string>
     <string name="settings_csv_action_export">Export</string>
+    <string name="settings_csv_account_label">Import into account</string>
     <string name="settings_csv_preview_summary" formatted="true">Ready to import %1$d rows. %2$d rows will be skipped.</string>
     <string name="settings_csv_preview_confirm">Confirm import</string>
     <string name="settings_csv_preview_cancel">Cancel</string>

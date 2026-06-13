@@ -38,8 +38,8 @@ internal class CsvImporter @Inject constructor(
         }
     }
 
-    override suspend fun import(input: InputStream): CsvImportResult {
-        val plan = when (val result = buildPlan(input)) {
+    override suspend fun import(input: InputStream, accountId: String): CsvImportResult {
+        val plan = when (val result = buildPlan(input, accountId)) {
             is CsvPlanResult.Done -> result.plan
             is CsvPlanResult.Failed -> return CsvImportResult.Failed(result.reason)
         }
@@ -49,18 +49,21 @@ internal class CsvImporter @Inject constructor(
         return CsvImportResult.Done(imported = plan.transactions.size, skipped = plan.skippedRows.size)
     }
 
-    private suspend fun buildPlan(input: InputStream): CsvPlanResult {
+    private suspend fun buildPlan(
+        input: InputStream,
+        accountId: String = MANUAL_ACCOUNT_ID,
+    ): CsvPlanResult {
         val text = runCatching { input.bufferedReader().use { it.readText() } }
             .getOrElse { return CsvPlanResult.Failed("Couldn't read import file: ${it.message}") }
         val lines = text.lineSequence().filter { it.isNotBlank() }.toList()
         if (lines.isEmpty()) return CsvPlanResult.Failed("Empty import file.")
 
         if (StatementOfxMapper.looksLikeOfx(text)) {
-            return buildOfxPlan(text)
+            return buildOfxPlan(text, accountId)
         }
 
         if (StatementMt940Mapper.looksLikeMt940(text)) {
-            return buildMt940Plan(text)
+            return buildMt940Plan(text, accountId)
         }
 
         val header = parseRow(lines[0])
@@ -88,6 +91,7 @@ internal class CsvImporter @Inject constructor(
                 categoryByName = categoryByName,
                 categoryByAr = categoryByAr,
                 now = now,
+                accountId = accountId,
             )
             if (mapped == null) {
                 skippedRows += CsvImportSkippedRow(
@@ -112,7 +116,7 @@ internal class CsvImporter @Inject constructor(
         )
     }
 
-    private suspend fun buildOfxPlan(text: String): CsvPlanResult {
+    private suspend fun buildOfxPlan(text: String, accountId: String): CsvPlanResult {
         val parsed = when (val result = StatementOfxMapper.parse(text)) {
             is StatementOfxParseResult.Done -> result
             is StatementOfxParseResult.Failed -> return CsvPlanResult.Failed(result.reason)
@@ -124,7 +128,7 @@ internal class CsvImporter @Inject constructor(
                 rowNumber = row.rowNumber,
                 transaction = Transaction(
                     id = UUID.randomUUID().toString(),
-                    accountId = MANUAL_ACCOUNT_ID,
+                    accountId = accountId,
                     type = row.type,
                     amount = Money.of(row.amount, row.currency),
                     date = row.date,
@@ -169,7 +173,7 @@ internal class CsvImporter @Inject constructor(
         )
     }
 
-    private suspend fun buildMt940Plan(text: String): CsvPlanResult {
+    private suspend fun buildMt940Plan(text: String, accountId: String): CsvPlanResult {
         val parsed = when (val result = StatementMt940Mapper.parse(text)) {
             is StatementMt940ParseResult.Done -> result
             is StatementMt940ParseResult.Failed -> return CsvPlanResult.Failed(result.reason)
@@ -181,7 +185,7 @@ internal class CsvImporter @Inject constructor(
                 rowNumber = row.rowNumber,
                 transaction = Transaction(
                     id = UUID.randomUUID().toString(),
-                    accountId = MANUAL_ACCOUNT_ID,
+                    accountId = accountId,
                     type = row.type,
                     amount = Money.of(row.amount, row.currency),
                     date = row.date,
@@ -233,6 +237,7 @@ internal class CsvImporter @Inject constructor(
         categoryByName: Map<String, Category>,
         categoryByAr: Map<String, Category>,
         now: kotlinx.datetime.Instant,
+        accountId: String,
     ): CsvMappedTransaction? {
         val mapped = StatementCsvMapper.map(row, columns) ?: run {
             Timber.w("CSV row %d skipped (unparseable statement row)", rowIndex)
@@ -246,7 +251,7 @@ internal class CsvImporter @Inject constructor(
         return CsvMappedTransaction(
             transaction = Transaction(
                 id = UUID.randomUUID().toString(),
-                accountId = MANUAL_ACCOUNT_ID,
+                accountId = accountId,
                 type = mapped.type,
                 amount = Money.of(mapped.amount, mapped.currency),
                 date = mapped.date,

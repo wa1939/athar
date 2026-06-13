@@ -4,6 +4,9 @@ import android.content.ContentResolver
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.athar.core.domain.model.Account
+import com.athar.core.domain.model.MANUAL_ACCOUNT_ID
+import com.athar.core.domain.repo.AccountRepository
 import com.athar.core.domain.repo.BackfillProgress
 import com.athar.core.domain.repo.BackupRepository
 import com.athar.core.domain.repo.CommunityRulesShareResult
@@ -30,6 +33,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -130,6 +134,7 @@ class SettingsViewModel @Inject constructor(
     private val taxExport: TaxExportTrigger,
     private val prefs: UserPreferencesRepository,
     private val transactions: TransactionRepository,
+    accounts: AccountRepository,
 ) : ViewModel() {
 
     private val _rescan = MutableStateFlow<RescanStatus>(RescanStatus.Idle)
@@ -144,6 +149,11 @@ class SettingsViewModel @Inject constructor(
     private val _csv = MutableStateFlow<CsvStatus>(CsvStatus.Idle)
     val csvStatus: StateFlow<CsvStatus> = _csv.asStateFlow()
     private var pendingCsvImportBytes: ByteArray? = null
+    private val _selectedStatementImportAccountId = MutableStateFlow(MANUAL_ACCOUNT_ID)
+    val selectedStatementImportAccountId: StateFlow<String> = _selectedStatementImportAccountId.asStateFlow()
+
+    val statementImportAccounts: StateFlow<List<Account>> = accounts.observeActive()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val _bulkCategorize = MutableStateFlow<BulkCategorizeStatus>(BulkCategorizeStatus.Idle)
     val bulkCategorizeStatus: StateFlow<BulkCategorizeStatus> = _bulkCategorize.asStateFlow()
@@ -175,6 +185,17 @@ class SettingsViewModel @Inject constructor(
     val appLocale: StateFlow<String> = prefs.appLocale()
         .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
+    init {
+        viewModelScope.launch {
+            statementImportAccounts.collectLatest { rows ->
+                val selected = _selectedStatementImportAccountId.value
+                if (rows.isNotEmpty() && rows.none { it.id == selected }) {
+                    _selectedStatementImportAccountId.value = rows.first().id
+                }
+            }
+        }
+    }
+
     fun setHijriEnabled(enabled: Boolean) {
         viewModelScope.launch { prefs.setHijriEnabled(enabled) }
     }
@@ -192,6 +213,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setAppLocale(tag: String) {
         viewModelScope.launch { prefs.setAppLocale(tag) }
+    }
+
+    fun setStatementImportAccount(accountId: String) {
+        _selectedStatementImportAccountId.value = accountId
     }
 
     fun export(resolver: ContentResolver, uri: Uri, passphrase: String) {
@@ -257,7 +282,12 @@ class SettingsViewModel @Inject constructor(
                 return@launch
             }
             _csv.value = CsvStatus.Working
-            _csv.value = when (val result = csvImporter.import(bytes.inputStream())) {
+            _csv.value = when (
+                val result = csvImporter.import(
+                    input = bytes.inputStream(),
+                    accountId = _selectedStatementImportAccountId.value,
+                )
+            ) {
                 is CsvImportResult.Done -> CsvStatus.Done(result.imported, result.skipped)
                 is CsvImportResult.Failed -> CsvStatus.Failed(result.reason)
             }

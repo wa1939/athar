@@ -26,6 +26,7 @@ Malformed `:61:` records are counted as skipped transactions instead of aborting
 - Missing date, amount, or merchant skips only that MT940 transaction.
 - Existing CSV and OFX/QFX imports remain unchanged.
 - Settings copy and file picker advertise the broader statement import support.
+- Import confirmation can target a selected active account in the follow-up G-12 account-selection slice.
 
 ## Validation
 
