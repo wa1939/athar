@@ -352,6 +352,54 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses MENA bank package notifications`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "You spent AED 42.00 at Carrefour"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Carrefour")
+    }
+
+    @Test
+    fun `parses Australian bank package notifications`() {
+        val result = parser.parse(
+            event("notification:com.commbank.netbank", "Card transaction Woolworths AUD 12.34"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("12.34"))
+        assertThat(result.amount.currency).isEqualTo("AUD")
+        assertThat(result.merchant).isEqualTo("Woolworths")
+    }
+
+    @Test
+    fun `parses Indian bank package notifications`() {
+        val result = parser.parse(
+            event("notification:com.hdfcbank.mobilebanking", "Paid INR 450.00 to Swiggy"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("450.00"))
+        assertThat(result.amount.currency).isEqualTo("INR")
+        assertThat(result.merchant).isEqualTo("Swiggy")
+    }
+
+    @Test
+    fun `parses US card package notifications`() {
+        val result = parser.parse(
+            event("notification:com.discoverfinancial.mobile", "Your card was charged $8.99 by Netflix"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("8.99"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Netflix")
+    }
+
+    @Test
     fun `ignores security code notifications`() {
         assertThat(
             parser.parse(event("notification:com.wise.android", "Your verification code is 123456. Do not share it.")),
