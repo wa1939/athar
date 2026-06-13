@@ -35,6 +35,11 @@ abstract class StructuredBankTemplate(
     final override val senderMatcher: SenderMatcher,
 ) : BankTemplate {
 
+    private val localizedAmount = """(?:${Normalize.LOCALIZED_AMOUNT_PATTERN})"""
+    private val amountSarInParens = Regex(
+        """(?:Amount|المبلغ|مبلغ(?:\s+العملية)?|بمبلغ|قيمة\s+العملية)\s*[:\s]\s*[A-Z]{3}\s+$localizedAmount\s*\(\s*SAR\s+($localizedAmount)\s*\)""",
+        RegexOption.IGNORE_CASE,
+    )
     private val amount = Regex(
         """(?:Amount|المبلغ|مبلغ(?:\s+العملية)?|بمبلغ|قيمة\s+العملية)\s*[:\s]\s*(?:SAR\s+|SR\s+)?([\d., ]+)(?:\s*SAR|\s*SR|\s*ر\.?\s*س)?""",
         RegexOption.IGNORE_CASE,
@@ -43,8 +48,16 @@ abstract class StructuredBankTemplate(
         """(?:purchase|POS|PoS|نقاط\s+بيع|شراء|خصم|سحب|مدين)""",
         RegexOption.IGNORE_CASE,
     )
+    private val withdrawalMarker = Regex(
+        """(?:withdrawal|ATM|سحب\s+صراف)""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val creditCardPaymentMarker = Regex(
+        """(?:Credit\s+Card\s*:\s*Payment|بطاقة\s+(?:ائتمانية|إئتمانية)\s*:\s*(?:سداد|تسديد))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val transferOutMarker = Regex(
-        """(?:Debit|Outgoing|outward|حوالة\s+صادرة|حوالة\s+مالية\s+صادرة|حوالة\s+(?:داخلية|محلية)(?!\s+واردة)|تحويل\s+صادر|تحويل\s+خارج|إرسال|صادرة\s+(?:داخلية|محلية))""",
+        """(?:Debit|Outgoing|outward|حوالة\s+صادرة|حوالة\s+مالية\s+صادرة|حوالة\s+(?:داخلية|محلية)(?!\s+واردة)|تحويل\s+صادر|تحويل\s+خارج|تحويل\s+بين\s+حسابات(?:ك|ي)?|إرسال|صادرة\s+(?:داخلية|محلية))""",
         RegexOption.IGNORE_CASE,
     )
     private val incomeMarker = Regex(
@@ -53,6 +66,10 @@ abstract class StructuredBankTemplate(
     )
     private val merchantAt = Regex(
         """(?:At|لدى|من\s+متجر)\s*[:\s]\s*([^\n\r]+?)(?:\n|$)""",
+        setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
+    )
+    private val serviceField = Regex(
+        """(?:Service|Biller|الجهة|الخدمة|مفوتر)\s*[:\s]\s*([^\n\r]+?)(?:\n|$)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val toField = Regex(
@@ -84,13 +101,17 @@ abstract class StructuredBankTemplate(
             return ParseResult.Ignored
         }
 
-        val amountRaw = amount.find(normalized)?.groupValues?.get(1)
+        val amountRaw = amountSarInParens.find(normalized)?.groupValues?.get(1)
+            ?: amount.find(normalized)?.groupValues?.get(1)
             ?: return ParseResult.Failed("amount label not found", listOf(id))
         val parsedAmount = Normalize.amount(amountRaw)
             ?: return ParseResult.Failed("amount unparseable: $amountRaw", listOf(id))
 
         val isPurchase = purchaseMarker.containsMatchIn(normalized)
+        val isWithdrawal = withdrawalMarker.containsMatchIn(normalized)
+        val isCreditCardPayment = creditCardPaymentMarker.containsMatchIn(normalized)
         val type = when {
+            isCreditCardPayment -> TxType.TRANSFER
             incomeMarker.containsMatchIn(normalized) -> TxType.INCOME
             transferOutMarker.containsMatchIn(normalized) -> TxType.TRANSFER
             isPurchase -> TxType.EXPENSE
@@ -99,11 +120,14 @@ abstract class StructuredBankTemplate(
 
         val to = toField.find(normalized)?.groupValues?.get(1)?.trim()
         val from = fromField.find(normalized)?.groupValues?.get(1)?.trim()
+        val service = serviceField.find(normalized)?.groupValues?.get(1)?.trim()
         val merchant = merchantAt.find(normalized)?.groupValues?.get(1)?.trim()
+            ?: service.takeIf { type == TxType.EXPENSE && !it.isNullOrBlank() }
             ?: from.takeIf { type == TxType.EXPENSE && isPurchase && !it.isNullOrBlank() }
+            ?: "ATM Withdrawal".takeIf { type == TxType.EXPENSE && isWithdrawal }
         val counterparty = when (type) {
             TxType.INCOME -> from
-            TxType.TRANSFER -> to
+            TxType.TRANSFER -> to ?: "Credit Card Payment".takeIf { isCreditCardPayment }
             else -> merchant ?: to
         }
         val cardLast4 = card.find(normalized)?.groupValues?.get(1)
@@ -135,7 +159,7 @@ class AlinmaTemplate : StructuredBankTemplate(
 class D360Template : StructuredBankTemplate(
     id = "d360-structured",
     senderMatcher = SenderMatcher.AnyOf(
-        setOf("D360", "D360Bank", "D-360", "Dahab", "D360BANK"),
+        setOf("D360", "D360 Bank", "D360Bank", "D-360", "Dahab", "D360BANK"),
     ),
 )
 

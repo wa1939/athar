@@ -11,6 +11,7 @@ import com.athar.ingestion.smsparser.alrajhi.AlRajhiDebitInternalTransferTemplat
 import com.athar.ingestion.smsparser.alrajhi.AlRajhiDebitLocalTransferTemplate
 import com.athar.ingestion.smsparser.alrajhi.AlRajhiDeclinedTemplate
 import com.athar.ingestion.smsparser.alrajhi.AlRajhiDepositRealTemplate
+import com.athar.ingestion.smsparser.alrajhi.AlRajhiGenericAmountTemplate
 import com.athar.ingestion.smsparser.alrajhi.AlRajhiLoanInstalmentTemplate
 import com.athar.ingestion.smsparser.alrajhi.AlRajhiOnlinePurchaseRealTemplate
 import com.athar.ingestion.smsparser.alrajhi.AlRajhiPosPurchaseRealTemplate
@@ -30,6 +31,7 @@ import com.athar.ingestion.smsparser.d360.D360InternationalPurchaseTemplate
 import com.athar.ingestion.smsparser.d360.D360InternationalTransferTemplate
 import com.athar.ingestion.smsparser.d360.D360LocalPurchaseTemplate
 import com.athar.ingestion.smsparser.d360.D360OnlinePurchaseTemplate
+import com.athar.ingestion.smsparser.genericbank.D360Template
 import com.athar.ingestion.smsparser.genericbank.AlJaziraTemplate
 import com.athar.ingestion.smsparser.genericbank.AlinmaTemplate
 import com.athar.ingestion.smsparser.genericbank.SnbTemplate
@@ -71,6 +73,7 @@ class SmsCorpusTest {
             AlRajhiTransferBetweenOwnTemplate(),
             AlRajhiDepositRealTemplate(),
             AlRajhiPosPurchaseTemplate(),
+            AlRajhiGenericAmountTemplate(),
             StcBankIncomingTransferTemplate(),
             StcBankOutgoingTransferTemplate(),
             StcBankSarieOutwardTemplate(),
@@ -83,6 +86,7 @@ class SmsCorpusTest {
             D360AccountFundingTemplate(),
             D360IncomingTransferTemplate(),
             D360InternationalTransferTemplate(),
+            D360Template(),
             BarqRejectedTemplate(),
             BarqOnlinePurchaseTemplate(),
             BarqPosInternationalTemplate(),
@@ -224,6 +228,21 @@ class SmsCorpusTest {
         assertThat(r.merchant).isEqualTo("SAUDI ELECTRIC COMPANY")
     }
 
+    @Test fun `AlRajhi Arabic bill payment without biller keeps bill payment merchant`() {
+        val body = """
+            سداد فاتورة
+            بطاقة:1234 ;فيزا
+            مبلغ:SAR 250.00
+            رصيد:SAR 12000.00
+            في:26-1-1 10:10
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.EXPENSE)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("250.00"))
+        assertThat(r.merchant).isEqualTo("سداد فاتورة")
+        assertThat(r.templateId).isEqualTo("al-rajhi-generic-amount")
+    }
+
     @Test fun `AlRajhi Deposit Saving Monthly Profit = INCOME`() {
         val body = """
             Deposit:Saving Account Monthly Profit
@@ -286,6 +305,70 @@ class SmsCorpusTest {
         assertThat(r.amount.amount).isEqualTo(BigDecimal("56.35"))
         assertThat(r.merchant).isEqualTo("STARBUCKS RIYADH")
         assertThat(r.templateId).isEqualTo("al-rajhi-pos-purchase")
+    }
+
+    @Test fun `AlRajhi Arabic compact purchase captures lam merchant`() {
+        val body = """
+            شراء
+            عبر:1234;مدى-أثير
+            بـSAR 20
+            لـSTC Pay
+            26/1/1 10:10
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.EXPENSE)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("20"))
+        assertThat(r.merchant).isEqualTo("STC Pay")
+        assertThat(r.templateId).isEqualTo("al-rajhi-pos-purchase")
+    }
+
+    @Test fun `AlRajhi Arabic credit card settlement is transfer`() {
+        val body = """
+            بطاقة ائتمانية:سداد
+            بطاقة:1234 ;فيزا
+            مبلغ:SAR 1500
+            رصيد:SAR 12000.00
+            في:26-1-1 10:10
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.TRANSFER)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("1500"))
+        assertThat(r.templateId).isEqualTo("al-rajhi-credit-card-payment")
+    }
+
+    @Test fun `AlRajhi Arabic compact card settlement is transfer`() {
+        val body = """
+            بطاقة فيزا:سداد بـSR 100
+            عبر:فيزا;1234
+            رصيد:12000.0 SR
+            26/1/1 10:10
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.TRANSFER)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("100"))
+        assertThat(r.templateId).isEqualTo("al-rajhi-credit-card-payment")
+    }
+
+    @Test fun `AlRajhi Arabic salary and transfer confirmations keep non-expense type`() {
+        val salary = """
+            راتب
+            مبلغ:SAR 12000.00
+            الى:1234
+            في:26-1-1 10:10
+        """.trimIndent()
+        val salaryResult = parser().parse(event("AlRajhiBank", salary)) as ParseResult.Success
+        assertThat(salaryResult.type).isEqualTo(TxType.INCOME)
+        assertThat(salaryResult.templateId).isEqualTo("al-rajhi-generic-amount")
+
+        val transfer = """
+            عزيزي العميل تم تعميد حوالتكم
+            مبلغ: SAR 2500
+            في: 2026-01-01 10:10
+            مرجع: ABC123456
+        """.trimIndent()
+        val transferResult = parser().parse(event("AlRajhiBank", transfer)) as ParseResult.Success
+        assertThat(transferResult.type).isEqualTo(TxType.TRANSFER)
+        assertThat(transferResult.templateId).isEqualTo("al-rajhi-generic-amount")
     }
 
     @Test fun `AlRajhi Arabic temporary code with amount is Ignored`() {
@@ -441,6 +524,21 @@ class SmsCorpusTest {
         assertThat(r.counterparty).contains("WALEED HAMED")
     }
 
+    @Test fun `D360 Arabic transfer between accounts is transfer`() {
+        val body = """
+            تحويل بين حساباتك
+            من: *1111
+            المبلغ: 12,000.00 ريال
+            إلى: *2222
+            في: 2026-01-16 20:27
+        """.trimIndent()
+        val r = parser().parse(event("D360 Bank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.TRANSFER)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("12000.00"))
+        assertThat(r.counterparty).isEqualTo("*2222")
+        assertThat(r.templateId).isEqualTo("d360-structured")
+    }
+
     @Test fun `D360 Declined Transaction is Ignored`() {
         val body = """
             Transaction Declined: Insufficient balance
@@ -562,6 +660,38 @@ class SmsCorpusTest {
         assertThat(parser().parse(event("SNB-AlAhli", body))).isEqualTo(ParseResult.Ignored)
     }
 
+    @Test fun `SNB AlAhli public service payment captures agency merchant`() {
+        val body = """
+            مدفوعات وزارة الداخلية
+            من 304*111
+            مبلغ 300 SAR
+            الجهة المخالفات المرورية
+            الخدمة الاستعلام عن المخالفات برقم المخالفة
+            رقم الفاتورة 1234567890
+            في 20/01/25 16:56
+        """.trimIndent()
+        val r = parser().parse(event("SNB-AlAhli", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.EXPENSE)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("300"))
+        assertThat(r.merchant).isEqualTo("المخالفات المرورية")
+        assertThat(r.templateId).isEqualTo("snb-structured")
+    }
+
+    @Test fun `SNB AlAhli ATM withdrawal gets ATM merchant fallback`() {
+        val body = """
+            سحب صراف آلي
+            مبلغ 1000 SAR
+            بطاقة مدى *1111
+            بـ SAMPLE ATM
+            في 20/01/25 16:56
+        """.trimIndent()
+        val r = parser().parse(event("SNB-AlAhli", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.EXPENSE)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("1000"))
+        assertThat(r.merchant).isEqualTo("ATM Withdrawal")
+        assertThat(r.templateId).isEqualTo("snb-structured")
+    }
+
     @Test fun `AlJazira incoming internal transfer is INCOME`() {
         val body = """
             حوالة واردة داخلية
@@ -595,6 +725,21 @@ class SmsCorpusTest {
         assertThat(r.templateId).isEqualTo("aljazira-structured")
     }
 
+    @Test fun `AlJazira Arabic credit card settlement is transfer`() {
+        val body = """
+            بطاقة إئتمانية: تسديد
+            بطاقة: 1234;إئتمانية
+            مبلغ: SAR 500.00
+            من: 8001
+            في: 2026-01-16 20:27
+        """.trimIndent()
+        val r = parser().parse(event("AlJaziraSMS", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.TRANSFER)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("500.00"))
+        assertThat(r.counterparty).isEqualTo("Credit Card Payment")
+        assertThat(r.templateId).isEqualTo("aljazira-structured")
+    }
+
     @Test fun `Jazira one-time-password with amount is Ignored`() {
         val body = """
             كلمة مرور صالحة لمرة واحدة
@@ -605,6 +750,39 @@ class SmsCorpusTest {
             التاريخ: 20:27 16-01-2026
         """.trimIndent()
         assertThat(parser().parse(event("Jazira Bank", body))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `beneficiary status notices are Ignored`() {
+        val inactive = """
+            اسم المستفيد : مستفيد تجريبي
+            اسم المخصص : مستفيد
+            حالة: غير نشط
+            SA0000000000000000000000 : حساب
+            مصرف الراجحي : مصرف
+            في : 20:27 16-01-2026
+        """.trimIndent()
+        assertThat(parser().parse(event("AlJaziraSMS", inactive))).isEqualTo(ParseResult.Ignored)
+
+        val activated = """
+            اسم المستفيد:مستفيد تجريبي, رقم المرجع: 1234, الحالة: تم التنشيط, التاريخ والوقت: 16-01-2026 20:27:00
+        """.trimIndent()
+        assertThat(parser().parse(event("D360 Bank", activated))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `D360 Arabic international purchase uses structured fallback merchant`() {
+        val body = """
+            شراء دولي
+            مبلغ: USD 12.00 (SAR 45.00)
+            بطاقة: *1111 - VISA (Card)
+            لدى: SAMPLE MERCHANT
+            الدولة: USA
+            في: 20:27 2026-01-16
+        """.trimIndent()
+        val r = parser().parse(event("D360 Bank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.EXPENSE)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("45.00"))
+        assertThat(r.merchant).isEqualTo("SAMPLE MERCHANT")
+        assertThat(r.templateId).isEqualTo("d360-structured")
     }
 
     @Test fun `urpay Arabic purchase captures merchant from from field`() {
@@ -739,6 +917,36 @@ class SmsCorpusTest {
 
         val inactiveCard = "عملية مرفوضة: بطاقتك غير مفعلة، الرجاء الدخول للتطبيق ثم الضغط على إدارة البطاقة ثم التفعيل."
         assertThat(parser().parse(event("D360 Bank", inactiveCard))).isEqualTo(ParseResult.Ignored)
+
+        val inactiveCardVariant = """
+            إشعار: عملية مرفوضة - البطاقة غير مفعلة
+            العملية : شراء انترنت
+            بطاقة : 1111***
+            مبلغ : 250.00 SAR
+            على : Sample
+            في :16-01-2026 20:27
+        """.trimIndent()
+        assertThat(parser().parse(event("AlRajhiBank", inactiveCardVariant))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `card terms and renewal notices are Ignored`() {
+        val terms = """
+            بطاقة مدى
+            يمكن الاطلاع على الشروط والأحكام، يرجى زيارة موقع مصرف الراجحي.
+        """.trimIndent()
+        assertThat(parser().parse(event("AlRajhiBank", terms))).isEqualTo(ParseResult.Ignored)
+
+        val renewal = """
+            تقترب بطاقة مدى من الانتهاء، بإمكانكم تجديد البطاقة من خلال تطبيق المصرف.
+        """.trimIndent()
+        assertThat(parser().parse(event("AlRajhiBank", renewal))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `Arabic card cashback is income not expense`() {
+        val body = "مبروك! تم إضافة 5.00 ريال لبطاقتك المنتهية بـ 1111 كاسترداد نقدي."
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.INCOME)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("5.00"))
     }
 
     @Test fun `bank promo app migration document and fraud notices are Ignored`() {
@@ -749,6 +957,9 @@ class SmsCorpusTest {
         assertThat(parser().parse(event("D360 Bank", savingsPromo))).isEqualTo(ParseResult.Ignored)
         assertThat(
             parser().parse(event("D360 Bank", "تم تفعيل الرمز الترويجي على حسابك الادخاري، استمتع بعرضك الآن!")),
+        ).isEqualTo(ParseResult.Ignored)
+        assertThat(
+            parser().parse(event("D360 Bank", "مبروك! تم تنشيط حسابك الادخاري الجديد. رقم الآيبان الخاص بك هو SA0000000000000000000000")),
         ).isEqualTo(ParseResult.Ignored)
 
         val migration = """

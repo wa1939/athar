@@ -38,15 +38,16 @@ class UniversalAmountTemplate : BankTemplate {
     )
 
     private val incomeWords = Regex(
-        """\b(?:credit|deposit|received|incoming|refund|salary|payment\s+from|إيداع|ايداع|وارد|استلم|تم\s+استلام|recibido|reçu|gelir|گیا)\b""",
+        """\b(?:credit|deposit|received|incoming|refund|salary|payment\s+from|إيداع|ايداع|وارد|استلم|تم\s+استلام|راتب|استرداد\s+نقدي|recibido|reçu|gelir|گیا)\b""",
         RegexOption.IGNORE_CASE,
     )
+    private val incomePhrases = Regex("""(?:راتب|استرداد\s+نقدي|كاسترداد\s+نقدي|تم\s+إضافة)""")
     private val expenseWords = Regex(
         """\b(?:purchase|paid|debit|withdrawal|spent|charge|pos|atm|شراء|سحب|خصم|دفع|cobrado|payé|harcanan|خرچ)\b""",
         RegexOption.IGNORE_CASE,
     )
     private val transferWords = Regex(
-        """\b(?:transfer|sent|outgoing|remit|تحويل|حوالة|إرسال|envío|virement|havale|بھیج)\b""",
+        """\b(?:transfer|sent|outgoing|remit|تحويل|حوالة|حوالتكم|حوالتك|الحوالة|إرسال|envío|virement|havale|بھیج)\b""",
         RegexOption.IGNORE_CASE,
     )
     private val ignoreWords = Regex(
@@ -54,7 +55,7 @@ class UniversalAmountTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val merchantHint = Regex(
-        """(?:at|from|to|لدى|من|إلى|الى|لـ|الجهة|الخدمة|مكان\s+السحب|مفوتر|على|de|à|en|chez)\s*[:\s]\s*([A-Za-z\u0600-\u06FF][^\n\r]{1,40})""",
+        """(?:(?:\bat\b|\bfrom\b|\bto\b|لدى|من|إلى|الى|الجهة|الخدمة|مكان\s+السحب|مفوتر|على|de|à|en|chez)\s*[:\s]\s*|لـ\s*[:\s]?)([A-Za-z\u0600-\u06FF][^\n\r]{1,40})""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
 
@@ -62,7 +63,7 @@ class UniversalAmountTemplate : BankTemplate {
         val normalized = Normalize.digits(body)
 
         if (ignoreWords.containsMatchIn(normalized) &&
-            !incomeWords.containsMatchIn(normalized) &&
+            !hasIncomeAction(normalized) &&
             !expenseWords.containsMatchIn(normalized) &&
             !transferWords.containsMatchIn(normalized)
         ) {
@@ -81,7 +82,7 @@ class UniversalAmountTemplate : BankTemplate {
 
         // Heuristic: prefer the most specific verb. Income > Transfer > Expense (default).
         val type = when {
-            incomeWords.containsMatchIn(normalized) -> TxType.INCOME
+            hasIncomeAction(normalized) -> TxType.INCOME
             transferWords.containsMatchIn(normalized) -> TxType.TRANSFER
             else -> TxType.EXPENSE
         }
@@ -93,7 +94,7 @@ class UniversalAmountTemplate : BankTemplate {
         var confidence = 0.20f
         if (currency != null) confidence += 0.15f
         if (merchant != null) confidence += 0.10f
-        if (incomeWords.containsMatchIn(normalized) ||
+        if (hasIncomeAction(normalized) ||
             transferWords.containsMatchIn(normalized) ||
             expenseWords.containsMatchIn(normalized)
         ) confidence += 0.10f
@@ -109,4 +110,7 @@ class UniversalAmountTemplate : BankTemplate {
             templateId = id,
         )
     }
+
+    private fun hasIncomeAction(body: String): Boolean =
+        incomeWords.containsMatchIn(body) || incomePhrases.containsMatchIn(body)
 }

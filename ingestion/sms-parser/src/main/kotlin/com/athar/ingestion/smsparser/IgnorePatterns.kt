@@ -44,6 +44,7 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""تم\s+تنشيط\s+المستفيد"""),
         Regex("""تم\s+إ?ضافة\s+مستفيد\s*[-–]"""),
         Regex("""تم\s+تنشيط\s+مستفيد\s*[-–]"""),
+        Regex("""اسم\s+المستفيد[\s\S]{0,180}(?:حالة\s*:\s*غير\s+نشط|الحالة\s*:\s*تم\s+التنشيط|تم\s+التنشيط)"""),
 
         // Card management (activation, digital wallet provisioning, renewal)
         Regex("""\bcard\s+(?:has\s+been\s+)?added\s+to\s+(?:digital\s+wallet|wallet)""", RegexOption.IGNORE_CASE),
@@ -55,10 +56,14 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""الموافقة\s+على\s+طلبكم[^\n\r]{0,80}منتج\s+بطاقة\s+الائتمان"""),
         Regex("""سندات\s+الأمر[^\n\r]{0,120}البطاقات\s+الائتمانية"""),
         Regex("""بطاقة\s+ائتمانية[\s\S]{0,240}(?:إجمالي\s+المبلغ\s+المستحق|المبلغ\s+الأدنى\s+المستحق)"""),
+        Regex("""بطاقة\s+(?:ائتمانية|إئتمانية)[\s\S]{0,240}(?:كشف\s+حساب|المبلغ\s+المستحق|المبلغ\s+الأدنى\s+المستحق)"""),
         Regex("""كشف\s+حسابكم\s+الشهري"""),
         Regex("""تحديث\s+شروط\s+استبدال\s+البطاقة"""),
         Regex("""البطاقة\s+البلاستيكية\s+التالفة\s+أو\s+المفقودة"""),
+        Regex("""(?:الشروط\s+والأحكام|الشروط)[\s\S]{0,160}(?:يرجى\s+زيارة|موقع\s+مصرف|موقع\s+البنك)"""),
+        Regex("""الانتهاء[\s\S]{0,160}تجديد\s+البطاقة"""),
         Regex("""عملية\s+مرفوضة[^\n\r]{0,80}بطاقتك\s+غير\s+مفعلة"""),
+        Regex("""عملية\s+مرفوضة[\s\S]{0,120}البطاقة\s+غير\s+مفعلة"""),
 
         // System / scheduled maintenance / service announcements
         Regex("""\bscheduled\s+(?:update|maintenance)\b""", RegexOption.IGNORE_CASE),
@@ -133,6 +138,8 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""تم\s+التسجيل\s+في\s+خاصية\s+(?:البصمة|الدخول\s+السريع)"""),
         Regex("""تم\s+إلغاء\s+خاصية\s+البصمة"""),
         Regex("""تفعيل\s+خدمة\s+الدخول[^\n\r]{0,80}بصمة"""),
+        Regex("""تم\s+تنشيط\s+حسابك\s+الادخاري"""),
+        Regex("""رقم\s+الآيبان\s+الخاص\s+بك"""),
         Regex("""نعتذر\s+عن\s+الخلل[^\n\r]{0,120}استخدام\s+البطاقة"""),
         Regex("""يمكنك\s+استخدام\s+بطاقتك\s+مجدد"""),
 

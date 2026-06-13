@@ -316,8 +316,14 @@ class AlRajhiCreditCardPaymentTemplate : BankTemplate {
     override val id: String = "al-rajhi-credit-card-payment"
     override val senderMatcher: SenderMatcher = AL_RAJHI_SENDERS_REAL
 
-    private val header = Regex("""^Credit\s+Card\s*:\s*Payment\s*$""", setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))
-    private val amountLine = Regex("""^Amount\s*:\s*(?:SAR\s+)?(${NUM_RE.pattern})""", setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))
+    private val header = Regex(
+        """^(?:Credit\s+Card\s*:\s*Payment|بطاقة\s+(?:ائتمانية|إئتمانية|فيزا)\s*:\s*سداد(?:\s+بـ[^\n\r]+)?)\s*$""",
+        setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE),
+    )
+    private val amountLine = Regex(
+        """(?:^Amount\s*:\s*|^مبلغ\s*:\s*|بـ\s*)(?:SAR\s+|SR\s+)?(${NUM_RE.pattern})(?:\s*SAR|\s*SR|\s*ر\.?\s*س)?""",
+        setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE),
+    )
 
     override fun tryParse(body: String, receivedAt: Instant): ParseResult {
         val n = Normalize.digits(body)
