@@ -32,12 +32,14 @@ internal class MerchantBulkExporter @Inject constructor(
                 (tx.status == TxStatus.CONFIRMED && tx.categoryId.isNullOrBlank())
         }
         OutputStreamWriter(out, Charsets.UTF_8).use { writer ->
-            writer.write("id,merchant,merchant_normalized,amount,currency,type,status,date,raw_body,category_id\n")
+            writer.write("id,stable_key,source_ref_id,merchant,merchant_normalized,amount,currency,type,status,date,raw_body,category_id\n")
             candidates.forEach { tx ->
                 val raw = tx.notes.orEmpty() // raw SMS body lives in notes when ingested
                 writer.write(
                     listOf(
                         tx.id,
+                        MerchantBulkStableKey.sourceAware(tx),
+                        tx.sourceRefId.orEmpty(),
                         tx.merchant,
                         tx.merchantNormalized,
                         tx.amount.amount.toPlainString(),

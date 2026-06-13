@@ -8,13 +8,14 @@ import java.io.OutputStream
  *
  * Flow:
  *  1. **Export** — write a CSV of every PENDING / DISMISSED / uncategorized-CONFIRMED
- *     transaction. Columns: id, merchant, amount, currency, type, status, date, raw_body,
- *     category_id (blank for user to fill).
+ *     transaction. Columns: id, stable_key, source_ref_id, merchant, amount, currency,
+ *     type, status, date, raw_body, category_id (blank for user to fill).
  *  2. **External** — user feeds the CSV to ChatGPT/Claude/Z.ai with the AI triage prompt
  *     (`docs/AI_SMS_TRIAGE_PROMPT.md`) and exports the filled-in CSV.
  *  3. **Import** — read the filled CSV. For each row with a non-blank category_id:
  *       - validate the category exists,
- *       - set categoryId on the matching transaction AND move it to CONFIRMED,
+ *       - set categoryId on the matching transaction AND move it to CONFIRMED
+ *         (matched by id first, stable_key/source/content fingerprint second),
  *       - record a learned `CategoryRule` per unique (merchant → categoryId) pair so
  *         future ingests auto-categorize the same merchant.
  *
