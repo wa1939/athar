@@ -3219,6 +3219,71 @@
       "pattern": "splash",
       "categoryId": "cat-clothing",
       "priority": 90
+    },
+    {
+      "pattern": "tabby",
+      "categoryId": "cat-debt",
+      "priority": 90
+    },
+    {
+      "pattern": "farm supe",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "petrofas",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "fuelax",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "gathern",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "giordano",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "ryanair",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "wizz air",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "saco",
+      "categoryId": "cat-electronics",
+      "priority": 90
+    },
+    {
+      "pattern": "airalo",
+      "categoryId": "cat-telecom",
+      "priority": 90
+    },
+    {
+      "pattern": "woqoof",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "المخالفات المرورية",
+      "categoryId": "cat-utilities",
+      "priority": 90
+    },
+    {
+      "pattern": "خدمات المقيمين",
+      "categoryId": "cat-utilities",
+      "priority": 90
     }
   ]
 }
