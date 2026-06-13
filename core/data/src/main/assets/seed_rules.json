@@ -3389,6 +3389,46 @@
       "pattern": "aliexpress",
       "categoryId": "cat-other-expense",
       "priority": 90
+    },
+    {
+      "pattern": "spar",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "panificio",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "regoli",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "chili's",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "chilis",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "claude",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "airside",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "harvard",
+      "categoryId": "cat-education",
+      "priority": 90
     }
   ]
 }
