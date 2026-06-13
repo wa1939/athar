@@ -117,6 +117,42 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `ignores card activation admin notifications`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.chase.sig.android", "Your card ending 1234 has been activated."),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores card terms admin notifications`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.capitalone.mobile", "Terms and conditions updated for your card ending 1234."),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores device link admin notifications`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.wise.android", "New device linked to your account. Review if this was not you."),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores Arabic card activation admin notifications`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.alrajhibank.alrajhimobile", "تم تفعيل بطاقتك الرقمية بنجاح"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
     fun `parses Arabic debit without offer wording`() {
         val result = parser.parse(
             event("notification:com.alrajhibank.alrajhimobile", "خصم ٣٥٫٥٠ ر.س لدى كارفور"),

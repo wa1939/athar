@@ -64,6 +64,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         """\b(?:scheduled\s+(?:payment|transfer|autopay|bill)|payment\s+(?:is\s+)?scheduled|transfer\s+(?:is\s+)?scheduled|autopay\s+(?:is\s+)?scheduled|upcoming\s+payment)\b""",
         RegexOption.IGNORE_CASE,
     )
+    private val adminNoticeWords = Regex(
+        """(?:\b(?:card\s+(?:ending\s+\d{2,4}\s+(?:has\s+been\s+|was\s+)?)?(?:activated|activation|blocked|unblocked|locked|unlocked|frozen|unfrozen|issued|shipped|delivered|ready|expired|renewed|replacement)|pin\s+(?:changed|updated|reset)|new\s+device\s+(?:linked|registered|added)|device\s+(?:linked|registered|added)|biometric\s+(?:enabled|disabled|login)|quick\s+login|beneficiary\s+(?:added|activated|updated)|payee\s+(?:added|activated|updated)|terms\s+(?:and\s+conditions\s+)?(?:updated|changed|available)|privacy\s+notice|document\s+(?:ready|available)|maintenance|service\s+interruption|app\s+(?:updated|migration|migrated))\b|تم\s+(?:تفعيل|إيقاف|ايقاف|حظر|فك\s+حظر|تجميد|إصدار|اصدار|تجديد)\s+(?:بطاقتك|البطاقة)|تفعيل\s+(?:البطاقة|بطاقتك)|تم\s+ربط\s+جهاز|تم\s+تسجيل\s+جهاز|تم\s+إضافة\s+مستفيد|تم\s+اضافة\s+مستفيد|الشروط\s+والأحكام|الأحكام\s+والشروط|الصيانة|تحديث\s+التطبيق)""",
+        RegexOption.IGNORE_CASE,
+    )
     private val securityWords = Regex(
         """\b(?:otp|one[-\s]?time|verification|security\s+code|login|password|do\s+not\s+share|رمز|تحقق|الدخول|كلمة\s+المرور)\b""",
         RegexOption.IGNORE_CASE,
@@ -164,6 +168,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             return ParseResult.Ignored
         }
         if (requestWords.containsMatchIn(normalized) && !hasAction) return ParseResult.Ignored
+        if (adminNoticeWords.containsMatchIn(normalized) && !hasAction) return ParseResult.Ignored
         if (securityWords.containsMatchIn(normalized) && !hasAction) return ParseResult.Ignored
         if (marketingWords.containsMatchIn(normalized) && !hasAction) return ParseResult.Ignored
         if (hasBalanceNoticeText(normalized) && !hasAction) return ParseResult.Ignored
