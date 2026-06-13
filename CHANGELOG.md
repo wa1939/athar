@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Statement CSV import now auto-detects common bank export headers: `description`/`details`/`narrative`, signed `amount`, split `debit`/`credit`, optional ISO currency, and Arabic date/description/debit/credit headers. Original Athar/TMOAP CSV imports still work, with positive `date,vendor,amount` rows kept as expenses unless `type` says otherwise.
 - In-place Confirm / Dismiss / Categorize buttons on the Pending widget (currently a tap opens the app). Needs HiltWorker + WorkManager+Hilt wiring.
 - App-triggered widget refresh (`updateAll(context)`) after in-app Confirm/Dismiss so the widget syncs within seconds instead of the system's 30-minute cadence.
 

@@ -89,8 +89,8 @@ Below is the prioritized gap list, in delivery order.
 **Fix:** Add notification handlers for Apple Wallet, Google Pay, Revolut, Wise, N26, Monzo, Starling, Chase, Capital One, Mercury, plus regional non-Saudi banks.
 
 ### G-12 — Bank statement / CSV / OFX import
-**Status:** CSV import exists for a single hand-rolled column layout.
-**Gap:** Banks export CSV, OFX, QFX with different shapes. Users on every continent need to be able to drag in their statement.
+**Status:** CSV import now auto-detects the original Athar/TMOAP layout plus common statement layouts (`description`/`amount`, split `debit`/`credit`, optional ISO currency).
+**Gap:** OFX, QFX, MT940, preview, and manual column mapping are still missing. Users on every continent need to be able to drag in their statement and verify rows before commit.
 **Fix:**
 - Import wizard: auto-detect format (CSV / OFX / QFX / MT940), preview rows, let user map columns to fields.
 - Support multi-currency statements.

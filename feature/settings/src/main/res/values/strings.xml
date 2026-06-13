@@ -68,7 +68,7 @@
 
     <!-- CSV card -->
     <string name="settings_csv_title">تبادل CSV</string>
-    <string name="settings_csv_body">استورد من جدول الاكسل القديم أو صدّر حركاتك بصيغة CSV (الأعمدة: date · vendor · amount · category · type · notes).</string>
+    <string name="settings_csv_body">استورد من جدول الاكسل القديم أو من كشف بنك بصيغة CSV. يدعم date/description/amount أو أعمدة debit/credit مع currency اختياري، ويمكنك تصدير حركاتك للمحاسب.</string>
     <string name="settings_csv_done" formatted="true">تم استيراد %1$d حركة. (تم تخطّي %2$d صف.)</string>
     <string name="settings_csv_exported" formatted="true">تم تصدير %1$d حركة.</string>
     <string name="settings_csv_action_import">استيراد</string>
