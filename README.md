@@ -109,6 +109,7 @@ Other tools force a trade-off:
 - ✅ **SQLCipher** database encryption at rest, key wrapped via Android Keystore
 - ✅ **SMS audit log** — every parsed/failed/ignored SMS retained, never deleted
 - ✅ **Support diagnostics export** — Settings writes a redacted JSON report with SMS parse counts, pseudonymous sender hashes, body-shape fingerprints/flags, failed-template groups, and redacted parser errors. No raw SMS body, sender, balance, card, or account numbers are included
+- ✅ **SMS audit log** — every parsed/failed/ignored SMS retained, never deleted, with sender-health counts so failed banks and spammy senders are easy to spot after a backfill
 - ✅ **Activity log** — every transaction edit, with timestamp
 - ✅ **All transactions history (H-01, beta.12)** — searchable list of every transaction across all time, filter chips for status (All / Confirmed / Pending / Dismissed) and type (Expenses / Income / Transfers), tap any row to edit category or delete. Reachable from Settings → "All transactions"
 - ✅ **Recover dismissed (beta.15)** — one-tap action moves every DISMISSED transaction back to PENDING so users on older builds can recover what was hidden by the now-removed auto-dismiss policy

@@ -276,6 +276,10 @@
     <string name="settings_sms_audit_filter_parsed">ناجحة</string>
     <string name="settings_sms_audit_filter_failed">فاشلة</string>
     <string name="settings_sms_audit_filter_ignored">مُتجاهَلة</string>
+    <string name="settings_sms_audit_parse_rate" formatted="true">معدل التحليل الناجح · %1$d٪</string>
+    <string name="settings_sms_audit_sender_health_title">صحة المرسلين</string>
+    <string name="settings_sms_audit_sender_health_body">أكثر المرسلين احتياجًا للمراجعة. الفشل يعني أن القالب لا يفهم الرسالة؛ التجاهل يعني غالبًا إعلانًا أو رمز تحقق.</string>
+    <string name="settings_sms_audit_sender_health_counts" formatted="true">%1$d ناجحة · %2$d فاشلة · %3$d متجاهَلة</string>
     <string name="settings_sms_audit_empty">لا رسائل في هذا التصنيف بعد.</string>
     <string name="settings_sms_audit_empty_subtle">تظهر الرسائل هنا كلما وصلت أو فعّلت إعادة الفحص من الإعدادات.</string>
 
