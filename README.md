@@ -100,6 +100,7 @@ Other tools force a trade-off:
 
 #### Settings + ops
 - ✅ **Multi-currency display** — pick from 18 ISO-4217 codes (USD · EUR · GBP · AED · EGP · INR · PKR · TRY · SAR · KWD · QAR · BHD · OMR · JOD · CAD · AUD · CHF · JPY) with Arabic + English currency labels
+- ✅ **Per-account ingestion routing** — add SMS sender aliases or card/account tails to each account so new bank messages land on the right checking, savings, or credit-card account instead of the manual seed account
 - ✅ **AES-256-GCM encrypted backup** (Argon2-equivalent KDF, passphrase-protected)
 - ✅ **CSV import + export** for Excel and bank-statement interop — import TMOAP/Athar CSVs or common statement layouts with description/amount or debit/credit columns; export annual data for your accountant
 - ✅ **CSV import + export** for Excel interop — drop in your TMOAP transaction log to import; export annual data for your accountant
@@ -323,7 +324,7 @@ Full gap analysis: [`docs/ROADMAP_GLOBAL.md`](docs/ROADMAP_GLOBAL.md).
 - ⏳ TFLite merchant classifier (rule engine handles ~90% of cases)
 - ⏳ Paparazzi snapshot baselines (need to record on a real machine)
 - ⏳ Macrobenchmarks (need a device)
-- ⏳ Per-bank account routing (S-20)
+- ✅ Per-account SMS/notification routing by sender alias or card/account tail (S-20)
 - ⏳ WorkManager auto-trigger for recurring rules (manual "Run now" works today)
 - ⏳ XLSX direct import (CSV path covers the migration today)
 

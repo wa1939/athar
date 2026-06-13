@@ -8,6 +8,7 @@ import com.athar.core.data.mapper.toEntity
 import com.athar.core.data.mapper.toMinor
 import com.athar.core.domain.model.Account
 import com.athar.core.domain.model.AccountBalance
+import com.athar.core.domain.model.AccountRouting
 import com.athar.core.domain.model.IngestSource
 import com.athar.core.domain.model.MANUAL_ACCOUNT_ID
 import com.athar.core.domain.model.NetWorth
@@ -91,6 +92,14 @@ internal class AccountRepositoryImpl @Inject constructor(
             AccountBalance(account = account, current = current)
         }
     }
+
+    override suspend fun resolveForIngest(sender: String, body: String, counterparty: String?): Account? =
+        AccountRouting.resolve(
+            accounts = accountDao.observeActive().first().map { it.toDomain() },
+            sender = sender,
+            body = body,
+            counterparty = counterparty,
+        )
 
     override suspend fun reconcile(
         accountId: String,

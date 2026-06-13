@@ -181,6 +181,9 @@
     <string name="settings_accounts_field_name">Account name</string>
     <string name="settings_accounts_field_name_hint">Account name (e.g. Al Rajhi - Checking)</string>
     <string name="settings_accounts_field_opening" formatted="true">Opening balance (%1$s)</string>
+    <string name="settings_accounts_field_sms_senders">SMS routing aliases</string>
+    <string name="settings_accounts_field_sms_senders_help">Comma-separated sender names or card/account tails, e.g. AlRajhiBank, 9803. Used only on-device to route new bank messages to this account.</string>
+    <string name="settings_accounts_sms_routes" formatted="true">Routes bank messages: %1$s</string>
     <string name="settings_accounts_field_notes">Notes (optional)</string>
     <string name="settings_accounts_save_edits">Save changes</string>
     <string name="settings_accounts_action_edit">Edit</string>
