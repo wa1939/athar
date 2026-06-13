@@ -322,6 +322,22 @@ class SmsCorpusTest {
         assertThat(r.templateId).isEqualTo("al-rajhi-pos-purchase")
     }
 
+    @Test fun `AlRajhi Arabic online purchase prefers explicit merchant over account source`() {
+        val body = """
+            شراء انترنت
+            بطاقة:1234;مدى
+            من:4186
+            مبلغ:SAR 49.45
+            لدى:Tawuniya
+            في:25-2-13 09:41
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.EXPENSE)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("49.45"))
+        assertThat(r.merchant).isEqualTo("Tawuniya")
+        assertThat(r.templateId).isEqualTo("al-rajhi-pos-purchase")
+    }
+
     @Test fun `AlRajhi Arabic credit card settlement is transfer`() {
         val body = """
             بطاقة ائتمانية:سداد
@@ -692,6 +708,21 @@ class SmsCorpusTest {
         assertThat(r.templateId).isEqualTo("snb-structured")
     }
 
+    @Test fun `D360 Arabic cash withdrawal gets ATM merchant fallback`() {
+        val body = """
+            سحب نقدي
+            مبلغ: SAR 1000.00
+            بطاقة: *1111 - mada
+            لدى: SAMPLE BANK
+            في: 10:59 2025-01-19
+        """.trimIndent()
+        val r = parser().parse(event("D360 Bank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.EXPENSE)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("1000.00"))
+        assertThat(r.merchant).isEqualTo("ATM Withdrawal")
+        assertThat(r.templateId).isEqualTo("d360-structured")
+    }
+
     @Test fun `AlJazira incoming internal transfer is INCOME`() {
         val body = """
             حوالة واردة داخلية
@@ -722,6 +753,21 @@ class SmsCorpusTest {
         assertThat(r.type).isEqualTo(TxType.TRANSFER)
         assertThat(r.amount.amount).isEqualTo(BigDecimal("498.00"))
         assertThat(r.counterparty).isEqualTo("مستفيد العائلة")
+        assertThat(r.templateId).isEqualTo("aljazira-structured")
+    }
+
+    @Test fun `Jazira account-only fee debit gets bank fees merchant`() {
+        val body = """
+            خصم: رسوم
+            السبب: ضريبة القيمة المضافة
+            من: 8001
+            مبلغ: 0.08 SAR
+            في: 2026-01-16 20:27
+        """.trimIndent()
+        val r = parser().parse(event("Jazira Bank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.EXPENSE)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("0.08"))
+        assertThat(r.merchant).isEqualTo("Bank fees")
         assertThat(r.templateId).isEqualTo("aljazira-structured")
     }
 

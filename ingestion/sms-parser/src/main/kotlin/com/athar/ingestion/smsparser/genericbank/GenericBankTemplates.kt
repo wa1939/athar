@@ -49,7 +49,7 @@ abstract class StructuredBankTemplate(
         RegexOption.IGNORE_CASE,
     )
     private val withdrawalMarker = Regex(
-        """(?:withdrawal|ATM|سحب\s+صراف)""",
+        """(?:withdrawal|ATM|سحب\s+(?:صراف|نقدي))""",
         RegexOption.IGNORE_CASE,
     )
     private val creditCardPaymentMarker = Regex(
@@ -79,6 +79,14 @@ abstract class StructuredBankTemplate(
     private val fromField = Regex(
         """(?:From|من|اسم\s+المرسل)\s*[:\s]\s*([^\n\r]+?)(?:\n|$)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
+    )
+    private val feeDescription = Regex(
+        """^خصم\s*:\s*([^\n\r]+)$""",
+        setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
+    )
+    private val debitAccountOnly = Regex(
+        """مدين\s+بمبلغ\b.*تم\s+الخصم\s+من\s+حساب""",
+        RegexOption.IGNORE_CASE,
     )
     private val card = Regex(
         """(?:Card|البطاقة|بطاقة)\s*[:\s]\s*(\d{3,4})""",
@@ -121,10 +129,14 @@ abstract class StructuredBankTemplate(
         val to = toField.find(normalized)?.groupValues?.get(1)?.trim()
         val from = fromField.find(normalized)?.groupValues?.get(1)?.trim()
         val service = serviceField.find(normalized)?.groupValues?.get(1)?.trim()
-        val merchant = merchantAt.find(normalized)?.groupValues?.get(1)?.trim()
+        val merchant = "ATM Withdrawal".takeIf { type == TxType.EXPENSE && isWithdrawal }
+            ?: "Bank fees".takeIf {
+                type == TxType.EXPENSE &&
+                    (feeDescription.containsMatchIn(normalized) || debitAccountOnly.containsMatchIn(normalized))
+            }
+            ?: merchantAt.find(normalized)?.groupValues?.get(1)?.trim()
             ?: service.takeIf { type == TxType.EXPENSE && !it.isNullOrBlank() }
             ?: from.takeIf { type == TxType.EXPENSE && isPurchase && !it.isNullOrBlank() }
-            ?: "ATM Withdrawal".takeIf { type == TxType.EXPENSE && isWithdrawal }
         val counterparty = when (type) {
             TxType.INCOME -> from
             TxType.TRANSFER -> to ?: "Credit Card Payment".takeIf { isCreditCardPayment }

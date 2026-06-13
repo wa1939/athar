@@ -169,7 +169,8 @@ class AlRajhiPosPurchaseTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val amount = Regex("""(?:Amount|المبلغ|مبلغ|بـ)\s*[:\s]?\s*(?:SAR\s+|SR\s+)?([\d.,]+)(?:\s*SAR|\s*SR|\s*ر\.?\s*س)?""", RegexOption.IGNORE_CASE)
-    private val merchant = Regex("""(?:(?:At|لدى|من)\s*[:\s]\s*|لـ\s*[:\s]?)([^\n\r]+?)(?:\n|$)""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
+    private val merchantPreferred = Regex("""(?:(?:At|لدى)\s*[:\s]\s*|لـ\s*[:\s]?)([^\n\r]+?)(?:\n|$)""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
+    private val merchantFrom = Regex("""(?:من)\s*[:\s]\s*([^\n\r]+?)(?:\n|$)""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
     private val card = Regex("""(?:Card|البطاقة|بطاقة|عبر)\s*[:\s]\s*(\d{3,4})""", RegexOption.IGNORE_CASE)
 
     override fun tryParse(body: String, receivedAt: Instant): ParseResult {
@@ -182,7 +183,8 @@ class AlRajhiPosPurchaseTemplate : BankTemplate {
         val parsedAmount = runCatching { BigDecimal(amountRaw.replace(",", "")) }.getOrNull()
             ?: return ParseResult.Failed("amount unparseable: $amountRaw", listOf(id))
 
-        val merchantName = merchant.find(normalized)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotEmpty() }
+        val merchantName = merchantPreferred.find(normalized)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotEmpty() }
+            ?: merchantFrom.find(normalized)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotEmpty() }
         val cardLast4 = card.find(normalized)?.groupValues?.get(1)
 
         return ParseResult.Success(
@@ -267,6 +269,7 @@ class AlRajhiGenericAmountTemplate : BankTemplate {
     private val amount = Regex("""(?:Amount|المبلغ|مبلغ)\s*[:\s]\s*(?:SAR\s+|SR\s+)?([\d.,]+)(?:\s*SAR|\s*SR|\s*ر\.?\s*س)?""", RegexOption.IGNORE_CASE)
     private val isIncome = Regex("""(?:Credit|Deposit|Salary|ايداع|إيداع|وارد|راتب)""", RegexOption.IGNORE_CASE)
     private val isTransfer = Regex("""(?:Transfer|Wire|تحويل|حوالة|حوالتكم|حوالتك|الحوالة)""", RegexOption.IGNORE_CASE)
+    private val isWithdrawal = Regex("""(?:ATM|سحب\s*:\s*صراف|سحب\s+صراف|سحب\s+نقدي)""", RegexOption.IGNORE_CASE)
     private val party = Regex(
         """(?:(?:At|Merchant|Biller|Service|لدى|الجهة|الخدمة|مكان\s+السحب|مفوتر)\s*[:\s]\s*|لـ\s*[:\s]?)([^\n\r]+?)(?:\n|$)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
@@ -288,7 +291,8 @@ class AlRajhiGenericAmountTemplate : BankTemplate {
             isTransfer.containsMatchIn(normalized) -> TxType.TRANSFER
             else -> TxType.EXPENSE
         }
-        val merchant = party.find(normalized)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }
+        val merchant = "ATM Withdrawal".takeIf { type == TxType.EXPENSE && isWithdrawal.containsMatchIn(normalized) }
+            ?: party.find(normalized)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }
             ?: feeDescription.find(normalized)?.groupValues?.get(1)?.trim()?.takeIf { type == TxType.EXPENSE && it.isNotBlank() }
             ?: billPaymentDescription.find(normalized)?.value?.trim()?.takeIf { type == TxType.EXPENSE && it.isNotBlank() }
         val counterparty = when (type) {

@@ -3284,6 +3284,56 @@
       "pattern": "خدمات المقيمين",
       "categoryId": "cat-utilities",
       "priority": 90
+    },
+    {
+      "pattern": "atm withdrawal",
+      "categoryId": "cat-other-expense",
+      "priority": 90
+    },
+    {
+      "pattern": "bank fees",
+      "categoryId": "cat-other-expense",
+      "priority": 90
+    },
+    {
+      "pattern": "mcdo",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "andalusi",
+      "categoryId": "cat-medical",
+      "priority": 90
+    },
+    {
+      "pattern": "seoudi market",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "hofer",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "tap*tamee",
+      "categoryId": "cat-insurance",
+      "priority": 90
+    },
+    {
+      "pattern": "tamwinat",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "temu",
+      "categoryId": "cat-other-expense",
+      "priority": 90
+    },
+    {
+      "pattern": "ejar",
+      "categoryId": "cat-rent",
+      "priority": 90
     }
   ]
 }
