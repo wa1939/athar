@@ -30,6 +30,7 @@ import com.athar.ingestion.smsparser.d360.D360InternationalTransferTemplate
 import com.athar.ingestion.smsparser.d360.D360LocalPurchaseTemplate
 import com.athar.ingestion.smsparser.d360.D360OnlinePurchaseTemplate
 import com.athar.ingestion.smsparser.genericbank.AlJaziraTemplate
+import com.athar.ingestion.smsparser.genericbank.AlinmaTemplate
 import com.athar.ingestion.smsparser.genericbank.SnbTemplate
 import com.athar.ingestion.smsparser.genericbank.UrpayTemplate
 import com.athar.ingestion.smsparser.stcbank.StcBankIncomingTransferTemplate
@@ -86,6 +87,7 @@ class SmsCorpusTest {
             BarqAtmWithdrawalTemplate(),
             BarqDebitTransferTemplate(),
             BarqCreditTransferTemplate(),
+            AlinmaTemplate(),
             SnbTemplate(),
             AlJaziraTemplate(),
             UrpayTemplate(),
@@ -577,6 +579,29 @@ class SmsCorpusTest {
     @Test fun `urpay device-linking notice is Ignored`() {
         val body = "تم إلغاء ربط جهاز android v33 بحسابك"
         assertThat(parser().parse(event("urpay", body))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `lowercase Alinma maintenance notice is Ignored`() {
+        val body = """
+            نفيدكم أنه اعتبارًا من 01 فبراير 2026 سيتم تحديث قائمة رسوم التعرفة البنكية لبعض الخدمات والمنتجات.
+            للمزيد، يرجى الاطلاع على موقع المصرف.
+        """.trimIndent()
+        assertThat(parser().parse(event("alinma", body))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `uppercase STCPAY migration notice is Ignored`() {
+        val body = """
+            ستنتقل جميع خدمات stc pay إلى STC Bank ولضمان استمرار خدماتكم، يرجى تحميل تطبيق STC Bank.
+        """.trimIndent()
+        assertThat(parser().parse(event("STCPAY", body))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `BSF digital-services outage notice is Ignored`() {
+        val body = """
+            عزيزي عميل BSF،
+            نود إشعاركم بأن البنك سيقوم بتحديث الأنظمة وستكون الخدمات الرقمية خارج الخدمة مؤقتًا.
+        """.trimIndent()
+        assertThat(parser().parse(event("BSF", body))).isEqualTo(ParseResult.Ignored)
     }
 
     // ─── Cross-cutting: unknown sender ────────────────────────────────────

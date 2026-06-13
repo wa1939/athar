@@ -50,14 +50,18 @@ sealed interface SenderMatcher {
     fun matches(sender: String): Boolean
 
     data class Exact(val value: String) : SenderMatcher {
-        override fun matches(sender: String) = sender == value
+        override fun matches(sender: String) =
+            sender.trim().equals(value.trim(), ignoreCase = true)
     }
 
     data class AnyOf(val values: Set<String>) : SenderMatcher {
-        override fun matches(sender: String) = sender in values
+        override fun matches(sender: String): Boolean {
+            val normalized = sender.trim()
+            return values.any { it.trim().equals(normalized, ignoreCase = true) }
+        }
     }
 
     data class Regex(val pattern: kotlin.text.Regex) : SenderMatcher {
-        override fun matches(sender: String) = pattern.matches(sender)
+        override fun matches(sender: String) = pattern.matches(sender.trim())
     }
 }

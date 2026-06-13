@@ -90,6 +90,7 @@ Other tools force a trade-off:
 - ✅ **STC Bank · Alinma · D360 · Barq** templates derived from real corpus, with date extraction so historical SMS sit in their correct months
 - ✅ **User-defined templates** — paste a sample SMS from your bank, mark the anchor strings around the amount/merchant, and confirm the live parse preview before saving (W-4)
 - ✅ **Spam-resistant pipeline** — `-AD` suffix block (CITC convention), sender allow-list, ~40 ignore patterns for OTP/promo/marketing (Tasaheal, "Buy X Get Y", "Earn 10,000")
+- ✅ **Sender-ID tolerant parsing** — built-in bank sender matching trims edge whitespace and ignores casing drift, while known bank/wallet maintenance, fee, fraud-awareness, migration, and account-admin notices are ignored instead of becoming failed parses or pending transactions
 - ✅ **Notification listener** path for Play-Store-safe distribution, with generic bank-app push parsing for common English/Arabic spend, income, and transfer alerts
 - ✅ **Multi-currency capture** — foreign-card spend keeps both the original amount and the SAR equivalent
 - ✅ **Self-transfer detection** — moves to your own savings account flagged as "Own account move" (savings), not expense
@@ -307,6 +308,7 @@ maestro test .maestro/flows/                     # 10 E2E flows
 - ✅ JVM tests, both debug APK builds, and both app lint variants pass with JDK 17.
 - ✅ The scoped `dev/today-goals-nudge` branch also passes `:feature:today:test` plus the full JVM test/build/lint stack after adding the Today Goals check.
 - ✅ The scoped `dev/bill-reminders` branch passes `:core:domain:test`, `:feature:plan:compileDebugKotlin`, `:app:compilePersonalFullSmsDebugKotlin`, and the full JVM test/build/lint stack after adding opt-in bill reminders. The full lint stack was run with `--max-workers=1` because parallel lint analysis intermittently crashed inside Android lint's Kotlin FIR resolver on existing unit tests.
+- ✅ The scoped `dev/sender-matching-reliability` branch passes `:ingestion:sms-parser:test` and the full JVM test/build/lint stack after hardening sender matching and adding sanitized corpus tests. Validation was run with `JAVA_HOME=C:\Users\waok\.codex\jdks\jdk-17.0.19+10`, `--no-daemon`, and `--max-workers=1`.
 - ⏳ Device E2E, screenshot UI audit, and notification tap-through still need a physical Android device or a working accelerated emulator. On 2026-06-13 the local AVD could not boot because firmware virtualization was disabled, and `adb devices -l` still returned no attached devices during this branch validation.
 
 ### In flight / remaining

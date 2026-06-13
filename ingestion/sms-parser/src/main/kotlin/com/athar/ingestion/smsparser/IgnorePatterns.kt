@@ -51,6 +51,10 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""\bbanking\s+services\s+will\s+be\s+temporarily\s+unavailable""", RegexOption.IGNORE_CASE),
         Regex("""\bsystem\s+maintenance\b""", RegexOption.IGNORE_CASE),
         Regex("""يرجى\s+العلم\s+بأنه\s+سيتم"""),
+        Regex("""تحديث\s+الأنظمة|تحديث\s+انظمتنا|تحديثات?\s+على\s+انظمتنا"""),
+        Regex("""(?:الخدمات|القنوات)\s+الرقمية[^\n\r]{0,80}خارج\s+الخدمة"""),
+        Regex("""خارج\s+الخدمة\s+مؤقت"""),
+        Regex("""خدمات\s+بطاقة\s+مدى[^\n\r]{0,80}خارج\s+الخدمة"""),
 
         // Marketing / promotional offers — derived from real Saudi banking promo corpus
         // (see docs/all-senders-analysis.md). The shape is always "Earn X / Win Y /
@@ -89,16 +93,25 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""تقسيط|التقسيط"""),
         Regex("""موافقة\s+فورية"""),
         Regex("""خصومات?\s+(?:تصل|كبيرة)"""),
+        Regex("""احذر\s+المحتالين|ينتحلون\s+هوية"""),
+        Regex("""بطاقة\s+هدية"""),
+        Regex("""فرصة\s+استثمارية"""),
+        Regex("""رمز\s+الريال\s+السعودي"""),
 
         // Password / login / device alerts (not a transaction; sometimes contains amounts as limits)
         Regex("""\bpassword\s+(?:reset|change)""", RegexOption.IGNORE_CASE),
         Regex("""\blogin\s+from\s+(?:a\s+)?(?:new\s+)?device""", RegexOption.IGNORE_CASE),
         Regex("""\bsuccessful\s+login\b""", RegexOption.IGNORE_CASE),
         Regex("""تم\s+(?:إلغاء\s+)?ربط\s+جهاز"""),
+        Regex("""تم\s+إنشاء\s+(?:كلمة\s+المرور|حساب)"""),
+        Regex("""تم\s+تحديث\s+نموذج\s+معلومات\s+العميل"""),
 
         // Account request acknowledgement
         Regex("""تم\s+تسجيل\s+طلبكم"""),
         Regex("""\brequest\s+(?:received|registered|number)\b""", RegexOption.IGNORE_CASE),
+        Regex("""تحديث\s+قائمة\s+رسوم\s+التعرفة\s+البنكية"""),
+        Regex("""رسوم\s+التعرفة\s+البنكية"""),
+        Regex("""تعرفة\s+المنتجات\s+البنكية"""),
 
         // Non-transaction bank notices observed in real family-device exports.
         Regex("""تحديث\s+الشروط\s+والأحكام"""),
@@ -106,6 +119,10 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""سيتم\s+تحديث\s+تعرفة"""),
         Regex("""تحديثات?\s+على\s+انظمتنا\s+البنكية"""),
         Regex("""قنواتنا\s+الرقمية\s+خارج\s+الخدمة"""),
+        Regex("""ستنتقل\s+جميع\s+خدمات\s+stc\s*pay""", RegexOption.IGNORE_CASE),
+        Regex("""كل\s+خدماتك\s+انتقلت\s+لتطبيق\s+STC\s+Bank""", RegexOption.IGNORE_CASE),
+        Regex("""إيقاف\s+خدمات\s+تطبيق\s+stc\s*pay""", RegexOption.IGNORE_CASE),
+        Regex("""حمّل\s+تطبيق\s+STC\s+Bank""", RegexOption.IGNORE_CASE),
     )
 
     override fun tryParse(body: String, receivedAt: Instant): ParseResult {
