@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.athar.core.data.AppDataInitializer
+import com.athar.recurring.RecurringWorkScheduler
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -30,11 +31,11 @@ class AtharApplication : Application(), Configuration.Provider {
             .setWorkerFactory(workerFactory)
             .build()
 
-    private val initErrorHandler = CoroutineExceptionHandler { _, t ->
-        Timber.e(t, "AppDataInitializer failed")
-        writeCrashLog("AppDataInitializer.initialize() threw", t)
+    private val startupErrorHandler = CoroutineExceptionHandler { _, t ->
+        Timber.e(t, "Athar startup initialization failed")
+        writeCrashLog("Athar startup initialization threw", t)
     }
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default + initErrorHandler)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default + startupErrorHandler)
 
     override fun onCreate() {
         super.onCreate()
@@ -45,7 +46,10 @@ class AtharApplication : Application(), Configuration.Provider {
         installCrashHandler()
         Timber.i("Athar starting · versionName=%s", BuildConfig.VERSION_NAME)
 
-        scope.launch { dataInitializer.initialize(seedTmoap = BuildConfig.SEED_ON_FIRST_LAUNCH) }
+        scope.launch {
+            dataInitializer.initialize(seedTmoap = BuildConfig.SEED_ON_FIRST_LAUNCH)
+            RecurringWorkScheduler.schedule(this@AtharApplication)
+        }
     }
 
     private fun installCrashHandler() {
