@@ -50,4 +50,17 @@ interface UserPreferencesRepository {
      */
     fun appLocale(): Flow<String>
     suspend fun setAppLocale(languageTag: String)
+
+    /**
+     * User's savings-rate target as a whole percent, e.g. 20 means save 20% of income.
+     * Defaults to 20%.
+     */
+    fun savingsRateTargetPercent(): Flow<Int>
+    suspend fun setSavingsRateTargetPercent(percent: Int)
+
+    /**
+     * User's emergency-fund target in months of average expenses. Defaults to 6 months.
+     */
+    fun emergencyFundTargetMonths(): Flow<Int>
+    suspend fun setEmergencyFundTargetMonths(months: Int)
 }

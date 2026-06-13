@@ -76,6 +76,7 @@ Other tools force a trade-off:
 #### Plan (الخطة)
 - ✅ **Budget targets** per category with variance pills (over/under)
 - ✅ **Editable monthly targets** — tap any row, type the number, save
+- ✅ **Goals tab** — savings-rate target and emergency-fund target, computed from confirmed history and liquid accounts
 - ✅ **Wishlist** with savings-capacity math (NOW / WAIT until YYYY-MM / INFEASIBLE)
 - ✅ **Family investments pool** with **percentage-based return entry**, proportional share %, delete pool/contributor
 - ✅ **Recurring transactions** — define rent / salary / Netflix / utilities once; rules materialize into PENDING transactions on their due date
@@ -295,6 +296,8 @@ maestro test .maestro/flows/                     # 10 E2E flows
 | G-7 | Bills calendar | ⏳ | 2 days | "Upcoming bills" view + push notifications 2 days before each bill |
 | G-8 | Manual transaction UX upgrades | ◐ | 2 days | ✅ Recent-merchant autocomplete + quick-add chips · ⏳ voice entry · receipt photo |
 | G-10 | Savings-rate goals + emergency fund | ⏳ | 2 days | Plan → Goals tab with target progress |
+| G-8 | Manual transaction UX upgrades | ⏳ | 2 days | Recent-merchant autocomplete · quick-add chips · voice entry · receipt photo |
+| G-10 | Savings-rate goals + emergency fund | ◐ | 2 days | ✅ Plan → Goals tab with target progress · ⏳ Today progress/nudge |
 | G-11 | Broader notification handlers | ⏳ | 3 days | Apple Wallet, Google Pay, Revolut, Wise, Chase, Capital One, Mercury (Play-Store flavor) |
 | G-12 | Bank statement / CSV / OFX / QFX import wizard | ⏳ | 3 days | Auto-detect format, column mapping, multi-currency statements |
 | G-13 | Zero-knowledge sync to companion devices | ⏳ | 5 days | E2E-encrypted via Dropbox / Drive / iCloud / WebDAV / S3 — user holds the key |

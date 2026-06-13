@@ -12,6 +12,7 @@
     <!-- Top-level tabs -->
     <string name="plan_tab_budget">الميزانية</string>
     <string name="plan_tab_wishlist">الرغبات</string>
+    <string name="plan_tab_goals">الأهداف</string>
     <string name="plan_tab_investments">الاستثمارات</string>
 
     <!-- Period selector -->
@@ -79,6 +80,27 @@
     <string name="plan_wishlist_label_notes">ملاحظات</string>
     <string name="plan_wishlist_action_delete">حذف</string>
     <string name="plan_wishlist_action_save">حفظ</string>
+
+    <!-- Goals -->
+    <string name="plan_goals_savings_title">معدل الادخار</string>
+    <string name="plan_goals_emergency_title">صندوق الطوارئ</string>
+    <string name="plan_goals_percent_value" formatted="true">%1$s%%</string>
+    <string name="plan_goals_months_value" formatted="true">%1$s شهر</string>
+    <string name="plan_goals_not_available">غير متاح</string>
+    <string name="plan_goals_no_monthly_burn">مكتمل</string>
+    <string name="plan_goals_savings_target" formatted="true">الهدف %1$d%%</string>
+    <string name="plan_goals_emergency_target" formatted="true">الهدف %1$d أشهر</string>
+    <string name="plan_goals_monthly_income">متوسط الدخل الشهري</string>
+    <string name="plan_goals_monthly_expense">متوسط المصروف الشهري</string>
+    <string name="plan_goals_monthly_savings">متوسط الادخار الشهري</string>
+    <string name="plan_goals_liquid_balance">الرصيد السائل</string>
+    <string name="plan_goals_emergency_target_amount">مبلغ الهدف</string>
+    <string name="plan_goals_edit_savings_title">تعديل هدف الادخار</string>
+    <string name="plan_goals_edit_savings_label">النسبة المستهدفة من 0 إلى 100</string>
+    <string name="plan_goals_edit_savings_error">اكتب رقمًا بين 0 و100</string>
+    <string name="plan_goals_edit_emergency_title">تعديل صندوق الطوارئ</string>
+    <string name="plan_goals_edit_emergency_label">عدد الأشهر المستهدفة</string>
+    <string name="plan_goals_edit_emergency_error">اكتب رقمًا بين 1 و120</string>
 
     <!-- Investments -->
     <string name="plan_investments_title">الاستثمارات</string>

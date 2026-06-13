@@ -73,10 +73,10 @@ Below is the prioritized gap list, in delivery order.
 **How:** Three vertically-stacked `AtharMonthlyChartWithLines` instances on Trends — one each for income (olive bars), expenses (ember bars), and savings (ink bars). Each shows last-12-months with a dashed average line and (for expenses) a solid target line if the user has set one in Plan. Per-category drill-down on tap: opens a sheet with a 12-month bar mini-chart for that category alone + top-5 merchants. Pie charts remain banned per Master Brief §2.4 — `AtharProportionBar` is the categorical-breakdown component (horizontal stacked bar with segment labels).
 
 ### G-10 — Savings rate goals + emergency fund
-**Status:** Wishlist exists. No "savings rate" goal, no "emergency fund" goal.
+**Status:** Partially shipped — Plan → Goals tab.
 **Gap:** A common budgeting practice is "I want to save 20% of my income" or "I want 6 months of expenses in emergency fund."
 **Fix:**
-- Plan → Goals tab (new): savings-rate target, emergency-fund target.
+- Plan → Goals tab: savings-rate target, emergency-fund target. ✅
 - Today screen: progress ring + nudge if user is on / off track.
 
 ---
@@ -163,6 +163,7 @@ Real-user testing on top of imported SMS history surfaced bugs and one architect
 | **beta.24** | **R-01 queued SMS ingestion dispatcher** — backfill/live SMS now enter a singleton Channel queue drained by one ingestion worker. | First big SMS imports could enqueue thousands of messages and start thousands of concurrent `pipeline.process(event)` coroutines. Room invalidation then fell behind, making Today/History look stale until Activity recreate. The new `QueuedRawIngestDispatcher` keeps receiver enqueue non-blocking but serializes parser/audit/transaction writes, preserving content-provider order and preventing DB-write fan-out. Per-event failures are logged without killing the queue. Follow-up transactional batching remains available if real-device traces show drain time needs more work. | [R-01](specs/R-01-queued-sms-dispatcher.md) |
 | **beta.24** | **R-08/R-09 Pending widget actions + fresh widgets** — Pending widget rows now expose Confirm / Dismiss / Categorize controls, and transaction mutations request widget refreshes. | The beta.21 widgets were useful at a glance but not actionable: pending rows only opened the app, and widget counts could stay stale until the 30-minute system refresh. Confirm/Dismiss now enqueue a Hilt `CoroutineWorker` that calls `TransactionRepository.setStatus`; Categorize opens Athar because category choice still needs the full edit + "Always categorize" learning flow. A new `WidgetRefresher` domain interface lets `core:data` request refreshes without depending on Glance; the concrete widget implementation debounces bursts so SMS imports and bulk actions do not spam `updateAll(context)`. | [R-08/R-09](specs/R-08-R-09-widget-actions-refresh.md) |
 | **beta.24** | **G-8 manual entry quick-add** — Add Transaction now shows recent merchant chips that prefill merchant, amount when currency-safe, type, and category from the user's own confirmed history. | Non-SMS users and users with unsupported banks still need manual entry, so the add sheet must remember their routine transactions. Suggestions are built locally from confirmed, non-reconciliation rows, ranked by merchant frequency, filtered as the user types, and split by Expense/Income. No backend and no cloud prediction. Voice entry and receipt photos stay as the remaining G-8 follow-ups. | [G-08](specs/G-08-manual-entry-quick-add.md) |
+| **beta.24** | **G-10 Plan goals** — Plan now has savings-rate and emergency-fund target cards with editable persisted targets. | TMOAP users care about more than category budgets: they need to know whether savings rate is on plan and whether liquid cash covers emergencies. The implementation stays local-first: savings rate uses the last 3 months of confirmed income/expense, emergency fund uses checking/savings/cash balances only, and targets live in DataStore. Reconciliation adjustments are excluded so balance fixes never distort operating progress. Today-screen nudges remain the G-10 follow-up. | [G-10](specs/G-10-plan-goals.md) |
 
 ### Known issue carried forward
 
@@ -190,6 +191,8 @@ The current Saudi-specialized features (SMS parser, AlRajhi/STC/D360/Barq templa
 | 1 | G-7 bills calendar | 2 days | Recurring rules already exist; calendar view unlocks the value |
 | 2 | G-8 manual transaction UX follow-ups | 1.5 days | Voice entry + local encrypted receipt photos; recent merchants/quick-add shipped in G-08 |
 | 3 | G-10 savings-rate goals | 2 days | TMOAP doesn't have it — clear differentiator + matches FIRE/financial-independence crowd |
+| 2 | G-8 manual transaction UX | 2 days | Friction for non-Saudi users (no SMS) — autocomplete, quick-add chips |
+| 3 | G-10 Today goals nudge | 0.5 day | Plan goals are live; add a quiet Today progress cue without turning it into gamification |
 | 4 | G-11 broader notification handlers | 3 days | Play-Store eligibility for non-Saudi (Wise, Revolut, Chase, Mercury, etc.) |
 | 5 | G-5b residual seed/SMS strings | 0.5 day | Inject `@ApplicationContext` into `SmsIngestionPipeline` for new self-transfer transactions; convert seed account name to a sentinel resolved at render |
 

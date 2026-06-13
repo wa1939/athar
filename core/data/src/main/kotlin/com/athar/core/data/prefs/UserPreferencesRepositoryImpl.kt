@@ -3,9 +3,11 @@ package com.athar.core.data.prefs
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.athar.core.domain.model.GoalSettings
 import com.athar.core.domain.repo.UserPreferencesRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -26,6 +28,8 @@ internal class UserPreferencesRepositoryImpl @Inject constructor(
     private val ownAccountsKey = stringPreferencesKey("own_account_numbers_csv")
     private val displayCurrencyKey = stringPreferencesKey("display_currency_iso4217")
     private val appLocaleKey = stringPreferencesKey("app_locale_tag")
+    private val savingsRateTargetPercentKey = intPreferencesKey("savings_rate_target_percent")
+    private val emergencyFundTargetMonthsKey = intPreferencesKey("emergency_fund_target_months")
 
     override fun onboardingComplete(): Flow<Boolean> =
         context.userPrefs.data.map { it[onboardingKey] ?: false }
@@ -71,5 +75,25 @@ internal class UserPreferencesRepositoryImpl @Inject constructor(
 
     override suspend fun setAppLocale(languageTag: String) {
         context.userPrefs.edit { it[appLocaleKey] = languageTag.trim() }
+    }
+
+    override fun savingsRateTargetPercent(): Flow<Int> =
+        context.userPrefs.data.map {
+            it[savingsRateTargetPercentKey] ?: GoalSettings.DEFAULT_SAVINGS_RATE_TARGET_PERCENT
+        }
+
+    override suspend fun setSavingsRateTargetPercent(percent: Int) {
+        require(percent in 0..100) { "Savings-rate target must be in 0..100, got $percent" }
+        context.userPrefs.edit { it[savingsRateTargetPercentKey] = percent }
+    }
+
+    override fun emergencyFundTargetMonths(): Flow<Int> =
+        context.userPrefs.data.map {
+            it[emergencyFundTargetMonthsKey] ?: GoalSettings.DEFAULT_EMERGENCY_FUND_TARGET_MONTHS
+        }
+
+    override suspend fun setEmergencyFundTargetMonths(months: Int) {
+        require(months in 1..120) { "Emergency-fund target must be in 1..120 months, got $months" }
+        context.userPrefs.edit { it[emergencyFundTargetMonthsKey] = months }
     }
 }
