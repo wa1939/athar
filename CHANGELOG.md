@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Built-in category seeding is now upgrade-safe: app startup inserts missing bundled categories for existing installs while preserving user-edited names, archived state, targets, custom categories, and current sort order.
+- Android library unit tests now run on JUnit Platform through the shared convention plugin. The newly active test gate exposed and fixed statement CSV header normalization, XLSX XML padding, support-diagnostics decimal redaction, and side-income seed guard edge cases.
 - Store-safe notification parsing now normalizes posted furniture, home-goods, and appliance purchase pushes to exact seed-backed home/electronics labels while preserving named stores when present and ignoring quotes, carts/wishlists, delivery/order-status, installation/assembly, warranty, reminder, and offer copy with amounts; the active public seed is now 703 rules.
 - Store-safe notification parsing now normalizes posted gift-card, gift, and flower-delivery payment pushes to exact seed-backed gift labels while preserving specific florists when present and ignoring free-gift promos, gift-card balances, expiry/reminder copy, and offers with amounts; the active public seed is now 700 rules.
 - Store-safe notification parsing now normalizes posted mortgage, home-loan, housing-finance, and Arabic mortgage-instalment payment pushes to the exact seed-backed `Mortgage payment` label while ignoring mortgage offers, due reminders, schedules, refinance/rate estimates, pre-approvals, and eligibility copy with amounts; the active public seed is now 697 rules.

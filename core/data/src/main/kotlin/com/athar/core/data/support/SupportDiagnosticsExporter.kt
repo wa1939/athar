@@ -330,6 +330,7 @@ internal object SupportDiagnosticsReportBuilder {
         return normalized
             .replace(EmailRegex, "[email]")
             .replace(IbanRegex, "[iban]")
+            .replace(DecimalNumberRegex, "[number]")
             .replace(LongNumberRegex, "[number]")
             .replace(AnyNumberRegex, "[number]")
             .replace(WhitespaceRegex, " ")
@@ -375,6 +376,7 @@ internal object SupportDiagnosticsReportBuilder {
     private val TemplateAttemptsRegex = Regex("tried=([^\\s]+)")
     private val EmailRegex = Regex("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")
     private val IbanRegex = Regex("\\b[A-Z]{2}\\d{2}[A-Z0-9]{10,30}\\b", RegexOption.IGNORE_CASE)
+    private val DecimalNumberRegex = Regex("(?<!\\d)\\d+(?:[.,]\\d+)+(?!\\d)")
     private val LongNumberRegex = Regex("\\+?\\d[\\d\\s().,/_-]{5,}\\d")
     private val AnyNumberRegex = Regex("\\d+")
     private val ActionHintPatterns = listOf(

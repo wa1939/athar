@@ -265,7 +265,23 @@ internal object StatementXlsxMapper {
             runCatching { setFeature("http://xml.org/sax/features/external-parameter-entities", false) }
             runCatching { setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false) }
         }
-        return factory.newDocumentBuilder().parse(ByteArrayInputStream(bytes))
+        return factory.newDocumentBuilder().parse(ByteArrayInputStream(bytes.withoutLeadingXmlPadding()))
+    }
+
+    private fun ByteArray.withoutLeadingXmlPadding(): ByteArray {
+        var index = 0
+        if (
+            size >= 3 &&
+            this[0] == 0xEF.toByte() &&
+            this[1] == 0xBB.toByte() &&
+            this[2] == 0xBF.toByte()
+        ) {
+            index = 3
+        }
+        while (index < size && this[index] in XmlLeadingPaddingBytes) {
+            index += 1
+        }
+        return if (index == 0) this else copyOfRange(index, size)
     }
 
     private fun Document.elementsByLocalName(name: String): List<Element> =
@@ -295,6 +311,13 @@ internal object StatementXlsxMapper {
         val lastNonBlank = indexOfLast { it.isNotBlank() }
         return if (lastNonBlank < 0) emptyList() else take(lastNonBlank + 1)
     }
+
+    private val XmlLeadingPaddingBytes = byteArrayOf(
+        ' '.code.toByte(),
+        '\t'.code.toByte(),
+        '\n'.code.toByte(),
+        '\r'.code.toByte(),
+    )
 
     private data class WorkbookSheet(val name: String, val path: String)
     private data class DetectedHeader(

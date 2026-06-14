@@ -299,6 +299,7 @@ class SeedRulesAssetTest {
             "cash",
             "co.",
             "company",
+            "cooperative",
             "cruises",
             "dhamen",
             "google",

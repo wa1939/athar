@@ -275,7 +275,7 @@ internal object StatementCsvMapper {
             .replace('آ', 'ا')
             .replace('ى', 'ي')
             .replace('ة', 'ه')
-            .replace(Regex("""[-_:/\\()[\]{}|]+"""), " ")
+            .replace(Regex("""[-_:/\\(){}\[\]|]+"""), " ")
             .replace(Regex("""\s+"""), " ")
             .trim()
 
