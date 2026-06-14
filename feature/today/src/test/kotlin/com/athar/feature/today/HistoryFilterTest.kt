@@ -243,6 +243,57 @@ class HistoryFilterTest {
     }
 
     @Test
+    fun `repeated backlog count map annotates repeated visible rows only`() {
+        val rows = listOf(
+            tx(
+                id = "coffee-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Coffee A",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "coffee-b",
+                source = IngestSource.SMS,
+                categoryId = " ",
+                merchant = "Coffee B",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "grocery",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Grocery",
+                merchantNormalized = "grocery",
+            ),
+            tx(
+                id = "coffee-income",
+                source = IngestSource.SMS,
+                type = TxType.INCOME,
+                categoryId = null,
+                merchant = "Coffee Income",
+                merchantNormalized = "coffee shop",
+            ),
+        )
+
+        val counts = buildRepeatedBacklogCountById(
+            visibleRows = rows,
+            category = HistoryCategoryFilter.REPEATED_UNCATEGORIZED,
+        )
+
+        assertThat(counts).containsExactly(
+            "coffee-a", 2,
+            "coffee-b", 2,
+        )
+        assertThat(
+            buildRepeatedBacklogCountById(
+                visibleRows = rows,
+                category = HistoryCategoryFilter.UNCATEGORIZED,
+            ),
+        ).isEmpty()
+    }
+
+    @Test
     fun `filters categorized rows without hiding searched merchants`() {
         val rows = listOf(
             tx(id = "coffee-categorized", source = IngestSource.IMPORT, categoryId = "cat-coffee"),

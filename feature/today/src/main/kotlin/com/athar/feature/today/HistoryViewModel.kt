@@ -92,6 +92,14 @@ class HistoryViewModel @Inject constructor(
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    val repeatedBacklogCounts: StateFlow<Map<String, Int>> =
+        combine(items, _category) { visibleRows, category ->
+            buildRepeatedBacklogCountById(
+                visibleRows = visibleRows,
+                category = category,
+            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
     val bulkCategoryState: StateFlow<HistoryBulkCategoryState> =
         combine(items, _selectedIds, _selectionMode, activeCategories) { visibleRows, selectedIds, selectionMode, categories ->
             buildHistoryBulkCategoryState(
@@ -347,6 +355,24 @@ internal fun filterHistoryTransactions(
         .keys
 
     return baseRows.filter { it.uncategorizedMerchantGroupKey() in repeatedKeys }
+}
+
+internal fun buildRepeatedBacklogCountById(
+    visibleRows: List<Transaction>,
+    category: HistoryCategoryFilter,
+): Map<String, Int> {
+    if (category != HistoryCategoryFilter.REPEATED_UNCATEGORIZED) return emptyMap()
+    val rowKeys = visibleRows.mapNotNull { tx ->
+        tx.uncategorizedMerchantGroupKey()?.let { key -> tx.id to key }
+    }
+    val groupCounts = rowKeys
+        .groupingBy { it.second }
+        .eachCount()
+    return rowKeys.mapNotNull { (id, key) ->
+        groupCounts[key]
+            ?.takeIf { it > 1 }
+            ?.let { count -> id to count }
+    }.toMap()
 }
 
 data class HistoryBulkCategoryState(

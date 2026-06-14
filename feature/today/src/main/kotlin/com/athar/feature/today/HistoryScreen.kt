@@ -59,6 +59,7 @@ fun HistoryScreen(
     val source by viewModel.source.collectAsStateWithLifecycle()
     val category by viewModel.category.collectAsStateWithLifecycle()
     val categoryLabels by viewModel.categoryLabels.collectAsStateWithLifecycle()
+    val repeatedBacklogCounts by viewModel.repeatedBacklogCounts.collectAsStateWithLifecycle()
     val backfill by viewModel.lastBackfill.collectAsStateWithLifecycle()
     val bulkCategory by viewModel.bulkCategoryState.collectAsStateWithLifecycle()
     val bulkCategoryResult by viewModel.lastBulkCategory.collectAsStateWithLifecycle()
@@ -224,6 +225,7 @@ fun HistoryScreen(
                         TxRow(
                             tx = tx,
                             categoryLabel = transactionCategoryLabel(tx, categoryLabels),
+                            repeatedBacklogCount = repeatedBacklogCounts[tx.id] ?: 0,
                             selected = tx.id in bulkCategory.selectedIds,
                             selectionMode = bulkCategory.selectionMode,
                             onClick = {
@@ -273,6 +275,7 @@ fun HistoryScreen(
 private fun TxRow(
     tx: Transaction,
     categoryLabel: String,
+    repeatedBacklogCount: Int,
     selected: Boolean,
     selectionMode: Boolean,
     onClick: () -> Unit,
@@ -289,17 +292,41 @@ private fun TxRow(
         } else {
             tx.merchant
         },
-        subtitle = stringResource(
-            R.string.history_row_subtitle,
-            tx.date.toString(),
-            typeChip,
-            statusLabel(tx.status),
-            sourceLabel(tx.source),
-            categoryLabel,
+        subtitle = historyRowSubtitle(
+            tx = tx,
+            typeChip = typeChip,
+            categoryLabel = categoryLabel,
+            repeatedBacklogCount = repeatedBacklogCount,
         ),
         trailing = tx.amount,
         onClick = onClick,
     )
+}
+
+@Composable
+private fun historyRowSubtitle(
+    tx: Transaction,
+    typeChip: String,
+    categoryLabel: String,
+    repeatedBacklogCount: Int,
+): String {
+    val base = stringResource(
+        R.string.history_row_subtitle,
+        tx.date.toString(),
+        typeChip,
+        statusLabel(tx.status),
+        sourceLabel(tx.source),
+        categoryLabel,
+    )
+    return if (repeatedBacklogCount > 1) {
+        stringResource(
+            R.string.history_row_subtitle_with_repeated_count,
+            base,
+            repeatedBacklogCount,
+        )
+    } else {
+        base
+    }
 }
 
 @Composable

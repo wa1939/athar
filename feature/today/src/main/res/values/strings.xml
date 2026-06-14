@@ -66,6 +66,7 @@
     <string name="history_category_repeated_uncategorized">متكرر بلا تصنيف</string>
     <string name="history_category_categorized">مصنفة</string>
     <string name="history_row_subtitle" formatted="true">%1$s · %2$s · %3$s · %4$s · %5$s</string>
+    <string name="history_row_subtitle_with_repeated_count" formatted="true">%1$s · نفس التاجر: %2$d</string>
     <string name="history_count" formatted="true">%1$d حركة</string>
     <string name="history_empty">لا حركات تطابق هذا البحث.</string>
     <string name="history_bulk_select">تحديد</string>
