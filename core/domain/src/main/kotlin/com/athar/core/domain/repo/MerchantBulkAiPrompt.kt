@@ -29,7 +29,7 @@ Rules:
 - If type=INCOME, pick cat-salary if the merchant looks like a known employer, salary, payroll, راتب, or رواتب; otherwise use cat-side-income.
 - Transfers are normally not exported. If an older CSV contains type=TRANSFER, leave category_id blank.
 - If you cannot tell, leave category_id blank. Do not guess. It is better to skip than mis-categorize.
-- Use raw_body aggressively. Arabic SMS often spells the merchant differently than the parsed merchant field. Look for keywords such as مطعم, صيدلية, محطة, اتصالات, كهرباء, تأمين, إيجار, رسوم, فاتورة, and اشتراك.
+- Use raw_body aggressively when it is present. Arabic SMS often spells the merchant differently than the parsed merchant field. Private exports may leave raw_body blank; in that case use merchant, merchant_normalized, amount, type, date, and category_options, and leave uncertain rows blank.
 - Hemmah, همة, Maharah, and مهارة usually mean cat-home-maintenance.
 - Yaqoot and ياقوت usually mean cat-telecom unless the raw text clearly describes a water delivery subscription.
 - Saudi Electric, SEC, and الكهرباء mean cat-utilities.

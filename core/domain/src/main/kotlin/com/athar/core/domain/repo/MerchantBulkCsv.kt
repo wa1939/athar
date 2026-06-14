@@ -10,7 +10,8 @@ import java.io.OutputStream
  *  1. **Export** — write a CSV of every non-transfer PENDING / DISMISSED /
  *     uncategorized-CONFIRMED transaction. Columns: id, stable_key, source_ref_id,
  *     merchant, merchant_group_count, category_options, amount, currency, type,
- *     status, date, raw_body, category_id (blank for user to fill).
+ *     status, date, raw_body, category_id (blank for user to fill). The private
+ *     export mode keeps the same columns but leaves raw_body blank.
  *  2. **External** — user feeds the CSV to ChatGPT/Claude/Z.ai with the AI triage prompt.
  *     `category_options` is read-only row context; only `category_id` should be edited.
  *  3. **Import** — read the filled CSV. For each row with a non-blank category_id:
@@ -30,11 +31,19 @@ import java.io.OutputStream
  * The pair builds a permanent personal merchant library without needing inline AI API keys.
  */
 interface MerchantBulkExportTrigger {
-    suspend fun exportUncategorized(out: OutputStream): MerchantBulkExportResult
+    suspend fun exportUncategorized(
+        out: OutputStream,
+        mode: MerchantBulkExportMode = MerchantBulkExportMode.FULL_CONTEXT,
+    ): MerchantBulkExportResult
 }
 
 interface MerchantBulkImportTrigger {
     suspend fun importCategorizations(input: InputStream): MerchantBulkImportResult
+}
+
+enum class MerchantBulkExportMode {
+    FULL_CONTEXT,
+    NO_RAW_BODY,
 }
 
 data class MerchantBulkImportSkipSummary(

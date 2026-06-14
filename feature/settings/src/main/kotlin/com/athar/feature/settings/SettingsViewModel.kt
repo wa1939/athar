@@ -22,6 +22,7 @@ import com.athar.core.domain.repo.CsvImportRowDecision
 import com.athar.core.domain.repo.CsvImportRowEdit
 import com.athar.core.domain.repo.CsvImportTrigger
 import com.athar.core.domain.repo.MerchantBulkExportResult
+import com.athar.core.domain.repo.MerchantBulkExportMode
 import com.athar.core.domain.repo.MerchantBulkExportTrigger
 import com.athar.core.domain.repo.MerchantBulkImportResult
 import com.athar.core.domain.repo.MerchantBulkImportSkipSummary
@@ -502,7 +503,11 @@ class SettingsViewModel @Inject constructor(
      * Bulk-categorize export: writes a CSV of every PENDING/DISMISSED/uncategorized
      * transaction so the user can run them through an AI and import the filled file back.
      */
-    fun exportUncategorized(resolver: ContentResolver, uri: Uri) {
+    fun exportUncategorized(
+        resolver: ContentResolver,
+        uri: Uri,
+        mode: MerchantBulkExportMode = MerchantBulkExportMode.FULL_CONTEXT,
+    ) {
         viewModelScope.launch {
             _bulkCategorize.value = BulkCategorizeStatus.Working
             val out = resolver.openOutputStream(uri)
@@ -510,7 +515,7 @@ class SettingsViewModel @Inject constructor(
                 _bulkCategorize.value = BulkCategorizeStatus.Failed("Couldn't open CSV destination.")
                 return@launch
             }
-            _bulkCategorize.value = when (val r = bulkExporter.exportUncategorized(out)) {
+            _bulkCategorize.value = when (val r = bulkExporter.exportUncategorized(out, mode)) {
                 is MerchantBulkExportResult.Done -> BulkCategorizeStatus.Exported(r.rows)
                 is MerchantBulkExportResult.Failed -> BulkCategorizeStatus.Failed(r.reason)
             }

@@ -4,7 +4,7 @@ Use this when you have dozens or hundreds of uncategorized transactions sitting 
 
 ## The three-step loop
 
-1. **Open Settings → "تصنيف بالذكاء الاصطناعي · مجمّع" / "Bulk categorize with AI"** → tap **Copy AI prompt**, then **Export uncategorized**. Athar writes a CSV of every non-transfer transaction that is PENDING, DISMISSED, or CONFIRMED-without-category, including the valid active category options for each row's type. Default filename: `athar-uncategorized.csv`. Save it somewhere you can reach from a desktop.
+1. **Open Settings → "تصنيف بالذكاء الاصطناعي · مجمّع" / "Bulk categorize with AI"** → tap **Copy AI prompt**, then choose an export. **Export with SMS text** writes the highest-context CSV, including raw message text in `raw_body` when available. **Export private CSV** writes the same import-compatible columns but leaves `raw_body` blank. Both files include every non-transfer transaction that is PENDING, DISMISSED, or CONFIRMED-without-category, plus valid active category options for each row's type. Default filenames: `athar-uncategorized.csv` and `athar-uncategorized-private.csv`. Save the file somewhere you can reach from a desktop.
 2. **Open ChatGPT / Claude / Z.ai** in a fresh chat. Paste the copied prompt, attach (or paste) the CSV, and ask for the filled-in CSV back.
 3. **Back in Athar → same Settings card → Import categorized.** Pick the filled CSV. If you saved the full AI response with prose and a fenced `csv` block, Athar extracts the valid CSV block automatically. Filled rows update their transactions (status → CONFIRMED, category set) only when the chosen category matches the row's expense/income type. If a repeated merchant group has one unambiguous compatible filled category, blank peers in that imported CSV group inherit it. Athar also records an exact learned `CategoryRule` per unambiguous type-compatible `merchant → category` pair so future SMS from the same normalized merchant auto-categorize without broad substring matching.
 
@@ -26,7 +26,7 @@ id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,ca
 - **`merchant_group_count`** — how many exported rows share the same normalized merchant. The export is sorted so repeated merchants appear first and together; assign one consistent category to the group unless the raw body proves otherwise. For human review, filling one representative row is enough when the blank rows in the same group should inherit the same category.
 - **`category_options`** — read-only active category choices for this row's `type`, using the user's current category table. Do not edit. Pick one of these IDs for `category_id`; this keeps custom categories visible to ChatGPT/Claude without a separate lookup file, and the importer skips categories whose kind does not match the row type.
 - **`amount` · `currency` · `type` · `status` · `date`** — context for the AI to disambiguate similar merchants. Do not change.
-- **`raw_body`** — the original SMS body (when available). Often the strongest categorization signal.
+- **`raw_body`** — the original SMS body (when available) in the full-context export. Often the strongest categorization signal. The private export keeps this column but leaves it blank.
 - **`category_id`** — *blank in the export.* The AI fills this from the row's `category_options`. The chosen category must match the row's `type`. For older exports without `category_options`, use one of the bundled default IDs from `core/data/src/main/assets/seed_categories.json`:
    - Expense: `cat-rent`, `cat-mortgage`, `cat-groceries`, `cat-restaurant`, `cat-coffee`, `cat-going-out`, `cat-entertainment`, `cat-travel`, `cat-gas`, `cat-public-transport`, `cat-car-maintenance`, `cat-car-payment`, `cat-utilities`, `cat-telecom`, `cat-subscriptions`, `cat-home-maintenance`, `cat-medical`, `cat-insurance`, `cat-education`, `cat-childcare`, `cat-clothing`, `cat-electronics`, `cat-gym`, `cat-gifts`, `cat-charity`, `cat-wife-allowance`, `cat-debt`, `cat-other-expense`
    - Income: `cat-salary`, `cat-side-income`
@@ -63,8 +63,10 @@ Rules:
   / "راتب", otherwise cat-side-income.
 - Transfers are normally not exported. If an older CSV contains type=TRANSFER, leave category_id blank.
 - If you cannot tell, leave category_id blank — do not guess. Better to skip than mis-categorize.
-- Use `raw_body` aggressively — Arabic SMS often spells the merchant differently than
-  the parsed `merchant` field. Look for keywords ("مطعم", "صيدلية", "محطة", "اتصالات").
+- Use `raw_body` aggressively when present — Arabic SMS often spells the merchant
+  differently than the parsed `merchant` field. Private exports may leave it
+  blank; then use merchant, amount, type, date, and category options, and leave
+  uncertain rows blank.
 - "Hemmah" / "هيمة" / "Maharah" / "مهارة" → cat-home-maintenance (domestic-worker apps).
 - "Yaqoot" / "ياقوت" → cat-utilities (water delivery subscription).
 - "SAUDI ELECTRIC" / "SEC" / "الكهرباء" → cat-utilities.

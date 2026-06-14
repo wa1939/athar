@@ -6,6 +6,7 @@ import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRepository
+import com.athar.core.domain.repo.MerchantBulkExportMode
 import com.athar.core.domain.repo.MerchantBulkExportResult
 import com.athar.core.domain.repo.MerchantBulkExportTrigger
 import com.athar.core.domain.repo.TransactionRepository
@@ -24,6 +25,7 @@ import javax.inject.Singleton
  * [MerchantBulkImporter].
  *
  * `category_id` is left blank in the export — that's the column the user (or AI) fills.
+ * Private exports keep the same import-compatible columns but omit raw SMS bodies.
  */
 @Singleton
 internal class MerchantBulkExporter @Inject constructor(
@@ -31,7 +33,10 @@ internal class MerchantBulkExporter @Inject constructor(
     private val categories: CategoryRepository,
 ) : MerchantBulkExportTrigger {
 
-    override suspend fun exportUncategorized(out: OutputStream): MerchantBulkExportResult = runCatching {
+    override suspend fun exportUncategorized(
+        out: OutputStream,
+        mode: MerchantBulkExportMode,
+    ): MerchantBulkExportResult = runCatching {
         val all = transactions.observeAll().first()
         val candidates = all.filter { it.needsCategoryDecision() }
         val categoryOptions = categories.observeAll(kind = null, includeArchived = false)
@@ -47,7 +52,10 @@ internal class MerchantBulkExporter @Inject constructor(
         OutputStreamWriter(out, Charsets.UTF_8).use { writer ->
             writer.write("id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,category_options,amount,currency,type,status,date,raw_body,category_id\n")
             orderedCandidates.forEach { tx ->
-                val raw = tx.notes.orEmpty() // raw SMS body lives in notes when ingested
+                val raw = when (mode) {
+                    MerchantBulkExportMode.FULL_CONTEXT -> tx.notes.orEmpty()
+                    MerchantBulkExportMode.NO_RAW_BODY -> ""
+                }
                 writer.write(
                     listOf(
                         tx.id,

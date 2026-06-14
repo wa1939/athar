@@ -27,6 +27,7 @@ import com.athar.core.domain.repo.CsvImportRowDecision
 import com.athar.core.domain.repo.CsvImportRowEdit
 import com.athar.core.domain.repo.CsvImportTrigger
 import com.athar.core.domain.repo.MerchantBulkExportResult
+import com.athar.core.domain.repo.MerchantBulkExportMode
 import com.athar.core.domain.repo.MerchantBulkExportTrigger
 import com.athar.core.domain.repo.MerchantBulkImportResult
 import com.athar.core.domain.repo.MerchantBulkImportTrigger
@@ -405,7 +406,10 @@ private object FakeCsvExportTrigger : CsvExportTrigger {
 }
 
 private object FakeMerchantBulkExportTrigger : MerchantBulkExportTrigger {
-    override suspend fun exportUncategorized(out: OutputStream): MerchantBulkExportResult =
+    override suspend fun exportUncategorized(
+        out: OutputStream,
+        mode: MerchantBulkExportMode,
+    ): MerchantBulkExportResult =
         MerchantBulkExportResult.Done(rows = 0)
 }
 

@@ -12,6 +12,7 @@ import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.CategoryRuleRepository
+import com.athar.core.domain.repo.MerchantBulkExportMode
 import com.athar.core.domain.repo.MerchantBulkImportResult
 import com.athar.core.domain.repo.MerchantBulkImportSkipSummary
 import com.athar.core.domain.repo.TransactionRepository
@@ -42,7 +43,7 @@ class MerchantBulkCsvTest {
         val exported = MerchantBulkExporter(
             transactions = exportRepo,
             categories = FakeCategoryRepository(listOf(coffeeCategory())),
-        ).exportUncategorized(out)
+        ).exportUncategorized(out, MerchantBulkExportMode.FULL_CONTEXT)
 
         assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 1))
         val csv = out.toString(Charsets.UTF_8)
@@ -69,6 +70,33 @@ class MerchantBulkCsvTest {
         assertThat(rules.learnedRules.map { it.pattern to it.categoryId })
             .containsExactly("barns" to "cat-coffee")
         assertThat(rules.learnedRules.single().patternType).isEqualTo(PatternType.EXACT)
+    }
+
+    @Test
+    fun `private export leaves raw body blank while keeping import columns`() = runTest {
+        val tx = tx(
+            id = "private-row",
+            sourceRefId = "inbox-private",
+            merchant = "Private Shop",
+            notes = "sensitive merchant detail and card hint",
+        )
+        val out = ByteArrayOutputStream()
+
+        val exported = MerchantBulkExporter(
+            transactions = FakeTransactionRepository(listOf(tx)),
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+        ).exportUncategorized(out, MerchantBulkExportMode.NO_RAW_BODY)
+
+        assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 1))
+        val csv = out.toString(Charsets.UTF_8)
+        assertThat(csv).doesNotContain("sensitive merchant detail")
+        val lines = csv.trim().lines()
+        val header = lines.first().split(",")
+        val row = lines.drop(1).single().split(",")
+        assertThat(row[header.indexOf("raw_body")]).isEmpty()
+        assertThat(row[header.indexOf("id")]).isEqualTo("private-row")
+        assertThat(row[header.indexOf("stable_key")]).isNotEmpty()
+        assertThat(row[header.indexOf("category_options")]).contains("cat-coffee=Coffee")
     }
 
     @Test
@@ -395,7 +423,7 @@ class MerchantBulkCsvTest {
                     coffeeCategory().copy(id = "cat-archived", archived = true),
                 ),
             ),
-        ).exportUncategorized(out)
+        ).exportUncategorized(out, MerchantBulkExportMode.FULL_CONTEXT)
 
         assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 4))
         val lines = out.toString(Charsets.UTF_8).trim().lines()
@@ -435,7 +463,7 @@ class MerchantBulkCsvTest {
                 ),
             ),
             categories = FakeCategoryRepository(listOf(coffeeCategory(), salaryCategory())),
-        ).exportUncategorized(out)
+        ).exportUncategorized(out, MerchantBulkExportMode.FULL_CONTEXT)
 
         assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 1))
         val lines = out.toString(Charsets.UTF_8).trim().lines()

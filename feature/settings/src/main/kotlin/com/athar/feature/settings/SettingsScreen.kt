@@ -50,6 +50,7 @@ import com.athar.core.domain.repo.CsvImportCurrencySummary
 import com.athar.core.domain.repo.CsvImportPreview
 import com.athar.core.domain.repo.CsvImportPreviewRow
 import com.athar.core.domain.repo.CsvImportRowEdit
+import com.athar.core.domain.repo.MerchantBulkExportMode
 import com.athar.core.domain.repo.MerchantBulkImportSkipSummary
 import com.athar.core.domain.repo.merchantBulkAiPrompt
 import com.athar.core.designsystem.component.AtharCard
@@ -120,7 +121,22 @@ fun SettingsScreen(
         if (uri != null) viewModel.exportCsv(context.contentResolver, uri)
     }
     val bulkExportLauncher = rememberLauncherForActivityResult(CreateDocument("text/csv")) { uri ->
-        if (uri != null) viewModel.exportUncategorized(context.contentResolver, uri)
+        if (uri != null) {
+            viewModel.exportUncategorized(
+                context.contentResolver,
+                uri,
+                MerchantBulkExportMode.FULL_CONTEXT,
+            )
+        }
+    }
+    val bulkPrivateExportLauncher = rememberLauncherForActivityResult(CreateDocument("text/csv")) { uri ->
+        if (uri != null) {
+            viewModel.exportUncategorized(
+                context.contentResolver,
+                uri,
+                MerchantBulkExportMode.NO_RAW_BODY,
+            )
+        }
     }
     val bulkImportLauncher = rememberLauncherForActivityResult(OpenDocument()) { uri ->
         if (uri != null) viewModel.importCategorizations(context.contentResolver, uri)
@@ -252,6 +268,7 @@ fun SettingsScreen(
                     }
                 },
                 onExport = { bulkExportLauncher.launch("athar-uncategorized.csv") },
+                onExportPrivate = { bulkPrivateExportLauncher.launch("athar-uncategorized-private.csv") },
                 onImport = { bulkImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "*/*")) },
                 onClear = viewModel::clearBulkCategorizeStatus,
             )
@@ -604,6 +621,7 @@ private fun BulkCategorizeCard(
     promptCopied: Boolean,
     onCopyPrompt: () -> Unit,
     onExport: () -> Unit,
+    onExportPrivate: () -> Unit,
     onImport: () -> Unit,
     onClear: () -> Unit,
 ) {
@@ -668,41 +686,34 @@ private fun BulkCategorizeCard(
                 }
             }
             val isWorking = status is BulkCategorizeStatus.Working
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+                verticalArrangement = Arrangement.spacedBy(theme.spacing.s),
             ) {
-                Box(modifier = Modifier.weight(1f)) {
-                    PrimaryButton(
-                        text = if (isWorking) {
-                            stringResource(R.string.settings_status_in_progress)
-                        } else {
-                            stringResource(R.string.settings_bulk_cat_action_export)
-                        },
-                        onClick = { if (!isWorking) onExport() },
-                    )
-                }
-                Box(modifier = Modifier.weight(1f)) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(theme.spacing.s))
-                            .background(theme.colors.divider)
-                            .clickable(enabled = !isWorking) { onImport() }
-                            .padding(theme.spacing.m),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        AtharText(
-                            text = if (isWorking) {
-                                stringResource(R.string.settings_status_in_progress)
-                            } else {
-                                stringResource(R.string.settings_bulk_cat_action_import)
-                            },
-                            style = theme.typography.headline,
-                            color = theme.colors.ink,
-                        )
-                    }
-                }
+                PrimaryButton(
+                    text = if (isWorking) {
+                        stringResource(R.string.settings_status_in_progress)
+                    } else {
+                        stringResource(R.string.settings_bulk_cat_action_export)
+                    },
+                    onClick = { if (!isWorking) onExport() },
+                )
+                SecondaryButton(
+                    text = if (isWorking) {
+                        stringResource(R.string.settings_status_in_progress)
+                    } else {
+                        stringResource(R.string.settings_bulk_cat_action_export_private)
+                    },
+                    onClick = { if (!isWorking) onExportPrivate() },
+                )
+                SecondaryButton(
+                    text = if (isWorking) {
+                        stringResource(R.string.settings_status_in_progress)
+                    } else {
+                        stringResource(R.string.settings_bulk_cat_action_import)
+                    },
+                    onClick = { if (!isWorking) onImport() },
+                )
             }
         }
     }

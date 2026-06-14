@@ -153,7 +153,7 @@
 
     <!-- Bulk-categorize via AI (Issue #5a) -->
     <string name="settings_bulk_cat_title">Bulk categorize with AI</string>
-    <string name="settings_bulk_cat_body">Copy the prompt, export non-transfer uncategorized transactions to CSV with repeated merchants grouped first and valid category options included, run it through ChatGPT/Claude, then import the filled file. One clear category choice can update blank peers in the same merchant group and record an exact local rule for future SMS; skipped rows show reason counts.</string>
+    <string name="settings_bulk_cat_body">Copy the prompt, export non-transfer uncategorized transactions to CSV with repeated merchants grouped first and valid category options included, run it through ChatGPT/Claude, then import the filled file. Use the private export to omit raw SMS text. One clear category choice can update blank peers in the same merchant group and record an exact local rule for future SMS; skipped rows show reason counts.</string>
     <string name="settings_bulk_cat_exported" formatted="true">Exported %1$d uncategorized transactions.</string>
     <string name="settings_bulk_cat_imported" formatted="true">Updated %1$d · added %2$d rules · skipped %3$d.</string>
     <string name="settings_bulk_cat_skip_details" formatted="true">Skipped details: %1$s.</string>
@@ -166,7 +166,8 @@
     <string name="settings_bulk_cat_action_copy_prompt">Copy AI prompt</string>
     <string name="settings_bulk_cat_prompt_copied">Prompt copied.</string>
     <string name="settings_bulk_cat_prompt_clip_label">Athar bulk categorize prompt</string>
-    <string name="settings_bulk_cat_action_export">Export uncategorized</string>
+    <string name="settings_bulk_cat_action_export">Export with SMS text</string>
+    <string name="settings_bulk_cat_action_export_private">Export private CSV</string>
     <string name="settings_bulk_cat_action_import">Import categorized</string>
 
     <!-- Display currency card -->
