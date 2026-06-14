@@ -434,6 +434,70 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses auto loan payment notification with shared car payment label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Auto loan payment USD 420.00 posted"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("420.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Car payment")
+    }
+
+    @Test
+    fun `parses exact car payment notification with shared car payment label`() {
+        val result = parser.parse(
+            event("notification:com.capitalone.mobile", "Car payment SAR 1,200.00 posted"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("1200.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Car payment")
+    }
+
+    @Test
+    fun `parses vehicle finance installment notification with shared car payment label`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Vehicle finance installment AED 1,250.00 debited"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("1250.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Car payment")
+    }
+
+    @Test
+    fun `parses Arabic car installment notification with shared car payment label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم سداد قسط سيارة بمبلغ ١٢٠٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("1200"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Car payment")
+    }
+
+    @Test
+    fun `ignores car payment offers and reminders with amounts`() {
+        val nonPostedMessages = listOf(
+            "Your auto loan payment of USD 420.00 is due tomorrow",
+            "Car payment SAR 1,200.00 scheduled for tomorrow",
+            "Pre-approved car finance offer SAR 75,000.00 available",
+            "Vehicle lease reminder AED 1,250.00 upcoming",
+            "عرض تمويل سيارة بمبلغ ٨٠٠٠٠ ر.س متاح الآن",
+        )
+
+        nonPostedMessages.forEach { body ->
+            assertThat(parser.parse(event("notification:com.chase.sig.android", body)))
+                .isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
     fun `parses Arabic credit card repayment notification with shared debt label`() {
         val result = parser.parse(
             event("notification:com.alrajhibank.alrajhimobile", "تم سداد بطاقة ائتمانية بمبلغ ٥٠٠ ر.س"),

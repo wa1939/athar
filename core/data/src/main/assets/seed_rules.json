@@ -2901,6 +2901,11 @@
       "priority": 90
     },
     {
+      "pattern": "car payment",
+      "categoryId": "cat-car-payment",
+      "priority": 90
+    },
+    {
       "pattern": "loan instalment",
       "categoryId": "cat-debt",
       "priority": 90
