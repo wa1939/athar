@@ -857,6 +857,38 @@ class SmsCorpusTest {
         assertThat(r.templateId).isEqualTo("universal-amount")
     }
 
+    @Test fun `universal fallback classifies Arabic transfer wording as transfer`() {
+        val body = """
+            حوالة مالية صادرة SAR 250
+            إلى: مستفيد تجريبي
+            في:27/12/25 23:04
+        """.trimIndent()
+
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+
+        assertThat(r.type).isEqualTo(TxType.TRANSFER)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("250"))
+        assertThat(r.merchant).isNull()
+        assertThat(r.counterparty).isEqualTo("مستفيد تجريبي")
+        assertThat(r.templateId).isEqualTo("universal-amount")
+    }
+
+    @Test fun `universal fallback keeps Arabic purchase wording as expense`() {
+        val body = """
+            تمت عملية شراء SAR 42
+            لدى: متجر تجريبي
+            في:27/12/25 23:04
+        """.trimIndent()
+
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+
+        assertThat(r.type).isEqualTo(TxType.EXPENSE)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("42"))
+        assertThat(r.merchant).isEqualTo("متجر تجريبي")
+        assertThat(r.counterparty).isNull()
+        assertThat(r.templateId).isEqualTo("universal-amount")
+    }
+
     @Test fun `uppercase STCPAY migration notice is Ignored`() {
         val body = """
             ستنتقل جميع خدمات stc pay إلى STC Bank ولضمان استمرار خدماتكم، يرجى تحميل تطبيق STC Bank.

@@ -8,6 +8,7 @@ import kotlinx.datetime.Instant
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Path
+import java.security.MessageDigest
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -61,6 +62,7 @@ class PrivateSmsExportAuditTest {
         var categorizedExpenses = 0
         var uncategorizedExpenses = 0
         var missingMerchantExpenses = 0
+        val missingMerchantGroups = linkedMapOf<MissingMerchantKey, Int>()
 
         val messages = readExport(export)
         messages.forEachIndexed { index, message ->
@@ -75,7 +77,15 @@ class PrivateSmsExportAuditTest {
                     if (result.type == TxType.EXPENSE) {
                         parsedExpenses += 1
                         val merchant = result.merchant?.trim()
-                        if (merchant.isNullOrBlank()) missingMerchantExpenses += 1
+                        if (merchant.isNullOrBlank()) {
+                            missingMerchantExpenses += 1
+                            val key = missingMerchantKey(
+                                templateId = result.templateId,
+                                sender = message.sender,
+                                body = message.body,
+                            )
+                            missingMerchantGroups[key] = missingMerchantGroups.getOrDefault(key, 0) + 1
+                        }
 
                         val effectiveMerchant = (merchant ?: result.counterparty ?: message.sender)
                             .lowercase()
@@ -108,6 +118,14 @@ class PrivateSmsExportAuditTest {
             inactiveCatalogMatches = inactiveCatalogMatches.entries
                 .sortedWith(compareByDescending<Map.Entry<AuditRule, Int>> { it.value }.thenBy { it.key.pattern })
                 .map { AuditCandidate(pattern = it.key.pattern, categoryId = it.key.categoryId, count = it.value) },
+            missingMerchantGroups = missingMerchantGroups.entries
+                .sortedWith(
+                    compareByDescending<Map.Entry<MissingMerchantKey, Int>> { it.value }
+                        .thenBy { it.key.templateId }
+                        .thenBy { it.key.bodyShapeSha256 },
+                )
+                .take(20)
+                .map { (key, count) -> key.toGroup(count) },
         )
     }
 
@@ -188,6 +206,94 @@ class PrivateSmsExportAuditTest {
 
     private fun String.unescapeJson(): String = replace("\\\"", "\"").replace("\\\\", "\\")
 
+    private fun senderHash(sender: String): String = sha256Prefix(sender.trim().lowercase())
+
+    private fun senderKind(sender: String): String {
+        val trimmed = sender.trim()
+        val digitCount = trimmed.count { it.isDigit() || it in '٠'..'٩' || it in '۰'..'۹' }
+        return when {
+            trimmed.isBlank() -> "blank"
+            digitCount == trimmed.count { !it.isWhitespace() } && digitCount <= 6 -> "short_code"
+            digitCount >= 7 && trimmed.none { it.isLetter() } -> "phone_like"
+            ArabicRegex.containsMatchIn(trimmed) -> "arabic_or_mixed"
+            trimmed.any { it.isLetter() } && trimmed.any { it.isDigit() } -> "alphanumeric"
+            trimmed.all { it.isLetter() || it.isWhitespace() || it == '-' } -> "alpha"
+            else -> "mixed"
+        }
+    }
+
+    private fun bodyFeatures(body: String): BodyFeatures {
+        val normalized = normalizeArabicDigits(body)
+        return BodyFeatures(
+            lengthBucket = bucket(body.length),
+            lineCount = body.lineSequence().count(),
+            tokenCount = body.split(WhitespaceRegex).count { it.isNotBlank() },
+            hasArabic = ArabicRegex.containsMatchIn(body),
+            hasLatin = LatinRegex.containsMatchIn(body),
+            hasCurrencyMarker = CurrencyRegex.containsMatchIn(normalized),
+            amountTokenCount = AmountTokenRegex.findAll(normalized).count(),
+            hasOtpMarker = OtpRegex.containsMatchIn(body),
+            hasMaskedCardMarker = MaskedCardRegex.containsMatchIn(normalized),
+            actionHints = ActionHintPatterns.mapNotNull { (hint, regex) ->
+                hint.takeIf { regex.containsMatchIn(body) }
+            },
+        )
+    }
+
+    private fun bodyShapeSignature(body: String): String =
+        normalizeArabicDigits(body)
+            .map { ch ->
+                when {
+                    ch.isDigit() -> '9'
+                    ch in '\u0600'..'\u06FF' -> 'r'
+                    ch in 'A'..'Z' || ch in 'a'..'z' -> 'l'
+                    ch.isWhitespace() -> ' '
+                    else -> ch
+                }
+            }
+            .joinToString("")
+            .replace(WhitespaceRegex, " ")
+            .take(500)
+
+    private fun normalizeArabicDigits(input: String): String = buildString(input.length) {
+        input.forEach { ch ->
+            append(
+                when (ch) {
+                    in '٠'..'٩' -> '0' + (ch - '٠')
+                    in '۰'..'۹' -> '0' + (ch - '۰')
+                    else -> ch
+                },
+            )
+        }
+    }
+
+    private fun bucket(length: Int): String = when {
+        length <= 0 -> "0"
+        length <= 8 -> "1-8"
+        length <= 32 -> "9-32"
+        length <= 80 -> "33-80"
+        length <= 160 -> "81-160"
+        length <= 320 -> "161-320"
+        else -> "321+"
+    }
+
+    private fun sha256Prefix(value: String, length: Int = 12): String {
+        val bytes = MessageDigest.getInstance("SHA-256").digest(value.toByteArray(Charsets.UTF_8))
+        return bytes.joinToString("") { "%02x".format(it) }.take(length)
+    }
+
+    private fun missingMerchantKey(templateId: String, sender: String, body: String): MissingMerchantKey {
+        val shape = bodyShapeSignature(body)
+        return MissingMerchantKey(
+            templateId = templateId,
+            senderHash = senderHash(sender),
+            senderKind = senderKind(sender),
+            bodyShapeSha256 = sha256Prefix(shape),
+            bodyShapePreview = shape.take(240),
+            bodyFeatures = bodyFeatures(body),
+        )
+    }
+
     private data class ExportMessage(
         val sender: String,
         val body: String,
@@ -211,6 +317,81 @@ class PrivateSmsExportAuditTest {
             value.replace("\\", "\\\\").replace("\"", "\\\"")
     }
 
+    private data class MissingMerchantKey(
+        val templateId: String,
+        val senderHash: String,
+        val senderKind: String,
+        val bodyShapeSha256: String,
+        val bodyShapePreview: String,
+        val bodyFeatures: BodyFeatures,
+    ) {
+        fun toGroup(count: Int): MissingMerchantGroup =
+            MissingMerchantGroup(
+                templateId = templateId,
+                senderHash = senderHash,
+                senderKind = senderKind,
+                bodyShapeSha256 = bodyShapeSha256,
+                bodyShapePreview = bodyShapePreview,
+                bodyFeatures = bodyFeatures,
+                count = count,
+            )
+    }
+
+    private data class MissingMerchantGroup(
+        val templateId: String,
+        val senderHash: String,
+        val senderKind: String,
+        val bodyShapeSha256: String,
+        val bodyShapePreview: String,
+        val bodyFeatures: BodyFeatures,
+        val count: Int,
+    ) {
+        fun toJson(indent: String): String =
+            """
+                |$indent{
+                |$indent  "templateId": "${jsonEscape(templateId)}",
+                |$indent  "senderHash": "$senderHash",
+                |$indent  "senderKind": "$senderKind",
+                |$indent  "bodyShapeSha256": "$bodyShapeSha256",
+                |$indent  "bodyShapePreview": "${jsonEscape(bodyShapePreview)}",
+                |$indent  "bodyFeatures": ${bodyFeatures.toJson()},
+                |$indent  "count": $count
+                |$indent}
+            """.trimMargin()
+
+        private fun jsonEscape(value: String): String =
+            value.replace("\\", "\\\\").replace("\"", "\\\"")
+    }
+
+    private data class BodyFeatures(
+        val lengthBucket: String,
+        val lineCount: Int,
+        val tokenCount: Int,
+        val hasArabic: Boolean,
+        val hasLatin: Boolean,
+        val hasCurrencyMarker: Boolean,
+        val amountTokenCount: Int,
+        val hasOtpMarker: Boolean,
+        val hasMaskedCardMarker: Boolean,
+        val actionHints: List<String>,
+    ) {
+        fun toJson(): String =
+            """
+                |{
+                |  "lengthBucket": "$lengthBucket",
+                |  "lineCount": $lineCount,
+                |  "tokenCount": $tokenCount,
+                |  "hasArabic": $hasArabic,
+                |  "hasLatin": $hasLatin,
+                |  "hasCurrencyMarker": $hasCurrencyMarker,
+                |  "amountTokenCount": $amountTokenCount,
+                |  "hasOtpMarker": $hasOtpMarker,
+                |  "hasMaskedCardMarker": $hasMaskedCardMarker,
+                |  "actionHints": [${actionHints.joinToString(",") { """"$it"""" }}]
+                |}
+            """.trimMargin().replace("\n", "")
+    }
+
     private data class AuditReport(
         val records: Int,
         val successes: Int,
@@ -222,12 +403,15 @@ class PrivateSmsExportAuditTest {
         val uncategorizedExpenses: Int,
         val missingMerchantExpenses: Int,
         val inactiveCatalogMatches: List<AuditCandidate>,
+        val missingMerchantGroups: List<MissingMerchantGroup>,
     ) {
         val rawBodiesWritten: Int = 0
 
         fun toJson(): String {
             val candidates = inactiveCatalogMatches.joinToString(",\n") { it.toJson("    ") }
             val candidateBlock = if (candidates.isBlank()) "" else "\n$candidates\n  "
+            val groups = missingMerchantGroups.joinToString(",\n") { it.toJson("    ") }
+            val groupBlock = if (groups.isBlank()) "" else "\n$groups\n  "
             return """
                 |{
                 |  "records": $records,
@@ -240,10 +424,31 @@ class PrivateSmsExportAuditTest {
                 |  "uncategorizedExpenses": $uncategorizedExpenses,
                 |  "missingMerchantExpenses": $missingMerchantExpenses,
                 |  "rawBodiesWritten": $rawBodiesWritten,
-                |  "inactiveCatalogMatches": [$candidateBlock]
+                |  "inactiveCatalogMatches": [$candidateBlock],
+                |  "missingMerchantGroups": [$groupBlock]
                 |}
                 |
             """.trimMargin()
         }
+    }
+
+    companion object {
+        private val WhitespaceRegex = Regex("""\s+""")
+        private val ArabicRegex = Regex("""[\u0600-\u06FF]""")
+        private val LatinRegex = Regex("""[A-Za-z]""")
+        private val CurrencyRegex = Regex(
+            """\b(?:SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|CNY|HKD|SGD)\b|[﷼$€£₹¥]""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val AmountTokenRegex = Regex("""(?<!\p{L})\d{1,3}(?:[,\s.]\d{3})*(?:[.,]\d{2})?(?!\p{L})""")
+        private val OtpRegex = Regex("""\b(?:otp|code|رمز|تحقق|verification)\b""", RegexOption.IGNORE_CASE)
+        private val MaskedCardRegex = Regex("""(?:\*{2,}|x{2,}|[•●]{2,})\s*\d{2,4}""", RegexOption.IGNORE_CASE)
+        private val ActionHintPatterns = listOf(
+            "purchase" to Regex("""(?:\b(?:purchase|spent|debit|charge|pos)\b|شراء|خصم|دفع)""", RegexOption.IGNORE_CASE),
+            "income" to Regex("""(?:\b(?:credit|deposit|received|salary)\b|إيداع|ايداع|وارد|راتب)""", RegexOption.IGNORE_CASE),
+            "transfer" to Regex("""(?:\b(?:transfer|sent|remit)\b|تحويل|حوالة)""", RegexOption.IGNORE_CASE),
+            "withdrawal" to Regex("""(?:\b(?:atm|withdrawal)\b|سحب)""", RegexOption.IGNORE_CASE),
+            "balance" to Regex("""(?:\b(?:balance|available)\b|رصيد)""", RegexOption.IGNORE_CASE),
+        )
     }
 }
