@@ -25,7 +25,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val expenseWords = Regex(
-        """(?:\b(?:spent|purchase|paid|payment|debit|debited|charged|card\s+purchase|withdrawal|pos)\b|خصم|شراء|دفع|سحب)""",
+        """(?:\b(?:spent|purchase|paid|payment|debit|debited|charged|card\s+purchase|withdrawal|withdrawn|pos)\b|خصم|شراء|دفع|سحب)""",
         RegexOption.IGNORE_CASE,
     )
     private val expensePhrases = Regex(
@@ -50,6 +50,10 @@ class GenericBankNotificationTemplate : BankTemplate {
     )
     private val limitWords = Regex(
         """\b(?:transfer\s+limit|daily\s+limit|card\s+limit|spending\s+limit|credit\s+limit|cash\s+advance\s+limit|limit\s+(?:changed|updated|increased|decreased))\b""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val withdrawalLimitWords = Regex(
+        """(?:\b(?:atm\s+withdrawal\s+limit|cash\s+withdrawal\s+limit|withdrawal\s+limit|atm\s+limit)\b|حد\s+السحب|سقف\s+السحب)""",
         RegexOption.IGNORE_CASE,
     )
     private val declinedWords = Regex(
@@ -168,6 +172,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (declinedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (statementWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (scheduledWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (withdrawalLimitWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (spendingSummaryWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (limitWords.containsMatchIn(normalized) && !hasExpenseAction(normalized) && !hasIncomeAction(normalized)) {
             return ParseResult.Ignored
@@ -196,7 +201,8 @@ class GenericBankNotificationTemplate : BankTemplate {
         }
 
         val merchant = when (type) {
-            TxType.EXPENSE -> cleanParty(merchantLabelHint.find(normalized)?.groupValues?.get(1)
+            TxType.EXPENSE -> "ATM Withdrawal".takeIf { isWithdrawalNotification(normalized) }
+                ?: cleanParty(merchantLabelHint.find(normalized)?.groupValues?.get(1)
                 ?: toHint.find(normalized)?.groupValues?.get(1)
                 ?: atHint.find(normalized)?.groupValues?.get(1)
                 ?: byHint.find(normalized)?.groupValues?.get(1)
@@ -252,6 +258,9 @@ class GenericBankNotificationTemplate : BankTemplate {
             toHint.containsMatchIn(body) ||
             fromHint.containsMatchIn(body) ||
             forHint.containsMatchIn(body)
+
+    private fun isWithdrawalNotification(body: String): Boolean =
+        withdrawalWords.containsMatchIn(body)
 
     private fun isMarketingOnlyPromotion(body: String): Boolean =
         marketingOnlyWords.containsMatchIn(body) && !postedTransactionEvidence.containsMatchIn(body)
@@ -411,6 +420,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         private const val RewardSuffixWindow = 16
         private const val CurrencySuffixWindow = 12
         private val ArabicBalanceTerms = listOf("رصيد", "الرصيد", "المتاح", "الرصيد المتبقي")
+        private val withdrawalWords = Regex(
+            """(?:\b(?:atm\s+withdrawal|cash\s+withdrawal|withdrawal|withdrawn)\b|سحب|صراف)""",
+            RegexOption.IGNORE_CASE,
+        )
         private val afterTransactionBalanceContext = Regex(
             """(?:\bafter\s+(?:debit|purchase|payment|transaction|spend|withdrawal|transfer)\b|بعد\s+(?:خصم|شراء|دفع|سحب|تحويل|العملية|عملية))""",
             RegexOption.IGNORE_CASE,

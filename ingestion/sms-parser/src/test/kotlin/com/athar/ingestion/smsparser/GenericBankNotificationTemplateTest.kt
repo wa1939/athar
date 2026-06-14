@@ -260,6 +260,51 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses atm withdrawal notification with shared merchant label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "ATM withdrawal of USD 100.00 from Main Street ATM"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("100.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("ATM Withdrawal")
+    }
+
+    @Test
+    fun `parses withdrawn notification with shared merchant label`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Cash withdrawn AED 250.00 from ATM 123"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("250.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("ATM Withdrawal")
+    }
+
+    @Test
+    fun `parses Arabic cash withdrawal notification with shared merchant label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم سحب ٥٠٠ ر.س من صراف آلي"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("500"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("ATM Withdrawal")
+    }
+
+    @Test
+    fun `ignores atm withdrawal limit notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.chase.sig.android", "Your ATM withdrawal limit is now USD 1,000.00"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
     fun `parses transfer notification`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "You sent AED 100.00 to Ahmed"),
