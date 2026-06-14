@@ -1273,6 +1273,94 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses flight ticket payment notification with shared travel label`() {
+        val result = parser.parse(
+            event("notification:com.revolut.revolut", "Flight ticket payment USD 420.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("420.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Flight ticket")
+    }
+
+    @Test
+    fun `preserves airline merchant on flight payment notification`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Flight ticket payment AED 750.00 at Qatar Airways"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("750.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Qatar Airways")
+    }
+
+    @Test
+    fun `parses hotel payment notification with shared travel label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Hotel payment USD 180.25 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("180.25"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Hotel payment")
+    }
+
+    @Test
+    fun `parses travel booking payment notification with shared travel label`() {
+        val result = parser.parse(
+            event("notification:com.cibc.android.mobi", "Travel booking payment CAD 300.00 posted"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("300.00"))
+        assertThat(result.amount.currency).isEqualTo("CAD")
+        assertThat(result.merchant).isEqualTo("Travel booking")
+    }
+
+    @Test
+    fun `parses car rental payment notification with shared travel label`() {
+        val result = parser.parse(
+            event("notification:com.capitalone.mobile", "Car rental payment USD 89.90 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("89.90"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Car rental payment")
+    }
+
+    @Test
+    fun `parses Arabic flight ticket notification with shared travel label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم سداد تذكرة طيران بمبلغ ٩٠٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("900"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Flight ticket")
+    }
+
+    @Test
+    fun `ignores travel offers itineraries reservations and quotes with amounts`() {
+        val nonPostedMessages = listOf(
+            "Save SAR 200.00 on your next flight",
+            "Hotel reservation reminder SAR 500.00",
+            "Flight itinerary: fare SAR 1,200.00",
+            "Car rental quote USD 45.00",
+            "عرض خصم ١٠٠ ر.س على الفنادق",
+        )
+
+        nonPostedMessages.forEach { body ->
+            assertThat(parser.parse(event("notification:com.alrajhibank.alrajhimobile", body)))
+                .isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
     fun `does not treat trailing status as merchant`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "Card purchase SAR 42.00 approved"),

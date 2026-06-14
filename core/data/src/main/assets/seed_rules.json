@@ -3389,6 +3389,26 @@
       "pattern": "taxi ride payment",
       "categoryId": "cat-public-transport",
       "priority": 90
+    },
+    {
+      "pattern": "flight ticket",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "hotel payment",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "travel booking",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "car rental payment",
+      "categoryId": "cat-travel",
+      "priority": 90
     }
   ]
 }

@@ -208,6 +208,26 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\b(?:fuel|petrol|gasoline|gas\s+station|grocery|groceries|supermarket|restaurant|dining|coffee|cafe|coffee\s+shop|food\s+delivery|meal\s+delivery|delivery\s+order|taxi|cab|ride\s+hailing|rideshare|ride\s+share|ride)\b[^\n\r]{0,80}\b(?:offer|promo|discount|coupon|deal|save|bonus|reward|cashback|points|estimate|estimated|scheduled|upcoming|reservation|reserved|preorder|pre-order|reminder)\b|\b(?:offer|promo|discount|coupon|deal|save|bonus|reward|cashback|points|estimate|estimated|scheduled|upcoming|reservation|reserved|preorder|pre-order|reminder)\b[^\n\r]{0,80}\b(?:fuel|petrol|gasoline|gas\s+station|grocery|groceries|supermarket|restaurant|dining|coffee|cafe|coffee\s+shop|food\s+delivery|meal\s+delivery|delivery\s+order|taxi|cab|ride\s+hailing|rideshare|ride\s+share|ride)\b|(?:عرض|عروض|قسيمة|كوبون|وفر|مكافأة|نقاط|استرداد|تذكير|مجدول|قادم|حجز|تقدير)[^\n\r]{0,80}(?:وقود|بنزين|بقالة|سوبر\s*ماركت|مطعم|مطاعم|قهوة|مقهى|كافيه|توصيل\s+طعام|مشوار|رحلة|تاكسي))""",
         RegexOption.IGNORE_CASE,
     )
+    private val flightTicketPaymentWords = Regex(
+        """(?:\b(?:flight|airline|air\s+ticket|flight\s+ticket|plane\s+ticket)\s+(?:purchase|payment|paid|charge|ticket)\b|\b(?:purchase|payment|paid|charged)\s+(?:for\s+)?(?:flight|airline|air\s+ticket|flight\s+ticket|plane\s+ticket)\b|(?:سداد|دفع|خصم|شراء)\s+(?:تذكرة|تذاكر)\s+(?:طيران|سفر)|(?:تذكرة|تذاكر)\s+(?:طيران|سفر)\s+(?:تم\s+)?(?:سداد|دفع|خصم|شراء))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val hotelPaymentWords = Regex(
+        """(?:\b(?:hotel|lodging|accommodation)\s+(?:payment|paid|charge|stay)\b|\b(?:payment|paid|charged)\s+(?:for\s+)?(?:hotel|lodging|accommodation)\b|(?:سداد|دفع|خصم)\s+(?:رسوم\s+)?(?:فندق|الفندق|إقامة|اقامة)|(?:فندق|الفندق|إقامة|اقامة)\s+(?:تم\s+)?(?:سداد|دفع|خصم))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val travelBookingPaymentWords = Regex(
+        """(?:\b(?:travel|trip|holiday|vacation)\s+(?:booking\s+)?(?:payment|paid|purchase|charge)\b|\b(?:payment|paid|charged)\s+(?:for\s+)?(?:travel|trip|holiday|vacation)\s+booking\b|(?:سداد|دفع|خصم)\s+(?:حجز\s+)?(?:سفر|رحلة\s+سفر|رحلة\s+طيران)|(?:حجز\s+)?(?:سفر|رحلة\s+سفر|رحلة\s+طيران)\s+(?:تم\s+)?(?:سداد|دفع|خصم))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val carRentalPaymentWords = Regex(
+        """(?:\b(?:car\s+rental|rental\s+car|vehicle\s+rental)\s+(?:payment|paid|charge|booking)\b|\b(?:payment|paid|charged)\s+(?:for\s+)?(?:car\s+rental|rental\s+car|vehicle\s+rental)\b|(?:سداد|دفع|خصم)\s+(?:رسوم\s+)?(?:تأجير|تاجير|استئجار)\s+(?:سيارة|السيارة)|(?:تأجير|تاجير|استئجار)\s+(?:سيارة|السيارة)\s+(?:تم\s+)?(?:سداد|دفع|خصم))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val travelNonPostedWords = Regex(
+        """(?:\b(?:flight|airline|air\s+ticket|hotel|lodging|accommodation|travel|trip|holiday|vacation|car\s+rental|rental\s+car|vehicle\s+rental)\b[^\n\r]{0,80}\b(?:offer|promo|discount|coupon|deal|save|bonus|reward|cashback|points|miles|itinerary|reservation|reserved|check[-\s]?in|boarding\s+pass|quote|estimate|estimated|scheduled|upcoming|reminder)\b|\b(?:offer|promo|discount|coupon|deal|save|bonus|reward|cashback|points|miles|itinerary|reservation|reserved|check[-\s]?in|boarding\s+pass|quote|estimate|estimated|scheduled|upcoming|reminder)\b[^\n\r]{0,80}\b(?:flight|airline|air\s+ticket|hotel|lodging|accommodation|travel|trip|holiday|vacation|car\s+rental|rental\s+car|vehicle\s+rental)\b|(?:عرض|عروض|قسيمة|كوبون|وفر|مكافأة|نقاط|أميال|اميال|استرداد|تذكير|مجدول|قادم|حجز|تقدير|مسار\s+رحلة|بطاقة\s+صعود)[^\n\r]{0,80}(?:طيران|تذكرة\s+طيران|فندق|فنادق|سفر|تأجير\s+سيارة|تاجير\s+سيارة|استئجار\s+سيارة))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val declinedWords = Regex(
         """\b(?:declined|rejected|failed|unsuccessful|مرفوض|رُفض|فشل|غير\s+ناجحة)\b""",
         RegexOption.IGNORE_CASE,
@@ -335,6 +355,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (mobilityPaymentReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (essentialLifeReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (everydayCommerceNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (travelNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (spendingSummaryWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (limitWords.containsMatchIn(normalized) && !hasExpenseAction(normalized) && !hasIncomeAction(normalized)) {
             return ParseResult.Ignored
@@ -363,6 +384,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             isMobilityPaymentNotification(normalized) -> TxType.EXPENSE
             isEssentialLifeExpenseNotification(normalized) -> TxType.EXPENSE
             isEverydayCommerceExpenseNotification(normalized) -> TxType.EXPENSE
+            isTravelExpenseNotification(normalized) -> TxType.EXPENSE
             transferWords.containsMatchIn(normalized) -> TxType.TRANSFER
             hasExpenseAction(normalized) || isBankFeeNotification(normalized) ||
                 isDebtPaymentNotification(normalized) || hasMerchantHint(normalized) -> TxType.EXPENSE
@@ -421,7 +443,8 @@ class GenericBankNotificationTemplate : BankTemplate {
             isBankFeeNotification(body) || isDebtPaymentNotification(body) ||
             isRecurringExpenseNotification(body) || isTelecomRechargeNotification(body) ||
             isPublicServicePaymentNotification(body) || isMobilityPaymentNotification(body) ||
-            isEssentialLifeExpenseNotification(body) || isEverydayCommerceExpenseNotification(body)
+            isEssentialLifeExpenseNotification(body) || isEverydayCommerceExpenseNotification(body) ||
+            isTravelExpenseNotification(body)
 
     private fun hasExpenseAction(body: String): Boolean =
         expenseWords.containsMatchIn(body) || expensePhrases.containsMatchIn(body)
@@ -444,7 +467,8 @@ class GenericBankNotificationTemplate : BankTemplate {
         feeWords.containsMatchIn(body) &&
             !isPublicServicePaymentNotification(body) &&
             !isEssentialLifeExpenseNotification(body) &&
-            !isEverydayCommerceExpenseNotification(body)
+            !isEverydayCommerceExpenseNotification(body) &&
+            !isTravelExpenseNotification(body)
 
     private fun isDebtPaymentNotification(body: String): Boolean =
         isCreditCardPaymentNotification(body) || isLoanInstalmentNotification(body)
@@ -487,6 +511,12 @@ class GenericBankNotificationTemplate : BankTemplate {
             foodDeliveryPaymentWords.containsMatchIn(body) ||
             taxiRidePaymentWords.containsMatchIn(body)
 
+    private fun isTravelExpenseNotification(body: String): Boolean =
+        flightTicketPaymentWords.containsMatchIn(body) ||
+            hotelPaymentWords.containsMatchIn(body) ||
+            travelBookingPaymentWords.containsMatchIn(body) ||
+            carRentalPaymentWords.containsMatchIn(body)
+
     private fun String.cleanMerchantCandidate(amountMatch: MatchResult): String? =
         cleanParty(merchantLabelHint.find(this)?.groupValues?.get(1)
             ?: recipientLabelHint.find(this)?.groupValues?.get(1)
@@ -505,6 +535,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             ?: normalizeRecurringExpenseMerchant(body, merchant)
             ?: normalizeEssentialLifeMerchant(body, merchant)
             ?: normalizeEverydayCommerceMerchant(body, merchant)
+            ?: normalizeTravelMerchant(body, merchant)
             ?: merchant
 
     private fun normalizePublicServiceMerchant(body: String, merchant: String?): String? {
@@ -593,6 +624,20 @@ class GenericBankNotificationTemplate : BankTemplate {
         else -> null
     }
 
+    private fun normalizeTravelMerchant(body: String, merchant: String?): String? {
+        val label = travelLabel(body) ?: return null
+        if (merchant == null || genericTravelMerchantWords.matches(merchant.trim())) return label
+        return merchant
+    }
+
+    private fun travelLabel(body: String): String? = when {
+        flightTicketPaymentWords.containsMatchIn(body) -> "Flight ticket"
+        hotelPaymentWords.containsMatchIn(body) -> "Hotel payment"
+        travelBookingPaymentWords.containsMatchIn(body) -> "Travel booking"
+        carRentalPaymentWords.containsMatchIn(body) -> "Car rental payment"
+        else -> null
+    }
+
     private fun normalizeIncomeCounterparty(body: String, counterparty: String?): String? {
         if (!salaryIncomeWords.containsMatchIn(body)) return counterparty
         val label = if (ArabicSalaryTerms.any { body.contains(it) }) "راتب" else "Salary"
@@ -674,6 +719,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         coffeePaymentWords.find(body)?.range?.first,
         foodDeliveryPaymentWords.find(body)?.range?.first,
         taxiRidePaymentWords.find(body)?.range?.first,
+        flightTicketPaymentWords.find(body)?.range?.first,
+        hotelPaymentWords.find(body)?.range?.first,
+        travelBookingPaymentWords.find(body)?.range?.first,
+        carRentalPaymentWords.find(body)?.range?.first,
     ).minOrNull()
 
     private fun MatchResult.isBalanceAmount(body: String): Boolean {
@@ -849,6 +898,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         )
         private val genericEverydayCommerceMerchantWords = Regex(
             """(?:fuel\s+purchase|fuel\s+payment|petrol\s+payment|grocery\s+purchase|grocery\s+payment|supermarket\s+purchase|restaurant\s+payment|coffee\s+payment|cafe\s+payment|coffee\s+shop\s+payment|food\s+delivery\s+payment|delivery\s+order|taxi\s+ride\s+payment|taxi\s+fare|ride\s+fare|وقود|بنزين|بقالة|سوبر\s*ماركت|مطعم|قهوة|مقهى|كافيه|توصيل\s+طعام|مشوار|تاكسي)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val genericTravelMerchantWords = Regex(
+            """(?:flight\s+ticket|flight\s+payment|airline\s+payment|air\s+ticket|hotel\s+payment|travel\s+booking|travel\s+payment|trip\s+payment|car\s+rental\s+payment|rental\s+car\s+payment|تذكرة\s+طيران|تذاكر\s+طيران|تذكرة\s+سفر|تذاكر\s+سفر|فندق|إقامة|اقامة|حجز\s+سفر|تأجير\s+سيارة|تاجير\s+سيارة|استئجار\s+سيارة)""",
             RegexOption.IGNORE_CASE,
         )
 
