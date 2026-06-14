@@ -1,6 +1,8 @@
 package com.athar.feature.today
 
 import com.athar.core.common.money.Money
+import com.athar.core.domain.model.Category
+import com.athar.core.domain.model.CategoryKind
 import com.athar.core.domain.model.IngestSource
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
@@ -115,6 +117,49 @@ class HistoryFilterTest {
         assertThat(filtered.map { it.id }).containsExactly("coffee-categorized")
     }
 
+    @Test
+    fun `bulk category state offers expense categories and skips selected transfers`() {
+        val state = buildHistoryBulkCategoryState(
+            visibleRows = listOf(
+                tx(id = "expense", source = IngestSource.SMS, type = TxType.EXPENSE),
+                tx(id = "transfer", source = IngestSource.SMS, type = TxType.TRANSFER),
+            ),
+            selectedIds = setOf("expense", "transfer"),
+            selectionMode = true,
+            activeCategories = listOf(
+                category(id = "cat-food", kind = CategoryKind.EXPENSE),
+                category(id = "cat-salary", kind = CategoryKind.INCOME),
+            ),
+        )
+
+        assertThat(state.canApply).isTrue()
+        assertThat(state.selectedIds).containsExactly("expense", "transfer")
+        assertThat(state.selectedCount).isEqualTo(2)
+        assertThat(state.eligibleCount).isEqualTo(1)
+        assertThat(state.skippedCount).isEqualTo(1)
+        assertThat(state.categories.map { it.id }).containsExactly("cat-food")
+    }
+
+    @Test
+    fun `bulk category state blocks mixed expense and income selections`() {
+        val state = buildHistoryBulkCategoryState(
+            visibleRows = listOf(
+                tx(id = "expense", source = IngestSource.SMS, type = TxType.EXPENSE),
+                tx(id = "income", source = IngestSource.SMS, type = TxType.INCOME),
+            ),
+            selectedIds = setOf("expense", "income"),
+            selectionMode = true,
+            activeCategories = listOf(
+                category(id = "cat-food", kind = CategoryKind.EXPENSE),
+                category(id = "cat-salary", kind = CategoryKind.INCOME),
+            ),
+        )
+
+        assertThat(state.canApply).isFalse()
+        assertThat(state.hasMixedCategoryKinds).isTrue()
+        assertThat(state.categories).isEmpty()
+    }
+
     private fun tx(
         id: String,
         source: IngestSource,
@@ -139,5 +184,16 @@ class HistoryFilterTest {
         confidence = null,
         createdAt = Instant.parse("2026-06-13T00:00:00Z"),
         updatedAt = Instant.parse("2026-06-13T00:00:00Z"),
+    )
+
+    private fun category(id: String, kind: CategoryKind): Category = Category(
+        id = id,
+        name = id,
+        nameAr = id,
+        kind = kind,
+        icon = null,
+        monthlyTarget = null,
+        archived = false,
+        sortOrder = 0,
     )
 }

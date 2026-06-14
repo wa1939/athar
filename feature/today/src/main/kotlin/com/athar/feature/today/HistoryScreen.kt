@@ -3,17 +3,21 @@ package com.athar.feature.today
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,10 +30,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.athar.core.designsystem.component.AtharCategoryPicker
 import com.athar.core.designsystem.component.AtharCard
 import com.athar.core.designsystem.component.AtharListRow
+import com.athar.core.designsystem.component.AtharPickerItem
 import com.athar.core.designsystem.component.AtharText
 import com.athar.core.designsystem.component.AtharTextField
 import com.athar.core.designsystem.theme.AtharTheme
@@ -53,12 +60,21 @@ fun HistoryScreen(
     val category by viewModel.category.collectAsStateWithLifecycle()
     val categoryLabels by viewModel.categoryLabels.collectAsStateWithLifecycle()
     val backfill by viewModel.lastBackfill.collectAsStateWithLifecycle()
+    val bulkCategory by viewModel.bulkCategoryState.collectAsStateWithLifecycle()
+    val bulkCategoryResult by viewModel.lastBulkCategory.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<Transaction?>(null) }
+    var choosingBulkCategory by remember { mutableStateOf(false) }
 
     LaunchedEffect(backfill) {
         if (backfill != null) {
             kotlinx.coroutines.delay(4_000)
             viewModel.clearBackfill()
+        }
+    }
+    LaunchedEffect(bulkCategoryResult) {
+        if (bulkCategoryResult != null) {
+            kotlinx.coroutines.delay(4_000)
+            viewModel.clearBulkCategory()
         }
     }
 
@@ -91,6 +107,13 @@ fun HistoryScreen(
                     pattern = it.pattern,
                     count = it.count,
                     onDismiss = viewModel::clearBackfill,
+                )
+            }
+            bulkCategoryResult?.let {
+                BulkCategoryToast(
+                    applied = it.applied,
+                    skipped = it.skipped,
+                    onDismiss = viewModel::clearBulkCategory,
                 )
             }
 
@@ -149,11 +172,37 @@ fun HistoryScreen(
                 onSelect = viewModel::setCategory,
             )
 
-            AtharText(
-                text = stringResource(R.string.history_count, items.size),
-                style = theme.typography.caption,
-                color = theme.colors.muted,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+            ) {
+                AtharText(
+                    text = stringResource(R.string.history_count, items.size),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                    modifier = Modifier.weight(1f),
+                )
+                HistoryActionChip(
+                    text = stringResource(
+                        if (bulkCategory.selectionMode) {
+                            R.string.history_bulk_done
+                        } else {
+                            R.string.history_bulk_select
+                        },
+                    ),
+                    onClick = viewModel::toggleSelectionMode,
+                    selected = bulkCategory.selectionMode,
+                )
+            }
+
+            if (bulkCategory.selectionMode) {
+                BulkSelectionCard(
+                    state = bulkCategory,
+                    onApplyCategory = { choosingBulkCategory = true },
+                    onClear = viewModel::clearSelection,
+                )
+            }
 
             if (items.isEmpty()) {
                 AtharCard {
@@ -169,7 +218,15 @@ fun HistoryScreen(
                         TxRow(
                             tx = tx,
                             categoryLabel = transactionCategoryLabel(tx, categoryLabels),
-                            onClick = { editing = tx },
+                            selected = tx.id in bulkCategory.selectedIds,
+                            selectionMode = bulkCategory.selectionMode,
+                            onClick = {
+                                if (bulkCategory.selectionMode) {
+                                    viewModel.toggleSelected(tx.id)
+                                } else {
+                                    editing = tx
+                                }
+                            },
                         )
                     }
                 }
@@ -193,23 +250,39 @@ fun HistoryScreen(
             )
         }
     }
+
+    if (choosingBulkCategory && bulkCategory.canApply) {
+        BulkCategorySheet(
+            state = bulkCategory,
+            onDismiss = { choosingBulkCategory = false },
+            onApply = { categoryId ->
+                viewModel.applyBulkCategory(categoryId)
+                choosingBulkCategory = false
+            },
+        )
+    }
 }
 
 @Composable
-private fun TxRow(tx: Transaction, categoryLabel: String, onClick: () -> Unit) {
+private fun TxRow(
+    tx: Transaction,
+    categoryLabel: String,
+    selected: Boolean,
+    selectionMode: Boolean,
+    onClick: () -> Unit,
+) {
     val theme = AtharTheme
-    val statusTint = when (tx.status) {
-        TxStatus.CONFIRMED -> theme.colors.olive
-        TxStatus.PENDING -> theme.colors.dust
-        TxStatus.DISMISSED -> theme.colors.muted
-    }
     val typeChip = when (tx.type) {
         TxType.INCOME -> "+"
         TxType.EXPENSE -> "-"
-        TxType.TRANSFER -> "↔"
+        TxType.TRANSFER -> "<>"
     }
     AtharListRow(
-        title = tx.merchant,
+        title = if (selectionMode) {
+            "${if (selected) "✓" else "○"} ${tx.merchant}"
+        } else {
+            tx.merchant
+        },
         subtitle = stringResource(
             R.string.history_row_subtitle,
             tx.date.toString(),
@@ -221,6 +294,124 @@ private fun TxRow(tx: Transaction, categoryLabel: String, onClick: () -> Unit) {
         trailing = tx.amount,
         onClick = onClick,
     )
+}
+
+@Composable
+private fun BulkCategoryToast(applied: Int, skipped: Int, onDismiss: () -> Unit) {
+    AtharCard(modifier = Modifier.clickable(onClick = onDismiss)) {
+        AtharText(
+            text = if (skipped > 0) {
+                stringResource(R.string.history_bulk_applied_with_skips, applied, skipped)
+            } else {
+                stringResource(R.string.history_bulk_applied, applied)
+            },
+            style = AtharTheme.typography.body,
+            color = AtharTheme.colors.ink,
+        )
+    }
+}
+
+@Composable
+private fun BulkSelectionCard(
+    state: HistoryBulkCategoryState,
+    onApplyCategory: () -> Unit,
+    onClear: () -> Unit,
+) {
+    val theme = AtharTheme
+    AtharCard {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(
+                text = stringResource(R.string.history_bulk_selected, state.selectedCount),
+                style = theme.typography.body,
+                color = theme.colors.ink,
+            )
+            AtharText(
+                text = when {
+                    state.selectedCount == 0 -> stringResource(R.string.history_bulk_select_rows)
+                    state.hasMixedCategoryKinds -> stringResource(R.string.history_bulk_mixed_types)
+                    state.eligibleCount == 0 -> stringResource(R.string.history_bulk_no_eligible)
+                    state.skippedCount > 0 -> stringResource(
+                        R.string.history_bulk_ready_with_skips,
+                        state.eligibleCount,
+                        state.skippedCount,
+                    )
+                    else -> stringResource(R.string.history_bulk_ready, state.eligibleCount)
+                },
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+                HistoryActionChip(
+                    text = stringResource(R.string.history_bulk_clear),
+                    onClick = onClear,
+                )
+                HistoryActionChip(
+                    text = stringResource(R.string.history_bulk_category),
+                    onClick = onApplyCategory,
+                    selected = true,
+                    enabled = state.canApply,
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BulkCategorySheet(
+    state: HistoryBulkCategoryState,
+    onDismiss: () -> Unit,
+    onApply: (String) -> Unit,
+) {
+    val theme = AtharTheme
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var selectedCategoryId by remember(state.categories) { mutableStateOf(state.categories.firstOrNull()?.id) }
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = theme.colors.parchment,
+        contentColor = theme.colors.ink,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(theme.spacing.m),
+            verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
+        ) {
+            AtharText(
+                text = stringResource(R.string.history_bulk_category_title),
+                style = theme.typography.headline,
+                color = theme.colors.ink,
+            )
+            AtharCategoryPicker(
+                items = state.categories.map {
+                    AtharPickerItem(key = it.id, labelEn = it.name, labelAr = it.nameAr)
+                },
+                selectedKey = selectedCategoryId,
+                onSelect = { selectedCategoryId = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 220.dp, max = 360.dp),
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+            ) {
+                HistoryActionChip(
+                    text = stringResource(R.string.history_bulk_cancel),
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                )
+                HistoryActionChip(
+                    text = stringResource(R.string.history_bulk_apply),
+                    onClick = { selectedCategoryId?.let(onApply) },
+                    selected = true,
+                    enabled = selectedCategoryId != null,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -252,6 +443,40 @@ private fun <T> FilterChipRow(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun HistoryActionChip(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    selected: Boolean = false,
+    enabled: Boolean = true,
+) {
+    val theme = AtharTheme
+    val background = when {
+        !enabled -> theme.colors.divider
+        selected -> theme.colors.ember
+        else -> theme.colors.surface
+    }
+    val textColor = when {
+        !enabled -> theme.colors.muted
+        selected -> theme.colors.parchment
+        else -> theme.colors.ink
+    }
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(background)
+            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = theme.spacing.s, vertical = theme.spacing.xs),
+    ) {
+        AtharText(
+            text = text,
+            style = theme.typography.caption,
+            color = textColor,
+        )
     }
 }
 

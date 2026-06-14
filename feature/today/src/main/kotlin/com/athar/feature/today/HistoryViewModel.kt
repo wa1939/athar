@@ -2,6 +2,8 @@ package com.athar.feature.today
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.athar.core.domain.model.Category
+import com.athar.core.domain.model.CategoryKind
 import com.athar.core.domain.model.IngestSource
 import com.athar.core.domain.model.PatternType
 import com.athar.core.domain.model.Transaction
@@ -53,10 +55,24 @@ class HistoryViewModel @Inject constructor(
     private val _category = MutableStateFlow(HistoryCategoryFilter.ALL)
     val category: StateFlow<HistoryCategoryFilter> = _category.asStateFlow()
 
+    private val _selectionMode = MutableStateFlow(false)
+    val selectionMode: StateFlow<Boolean> = _selectionMode.asStateFlow()
+
+    private val _selectedIds = MutableStateFlow<Set<String>>(emptySet())
+    val selectedIds: StateFlow<Set<String>> = _selectedIds.asStateFlow()
+
+    private val _lastBulkCategory = MutableStateFlow<BulkCategoryEvent?>(null)
+    val lastBulkCategory: StateFlow<BulkCategoryEvent?> = _lastBulkCategory.asStateFlow()
+
     val categoryLabels: StateFlow<ImmutableMap<String, CategoryLabel>> =
         categories.observeAll(kind = null, includeArchived = true)
             .map { it.toCategoryLabels() }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), persistentMapOf())
+
+    private val activeCategories: StateFlow<List<Category>> =
+        categories.observeAll(kind = null, includeArchived = false)
+            .map { rows -> rows.sortedWith(compareBy<Category> { it.sortOrder }.thenBy { it.name }) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val items: StateFlow<List<Transaction>> =
@@ -76,17 +92,64 @@ class HistoryViewModel @Inject constructor(
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    fun setQuery(q: String) { _query.value = q }
-    fun setStatus(s: HistoryStatusFilter) { _status.value = s }
-    fun setType(t: HistoryTypeFilter) { _type.value = t }
-    fun setSource(s: HistorySourceFilter) { _source.value = s }
-    fun setCategory(c: HistoryCategoryFilter) { _category.value = c }
+    val bulkCategoryState: StateFlow<HistoryBulkCategoryState> =
+        combine(items, _selectedIds, _selectionMode, activeCategories) { visibleRows, selectedIds, selectionMode, categories ->
+            buildHistoryBulkCategoryState(
+                visibleRows = visibleRows,
+                selectedIds = selectedIds,
+                selectionMode = selectionMode,
+                activeCategories = categories,
+            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HistoryBulkCategoryState.Empty)
+
+    fun setQuery(q: String) {
+        _query.value = q
+        clearSelection()
+    }
+
+    fun setStatus(s: HistoryStatusFilter) {
+        _status.value = s
+        clearSelection()
+    }
+
+    fun setType(t: HistoryTypeFilter) {
+        _type.value = t
+        clearSelection()
+    }
+
+    fun setSource(s: HistorySourceFilter) {
+        _source.value = s
+        clearSelection()
+    }
+
+    fun setCategory(c: HistoryCategoryFilter) {
+        _category.value = c
+        clearSelection()
+    }
 
     private val _lastBackfill = MutableStateFlow<BackfillEvent?>(null)
     /** Emits the count of dismissed/pending rows auto-recategorized by "Always categorize…". */
     val lastBackfill: StateFlow<BackfillEvent?> = _lastBackfill.asStateFlow()
 
     fun clearBackfill() { _lastBackfill.value = null }
+
+    fun clearBulkCategory() { _lastBulkCategory.value = null }
+
+    fun toggleSelectionMode() {
+        val next = !_selectionMode.value
+        _selectionMode.value = next
+        if (!next) _selectedIds.value = emptySet()
+    }
+
+    fun clearSelection() {
+        _selectionMode.value = false
+        _selectedIds.value = emptySet()
+    }
+
+    fun toggleSelected(id: String) {
+        _selectionMode.value = true
+        _selectedIds.value = _selectedIds.value.toggle(id)
+    }
 
     fun updateTransaction(tx: Transaction, learnRule: Boolean) {
         viewModelScope.launch {
@@ -116,7 +179,34 @@ class HistoryViewModel @Inject constructor(
         viewModelScope.launch { transactions.delete(id) }
     }
 
+    fun applyBulkCategory(categoryId: String) {
+        viewModelScope.launch {
+            val category = categories.get(categoryId)?.takeUnless { it.archived } ?: return@launch
+            val now = clock.now()
+            var applied = 0
+            var skipped = 0
+            _selectedIds.value.forEach { id ->
+                val tx = transactions.get(id)
+                if (tx != null && tx.categoryKind() == category.kind) {
+                    transactions.upsert(
+                        tx.copy(
+                            categoryId = category.id,
+                            status = TxStatus.CONFIRMED,
+                            updatedAt = now,
+                        ),
+                    )
+                    applied += 1
+                } else {
+                    skipped += 1
+                }
+            }
+            _lastBulkCategory.value = BulkCategoryEvent(applied = applied, skipped = skipped)
+            clearSelection()
+        }
+    }
+
     data class BackfillEvent(val pattern: String, val count: Int)
+    data class BulkCategoryEvent(val applied: Int, val skipped: Int)
 }
 
 private data class HistoryFilterState(
@@ -181,3 +271,62 @@ internal fun filterHistoryTransactions(
             }
         }
         .toList()
+
+data class HistoryBulkCategoryState(
+    val selectionMode: Boolean,
+    val selectedIds: Set<String>,
+    val selectedCount: Int,
+    val eligibleCount: Int,
+    val skippedCount: Int,
+    val hasMixedCategoryKinds: Boolean,
+    val categories: List<Category>,
+) {
+    val canApply: Boolean = selectionMode && selectedCount > 0 && eligibleCount > 0 && !hasMixedCategoryKinds
+
+    companion object {
+        val Empty = HistoryBulkCategoryState(
+            selectionMode = false,
+            selectedIds = emptySet(),
+            selectedCount = 0,
+            eligibleCount = 0,
+            skippedCount = 0,
+            hasMixedCategoryKinds = false,
+            categories = emptyList(),
+        )
+    }
+}
+
+internal fun buildHistoryBulkCategoryState(
+    visibleRows: List<Transaction>,
+    selectedIds: Set<String>,
+    selectionMode: Boolean,
+    activeCategories: List<Category>,
+): HistoryBulkCategoryState {
+    val selectedRows = visibleRows.filter { it.id in selectedIds }
+    val selectedKinds = selectedRows.mapNotNull { it.categoryKind() }.distinct()
+    val categoryKind = selectedKinds.singleOrNull()
+    return HistoryBulkCategoryState(
+        selectionMode = selectionMode,
+        selectedIds = selectedRows.mapTo(mutableSetOf()) { it.id },
+        selectedCount = selectedRows.size,
+        eligibleCount = selectedRows.count { it.categoryKind() != null },
+        skippedCount = selectedRows.count { it.categoryKind() == null },
+        hasMixedCategoryKinds = selectedKinds.size > 1,
+        categories = categoryKind
+            ?.let { kind ->
+                activeCategories
+                    .filter { it.kind == kind && !it.archived }
+                    .sortedWith(compareBy<Category> { it.sortOrder }.thenBy { it.name })
+            }
+            .orEmpty(),
+    )
+}
+
+private fun Set<String>.toggle(id: String): Set<String> =
+    if (id in this) this - id else this + id
+
+private fun Transaction.categoryKind(): CategoryKind? = when (type) {
+    TxType.EXPENSE -> CategoryKind.EXPENSE
+    TxType.INCOME -> CategoryKind.INCOME
+    TxType.TRANSFER -> null
+}

@@ -67,6 +67,21 @@
     <string name="history_row_subtitle" formatted="true">%1$s · %2$s · %3$s · %4$s · %5$s</string>
     <string name="history_count" formatted="true">%1$d حركة</string>
     <string name="history_empty">لا حركات تطابق هذا البحث.</string>
+    <string name="history_bulk_select">تحديد</string>
+    <string name="history_bulk_done">تم</string>
+    <string name="history_bulk_selected" formatted="true">المحدد: %1$d</string>
+    <string name="history_bulk_select_rows">انقر الحركات لتحديدها.</string>
+    <string name="history_bulk_mixed_types">حدد مصاريف فقط أو دخلًا فقط.</string>
+    <string name="history_bulk_no_eligible">التحويلات لا تحتاج تصنيفًا.</string>
+    <string name="history_bulk_ready" formatted="true">جاهز لتصنيف %1$d حركة.</string>
+    <string name="history_bulk_ready_with_skips" formatted="true">جاهز لتصنيف %1$d حركة. ستبقى %2$d تحويلات دون تغيير.</string>
+    <string name="history_bulk_clear">مسح</string>
+    <string name="history_bulk_category">التصنيف</string>
+    <string name="history_bulk_category_title">اختر التصنيف</string>
+    <string name="history_bulk_cancel">إلغاء</string>
+    <string name="history_bulk_apply">تطبيق</string>
+    <string name="history_bulk_applied" formatted="true">حُدّثت %1$d حركة.</string>
+    <string name="history_bulk_applied_with_skips" formatted="true">حُدّثت %1$d حركة. تُركت %2$d دون تغيير.</string>
     <string name="category_backfill_applied" formatted="true">حُدّثت الحركات المطابقة لـ«%2$s»: %1$d.</string>
     <string name="category_backfill_future" formatted="true">سيُصنّف أثر الحركات القادمة المطابقة لـ«%1$s» تلقائيًا.</string>
 

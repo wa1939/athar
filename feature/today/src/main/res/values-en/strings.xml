@@ -66,6 +66,21 @@
     <string name="history_row_subtitle" formatted="true">%1$s · %2$s · %3$s · %4$s · %5$s</string>
     <string name="history_count" formatted="true">%1$d transactions</string>
     <string name="history_empty">No transactions match this filter.</string>
+    <string name="history_bulk_select">Select</string>
+    <string name="history_bulk_done">Done</string>
+    <string name="history_bulk_selected" formatted="true">%1$d selected</string>
+    <string name="history_bulk_select_rows">Tap rows to select them.</string>
+    <string name="history_bulk_mixed_types">Select expenses or income, not both.</string>
+    <string name="history_bulk_no_eligible">Transfers do not need categories.</string>
+    <string name="history_bulk_ready" formatted="true">Ready to categorize %1$d transactions.</string>
+    <string name="history_bulk_ready_with_skips" formatted="true">Ready to categorize %1$d transactions. %2$d transfers will stay unchanged.</string>
+    <string name="history_bulk_clear">Clear</string>
+    <string name="history_bulk_category">Category</string>
+    <string name="history_bulk_category_title">Choose category</string>
+    <string name="history_bulk_cancel">Cancel</string>
+    <string name="history_bulk_apply">Apply</string>
+    <string name="history_bulk_applied" formatted="true">Updated %1$d transactions.</string>
+    <string name="history_bulk_applied_with_skips" formatted="true">Updated %1$d transactions. %2$d skipped.</string>
     <string name="category_backfill_applied" formatted="true">Updated matching transactions for "%2$s": %1$d.</string>
     <string name="category_backfill_future" formatted="true">Future transactions matching "%1$s" will be categorized automatically.</string>
 
