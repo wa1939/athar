@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Store-safe notification package coverage now includes verified Canadian, German, and Saudi wallet/bank apps such as CIBC, BMO, Desjardins, Tangerine, Wealthsimple, EQ Bank, KOHO, Deutsche Bank, ING Deutschland, Sparkasse, SAB Mobile, urpay, and Mobily Pay; the ANB gate was tightened to exact package IDs so unrelated package names no longer enter the generic transaction parser through a broad `anb` substring.
 - Bulk categorization imports now treat exact local merchant rules as upserts: re-importing the same decision does not duplicate a rule, and corrected imports replace stale exact local rules while leaving seed and explicit substring rules intact.
 - Bulk categorization full-context exports now fill `raw_body` from the linked local ingestion-audit SMS/notification body when available, falling back to notes only for manual/imported rows; private exports still keep `raw_body` blank.
 - Seed-rule hygiene now removes 51 legacy private-person or ambiguous local side-income patterns from the public seed, adds an asset guard so low-priority side-income rules must be public or institution-backed, and leaves the active seed at 667 rules while the redacted private audit still reports 0 parser failures, 0 missing-merchant parsed expenses, and `rawBodiesWritten = 0`.

@@ -1662,6 +1662,70 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses Canadian bank package notifications`() {
+        val cibc = parser.parse(
+            event("notification:com.cibc.android.mobi", "You spent CAD 12.34 at Tim Hortons"),
+        ) as ParseResult.Success
+        val bmo = parser.parse(
+            event("notification:com.bmo.mobile", "Card transaction CAD 45.67 at Metro"),
+        ) as ParseResult.Success
+
+        assertThat(cibc.type).isEqualTo(TxType.EXPENSE)
+        assertThat(cibc.amount.amount).isEqualTo(BigDecimal("12.34"))
+        assertThat(cibc.amount.currency).isEqualTo("CAD")
+        assertThat(cibc.merchant).isEqualTo("Tim Hortons")
+        assertThat(bmo.type).isEqualTo(TxType.EXPENSE)
+        assertThat(bmo.amount.amount).isEqualTo(BigDecimal("45.67"))
+        assertThat(bmo.amount.currency).isEqualTo("CAD")
+        assertThat(bmo.merchant).isEqualTo("Metro")
+    }
+
+    @Test
+    fun `parses German bank package notifications`() {
+        val deutsche = parser.parse(
+            event("notification:com.db.pwcc.dbmobile", "Card transaction EUR 8.90 at REWE"),
+        ) as ParseResult.Success
+        val sparkasse = parser.parse(
+            event("notification:com.starfinanz.smob.android.sfinanzstatus", "Card purchase EUR 21.10 at Lidl"),
+        ) as ParseResult.Success
+
+        assertThat(deutsche.type).isEqualTo(TxType.EXPENSE)
+        assertThat(deutsche.amount.amount).isEqualTo(BigDecimal("8.90"))
+        assertThat(deutsche.amount.currency).isEqualTo("EUR")
+        assertThat(deutsche.merchant).isEqualTo("REWE")
+        assertThat(sparkasse.type).isEqualTo(TxType.EXPENSE)
+        assertThat(sparkasse.amount.amount).isEqualTo(BigDecimal("21.10"))
+        assertThat(sparkasse.amount.currency).isEqualTo("EUR")
+        assertThat(sparkasse.merchant).isEqualTo("Lidl")
+    }
+
+    @Test
+    fun `parses Saudi wallet package notifications`() {
+        val anb = parser.parse(
+            event("notification:com.anb.mobile.prod", "تم خصم ١٢ ر.س لدى متجر القهوة"),
+        ) as ParseResult.Success
+        val urpay = parser.parse(
+            event("notification:com.urpay.consumer", "تم خصم ١٥ ر.س لدى كارفور"),
+        ) as ParseResult.Success
+        val mobilyPay = parser.parse(
+            event("notification:com.es.mobily", "تم خصم ٢٥ ر.س لدى هنقرستيشن"),
+        ) as ParseResult.Success
+
+        assertThat(anb.type).isEqualTo(TxType.EXPENSE)
+        assertThat(anb.amount.amount).isEqualTo(BigDecimal("12"))
+        assertThat(anb.amount.currency).isEqualTo("SAR")
+        assertThat(anb.merchant).isEqualTo("متجر القهوة")
+        assertThat(urpay.type).isEqualTo(TxType.EXPENSE)
+        assertThat(urpay.amount.amount).isEqualTo(BigDecimal("15"))
+        assertThat(urpay.amount.currency).isEqualTo("SAR")
+        assertThat(urpay.merchant).isEqualTo("كارفور")
+        assertThat(mobilyPay.type).isEqualTo(TxType.EXPENSE)
+        assertThat(mobilyPay.amount.amount).isEqualTo(BigDecimal("25"))
+        assertThat(mobilyPay.amount.currency).isEqualTo("SAR")
+        assertThat(mobilyPay.merchant).isEqualTo("هنقرستيشن")
+    }
+
+    @Test
     fun `parses US card package notifications`() {
         val result = parser.parse(
             event("notification:com.discoverfinancial.mobile", "Your card was charged $8.99 by Netflix"),
@@ -1908,6 +1972,21 @@ class GenericBankNotificationTemplateTest {
     fun `does not run for random non bank packages`() {
         assertThat(
             parser.parse(event("notification:com.random.shopping", "You spent SAR 42.00 at Starbucks")),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `does not run for ambiguous non finance package names`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.alaeat.customer.android.kohokoreanbbqhouse", "You spent CAD 42.00 at KOHO"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+        assertThat(
+            parser.parse(event("notification:com.cryart.sabbathschool", "You spent SAR 42.00 at Bookstore")),
+        ).isEqualTo(ParseResult.Ignored)
+        assertThat(
+            parser.parse(event("notification:com.mobily.activity", "تم خصم ٢٥ ر.س لدى متجر")),
         ).isEqualTo(ParseResult.Ignored)
     }
 
