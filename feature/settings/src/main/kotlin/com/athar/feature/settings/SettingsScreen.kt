@@ -42,8 +42,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.athar.core.common.money.Money
 import com.athar.core.domain.model.Account
+import com.athar.core.domain.model.CategoryKind
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.repo.BudgetTargetImportPreview
 import com.athar.core.domain.repo.CsvImportColumnMapping
 import com.athar.core.domain.repo.CsvImportColumnRole
 import com.athar.core.domain.repo.CsvImportCurrencySummary
@@ -107,6 +110,7 @@ fun SettingsScreen(
     val appLocale by viewModel.appLocale.collectAsStateWithLifecycle()
     val statementImportAccounts by viewModel.statementImportAccounts.collectAsStateWithLifecycle()
     val selectedStatementImportAccountId by viewModel.selectedStatementImportAccountId.collectAsStateWithLifecycle()
+    val budgetTargetStatus by viewModel.budgetTargetStatus.collectAsStateWithLifecycle()
 
     val exportLauncher = rememberLauncherForActivityResult(CreateDocument("application/octet-stream")) { uri ->
         if (uri != null) pendingExportUri = uri
@@ -116,6 +120,9 @@ fun SettingsScreen(
     }
     val csvLauncher = rememberLauncherForActivityResult(OpenDocument()) { uri ->
         if (uri != null) viewModel.previewCsvImport(context.contentResolver, uri)
+    }
+    val budgetTargetLauncher = rememberLauncherForActivityResult(OpenDocument()) { uri ->
+        if (uri != null) viewModel.previewBudgetTargetsImport(context.contentResolver, uri)
     }
     val csvExportLauncher = rememberLauncherForActivityResult(CreateDocument("text/csv")) { uri ->
         if (uri != null) viewModel.exportCsv(context.contentResolver, uri)
@@ -242,6 +249,23 @@ fun SettingsScreen(
                 onCancelPreview = viewModel::cancelCsvImportPreview,
                 onExport = { csvExportLauncher.launch("athar-transactions.csv") },
                 onClear = viewModel::clearCsvStatus,
+            )
+
+            BudgetTargetImportCard(
+                status = budgetTargetStatus,
+                onImport = {
+                    budgetTargetLauncher.launch(
+                        arrayOf(
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            "application/vnd.ms-excel",
+                            "application/octet-stream",
+                            "*/*",
+                        ),
+                    )
+                },
+                onConfirmImport = viewModel::confirmBudgetTargetsImport,
+                onCancelPreview = viewModel::cancelBudgetTargetsImportPreview,
+                onClear = viewModel::clearBudgetTargetStatus,
             )
 
             TaxExportCard(
@@ -906,6 +930,147 @@ private fun CsvImportCard(
         }
     }
 }
+
+@Composable
+private fun BudgetTargetImportCard(
+    status: BudgetTargetStatus,
+    onImport: () -> Unit,
+    onConfirmImport: () -> Unit,
+    onCancelPreview: () -> Unit,
+    onClear: () -> Unit,
+) {
+    val theme = AtharTheme
+    AtharCard {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = stringResource(R.string.settings_budget_targets_title), style = theme.typography.headline)
+            AtharText(
+                text = stringResource(R.string.settings_budget_targets_body),
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
+            when (val s = status) {
+                BudgetTargetStatus.Idle -> Unit
+                BudgetTargetStatus.Working -> AtharText(
+                    text = stringResource(R.string.settings_status_working),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+                is BudgetTargetStatus.Preview -> {
+                    BudgetTargetPreviewSummary(preview = s.preview)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+                    ) {
+                        PrimaryButton(
+                            text = stringResource(R.string.settings_budget_targets_preview_confirm),
+                            onClick = onConfirmImport,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Box(modifier = Modifier.weight(1f)) {
+                            SecondaryButton(
+                                text = stringResource(R.string.settings_csv_preview_cancel),
+                                onClick = onCancelPreview,
+                            )
+                        }
+                    }
+                }
+                is BudgetTargetStatus.Done -> {
+                    AtharText(
+                        text = stringResource(
+                            R.string.settings_budget_targets_done,
+                            s.applied,
+                            s.changed,
+                            s.skipped,
+                        ),
+                        style = theme.typography.caption,
+                        color = theme.colors.olive,
+                    )
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
+                }
+                is BudgetTargetStatus.Failed -> {
+                    AtharText(text = s.reason, style = theme.typography.caption, color = theme.colors.crimson)
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
+                }
+            }
+            val isWorking = status is BudgetTargetStatus.Working
+            if (status !is BudgetTargetStatus.Preview) {
+                PrimaryButton(
+                    text = if (isWorking) {
+                        stringResource(R.string.settings_status_in_progress)
+                    } else {
+                        stringResource(R.string.settings_budget_targets_action_import)
+                    },
+                    onClick = { if (!isWorking) onImport() },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BudgetTargetPreviewSummary(preview: BudgetTargetImportPreview) {
+    val theme = AtharTheme
+    Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+        AtharText(
+            text = stringResource(
+                R.string.settings_budget_targets_preview_summary,
+                preview.targetRows,
+                preview.changed,
+                preview.skipped,
+            ),
+            style = theme.typography.caption,
+            color = theme.colors.olive,
+        )
+        AtharText(
+            text = stringResource(
+                R.string.settings_budget_targets_preview_totals,
+                preview.expenseTargets,
+                preview.monthlyExpenseTotal.compactMoney(),
+                preview.incomeTargets,
+                preview.monthlyIncomeTotal.compactMoney(),
+            ),
+            style = theme.typography.caption,
+            color = theme.colors.muted,
+        )
+        preview.sampleRows.forEach { row ->
+            AtharText(
+                text = stringResource(
+                    R.string.settings_budget_targets_preview_row,
+                    row.categoryName,
+                    row.kind.budgetTargetLabel(),
+                    row.target.compactMoney(),
+                ),
+                style = theme.typography.caption,
+                color = if (row.changed) theme.colors.ink else theme.colors.muted,
+            )
+        }
+        preview.skippedRows.firstOrNull()?.let { skipped ->
+            AtharText(
+                text = stringResource(
+                    R.string.settings_budget_targets_preview_first_skip,
+                    skipped.rowNumber,
+                    skipped.label,
+                    skipped.reason,
+                ),
+                style = theme.typography.caption,
+                color = theme.colors.crimson,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CategoryKind.budgetTargetLabel(): String = when (this) {
+    CategoryKind.EXPENSE -> stringResource(R.string.settings_csv_preview_type_expense)
+    CategoryKind.INCOME -> stringResource(R.string.settings_csv_preview_type_income)
+}
+
+private fun Money.compactMoney(): String =
+    "${rounded().amount.stripTrailingZeros().toPlainString()} $currency"
 
 @Composable
 private fun StatementImportAccountPicker(

@@ -9,6 +9,10 @@ import com.athar.core.domain.model.MANUAL_ACCOUNT_ID
 import com.athar.core.domain.repo.AccountRepository
 import com.athar.core.domain.repo.BackfillProgress
 import com.athar.core.domain.repo.BackupRepository
+import com.athar.core.domain.repo.BudgetTargetImportPreview
+import com.athar.core.domain.repo.BudgetTargetImportPreviewResult
+import com.athar.core.domain.repo.BudgetTargetImportResult
+import com.athar.core.domain.repo.BudgetTargetImportTrigger
 import com.athar.core.domain.repo.CommunityRulesShareResult
 import com.athar.core.domain.repo.CommunityRulesShareTrigger
 import com.athar.core.domain.repo.CsvExportResult
@@ -67,6 +71,14 @@ sealed interface CsvStatus {
     data class Done(val imported: Int, val skipped: Int) : CsvStatus
     data class Exported(val count: Int) : CsvStatus
     data class Failed(val reason: String) : CsvStatus
+}
+
+sealed interface BudgetTargetStatus {
+    data object Idle : BudgetTargetStatus
+    data object Working : BudgetTargetStatus
+    data class Preview(val preview: BudgetTargetImportPreview) : BudgetTargetStatus
+    data class Done(val applied: Int, val changed: Int, val skipped: Int) : BudgetTargetStatus
+    data class Failed(val reason: String) : BudgetTargetStatus
 }
 
 sealed interface RescanStatus {
@@ -142,6 +154,7 @@ class SettingsViewModel @Inject constructor(
     private val backup: BackupRepository,
     private val backfillTrigger: SmsBackfillTrigger,
     private val csvImporter: CsvImportTrigger,
+    private val budgetTargetsImporter: BudgetTargetImportTrigger,
     private val csvExporter: CsvExportTrigger,
     private val bulkExporter: MerchantBulkExportTrigger,
     private val bulkImporter: MerchantBulkImportTrigger,
@@ -170,6 +183,10 @@ class SettingsViewModel @Inject constructor(
     private var pendingCsvRowEdits: Map<Int, CsvImportRowEdit> = emptyMap()
     private val _selectedStatementImportAccountId = MutableStateFlow(MANUAL_ACCOUNT_ID)
     val selectedStatementImportAccountId: StateFlow<String> = _selectedStatementImportAccountId.asStateFlow()
+
+    private val _budgetTargets = MutableStateFlow<BudgetTargetStatus>(BudgetTargetStatus.Idle)
+    val budgetTargetStatus: StateFlow<BudgetTargetStatus> = _budgetTargets.asStateFlow()
+    private var pendingBudgetTargetImportBytes: ByteArray? = null
 
     val statementImportAccounts: StateFlow<List<Account>> = accounts.observeActive()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -398,6 +415,62 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun previewBudgetTargetsImport(resolver: ContentResolver, uri: Uri) {
+        viewModelScope.launch {
+            _budgetTargets.value = BudgetTargetStatus.Working
+            val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+            if (bytes == null) {
+                pendingBudgetTargetImportBytes = null
+                _budgetTargets.value = BudgetTargetStatus.Failed("Couldn't open workbook.")
+                return@launch
+            }
+            previewBudgetTargetsImportBytes(bytes)
+        }
+    }
+
+    internal fun previewBudgetTargetsImportBytes(bytes: ByteArray) {
+        viewModelScope.launch {
+            _budgetTargets.value = BudgetTargetStatus.Working
+            _budgetTargets.value = when (val result = budgetTargetsImporter.preview(bytes.inputStream())) {
+                is BudgetTargetImportPreviewResult.Done -> {
+                    pendingBudgetTargetImportBytes = bytes
+                    BudgetTargetStatus.Preview(result.preview)
+                }
+                is BudgetTargetImportPreviewResult.Failed -> {
+                    pendingBudgetTargetImportBytes = null
+                    BudgetTargetStatus.Failed(result.reason)
+                }
+            }
+        }
+    }
+
+    fun confirmBudgetTargetsImport() {
+        viewModelScope.launch {
+            val bytes = pendingBudgetTargetImportBytes
+            if (bytes == null) {
+                _budgetTargets.value = BudgetTargetStatus.Failed("No budget target preview is ready to import.")
+                return@launch
+            }
+            _budgetTargets.value = BudgetTargetStatus.Working
+            _budgetTargets.value = when (val result = budgetTargetsImporter.import(bytes.inputStream())) {
+                is BudgetTargetImportResult.Done -> {
+                    pendingBudgetTargetImportBytes = null
+                    BudgetTargetStatus.Done(
+                        applied = result.applied,
+                        changed = result.changed,
+                        skipped = result.skipped,
+                    )
+                }
+                is BudgetTargetImportResult.Failed -> BudgetTargetStatus.Failed(result.reason)
+            }
+        }
+    }
+
+    fun cancelBudgetTargetsImportPreview() {
+        pendingBudgetTargetImportBytes = null
+        _budgetTargets.value = BudgetTargetStatus.Idle
+    }
+
     fun cancelCsvImportPreview() {
         pendingCsvImportBytes = null
         pendingCsvImportMapping = null
@@ -493,6 +566,11 @@ class SettingsViewModel @Inject constructor(
         pendingCsvRowDecisions = emptyMap()
         pendingCsvRowEdits = emptyMap()
         _csv.value = CsvStatus.Idle
+    }
+
+    fun clearBudgetTargetStatus() {
+        pendingBudgetTargetImportBytes = null
+        _budgetTargets.value = BudgetTargetStatus.Idle
     }
 
     fun clearTaxExportStatus() {

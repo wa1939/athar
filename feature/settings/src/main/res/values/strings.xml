@@ -121,6 +121,17 @@
     <string name="settings_csv_mapping_type">نوع الحركة</string>
     <string name="settings_csv_mapping_notes">ملاحظات</string>
 
+    <!-- Budget target import card -->
+    <string name="settings_budget_targets_title">أهداف الميزانية</string>
+    <string name="settings_budget_targets_body">استورد أهداف الفئات الشهرية من ورقة Budget Targets في ملف TMOAP. يعرض أثر معاينة أولًا ثم يحدّث الفئات النشطة المطابقة فقط بعد التأكيد.</string>
+    <string name="settings_budget_targets_action_import">استيراد الأهداف</string>
+    <string name="settings_budget_targets_preview_summary" formatted="true">جاهز لتطبيق %1$d هدف. سيتغيّر %2$d هدف. سيتم تخطي %3$d صف.</string>
+    <string name="settings_budget_targets_preview_totals" formatted="true">المصروفات: %1$d أهداف · %2$s شهريًا. الدخل: %3$d أهداف · %4$s شهريًا.</string>
+    <string name="settings_budget_targets_preview_row" formatted="true">%1$s · %2$s · %3$s شهريًا</string>
+    <string name="settings_budget_targets_preview_first_skip" formatted="true">أول هدف متخطى: #%1$d · %2$s · %3$s</string>
+    <string name="settings_budget_targets_preview_confirm">تأكيد الأهداف</string>
+    <string name="settings_budget_targets_done" formatted="true">تم تطبيق %1$d هدف. تغيّر %2$d هدف. تم تخطي %3$d صف.</string>
+
     <!-- Tax export card -->
     <string name="settings_tax_title">تصدير للمحاسب والضرائب</string>
     <string name="settings_tax_body">أنشئ ملف PDF سنوي يحتوي ملخص الدخل والمصروفات، إجمالي كل فئة، وقائمة الحركات المؤكدة. تُستبعد تسويات الرصيد لأنها ليست دخلًا أو مصروفًا حقيقيًا.</string>

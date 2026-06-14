@@ -12,6 +12,10 @@ import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.AccountRepository
 import com.athar.core.domain.repo.BackfillProgress
 import com.athar.core.domain.repo.BackupRepository
+import com.athar.core.domain.repo.BudgetTargetImportPreview
+import com.athar.core.domain.repo.BudgetTargetImportPreviewResult
+import com.athar.core.domain.repo.BudgetTargetImportResult
+import com.athar.core.domain.repo.BudgetTargetImportTrigger
 import com.athar.core.domain.repo.CommunityRulesShareResult
 import com.athar.core.domain.repo.CommunityRulesShareTrigger
 import com.athar.core.domain.repo.CsvExportResult
@@ -225,15 +229,50 @@ class SettingsViewModelTest {
         assertThat(csv.importedRowEdits).containsExactly(listOf(edit))
     }
 
+    @Test
+    fun `confirm budget target import applies the previewed bytes`() = runTest(mainDispatcher) {
+        val budgetTargets = RecordingBudgetTargetImportTrigger()
+        val viewModel = settingsViewModel(budgetTargetsImporter = budgetTargets)
+
+        viewModel.previewBudgetTargetsImportBytes("previewed workbook".toByteArray())
+        advanceUntilIdle()
+        viewModel.confirmBudgetTargetsImport()
+        advanceUntilIdle()
+
+        assertThat(budgetTargets.previewedBytes.map { it.decodeToString() }).containsExactly("previewed workbook")
+        assertThat(budgetTargets.importedBytes.map { it.decodeToString() }).containsExactly("previewed workbook")
+        assertThat(viewModel.budgetTargetStatus.value)
+            .isEqualTo(BudgetTargetStatus.Done(applied = 4, changed = 3, skipped = 1))
+    }
+
+    @Test
+    fun `failed budget target preview clears pending import bytes`() = runTest(mainDispatcher) {
+        val budgetTargets = RecordingBudgetTargetImportTrigger(
+            previewResult = BudgetTargetImportPreviewResult.Failed("Not a TMOAP workbook."),
+        )
+        val viewModel = settingsViewModel(budgetTargetsImporter = budgetTargets)
+
+        viewModel.previewBudgetTargetsImportBytes("bad workbook".toByteArray())
+        advanceUntilIdle()
+        viewModel.confirmBudgetTargetsImport()
+        advanceUntilIdle()
+
+        assertThat(viewModel.budgetTargetStatus.value)
+            .isEqualTo(BudgetTargetStatus.Failed("No budget target preview is ready to import."))
+        assertThat(budgetTargets.importedBytes).isEmpty()
+    }
+
     private fun settingsViewModel(
         backfill: SmsBackfillTrigger = FakeSmsBackfillTrigger(),
         csvImporter: CsvImportTrigger = FakeCsvImportTrigger,
+        budgetTargetsImporter: BudgetTargetImportTrigger = FakeBudgetTargetImportTrigger,
         transactions: TransactionRepository = FakeTransactionRepository(),
         accounts: AccountRepository = FakeAccountRepository(),
     ) = SettingsViewModel(
         backup = FakeBackupRepository,
         backfillTrigger = backfill,
         csvImporter = csvImporter,
+        budgetTargetsImporter = budgetTargetsImporter,
         csvExporter = FakeCsvExportTrigger,
         bulkExporter = FakeMerchantBulkExportTrigger,
         bulkImporter = FakeMerchantBulkImportTrigger,
@@ -324,6 +363,32 @@ private object FakeCsvImportTrigger : CsvImportTrigger {
         CsvImportResult.Done(imported = 0, skipped = 0)
 }
 
+private object FakeBudgetTargetImportTrigger : BudgetTargetImportTrigger {
+    override suspend fun preview(input: InputStream): BudgetTargetImportPreviewResult =
+        BudgetTargetImportPreviewResult.Done(emptyBudgetPreview())
+
+    override suspend fun import(input: InputStream): BudgetTargetImportResult =
+        BudgetTargetImportResult.Done(applied = 0, changed = 0, skipped = 0)
+}
+
+private class RecordingBudgetTargetImportTrigger(
+    var previewResult: BudgetTargetImportPreviewResult =
+        BudgetTargetImportPreviewResult.Done(emptyBudgetPreview()),
+) : BudgetTargetImportTrigger {
+    val previewedBytes = mutableListOf<ByteArray>()
+    val importedBytes = mutableListOf<ByteArray>()
+
+    override suspend fun preview(input: InputStream): BudgetTargetImportPreviewResult {
+        previewedBytes += input.readBytes()
+        return previewResult
+    }
+
+    override suspend fun import(input: InputStream): BudgetTargetImportResult {
+        importedBytes += input.readBytes()
+        return BudgetTargetImportResult.Done(applied = 4, changed = 3, skipped = 1)
+    }
+}
+
 private class RecordingCsvImportTrigger(
     var previewResult: CsvImportPreviewResult = CsvImportPreviewResult.Done(emptyPreview()),
 ) : CsvImportTrigger {
@@ -398,6 +463,18 @@ private fun emptyPreview(): CsvImportPreview = CsvImportPreview(
             edited = false,
         ),
     ),
+    skippedRows = emptyList(),
+)
+
+private fun emptyBudgetPreview(): BudgetTargetImportPreview = BudgetTargetImportPreview(
+    targetRows = 0,
+    changed = 0,
+    skipped = 0,
+    expenseTargets = 0,
+    incomeTargets = 0,
+    monthlyExpenseTotal = Money.zero(),
+    monthlyIncomeTotal = Money.zero(),
+    sampleRows = emptyList(),
     skippedRows = emptyList(),
 )
 

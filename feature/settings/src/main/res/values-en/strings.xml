@@ -121,6 +121,17 @@
     <string name="settings_csv_mapping_type">Transaction type</string>
     <string name="settings_csv_mapping_notes">Notes</string>
 
+    <!-- Budget target import card -->
+    <string name="settings_budget_targets_title">Budget targets</string>
+    <string name="settings_budget_targets_body">Import monthly category targets from the TMOAP Budget Targets sheet. Athar previews the targets first and updates only matched active categories after confirmation.</string>
+    <string name="settings_budget_targets_action_import">Import targets</string>
+    <string name="settings_budget_targets_preview_summary" formatted="true">Ready to apply %1$d targets. %2$d will change. %3$d rows will be skipped.</string>
+    <string name="settings_budget_targets_preview_totals" formatted="true">Expenses: %1$d targets · %2$s monthly. Income: %3$d targets · %4$s monthly.</string>
+    <string name="settings_budget_targets_preview_row" formatted="true">%1$s · %2$s · %3$s monthly</string>
+    <string name="settings_budget_targets_preview_first_skip" formatted="true">First skipped target row: #%1$d · %2$s · %3$s</string>
+    <string name="settings_budget_targets_preview_confirm">Confirm targets</string>
+    <string name="settings_budget_targets_done" formatted="true">Applied %1$d targets. %2$d changed. %3$d rows skipped.</string>
+
     <!-- Tax export card -->
     <string name="settings_tax_title">Export for taxes and accountant</string>
     <string name="settings_tax_body">Create an annual PDF with income/expense summary, category totals, and the confirmed transaction list. Balance reconciliation adjustments are excluded because they are not real income or spending.</string>

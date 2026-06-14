@@ -523,11 +523,7 @@ internal class CsvImporter @Inject constructor(
 
     private suspend fun categoryLookup(): CategoryLookup {
         val rows = categories.observeAll(kind = null, includeArchived = false).first()
-        return CategoryLookup(
-            byId = rows.associateBy { it.id.lowercase().trim() },
-            byName = rows.groupBy { it.name.lowercase().trim() },
-            byAr = rows.groupBy { it.nameAr.trim() },
-        )
+        return CategoryLookup.from(rows)
     }
 
     private fun CsvMappedTransaction.applyEdit(
@@ -771,7 +767,7 @@ internal class CsvImporter @Inject constructor(
         data class Invalid(val reason: String) : RowEditResult
     }
 
-    private companion object {
+    companion object {
         const val PREVIEW_ROW_LIMIT = 5
         val CsvDelimiters = listOf(',', ';', '\t')
         val ISO_CURRENCY_REGEX = Regex("""[A-Z]{3}""")
@@ -786,7 +782,7 @@ private fun List<CsvImportRowEdit>.byRowNumber(): Map<Int, CsvImportRowEdit> =
     filter { it.rowNumber > 0 }
         .associateBy { it.rowNumber }
 
-private data class CategoryLookup(
+internal data class CategoryLookup(
     val byId: Map<String, Category>,
     val byName: Map<String, List<Category>>,
     val byAr: Map<String, List<Category>>,
@@ -797,6 +793,12 @@ private data class CategoryLookup(
         val trimmed = raw.trim()
         if (trimmed.isBlank()) return CategoryOverride(id = null, preview = null)
         val kind = type.categoryKind() ?: return null
+        return resolve(raw, kind)
+    }
+
+    fun resolve(raw: String, kind: CategoryKind): CategoryOverride? {
+        val trimmed = raw.trim()
+        if (trimmed.isBlank()) return CategoryOverride(id = null, preview = null)
         val normalized = trimmed.lowercase()
 
         val aliasId = tmoapCategoryAliases[CategoryLookupKey(normalized, kind)]
@@ -819,8 +821,14 @@ private data class CategoryLookup(
         val kind: CategoryKind,
     )
 
-    private companion object {
-        val tmoapCategoryAliases = mapOf(
+    companion object {
+        fun from(rows: List<Category>): CategoryLookup = CategoryLookup(
+            byId = rows.associateBy { it.id.lowercase().trim() },
+            byName = rows.groupBy { it.name.lowercase().trim() },
+            byAr = rows.groupBy { it.nameAr.trim() },
+        )
+
+        private val tmoapCategoryAliases = mapOf(
             CategoryLookupKey("public transportation", CategoryKind.EXPENSE) to "cat-public-transport",
             CategoryLookupKey("wife", CategoryKind.EXPENSE) to "cat-wife-allowance",
             CategoryLookupKey("job", CategoryKind.INCOME) to "cat-salary",
@@ -830,7 +838,7 @@ private data class CategoryLookup(
     }
 }
 
-private data class CategoryOverride(
+internal data class CategoryOverride(
     val id: String?,
     val preview: String?,
 )
