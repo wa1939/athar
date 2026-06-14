@@ -6,7 +6,7 @@ Use this when you have dozens or hundreds of uncategorized transactions sitting 
 
 1. **Open Settings → "تصنيف بالذكاء الاصطناعي · مجمّع" / "Bulk categorize with AI"** → tap **Export uncategorized**. Athar writes a CSV of every non-transfer transaction that is PENDING, DISMISSED, or CONFIRMED-without-category, including the valid active category options for each row's type. Default filename: `athar-uncategorized.csv`. Save it somewhere you can reach from a desktop.
 2. **Open ChatGPT / Claude / Z.ai** in a fresh chat. Drop in the prompt below, attach (or paste) the CSV, and ask for the filled-in CSV back.
-3. **Back in Athar → same Settings card → Import categorized.** Pick the filled CSV. Filled rows update their transactions (status → CONFIRMED, category set). If a repeated merchant group has one unambiguous filled category, blank peers in that imported CSV group inherit it. Athar also records a learned `CategoryRule` per unambiguous `merchant → category` pair so future SMS from the same merchant auto-categorize.
+3. **Back in Athar → same Settings card → Import categorized.** Pick the filled CSV. Filled rows update their transactions (status → CONFIRMED, category set). If a repeated merchant group has one unambiguous filled category, blank peers in that imported CSV group inherit it. Athar also records an exact learned `CategoryRule` per unambiguous `merchant → category` pair so future SMS from the same normalized merchant auto-categorize without broad substring matching.
 
 A typical 800-row export takes ChatGPT about 60–90 seconds; import takes a fraction of a second.
 
@@ -80,10 +80,11 @@ quoting as the input. Wrap your final output in a single ```csv code block.
 
 - Every filled row's transaction is now CONFIRMED with a category — visible on Today's lists, in Trends, and counted in budget targets.
 - Blank rows in the same imported repeated-merchant group inherit the category when the group has exactly one filled category. If the CSV contains conflicting categories for one merchant, only the explicit rows update and the blank peers stay untouched.
-- Every unambiguous merchant in the filled rows became a `learnedFromUser = true` `CategoryRule` at priority 200. This means:
-  - Next time an SMS from that merchant arrives, the ingestion pipeline auto-categorizes it before it ever hits the pending tray.
+- Every unambiguous merchant in the filled rows became an exact `learnedFromUser = true` `CategoryRule` at priority 200. This means:
+  - Next time an SMS from that exact normalized merchant arrives, the ingestion pipeline auto-categorizes it before it ever hits the pending tray.
   - The rule wins over Athar's curated seed rules (priority 100) and the 507 AI-seeded rules (priority 60–80), so the user's personal taste always overrides the defaults.
   - The rule is *never* overwritten by future seed-file updates (see `RuleSeed.kt`).
+  - Exact bulk-import rules stay local and are omitted from the community-rule export; public seed proposals still come from explicit "Always categorize X" substring rules.
 
 ## When the import skips a row
 
@@ -100,6 +101,6 @@ Inline API-key options were considered (`Settings → "Paste your OpenAI key"` +
 1. **No surprise costs.** A 1,000-row OpenAI call at gpt-4o pricing is ~$0.10 — small but non-zero, and surprises break trust. The CSV path leverages what the user already pays for (their ChatGPT Plus / Claude Pro subscription).
 2. **No new attack surface.** API keys are sensitive credentials; storing them locally (even encrypted) is a meaningful audit hit. The CSV roundtrip keeps Athar zero-credential.
 3. **Higher quality.** Pasting into a chat window lets the user iterate — "you got Hemmah wrong, redo with cat-home-maintenance instead of cat-other-expense" — which is far harder to express in a single API call.
-4. **Same end state.** Both paths produce the same `learnedFromUser=true` rules and the same updated transactions. The user's permanent merchant library grows identically.
+4. **Same local end state.** Both paths update the same transactions and grow the user's permanent merchant library. Bulk import trains exact local rules; explicit "Always categorize X" remains the shareable substring-rule path.
 
 Issue #5b remains in the roadmap as an *opt-in* enhancement if a future user explicitly asks for it — but it is not a blocker.

@@ -21,8 +21,9 @@ import javax.inject.Singleton
  * (status → CONFIRMED). When one repeated-merchant row is filled and its blank
  * peers are left blank, the same category propagates to those peers inside the
  * imported CSV as long as the merchant group has no conflicting filled category.
- * Unambiguous merchant groups also record a learned `CategoryRule` so future
- * ingests benefit too.
+ * Unambiguous merchant groups also record an exact learned `CategoryRule` so
+ * future ingests of the same normalized merchant benefit without creating broad
+ * substring matches.
  *
  * The category column may be either a category **id** (`cat-restaurant`) or the English /
  * Arabic display name — for AI-edited files the id is preferred since it's unambiguous.
@@ -167,7 +168,7 @@ internal class MerchantBulkImporter @Inject constructor(
                 rules.learnFromCorrection(
                     merchantNormalized = pattern,
                     categoryId = cat,
-                    patternType = PatternType.SUBSTRING,
+                    patternType = PatternType.EXACT,
                 )
                 rulesAdded++
             }.onFailure { Timber.w(it, "Failed to add rule for '$pattern'") }

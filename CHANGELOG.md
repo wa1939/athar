@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Bulk categorization imports now train exact merchant rules instead of broad substring rules, and community-rule exports omit exact local rules so private/imported merchant labels stay on device unless the user explicitly creates an "Always categorize" substring rule.
 - Bulk categorization imports now propagate one unambiguous category choice to blank rows for the same repeated merchant inside the imported CSV, while conflicting merchant-group categories update only the explicit rows and do not train a learned rule.
 - The gated private SMS audit now reports top hashed uncategorized merchant groups, including merchant length/script buckets, sample counts, and parser template counts, so categorization backlog work can focus on repeated merchants without exposing raw private labels.
 - SMS universal fallback parsing now detects Arabic action words without Latin word-boundary assumptions, so Arabic Al Rajhi transfer fallback rows no longer masquerade as uncategorized expenses. The gated private audit now reports redacted missing-merchant shape groups and the latest local audit is back to 0 parsed expense rows with missing merchants.

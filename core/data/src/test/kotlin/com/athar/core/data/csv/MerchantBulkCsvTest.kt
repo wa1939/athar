@@ -65,7 +65,9 @@ class MerchantBulkCsvTest {
         assertThat(result).isEqualTo(MerchantBulkImportResult.Done(updated = 1, rulesAdded = 1, skipped = 0))
         assertThat(importRepo.get("new-id")?.categoryId).isEqualTo("cat-coffee")
         assertThat(importRepo.get("new-id")?.status).isEqualTo(TxStatus.CONFIRMED)
-        assertThat(rules.learnedPatterns).containsExactly("barns", "cat-coffee")
+        assertThat(rules.learnedRules.map { it.pattern to it.categoryId })
+            .containsExactly("barns" to "cat-coffee")
+        assertThat(rules.learnedRules.single().patternType).isEqualTo(PatternType.EXACT)
     }
 
     @Test
@@ -122,7 +124,9 @@ class MerchantBulkCsvTest {
         assertThat(repo.get("hemmah-1")?.status).isEqualTo(TxStatus.CONFIRMED)
         assertThat(repo.get("hemmah-2")?.status).isEqualTo(TxStatus.CONFIRMED)
         assertThat(repo.get("other")?.categoryId).isNull()
-        assertThat(rules.learnedPatterns).containsExactly("hemmah", "cat-home-maintenance")
+        assertThat(rules.learnedRules.map { it.pattern to it.categoryId })
+            .containsExactly("hemmah" to "cat-home-maintenance")
+        assertThat(rules.learnedRules.single().patternType).isEqualTo(PatternType.EXACT)
     }
 
     @Test
@@ -154,7 +158,9 @@ class MerchantBulkCsvTest {
         assertThat(repo.get("hemmah-2")?.categoryId).isEqualTo("cat-home-maintenance")
         assertThat(repo.get("outside-csv")?.categoryId).isNull()
         assertThat(repo.get("outside-csv")?.status).isEqualTo(TxStatus.PENDING)
-        assertThat(rules.learnedPatterns).containsExactly("hemmah", "cat-home-maintenance")
+        assertThat(rules.learnedRules.map { it.pattern to it.categoryId })
+            .containsExactly("hemmah" to "cat-home-maintenance")
+        assertThat(rules.learnedRules.single().patternType).isEqualTo(PatternType.EXACT)
     }
 
     @Test
@@ -187,7 +193,7 @@ class MerchantBulkCsvTest {
         assertThat(repo.get("hemmah-2")?.categoryId).isEqualTo("cat-coffee")
         assertThat(repo.get("hemmah-3")?.categoryId).isNull()
         assertThat(repo.get("hemmah-3")?.status).isEqualTo(TxStatus.PENDING)
-        assertThat(rules.learnedPatterns).isEmpty()
+        assertThat(rules.learnedRules).isEmpty()
     }
 
     @Test
@@ -400,7 +406,7 @@ class MerchantBulkCsvTest {
     }
 
     private class FakeCategoryRuleRepository : CategoryRuleRepository {
-        val learnedPatterns = mutableMapOf<String, String>()
+        val learnedRules = mutableListOf<CategoryRule>()
 
         override fun observeAll(): Flow<List<CategoryRule>> = flowOf(emptyList())
         override suspend fun findMatching(merchantNormalized: String): List<CategoryRule> = emptyList()
@@ -411,8 +417,7 @@ class MerchantBulkCsvTest {
             categoryId: String,
             patternType: PatternType,
         ): CategoryRule {
-            learnedPatterns[merchantNormalized] = categoryId
-            return CategoryRule(
+            val rule = CategoryRule(
                 id = merchantNormalized,
                 pattern = merchantNormalized,
                 patternType = patternType,
@@ -421,6 +426,8 @@ class MerchantBulkCsvTest {
                 learnedFromUser = true,
                 createdAt = FixedInstant,
             )
+            learnedRules += rule
+            return rule
         }
     }
 

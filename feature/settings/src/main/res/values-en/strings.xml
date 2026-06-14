@@ -139,7 +139,7 @@
 
     <!-- Community rules sharing (beta.20) -->
     <string name="settings_community_title">Help others · share your rules</string>
-    <string name="settings_community_body">Export the personal categorization rules you created yourself (merchant → category) as a single JSON file, then submit it as a GitHub proposal. Reviewed and merged rules ship in the next release so every new user benefits. No transactions, balances, or SMS bodies leave your device — only the (merchant → category) tuples you tagged "Always categorize X".</string>
+    <string name="settings_community_body">Export the personal categorization rules you explicitly created with "Always categorize X" as a single JSON file, then submit it as a GitHub proposal. Exact local rules from bulk imports stay on device. No transactions or SMS bodies leave your device.</string>
     <string name="settings_community_exported" formatted="true">Exported %1$d rules. Next: open GitHub and attach the file.</string>
     <string name="settings_community_empty">No personal rules to share yet. Every "Always categorize X" pick lands here.</string>
     <string name="settings_community_action_export">Export my rules</string>
@@ -153,7 +153,7 @@
 
     <!-- Bulk-categorize via AI (Issue #5a) -->
     <string name="settings_bulk_cat_title">Bulk categorize with AI</string>
-    <string name="settings_bulk_cat_body">Export non-transfer uncategorized transactions to CSV with repeated merchants grouped first and valid category options included, run it through ChatGPT/Claude with the triage prompt, then import the filled file. One clear category choice can update blank peers in the same merchant group and record a merchant→category rule for future SMS.</string>
+    <string name="settings_bulk_cat_body">Export non-transfer uncategorized transactions to CSV with repeated merchants grouped first and valid category options included, run it through ChatGPT/Claude with the triage prompt, then import the filled file. One clear category choice can update blank peers in the same merchant group and record an exact local rule for future SMS.</string>
     <string name="settings_bulk_cat_exported" formatted="true">Exported %1$d uncategorized transactions.</string>
     <string name="settings_bulk_cat_imported" formatted="true">Updated %1$d · added %2$d rules · skipped %3$d.</string>
     <string name="settings_bulk_cat_action_export">Export uncategorized</string>

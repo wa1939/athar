@@ -139,7 +139,7 @@
 
     <!-- Community rules sharing (beta.20) -->
     <string name="settings_community_title">ساعد المجتمع · شارك القواعد</string>
-    <string name="settings_community_body">صدّر قواعد التصنيف الشخصية التي أنشأتها بنفسك (التاجر ← الفئة) كملف JSON واحد، ثم أرسلها كاقتراح على GitHub. تُراجَع وتُدمج في الإصدار القادم ليستفيد منها كل المستخدمين الجدد. لا تُرسَل أي حركة أو رصيد أو نص رسالة — فقط ما اخترته أنت بـ«اعتبره دائماً كذا».</string>
+    <string name="settings_community_body">صدّر قواعد التصنيف التي أنشأتها صراحة من «اعتبره دائماً كذا» كملف JSON واحد، ثم أرسلها كاقتراح على GitHub. القواعد المحلية الدقيقة الناتجة من التصنيف المجمّع تبقى على الجهاز. لا تُرسل الحركات أو نصوص الرسائل.</string>
     <string name="settings_community_exported" formatted="true">تم تصدير %1$d قاعدة. الخطوة التالية: افتح صفحة GitHub وأرفق الملف.</string>
     <string name="settings_community_empty">لا توجد قواعد شخصية لمشاركتها بعد. كل ما تختاره من «اعتبره دائماً X» سيظهر هنا.</string>
     <string name="settings_community_action_export">تصدير قواعدي</string>
@@ -153,7 +153,7 @@
 
     <!-- Bulk-categorize via AI (Issue #5a) -->
     <string name="settings_bulk_cat_title">تصنيف بالذكاء الاصطناعي · مجمّع</string>
-    <string name="settings_bulk_cat_body">صدّر الحركات غير المصنّفة، ما عدا التحويلات، كملف CSV مرتّب حسب التجار المتكررين ويتضمن خيارات الفئات الصالحة. أعطه لـ ChatGPT/Claude مع موجّه التصنيف، ثم استورد الملف المعبّأ. اختيار واضح واحد يمكن أن يحدّث الصفوف الفارغة لنفس التاجر ويضيف قاعدة للتصنيف القادم تلقائياً.</string>
+    <string name="settings_bulk_cat_body">صدّر الحركات غير المصنّفة، ما عدا التحويلات، كملف CSV مرتّب حسب التجار المتكررين ويتضمن خيارات الفئات الصالحة. أعطه لـ ChatGPT/Claude مع موجّه التصنيف، ثم استورد الملف المعبّأ. اختيار واضح واحد يمكن أن يحدّث الصفوف الفارغة لنفس التاجر ويضيف قاعدة محلية دقيقة للتصنيف القادم تلقائياً.</string>
     <string name="settings_bulk_cat_exported" formatted="true">تم تصدير %1$d حركة غير مصنّفة.</string>
     <string name="settings_bulk_cat_imported" formatted="true">تم تحديث %1$d حركة · أُضيفت %2$d قاعدة · تم تخطّي %3$d.</string>
     <string name="settings_bulk_cat_action_export">تصدير غير المصنّف</string>

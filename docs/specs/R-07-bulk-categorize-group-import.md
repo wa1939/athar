@@ -18,7 +18,8 @@ imported CSV:
   that same imported group inherit it;
 - when a merchant group has conflicting filled categories, only explicit rows
   update and blank peers stay unchanged;
-- learned `CategoryRule` rows are created only for unambiguous merchant groups.
+- exact learned `CategoryRule` rows are created only for unambiguous merchant
+  groups.
 
 This preserves the existing contract that `category_id` is the only editable
 column. It also keeps propagation scoped to rows present in the user-approved

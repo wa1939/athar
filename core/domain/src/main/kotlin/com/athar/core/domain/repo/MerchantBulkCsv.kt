@@ -19,8 +19,9 @@ import java.io.OutputStream
  *         (matched by id first, stable_key/source/content fingerprint second),
  *       - apply that category to blank rows in the same imported merchant group when
  *         the group has no conflicting filled categories,
- *       - record a learned `CategoryRule` per unambiguous (merchant → categoryId) pair
- *         so future ingests auto-categorize the same merchant.
+ *       - record an exact learned `CategoryRule` per unambiguous
+ *         (merchant → categoryId) pair so future ingests auto-categorize the same
+ *         normalized merchant without broad substring matching.
  *
  * The pair builds a permanent personal merchant library without needing inline AI API keys.
  */
