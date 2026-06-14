@@ -14,14 +14,16 @@ import java.io.OutputStream
  *  2. **External** — user feeds the CSV to ChatGPT/Claude/Z.ai with the AI triage prompt.
  *     `category_options` is read-only row context; only `category_id` should be edited.
  *  3. **Import** — read the filled CSV. For each row with a non-blank category_id:
- *       - validate the category exists,
+ *       - validate the category exists and matches the transaction type,
  *       - set categoryId on the matching transaction AND move it to CONFIRMED
  *         (matched by id first, stable_key/source/content fingerprint second),
  *       - apply that category to blank rows in the same imported merchant group when
- *         the group has no conflicting filled categories,
+ *         the group has no conflicting filled categories and the category matches
+ *         each row's type,
  *       - record an exact learned `CategoryRule` per unambiguous
- *         (merchant → categoryId) pair so future ingests auto-categorize the same
- *         normalized merchant without broad substring matching.
+ *         type-compatible (merchant → categoryId) pair so future ingests
+ *         auto-categorize the same normalized merchant without broad substring
+ *         matching.
  *
  * The pair builds a permanent personal merchant library without needing inline AI API keys.
  */

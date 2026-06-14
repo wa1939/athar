@@ -197,6 +197,70 @@ class MerchantBulkCsvTest {
     }
 
     @Test
+    fun `importer skips explicit category that does not match transaction type`() = runTest {
+        val repo = FakeTransactionRepository(
+            listOf(
+                tx(id = "expense", sourceRefId = "inbox-expense", merchant = "Coffee Shop"),
+            ),
+        )
+        val rules = FakeCategoryRuleRepository()
+        val importer = MerchantBulkImporter(
+            transactions = repo,
+            rules = rules,
+            categories = FakeCategoryRepository(listOf(coffeeCategory(), salaryCategory())),
+            clock = FixedClock,
+        )
+        val csv = """
+            id,merchant,merchant_normalized,amount,currency,type,status,date,category_id
+            expense,Coffee Shop,coffee shop,19.00,SAR,EXPENSE,PENDING,2026-02-14,cat-salary
+        """.trimIndent()
+
+        val result = importer.importCategorizations(ByteArrayInputStream(csv.toByteArray()))
+
+        assertThat(result).isEqualTo(MerchantBulkImportResult.Done(updated = 0, rulesAdded = 0, skipped = 1))
+        assertThat(repo.get("expense")?.categoryId).isNull()
+        assertThat(repo.get("expense")?.status).isEqualTo(TxStatus.PENDING)
+        assertThat(rules.learnedRules).isEmpty()
+    }
+
+    @Test
+    fun `importer does not propagate or train category across mixed transaction types`() = runTest {
+        val repo = FakeTransactionRepository(
+            listOf(
+                tx(id = "merchant-expense", sourceRefId = "inbox-1", merchant = "Acme", amount = "25.00"),
+                tx(
+                    id = "merchant-income",
+                    sourceRefId = "inbox-2",
+                    merchant = "Acme",
+                    amount = "100.00",
+                    type = TxType.INCOME,
+                ),
+            ),
+        )
+        val rules = FakeCategoryRuleRepository()
+        val importer = MerchantBulkImporter(
+            transactions = repo,
+            rules = rules,
+            categories = FakeCategoryRepository(listOf(homeCategory(), salaryCategory())),
+            clock = FixedClock,
+        )
+        val csv = """
+            id,merchant,merchant_normalized,amount,currency,type,status,date,category_id
+            merchant-expense,Acme,acme,25.00,SAR,EXPENSE,PENDING,2026-02-14,cat-home-maintenance
+            merchant-income,Acme,acme,100.00,SAR,INCOME,PENDING,2026-02-14,
+        """.trimIndent()
+
+        val result = importer.importCategorizations(ByteArrayInputStream(csv.toByteArray()))
+
+        assertThat(result).isEqualTo(MerchantBulkImportResult.Done(updated = 1, rulesAdded = 0, skipped = 1))
+        assertThat(repo.get("merchant-expense")?.categoryId).isEqualTo("cat-home-maintenance")
+        assertThat(repo.get("merchant-expense")?.status).isEqualTo(TxStatus.CONFIRMED)
+        assertThat(repo.get("merchant-income")?.categoryId).isNull()
+        assertThat(repo.get("merchant-income")?.status).isEqualTo(TxStatus.PENDING)
+        assertThat(rules.learnedRules).isEmpty()
+    }
+
+    @Test
     fun `export groups repeated merchants first and skips transfers`() = runTest {
         val rows = listOf(
             tx(id = "singleton", sourceRefId = "inbox-1", merchant = "Zed Market"),

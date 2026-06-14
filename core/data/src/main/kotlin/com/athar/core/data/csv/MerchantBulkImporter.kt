@@ -1,8 +1,11 @@
 package com.athar.core.data.csv
 
+import com.athar.core.domain.model.Category
+import com.athar.core.domain.model.CategoryKind
 import com.athar.core.domain.model.PatternType
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
+import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.CategoryRuleRepository
 import com.athar.core.domain.repo.MerchantBulkImportResult
@@ -63,8 +66,8 @@ internal class MerchantBulkImporter @Inject constructor(
 
         val cats = categories.observeAll(kind = null, includeArchived = false).first()
         val byId = cats.associateBy { it.id }
-        val byName = cats.associateBy { it.name.lowercase().trim() }
-        val byAr = cats.associateBy { it.nameAr.trim() }
+        val byName = cats.groupBy { it.name.lowercase().trim() }
+        val byAr = cats.groupBy { it.nameAr.trim() }
 
         var updated = 0
         var skipped = 0
@@ -79,6 +82,7 @@ internal class MerchantBulkImporter @Inject constructor(
         }
         val updatedTransactionIds = mutableSetOf<String>()
         val categoriesByPattern = linkedMapOf<String, MutableSet<String>>()
+        val patternsWithIncompatibleTypes = linkedSetOf<String>()
 
         for (csvRow in dataRows) {
             val row = csvRow.cells
@@ -86,13 +90,6 @@ internal class MerchantBulkImporter @Inject constructor(
             val txId = if (idIdx >= 0 && idIdx < row.size) row[idIdx].trim() else ""
             val rawCat = row[categoryIdx].trim()
             if (rawCat.isEmpty()) continue
-
-            val categoryId = resolveCategoryId(rawCat, byId, byName, byAr)
-            if (categoryId == null) {
-                Timber.w("CSV row %d skipped: unknown category '%s'", csvRow.number, rawCat)
-                skipped++
-                continue
-            }
 
             val tx = resolveTransaction(
                 txId = txId,
@@ -113,11 +110,31 @@ internal class MerchantBulkImporter @Inject constructor(
                 skipped++
                 continue
             }
-            if (applyCategory(tx, categoryId, updatedTransactionIds)) updated++
 
             val pattern = merchantPattern(tx, row, merchantIdx, merchantNormIdx)
+            val categoryCandidates = resolveCategoryCandidates(rawCat, byId, byName, byAr)
+            if (categoryCandidates.isEmpty()) {
+                Timber.w("CSV row %d skipped: unknown category '%s'", csvRow.number, rawCat)
+                skipped++
+                continue
+            }
+            val category = categoryCandidates.firstOrNull { it.isCompatibleWith(tx.type) }
+            if (category == null) {
+                Timber.w(
+                    "CSV row %d skipped: category '%s' is incompatible with transaction type %s",
+                    csvRow.number,
+                    rawCat,
+                    tx.type,
+                )
+                if (pattern.isNotBlank()) patternsWithIncompatibleTypes += pattern
+                skipped++
+                continue
+            }
+
+            if (applyCategory(tx, category.id, updatedTransactionIds)) updated++
+
             if (pattern.isNotBlank()) {
-                categoriesByPattern.getOrPut(pattern) { linkedSetOf() }.add(categoryId)
+                categoriesByPattern.getOrPut(pattern) { linkedSetOf() }.add(category.id)
             }
         }
 
@@ -157,10 +174,24 @@ internal class MerchantBulkImporter @Inject constructor(
                 skipped++
                 continue
             }
+            val category = byId[categoryId]
+            if (category == null || !category.isCompatibleWith(tx.type)) {
+                Timber.w(
+                    "CSV row %d skipped: group category '%s' is incompatible with transaction type %s",
+                    csvRow.number,
+                    categoryId,
+                    tx.type,
+                )
+                if (pattern.isNotBlank()) patternsWithIncompatibleTypes += pattern
+                skipped++
+                continue
+            }
             if (applyCategory(tx, categoryId, updatedTransactionIds)) updated++
         }
 
-        rulesToAdd.putAll(unambiguousGroups)
+        rulesToAdd.putAll(
+            unambiguousGroups.filterKeys { it !in patternsWithIncompatibleTypes },
+        )
 
         var rulesAdded = 0
         rulesToAdd.forEach { (pattern, cat) ->
@@ -308,17 +339,24 @@ internal class MerchantBulkImporter @Inject constructor(
     private fun requiredMaxIndex(vararg indexes: Int): Int =
         indexes.filter { it >= 0 }.maxOrNull() ?: -1
 
-    private fun resolveCategoryId(
+    private fun resolveCategoryCandidates(
         raw: String,
-        byId: Map<String, com.athar.core.domain.model.Category>,
-        byName: Map<String, com.athar.core.domain.model.Category>,
-        byAr: Map<String, com.athar.core.domain.model.Category>,
-    ): String? {
+        byId: Map<String, Category>,
+        byName: Map<String, List<Category>>,
+        byAr: Map<String, List<Category>>,
+    ): List<Category> {
         // Prefer exact id match (cat-restaurant). Fall back to English / Arabic names.
-        byId[raw]?.let { return it.id }
-        byAr[raw]?.let { return it.id }
-        return byName[raw.lowercase()]?.id
+        byId[raw]?.let { return listOf(it) }
+        byAr[raw]?.let { return it }
+        return byName[raw.lowercase()].orEmpty()
     }
+
+    private fun Category.isCompatibleWith(type: TxType): Boolean =
+        when (type) {
+            TxType.EXPENSE -> kind == CategoryKind.EXPENSE
+            TxType.INCOME -> kind == CategoryKind.INCOME
+            TxType.TRANSFER -> false
+        }
 
     private data class CsvDataRow(
         val number: Int,
