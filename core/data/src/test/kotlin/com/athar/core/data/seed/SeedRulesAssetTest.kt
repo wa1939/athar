@@ -18,7 +18,7 @@ class SeedRulesAssetTest {
         val categoryIds = seedCategories()
         val rules = seedRules()
 
-        assertThat(rules).hasSize(718)
+        assertThat(rules).hasSize(667)
         assertThat(rules.map { it.categoryId }.filterNot { it in categoryIds }).isEmpty()
 
         val duplicates = rules
@@ -26,6 +26,16 @@ class SeedRulesAssetTest {
             .filterValues { it.size > 1 }
             .keys
         assertThat(duplicates).isEmpty()
+    }
+
+    @Test
+    fun `side income seeds stay public or institution backed`() {
+        val unsupportedSideIncomeRules = seedRules()
+            .filter { it.categoryId == "cat-side-income" && it.priority < 90 }
+            .filterNot { publicSideIncomeCues.any(it.pattern.lowercase()::contains) }
+            .map { it.pattern }
+
+        assertThat(unsupportedSideIncomeRules).isEmpty()
     }
 
     @Test
@@ -244,6 +254,27 @@ class SeedRulesAssetTest {
             "parking payment" to "cat-public-transport",
             "toll payment" to "cat-public-transport",
             "transit fare" to "cat-public-transport",
+        )
+
+        val publicSideIncomeCues = listOf(
+            "account",
+            "airbnb",
+            "capital",
+            "cash",
+            "co.",
+            "company",
+            "cruises",
+            "dhamen",
+            "google",
+            "insurance",
+            "profit",
+            "surplus",
+            "trading",
+            "اليكترون",
+            "شركة",
+            "كاش باك",
+            "وزارة",
+            "يورباي",
         )
     }
 }

@@ -766,11 +766,6 @@
       "priority": 80
     },
     {
-      "pattern": "camel ren",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
       "pattern": "camel ste",
       "categoryId": "cat-coffee",
       "priority": 80
@@ -928,11 +923,6 @@
     {
       "pattern": "dr max statuto",
       "categoryId": "cat-medical",
-      "priority": 80
-    },
-    {
-      "pattern": "dr solima",
-      "categoryId": "cat-side-income",
       "priority": 80
     },
     {
@@ -1166,11 +1156,6 @@
       "priority": 80
     },
     {
-      "pattern": "intl ride",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
       "pattern": "ionos inc",
       "categoryId": "cat-subscriptions",
       "priority": 80
@@ -1178,11 +1163,6 @@
     {
       "pattern": "joe the j",
       "categoryId": "cat-coffee",
-      "priority": 80
-    },
-    {
-      "pattern": "kaiian rehlah",
-      "categoryId": "cat-side-income",
       "priority": 80
     },
     {
@@ -1401,18 +1381,8 @@
       "priority": 80
     },
     {
-      "pattern": "moroccan t",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
       "pattern": "mtajer al",
       "categoryId": "cat-groceries",
-      "priority": 80
-    },
-    {
-      "pattern": "muath hijazi",
-      "categoryId": "cat-side-income",
       "priority": 80
     },
     {
@@ -2056,26 +2026,6 @@
       "priority": 80
     },
     {
-      "pattern": "ابراهيم حامدالغامدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "احسان احمد عبدالله الغامدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "احمد الغامدى",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "احمد محمد احمد نسيب",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
       "pattern": "اعادة اصدار لوحة المركبة",
       "categoryId": "cat-utilities",
       "priority": 80
@@ -2111,46 +2061,6 @@
       "priority": 80
     },
     {
-      "pattern": "تركي الشرابي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "حاتم الغادمدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "حامد بن علي بن محمد الغامدى",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "حسن منصور عمر",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "حليمه علي محمد الغامدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "حمدالنيل عبدالله",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "حنان الاحمدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "خالد الحربي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
       "pattern": "رسوم طباعة كشف الحساب",
       "categoryId": "cat-other-expense",
       "priority": 80
@@ -2163,16 +2073,6 @@
     {
       "pattern": "سداد فاتورة",
       "categoryId": "cat-utilities",
-      "priority": 80
-    },
-    {
-      "pattern": "سعيد الغامدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "سلطان حسن محمد شوباص",
-      "categoryId": "cat-side-income",
       "priority": 80
     },
     {
@@ -2196,52 +2096,7 @@
       "priority": 80
     },
     {
-      "pattern": "عبدالعزيز عبدالله حيدر المغربي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "عبدالله الشهري",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "عبدالمجيد عبدالخالق",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "فاطمه الغامدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "فيصل العويضي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
       "pattern": "كاش باك بطاقة ائتمانية",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "كامل السلمي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "محمد الغامدى",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "محمد الغامدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "محمد محمد",
       "categoryId": "cat-side-income",
       "priority": 80
     },
@@ -2266,23 +2121,8 @@
       "priority": 80
     },
     {
-      "pattern": "ناصر عثمان عبدالله ال عويره الكربي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "نايف محمد فيصل سعد",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
       "pattern": "نقل الملكية",
       "categoryId": "cat-utilities",
-      "priority": 80
-    },
-    {
-      "pattern": "هاني الغامدى",
-      "categoryId": "cat-side-income",
       "priority": 80
     },
     {
@@ -2296,22 +2136,7 @@
       "priority": 80
     },
     {
-      "pattern": "هناء الغامدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
       "pattern": "وزارة المالية",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "وضاح الغامدى",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "وليد الغامدى",
       "categoryId": "cat-side-income",
       "priority": 80
     },
@@ -2323,26 +2148,6 @@
     {
       "pattern": "8 portion",
       "categoryId": "cat-restaurant",
-      "priority": 60
-    },
-    {
-      "pattern": "abdulelah alhazmi",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
-      "pattern": "abdullah faris",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
-      "pattern": "abdulrahman alghamdi",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
-      "pattern": "ahmed aljeaidan",
-      "categoryId": "cat-side-income",
       "priority": 60
     },
     {
@@ -2403,11 +2208,6 @@
     {
       "pattern": "asdaa",
       "categoryId": "cat-restaurant",
-      "priority": 60
-    },
-    {
-      "pattern": "aws alghamdi",
-      "categoryId": "cat-side-income",
       "priority": 60
     },
     {
@@ -2481,11 +2281,6 @@
       "priority": 60
     },
     {
-      "pattern": "fahad aldrsony",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
       "pattern": "farm vittorio emanuele",
       "categoryId": "cat-medical",
       "priority": 60
@@ -2536,16 +2331,6 @@
       "priority": 60
     },
     {
-      "pattern": "hamed alghamdi",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
-      "pattern": "hana alghamdi",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
       "pattern": "herfy1248",
       "categoryId": "cat-restaurant",
       "priority": 60
@@ -2563,16 +2348,6 @@
     {
       "pattern": "kayan aljawhrt",
       "categoryId": "cat-home-maintenance",
-      "priority": 60
-    },
-    {
-      "pattern": "khalid alsalem",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
-      "pattern": "khlooud tobigi",
-      "categoryId": "cat-side-income",
       "priority": 60
     },
     {
@@ -2636,11 +2411,6 @@
       "priority": 60
     },
     {
-      "pattern": "raghad alghamdi",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
       "pattern": "riyadh pa",
       "categoryId": "cat-entertainment",
       "priority": 60
@@ -2668,11 +2438,6 @@
     {
       "pattern": "seoul adb",
       "categoryId": "cat-restaurant",
-      "priority": 60
-    },
-    {
-      "pattern": "shadi shah",
-      "categoryId": "cat-side-income",
       "priority": 60
     },
     {
@@ -2726,21 +2491,6 @@
       "priority": 60
     },
     {
-      "pattern": "waleed alghamdi",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
-      "pattern": "waleed hamed",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
-      "pattern": "waleed hamed ali alghamdi",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
       "pattern": "whop",
       "categoryId": "cat-subscriptions",
       "priority": 60
@@ -2748,11 +2498,6 @@
     {
       "pattern": "zad jedda",
       "categoryId": "cat-restaurant",
-      "priority": 60
-    },
-    {
-      "pattern": "حامد بن علي الغامدى",
-      "categoryId": "cat-side-income",
       "priority": 60
     },
     {
