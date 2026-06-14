@@ -7,6 +7,8 @@ import com.athar.core.domain.model.CategoryKind
 import com.athar.core.domain.model.CategoryRule
 import com.athar.core.domain.model.IngestSource
 import com.athar.core.domain.model.PatternType
+import com.athar.core.domain.model.RawIngestEvent
+import com.athar.core.domain.model.SmsParseStatus
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
@@ -15,6 +17,8 @@ import com.athar.core.domain.repo.CategoryRuleRepository
 import com.athar.core.domain.repo.MerchantBulkExportMode
 import com.athar.core.domain.repo.MerchantBulkImportResult
 import com.athar.core.domain.repo.MerchantBulkImportSkipSummary
+import com.athar.core.domain.repo.SmsAuditEntry
+import com.athar.core.domain.repo.SmsAuditRepository
 import com.athar.core.domain.repo.TransactionRepository
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.Flow
@@ -43,6 +47,7 @@ class MerchantBulkCsvTest {
         val exported = MerchantBulkExporter(
             transactions = exportRepo,
             categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            smsAudit = FakeSmsAuditRepository(),
         ).exportUncategorized(out, MerchantBulkExportMode.FULL_CONTEXT)
 
         assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 1))
@@ -85,6 +90,7 @@ class MerchantBulkCsvTest {
         val exported = MerchantBulkExporter(
             transactions = FakeTransactionRepository(listOf(tx)),
             categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            smsAudit = FakeSmsAuditRepository(),
         ).exportUncategorized(out, MerchantBulkExportMode.NO_RAW_BODY)
 
         assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 1))
@@ -97,6 +103,80 @@ class MerchantBulkCsvTest {
         assertThat(row[header.indexOf("id")]).isEqualTo("private-row")
         assertThat(row[header.indexOf("stable_key")]).isNotEmpty()
         assertThat(row[header.indexOf("category_options")]).contains("cat-coffee=Coffee")
+    }
+
+    @Test
+    fun `full context export uses linked audit body before transaction notes`() = runTest {
+        val tx = tx(
+            id = "parsed-row",
+            sourceRefId = "sms-raw-1",
+            merchant = "Ambiguous Branch",
+            notes = "manual note fallback",
+        )
+        val auditBody = "شراء بمبلغ 42.00 ر.س\nمن Ambiguous Branch - Riyadh"
+        val out = ByteArrayOutputStream()
+
+        val exported = MerchantBulkExporter(
+            transactions = FakeTransactionRepository(listOf(tx)),
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            smsAudit = FakeSmsAuditRepository(
+                listOf(
+                    SmsAuditEntry(
+                        id = "audit-1",
+                        sender = "AlRajhiBank",
+                        body = auditBody,
+                        receivedAt = FixedInstant,
+                        parsedTransactionId = "parsed-row",
+                        status = SmsParseStatus.PARSED,
+                        error = null,
+                    ),
+                ),
+            ),
+        ).exportUncategorized(out, MerchantBulkExportMode.FULL_CONTEXT)
+
+        assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 1))
+        val csv = out.toString(Charsets.UTF_8)
+        assertThat(csv).contains(auditBody)
+        assertThat(csv).doesNotContain("manual note fallback")
+    }
+
+    @Test
+    fun `private export omits linked audit body`() = runTest {
+        val tx = tx(
+            id = "private-audit-row",
+            sourceRefId = "sms-private",
+            merchant = "Private Branch",
+            notes = "private note fallback",
+        )
+        val auditBody = "sensitive raw bank body"
+        val out = ByteArrayOutputStream()
+
+        val exported = MerchantBulkExporter(
+            transactions = FakeTransactionRepository(listOf(tx)),
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            smsAudit = FakeSmsAuditRepository(
+                listOf(
+                    SmsAuditEntry(
+                        id = "audit-private",
+                        sender = "Bank",
+                        body = auditBody,
+                        receivedAt = FixedInstant,
+                        parsedTransactionId = "private-audit-row",
+                        status = SmsParseStatus.PARSED,
+                        error = null,
+                    ),
+                ),
+            ),
+        ).exportUncategorized(out, MerchantBulkExportMode.NO_RAW_BODY)
+
+        assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 1))
+        val csv = out.toString(Charsets.UTF_8)
+        assertThat(csv).doesNotContain(auditBody)
+        assertThat(csv).doesNotContain("private note fallback")
+        val lines = csv.trim().lines()
+        val header = lines.first().split(",")
+        val row = lines.drop(1).single().split(",")
+        assertThat(row[header.indexOf("raw_body")]).isEmpty()
     }
 
     @Test
@@ -423,6 +503,7 @@ class MerchantBulkCsvTest {
                     coffeeCategory().copy(id = "cat-archived", archived = true),
                 ),
             ),
+            smsAudit = FakeSmsAuditRepository(),
         ).exportUncategorized(out, MerchantBulkExportMode.FULL_CONTEXT)
 
         assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 4))
@@ -463,6 +544,7 @@ class MerchantBulkCsvTest {
                 ),
             ),
             categories = FakeCategoryRepository(listOf(coffeeCategory(), salaryCategory())),
+            smsAudit = FakeSmsAuditRepository(),
         ).exportUncategorized(out, MerchantBulkExportMode.FULL_CONTEXT)
 
         assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 1))
@@ -617,6 +699,23 @@ class MerchantBulkCsvTest {
             learnedRules += rule
             return rule
         }
+    }
+
+    private class FakeSmsAuditRepository(
+        private val rows: List<SmsAuditEntry> = emptyList(),
+    ) : SmsAuditRepository {
+        override fun observeAll(): Flow<List<SmsAuditEntry>> = flowOf(rows)
+        override fun observeByStatus(status: SmsParseStatus): Flow<List<SmsAuditEntry>> =
+            flowOf(rows.filter { it.status == status })
+
+        override suspend fun record(event: RawIngestEvent): String = unsupported()
+
+        override suspend fun updateParseResult(
+            auditId: String,
+            status: SmsParseStatus,
+            parsedTransactionId: String?,
+            error: String?,
+        ) = unsupported()
     }
 
     private companion object {

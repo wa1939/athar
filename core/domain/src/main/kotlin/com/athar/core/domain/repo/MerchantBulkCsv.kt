@@ -10,8 +10,10 @@ import java.io.OutputStream
  *  1. **Export** — write a CSV of every non-transfer PENDING / DISMISSED /
  *     uncategorized-CONFIRMED transaction. Columns: id, stable_key, source_ref_id,
  *     merchant, merchant_group_count, category_options, amount, currency, type,
- *     status, date, raw_body, category_id (blank for user to fill). The private
- *     export mode keeps the same columns but leaves raw_body blank.
+ *     status, date, raw_body, category_id (blank for user to fill). Full-context
+ *     exports use the linked ingestion-audit message body when available, then
+ *     fall back to notes. The private export mode keeps the same columns but
+ *     leaves raw_body blank.
  *  2. **External** — user feeds the CSV to ChatGPT/Claude/Z.ai with the AI triage prompt.
  *     `category_options` is read-only row context; only `category_id` should be edited.
  *  3. **Import** — read the filled CSV. For each row with a non-blank category_id:

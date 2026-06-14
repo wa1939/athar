@@ -9,6 +9,8 @@ import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.MerchantBulkExportMode
 import com.athar.core.domain.repo.MerchantBulkExportResult
 import com.athar.core.domain.repo.MerchantBulkExportTrigger
+import com.athar.core.domain.repo.SmsAuditEntry
+import com.athar.core.domain.repo.SmsAuditRepository
 import com.athar.core.domain.repo.TransactionRepository
 import kotlinx.coroutines.flow.first
 import timber.log.Timber
@@ -31,6 +33,7 @@ import javax.inject.Singleton
 internal class MerchantBulkExporter @Inject constructor(
     private val transactions: TransactionRepository,
     private val categories: CategoryRepository,
+    private val smsAudit: SmsAuditRepository,
 ) : MerchantBulkExportTrigger {
 
     override suspend fun exportUncategorized(
@@ -42,6 +45,10 @@ internal class MerchantBulkExporter @Inject constructor(
         val categoryOptions = categories.observeAll(kind = null, includeArchived = false)
             .first()
             .groupBy { it.kind }
+        val rawBodiesByTransactionId = when (mode) {
+            MerchantBulkExportMode.FULL_CONTEXT -> smsAudit.observeAll().first().rawBodiesByTransactionId()
+            MerchantBulkExportMode.NO_RAW_BODY -> emptyMap()
+        }
         val groupCounts = candidates.groupingBy { it.merchantGroupKey() }.eachCount()
         val orderedCandidates = candidates.sortedWith(
             compareByDescending<Transaction> { groupCounts[it.merchantGroupKey()] ?: 0 }
@@ -53,7 +60,7 @@ internal class MerchantBulkExporter @Inject constructor(
             writer.write("id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,category_options,amount,currency,type,status,date,raw_body,category_id\n")
             orderedCandidates.forEach { tx ->
                 val raw = when (mode) {
-                    MerchantBulkExportMode.FULL_CONTEXT -> tx.notes.orEmpty()
+                    MerchantBulkExportMode.FULL_CONTEXT -> rawBodiesByTransactionId[tx.id] ?: tx.notes.orEmpty()
                     MerchantBulkExportMode.NO_RAW_BODY -> ""
                 }
                 writer.write(
@@ -100,6 +107,18 @@ internal class MerchantBulkExporter @Inject constructor(
 
     private fun Transaction.merchantGroupKey(): String =
         merchantNormalized.ifBlank { merchant.lowercase().trim() }.ifBlank { "blank" }
+
+    private fun List<SmsAuditEntry>.rawBodiesByTransactionId(): Map<String, String> {
+        val out = linkedMapOf<String, String>()
+        for (entry in this) {
+            val txId = entry.parsedTransactionId?.trim().orEmpty()
+            val body = entry.body.trim()
+            if (txId.isNotEmpty() && body.isNotEmpty() && txId !in out) {
+                out[txId] = body
+            }
+        }
+        return out
+    }
 
     private fun Map<CategoryKind, List<Category>>.forType(type: TxType): String {
         val kind = when (type) {
