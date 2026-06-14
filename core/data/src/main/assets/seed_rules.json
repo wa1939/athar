@@ -3449,6 +3449,81 @@
       "pattern": "تأميني",
       "categoryId": "cat-insurance",
       "priority": 90
+    },
+    {
+      "pattern": "chatgpt",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "notion",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "canva",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "figma",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "dropbox",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "hulu",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "disney+",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "disneyplus",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "paramount+",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "prime video",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "audible",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "deliveroo",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "instacart",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "costco",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "whole foods",
+      "categoryId": "cat-groceries",
+      "priority": 90
     }
   ]
 }
