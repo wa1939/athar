@@ -239,34 +239,59 @@ class HistoryViewModel @Inject constructor(
 
     fun applyBulkCategory(categoryId: String) {
         viewModelScope.launch {
-            val category = categories.get(categoryId)?.takeUnless { it.archived } ?: return@launch
-            val now = clock.now()
-            var applied = 0
-            var skipped = 0
-            val appliedRows = mutableListOf<Transaction>()
-            _selectedIds.value.forEach { id ->
-                val tx = transactions.get(id)
-                if (tx != null && tx.categoryKind() == category.kind) {
-                    val updated = tx.copy(
-                        categoryId = category.id,
-                        status = TxStatus.CONFIRMED,
-                        updatedAt = now,
-                    )
-                    transactions.upsert(updated)
-                    appliedRows += updated
-                    applied += 1
-                } else {
-                    skipped += 1
-                }
-            }
-            val exactRuleLearned = learnExactRuleForRepeatedMerchant(appliedRows, category.id)
-            _lastBulkCategory.value = BulkCategoryEvent(
-                applied = applied,
-                skipped = skipped,
-                exactRuleLearned = exactRuleLearned,
-            )
-            clearSelection()
+            applyBulkCategoryToIds(ids = _selectedIds.value, categoryId = categoryId)
         }
+    }
+
+    fun applyTopRepeatedBacklogSuggestedCategory() {
+        viewModelScope.launch {
+            val visibleRows = items.value
+            val topGroupIds = topRepeatedBacklogGroupIds(
+                visibleRows = visibleRows,
+                category = _category.value,
+            )
+            val topGroupRows = visibleRows.filter { it.id in topGroupIds }
+            val topCategoryKind = topGroupRows.mapNotNull { it.categoryKind() }.distinct().singleOrNull()
+            val activeCategoryIds = activeCategories.value
+                .filter { it.kind == topCategoryKind && !it.archived }
+                .mapTo(mutableSetOf()) { it.id }
+            val suggestion = allTransactions.value.suggestedCategoryForSelectedMerchant(
+                selectedRows = topGroupRows,
+                categoryKind = topCategoryKind,
+                activeCategoryIds = activeCategoryIds,
+            ) ?: return@launch
+            applyBulkCategoryToIds(ids = topGroupIds, categoryId = suggestion.categoryId)
+        }
+    }
+
+    private suspend fun applyBulkCategoryToIds(ids: Set<String>, categoryId: String) {
+        val category = categories.get(categoryId)?.takeUnless { it.archived } ?: return
+        val now = clock.now()
+        var applied = 0
+        var skipped = 0
+        val appliedRows = mutableListOf<Transaction>()
+        ids.forEach { id ->
+            val tx = transactions.get(id)
+            if (tx != null && tx.categoryKind() == category.kind) {
+                val updated = tx.copy(
+                    categoryId = category.id,
+                    status = TxStatus.CONFIRMED,
+                    updatedAt = now,
+                )
+                transactions.upsert(updated)
+                appliedRows += updated
+                applied += 1
+            } else {
+                skipped += 1
+            }
+        }
+        val exactRuleLearned = learnExactRuleForRepeatedMerchant(appliedRows, category.id)
+        _lastBulkCategory.value = BulkCategoryEvent(
+            applied = applied,
+            skipped = skipped,
+            exactRuleLearned = exactRuleLearned,
+        )
+        clearSelection()
     }
 
     private suspend fun learnExactRuleForRepeatedMerchant(
@@ -463,6 +488,8 @@ data class HistoryBulkCategoryState(
     val visibleCount: Int,
     val topRepeatedGroupCount: Int,
     val selectedTopRepeatedGroupCount: Int,
+    val topRepeatedSuggestedCategory: Category?,
+    val topRepeatedSuggestedCategoryUseCount: Int,
     val selectedMerchantName: String?,
     val suggestedCategoryId: String?,
     val suggestedCategoryUseCount: Int,
@@ -478,6 +505,8 @@ data class HistoryBulkCategoryState(
     val canSelectTopRepeatedGroup: Boolean =
         topRepeatedGroupCount > 0 &&
             (selectedCount != topRepeatedGroupCount || selectedTopRepeatedGroupCount != topRepeatedGroupCount)
+    val canApplyTopRepeatedSuggestedCategory: Boolean =
+        selectionMode && topRepeatedGroupCount > 0 && topRepeatedSuggestedCategory != null
 
     companion object {
         val Empty = HistoryBulkCategoryState(
@@ -487,6 +516,8 @@ data class HistoryBulkCategoryState(
             visibleCount = 0,
             topRepeatedGroupCount = 0,
             selectedTopRepeatedGroupCount = 0,
+            topRepeatedSuggestedCategory = null,
+            topRepeatedSuggestedCategoryUseCount = 0,
             selectedMerchantName = null,
             suggestedCategoryId = null,
             suggestedCategoryUseCount = 0,
@@ -529,6 +560,25 @@ internal fun buildHistoryBulkCategoryState(
         visibleRows = visibleRows,
         category = category,
     )
+    val topRepeatedGroupRows = visibleRows.filter { it.id in topRepeatedGroupIds }
+    val topRepeatedCategoryKind = topRepeatedGroupRows.mapNotNull { it.categoryKind() }.distinct().singleOrNull()
+    val topRepeatedCategories = topRepeatedCategoryKind
+        ?.let { kind ->
+            activeCategories
+                .filter { it.kind == kind && !it.archived }
+                .sortedWith(compareBy<Category> { it.sortOrder }.thenBy { it.name })
+        }
+        .orEmpty()
+    val topRepeatedSuggestedCategory = allRows.suggestedCategoryForSelectedMerchant(
+        selectedRows = topRepeatedGroupRows,
+        categoryKind = topRepeatedCategoryKind,
+        activeCategoryIds = topRepeatedCategories.mapTo(mutableSetOf()) { it.id },
+    )
+    val topRepeatedSuggestedCategoryRow = topRepeatedSuggestedCategory
+        ?.let { suggestion ->
+            topRepeatedCategories.firstOrNull { it.id == suggestion.categoryId }
+                ?.let { categoryRow -> categoryRow to suggestion.useCount }
+        }
     return HistoryBulkCategoryState(
         selectionMode = selectionMode,
         selectedIds = selectedVisibleIds,
@@ -536,6 +586,8 @@ internal fun buildHistoryBulkCategoryState(
         visibleCount = visibleRows.size,
         topRepeatedGroupCount = topRepeatedGroupIds.size,
         selectedTopRepeatedGroupCount = topRepeatedGroupIds.count { it in selectedVisibleIds },
+        topRepeatedSuggestedCategory = topRepeatedSuggestedCategoryRow?.first,
+        topRepeatedSuggestedCategoryUseCount = topRepeatedSuggestedCategoryRow?.second ?: 0,
         selectedMerchantName = selectedMerchantName,
         suggestedCategoryId = suggestedCategory?.categoryId,
         suggestedCategoryUseCount = suggestedCategory?.useCount ?: 0,

@@ -207,6 +207,7 @@ fun HistoryScreen(
                     onSelectTopRepeatedGroup = viewModel::selectTopRepeatedBacklogGroup,
                     onSelectVisible = viewModel::selectVisibleRows,
                     onSelectMatchingMerchant = viewModel::selectMatchingSelectedMerchants,
+                    onApplyTopRepeatedSuggestion = viewModel::applyTopRepeatedBacklogSuggestedCategory,
                     onApplySuggestedCategory = viewModel::applyBulkCategory,
                     onApplyCategory = { choosingBulkCategory = true },
                     onClear = viewModel::clearSelection,
@@ -362,6 +363,7 @@ private fun BulkSelectionCard(
     onSelectTopRepeatedGroup: () -> Unit,
     onSelectVisible: () -> Unit,
     onSelectMatchingMerchant: () -> Unit,
+    onApplyTopRepeatedSuggestion: () -> Unit,
     onApplySuggestedCategory: (String) -> Unit,
     onApplyCategory: () -> Unit,
     onClear: () -> Unit,
@@ -369,6 +371,7 @@ private fun BulkSelectionCard(
     val theme = AtharTheme
     val suggestedCategory = state.suggestedCategoryId
         ?.let { id -> state.categories.firstOrNull { it.id == id } }
+    val topRepeatedSuggestedCategory = state.topRepeatedSuggestedCategory
     AtharCard {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
             AtharText(
@@ -417,6 +420,17 @@ private fun BulkSelectionCard(
                         onClick = onSelectTopRepeatedGroup,
                         enabled = state.canSelectTopRepeatedGroup,
                     )
+                    if (state.canApplyTopRepeatedSuggestedCategory && topRepeatedSuggestedCategory != null) {
+                        HistoryActionChip(
+                            text = stringResource(
+                                R.string.history_bulk_apply_top_suggestion,
+                                topRepeatedSuggestedCategory.localizedName(),
+                                state.topRepeatedGroupCount,
+                            ),
+                            onClick = onApplyTopRepeatedSuggestion,
+                            selected = true,
+                        )
+                    }
                 }
                 HistoryActionChip(
                     text = stringResource(R.string.history_bulk_select_visible),

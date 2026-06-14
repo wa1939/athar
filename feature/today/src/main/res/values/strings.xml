@@ -79,6 +79,7 @@
     <string name="history_bulk_ready" formatted="true">جاهز لتصنيف %1$d حركة.</string>
     <string name="history_bulk_ready_with_skips" formatted="true">جاهز لتصنيف %1$d حركة. ستبقى %2$d تحويلات دون تغيير.</string>
     <string name="history_bulk_select_top_repeated_group" formatted="true">أكبر مجموعة (%1$d)</string>
+    <string name="history_bulk_apply_top_suggestion" formatted="true">تطبيق %1$s على الأكبر (%2$d)</string>
     <string name="history_bulk_select_visible">تحديد الظاهر</string>
     <string name="history_bulk_select_same_merchant">نفس التاجر</string>
     <string name="history_bulk_clear">مسح</string>

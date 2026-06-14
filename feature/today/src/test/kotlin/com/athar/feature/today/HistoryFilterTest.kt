@@ -823,6 +823,150 @@ class HistoryFilterTest {
         assertThat(topSelection.canSelectTopRepeatedGroup).isFalse()
     }
 
+    @Test
+    fun `bulk category state suggests top repeated group category from history`() {
+        val rows = listOf(
+            tx(
+                id = "tea-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "tea-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "tea-c",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "coffee-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "coffee-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchantNormalized = "coffee shop",
+            ),
+        )
+        val activeCategories = listOf(
+            category(id = "cat-cafe", kind = CategoryKind.EXPENSE),
+            category(id = "cat-groceries", kind = CategoryKind.EXPENSE),
+        )
+        val state = buildHistoryBulkCategoryState(
+            visibleRows = rows,
+            selectedIds = emptySet(),
+            selectionMode = true,
+            activeCategories = activeCategories,
+            category = HistoryCategoryFilter.REPEATED_UNCATEGORIZED,
+            allRows = rows + listOf(
+                tx(
+                    id = "tea-old-a",
+                    source = IngestSource.SMS,
+                    categoryId = "cat-cafe",
+                    merchantNormalized = "tea shop",
+                ),
+                tx(
+                    id = "tea-old-b",
+                    source = IngestSource.SMS,
+                    categoryId = "cat-cafe",
+                    merchantNormalized = "tea shop",
+                ),
+                tx(
+                    id = "coffee-old",
+                    source = IngestSource.SMS,
+                    categoryId = "cat-groceries",
+                    merchantNormalized = "coffee shop",
+                ),
+            ),
+        )
+
+        assertThat(state.topRepeatedGroupCount).isEqualTo(3)
+        assertThat(state.topRepeatedSuggestedCategory?.id).isEqualTo("cat-cafe")
+        assertThat(state.topRepeatedSuggestedCategoryUseCount).isEqualTo(2)
+        assertThat(state.canApplyTopRepeatedSuggestedCategory).isTrue()
+        assertThat(state.canApplySuggestedCategory).isFalse()
+    }
+
+    @Test
+    fun `bulk category state hides top repeated suggestion outside repeated backlog or conflicts`() {
+        val rows = listOf(
+            tx(
+                id = "tea-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "tea-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "tea-c",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchantNormalized = "tea shop",
+            ),
+        )
+        val activeCategories = listOf(
+            category(id = "cat-cafe", kind = CategoryKind.EXPENSE),
+            category(id = "cat-groceries", kind = CategoryKind.EXPENSE),
+        )
+        val nonRepeatedState = buildHistoryBulkCategoryState(
+            visibleRows = rows,
+            selectedIds = emptySet(),
+            selectionMode = true,
+            activeCategories = activeCategories,
+            category = HistoryCategoryFilter.UNCATEGORIZED,
+            allRows = rows + listOf(
+                tx(
+                    id = "tea-old",
+                    source = IngestSource.SMS,
+                    categoryId = "cat-cafe",
+                    merchantNormalized = "tea shop",
+                ),
+            ),
+        )
+        val conflictingState = buildHistoryBulkCategoryState(
+            visibleRows = rows,
+            selectedIds = emptySet(),
+            selectionMode = true,
+            activeCategories = activeCategories,
+            category = HistoryCategoryFilter.REPEATED_UNCATEGORIZED,
+            allRows = rows + listOf(
+                tx(
+                    id = "tea-old-a",
+                    source = IngestSource.SMS,
+                    categoryId = "cat-cafe",
+                    merchantNormalized = "tea shop",
+                ),
+                tx(
+                    id = "tea-old-b",
+                    source = IngestSource.SMS,
+                    categoryId = "cat-groceries",
+                    merchantNormalized = "tea shop",
+                ),
+            ),
+        )
+
+        assertThat(nonRepeatedState.topRepeatedGroupCount).isEqualTo(0)
+        assertThat(nonRepeatedState.topRepeatedSuggestedCategory).isNull()
+        assertThat(nonRepeatedState.canApplyTopRepeatedSuggestedCategory).isFalse()
+        assertThat(conflictingState.topRepeatedGroupCount).isEqualTo(3)
+        assertThat(conflictingState.topRepeatedSuggestedCategory).isNull()
+        assertThat(conflictingState.canApplyTopRepeatedSuggestedCategory).isFalse()
+    }
+
     private fun tx(
         id: String,
         source: IngestSource,
