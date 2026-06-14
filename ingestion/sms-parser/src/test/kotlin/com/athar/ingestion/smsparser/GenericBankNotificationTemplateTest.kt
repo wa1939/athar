@@ -1038,6 +1038,105 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses generic medical payment notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Medical payment SAR 220.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("220.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Medical payment")
+    }
+
+    @Test
+    fun `parses pharmacy purchase notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Pharmacy purchase AED 75.00 posted"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("75.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Pharmacy payment")
+    }
+
+    @Test
+    fun `preserves specific clinic merchant on medical notification`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Medical payment SAR 120.00 at Nahdi Care Clinic"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("120.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Nahdi Care Clinic")
+    }
+
+    @Test
+    fun `parses education payment notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Tuition payment USD 500.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("500.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Education payment")
+    }
+
+    @Test
+    fun `parses Arabic school fee notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم سداد رسوم مدرسية بمبلغ ١٥٠٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("1500"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Education payment")
+    }
+
+    @Test
+    fun `parses zakat payment notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Zakat payment SAR 250.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("250.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Zakat payment")
+    }
+
+    @Test
+    fun `preserves specific charity merchant on donation notification`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Donation payment AED 100.00 to Red Crescent"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("100.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Red Crescent")
+    }
+
+    @Test
+    fun `ignores essential life reminders and charity appeals with amounts`() {
+        val reminders = listOf(
+            "Your school fees of SAR 1,500.00 are due tomorrow",
+            "Medical bill reminder: SAR 220.00 is due tomorrow",
+            "Donate SAR 50.00 today to support the campaign",
+            "تذكير: رسوم مدرسية مستحقة ١٥٠٠ ر.س",
+        )
+
+        reminders.forEach { body ->
+            assertThat(parser.parse(event("notification:com.alrajhibank.alrajhimobile", body)))
+                .isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
     fun `does not treat trailing status as merchant`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "Card purchase SAR 42.00 approved"),

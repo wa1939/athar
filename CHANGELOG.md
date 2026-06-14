@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Store-safe notification parsing now normalizes posted medical, pharmacy, education, charity, and zakat payment pushes to exact seed-backed labels while preserving specific clinics/charities when present and ignoring essential-life due reminders or donation appeals with amounts.
 - Store-safe notification package coverage now includes verified Canadian, German, and Saudi wallet/bank apps such as CIBC, BMO, Desjardins, Tangerine, Wealthsimple, EQ Bank, KOHO, Deutsche Bank, ING Deutschland, Sparkasse, SAB Mobile, urpay, and Mobily Pay; the ANB gate was tightened to exact package IDs so unrelated package names no longer enter the generic transaction parser through a broad `anb` substring.
 - Bulk categorization imports now treat exact local merchant rules as upserts: re-importing the same decision does not duplicate a rule, and corrected imports replace stale exact local rules while leaving seed and explicit substring rules intact.
 - Bulk categorization full-context exports now fill `raw_body` from the linked local ingestion-audit SMS/notification body when available, falling back to notes only for manual/imported rows; private exports still keep `raw_body` blank.

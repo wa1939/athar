@@ -3334,6 +3334,31 @@
       "pattern": "transit fare",
       "categoryId": "cat-public-transport",
       "priority": 90
+    },
+    {
+      "pattern": "medical payment",
+      "categoryId": "cat-medical",
+      "priority": 90
+    },
+    {
+      "pattern": "pharmacy payment",
+      "categoryId": "cat-medical",
+      "priority": 90
+    },
+    {
+      "pattern": "education payment",
+      "categoryId": "cat-education",
+      "priority": 90
+    },
+    {
+      "pattern": "charity donation",
+      "categoryId": "cat-charity",
+      "priority": 90
+    },
+    {
+      "pattern": "zakat payment",
+      "categoryId": "cat-charity",
+      "priority": 90
     }
   ]
 }
