@@ -448,7 +448,12 @@ private fun BulkCategorySheet(
 ) {
     val theme = AtharTheme
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var selectedCategoryId by remember(state.categories) { mutableStateOf(state.categories.firstOrNull()?.id) }
+    val suggestedCategory = state.suggestedCategoryId
+        ?.let { id -> state.categories.firstOrNull { it.id == id } }
+    val initialCategoryId = suggestedCategory?.id ?: state.categories.firstOrNull()?.id
+    var selectedCategoryId by remember(state.categories, state.suggestedCategoryId) {
+        mutableStateOf(initialCategoryId)
+    }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
@@ -472,6 +477,17 @@ private fun BulkCategorySheet(
                         R.string.history_bulk_category_context,
                         merchantName,
                         state.selectedCount,
+                    ),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+            }
+            suggestedCategory?.let { category ->
+                AtharText(
+                    text = stringResource(
+                        R.string.history_bulk_category_suggestion,
+                        category.localizedName(),
+                        state.suggestedCategoryUseCount,
                     ),
                     style = theme.typography.caption,
                     color = theme.colors.muted,

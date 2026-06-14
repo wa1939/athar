@@ -640,8 +640,18 @@ class HistoryFilterTest {
         )
         val genericState = buildHistoryBulkCategoryState(
             visibleRows = listOf(
-                tx(id = "unknown-a", source = IngestSource.IMPORT, merchant = "Unknown", merchantNormalized = "unknown"),
-                tx(id = "unknown-b", source = IngestSource.IMPORT, merchant = "Unknown", merchantNormalized = "unknown"),
+                tx(
+                    id = "unknown-a",
+                    source = IngestSource.IMPORT,
+                    merchant = "Unknown",
+                    merchantNormalized = "unknown",
+                ),
+                tx(
+                    id = "unknown-b",
+                    source = IngestSource.IMPORT,
+                    merchant = "Unknown",
+                    merchantNormalized = "unknown",
+                ),
             ),
             selectedIds = setOf("unknown-a", "unknown-b"),
             selectionMode = true,
@@ -650,6 +660,130 @@ class HistoryFilterTest {
 
         assertThat(mixedState.selectedMerchantName).isNull()
         assertThat(genericState.selectedMerchantName).isNull()
+    }
+
+    @Test
+    fun `bulk category state suggests unambiguous same merchant category from history`() {
+        val visibleRows = listOf(
+            tx(
+                id = "coffee-a",
+                source = IngestSource.IMPORT,
+                categoryId = null,
+                merchant = "Coffee First",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "coffee-b",
+                source = IngestSource.IMPORT,
+                categoryId = null,
+                merchant = "Coffee Second",
+                merchantNormalized = "coffee shop",
+            ),
+        )
+        val state = buildHistoryBulkCategoryState(
+            visibleRows = visibleRows,
+            selectedIds = setOf("coffee-a", "coffee-b"),
+            selectionMode = true,
+            activeCategories = listOf(
+                category(id = "cat-coffee", kind = CategoryKind.EXPENSE),
+                category(id = "cat-groceries", kind = CategoryKind.EXPENSE),
+                category(id = "cat-salary", kind = CategoryKind.INCOME),
+            ),
+            allRows = visibleRows + listOf(
+                tx(
+                    id = "coffee-old-a",
+                    source = IngestSource.SMS,
+                    categoryId = "cat-coffee",
+                    merchant = "Coffee Old",
+                    merchantNormalized = "Coffee Shop",
+                ),
+                tx(
+                    id = "coffee-old-b",
+                    source = IngestSource.SMS,
+                    categoryId = "cat-coffee",
+                    merchant = "Coffee Old 2",
+                    merchantNormalized = "coffee shop",
+                ),
+                tx(
+                    id = "coffee-income",
+                    source = IngestSource.SMS,
+                    type = TxType.INCOME,
+                    categoryId = "cat-salary",
+                    merchant = "Coffee Refund",
+                    merchantNormalized = "coffee shop",
+                ),
+            ),
+        )
+
+        assertThat(state.suggestedCategoryId).isEqualTo("cat-coffee")
+        assertThat(state.suggestedCategoryUseCount).isEqualTo(2)
+    }
+
+    @Test
+    fun `bulk category state hides category suggestion for conflicting inactive or generic history`() {
+        val activeCategories = listOf(
+            category(id = "cat-coffee", kind = CategoryKind.EXPENSE),
+            category(id = "cat-groceries", kind = CategoryKind.EXPENSE),
+        )
+        val visibleRows = listOf(
+            tx(id = "coffee-a", source = IngestSource.IMPORT, merchantNormalized = "coffee shop"),
+            tx(id = "coffee-b", source = IngestSource.IMPORT, merchantNormalized = "coffee shop"),
+        )
+        val conflictingState = buildHistoryBulkCategoryState(
+            visibleRows = visibleRows,
+            selectedIds = setOf("coffee-a", "coffee-b"),
+            selectionMode = true,
+            activeCategories = activeCategories,
+            allRows = visibleRows + listOf(
+                tx(
+                    id = "coffee-old-a",
+                    source = IngestSource.SMS,
+                    categoryId = "cat-coffee",
+                    merchantNormalized = "coffee shop",
+                ),
+                tx(
+                    id = "coffee-old-b",
+                    source = IngestSource.SMS,
+                    categoryId = "cat-groceries",
+                    merchantNormalized = "coffee shop",
+                ),
+            ),
+        )
+        val inactiveState = buildHistoryBulkCategoryState(
+            visibleRows = visibleRows,
+            selectedIds = setOf("coffee-a", "coffee-b"),
+            selectionMode = true,
+            activeCategories = activeCategories,
+            allRows = visibleRows + listOf(
+                tx(
+                    id = "coffee-old",
+                    source = IngestSource.SMS,
+                    categoryId = "cat-archived",
+                    merchantNormalized = "coffee shop",
+                ),
+            ),
+        )
+        val genericState = buildHistoryBulkCategoryState(
+            visibleRows = listOf(
+                tx(id = "unknown-a", source = IngestSource.IMPORT, merchantNormalized = "unknown"),
+                tx(id = "unknown-b", source = IngestSource.IMPORT, merchantNormalized = "unknown"),
+            ),
+            selectedIds = setOf("unknown-a", "unknown-b"),
+            selectionMode = true,
+            activeCategories = activeCategories,
+            allRows = listOf(
+                tx(
+                    id = "unknown-old",
+                    source = IngestSource.SMS,
+                    categoryId = "cat-coffee",
+                    merchantNormalized = "unknown",
+                ),
+            ),
+        )
+
+        assertThat(conflictingState.suggestedCategoryId).isNull()
+        assertThat(inactiveState.suggestedCategoryId).isNull()
+        assertThat(genericState.suggestedCategoryId).isNull()
     }
 
     @Test

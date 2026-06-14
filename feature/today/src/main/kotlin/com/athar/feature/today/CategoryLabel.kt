@@ -18,6 +18,15 @@ data class CategoryLabel(
 internal fun List<Category>.toCategoryLabels(): ImmutableMap<String, CategoryLabel> =
     associate { it.id to CategoryLabel(name = it.name, nameAr = it.nameAr) }.toPersistentMap()
 
+internal fun Category.localizedName(): String {
+    val isArabic = Locale.getDefault().language == "ar"
+    return if (isArabic) {
+        nameAr.ifBlank { name }
+    } else {
+        name.ifBlank { nameAr }
+    }
+}
+
 @Composable
 internal fun transactionCategoryLabel(
     tx: Transaction,

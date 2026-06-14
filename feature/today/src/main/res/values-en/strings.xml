@@ -84,6 +84,7 @@
     <string name="history_bulk_category">Category</string>
     <string name="history_bulk_category_title">Choose category</string>
     <string name="history_bulk_category_context" formatted="true">Applying to %2$d transactions from %1$s</string>
+    <string name="history_bulk_category_suggestion" formatted="true">Suggested from same-merchant history (%2$d): %1$s</string>
     <string name="history_bulk_cancel">Cancel</string>
     <string name="history_bulk_apply">Apply</string>
     <string name="history_bulk_applied" formatted="true">Updated %1$d transactions.</string>

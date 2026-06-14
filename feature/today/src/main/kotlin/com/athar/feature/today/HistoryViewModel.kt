@@ -74,10 +74,14 @@ class HistoryViewModel @Inject constructor(
             .map { rows -> rows.sortedWith(compareBy<Category> { it.sortOrder }.thenBy { it.name }) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    private val allTransactions: StateFlow<List<Transaction>> =
+        transactions.observeAll()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val items: StateFlow<List<Transaction>> =
         combine(
-            transactions.observeAll(),
+            allTransactions,
             combine(_query, _status, _type, _source, _category) { q, s, t, source, category ->
                 HistoryFilterState(q, s, t, source, category)
             },
@@ -92,6 +96,11 @@ class HistoryViewModel @Inject constructor(
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    private val historyRows =
+        combine(items, allTransactions) { visibleRows, allRows ->
+            HistoryRows(visibleRows = visibleRows, allRows = allRows)
+        }
+
     val repeatedBacklogCounts: StateFlow<Map<String, Int>> =
         combine(items, _category) { visibleRows, category ->
             buildRepeatedBacklogCountById(
@@ -102,18 +111,19 @@ class HistoryViewModel @Inject constructor(
 
     val bulkCategoryState: StateFlow<HistoryBulkCategoryState> =
         combine(
-            items,
+            historyRows,
             _selectedIds,
             _selectionMode,
             activeCategories,
             _category,
-        ) { visibleRows, selectedIds, selectionMode, categories, category ->
+        ) { rows, selectedIds, selectionMode, categories, category ->
             buildHistoryBulkCategoryState(
-                visibleRows = visibleRows,
+                visibleRows = rows.visibleRows,
                 selectedIds = selectedIds,
                 selectionMode = selectionMode,
                 activeCategories = categories,
                 category = category,
+                allRows = rows.allRows,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HistoryBulkCategoryState.Empty)
 
@@ -306,6 +316,11 @@ private data class HistoryFilterState(
     val category: HistoryCategoryFilter,
 )
 
+private data class HistoryRows(
+    val visibleRows: List<Transaction>,
+    val allRows: List<Transaction>,
+)
+
 internal fun filterHistoryTransactions(
     all: List<Transaction>,
     query: String,
@@ -449,6 +464,8 @@ data class HistoryBulkCategoryState(
     val topRepeatedGroupCount: Int,
     val selectedTopRepeatedGroupCount: Int,
     val selectedMerchantName: String?,
+    val suggestedCategoryId: String?,
+    val suggestedCategoryUseCount: Int,
     val matchingMerchantCount: Int,
     val eligibleCount: Int,
     val skippedCount: Int,
@@ -469,6 +486,8 @@ data class HistoryBulkCategoryState(
             topRepeatedGroupCount = 0,
             selectedTopRepeatedGroupCount = 0,
             selectedMerchantName = null,
+            suggestedCategoryId = null,
+            suggestedCategoryUseCount = 0,
             matchingMerchantCount = 0,
             eligibleCount = 0,
             skippedCount = 0,
@@ -484,6 +503,7 @@ internal fun buildHistoryBulkCategoryState(
     selectionMode: Boolean,
     activeCategories: List<Category>,
     category: HistoryCategoryFilter = HistoryCategoryFilter.ALL,
+    allRows: List<Transaction> = visibleRows,
 ): HistoryBulkCategoryState {
     val selectedRows = visibleRows.filter { it.id in selectedIds }
     val selectedVisibleIds = selectedRows.mapTo(mutableSetOf()) { it.id }
@@ -491,6 +511,18 @@ internal fun buildHistoryBulkCategoryState(
     val categoryKind = selectedKinds.singleOrNull()
     val selectedMerchantKeys = selectedRows.mapNotNull { it.merchantSelectionKey() }.toSet()
     val selectedMerchantName = selectedRows.selectedMerchantName()
+    val categoriesForSelection = categoryKind
+        ?.let { kind ->
+            activeCategories
+                .filter { it.kind == kind && !it.archived }
+                .sortedWith(compareBy<Category> { it.sortOrder }.thenBy { it.name })
+        }
+        .orEmpty()
+    val suggestedCategory = allRows.suggestedCategoryForSelectedMerchant(
+        selectedRows = selectedRows,
+        categoryKind = categoryKind,
+        activeCategoryIds = categoriesForSelection.mapTo(mutableSetOf()) { it.id },
+    )
     val topRepeatedGroupIds = topRepeatedBacklogGroupIds(
         visibleRows = visibleRows,
         category = category,
@@ -503,6 +535,8 @@ internal fun buildHistoryBulkCategoryState(
         topRepeatedGroupCount = topRepeatedGroupIds.size,
         selectedTopRepeatedGroupCount = topRepeatedGroupIds.count { it in selectedVisibleIds },
         selectedMerchantName = selectedMerchantName,
+        suggestedCategoryId = suggestedCategory?.categoryId,
+        suggestedCategoryUseCount = suggestedCategory?.useCount ?: 0,
         matchingMerchantCount = if (selectedMerchantKeys.isEmpty()) {
             0
         } else {
@@ -511,13 +545,7 @@ internal fun buildHistoryBulkCategoryState(
         eligibleCount = selectedRows.count { it.categoryKind() != null },
         skippedCount = selectedRows.count { it.categoryKind() == null },
         hasMixedCategoryKinds = selectedKinds.size > 1,
-        categories = categoryKind
-            ?.let { kind ->
-                activeCategories
-                    .filter { it.kind == kind && !it.archived }
-                    .sortedWith(compareBy<Category> { it.sortOrder }.thenBy { it.name })
-            }
-            .orEmpty(),
+        categories = categoriesForSelection,
     )
 }
 
@@ -588,6 +616,34 @@ private fun Transaction.merchantDisplayName(): String? =
         .ifBlank { merchantNormalized }
         .trim()
         .takeIf { it.isNotBlank() }
+
+private data class SuggestedCategory(
+    val categoryId: String,
+    val useCount: Int,
+)
+
+private fun List<Transaction>.suggestedCategoryForSelectedMerchant(
+    selectedRows: List<Transaction>,
+    categoryKind: CategoryKind?,
+    activeCategoryIds: Set<String>,
+): SuggestedCategory? {
+    if (selectedRows.isEmpty() || categoryKind == null || activeCategoryIds.isEmpty()) return null
+    val merchantKey = selectedRows
+        .mapNotNull { it.merchantSelectionKey() }
+        .distinct()
+        .singleOrNull()
+        ?.takeIf { it.isSpecificMerchantKey() }
+        ?: return null
+    val categoryCounts = asSequence()
+        .filter { it.merchantSelectionKey() == merchantKey }
+        .filter { it.categoryKind() == categoryKind }
+        .mapNotNull { it.categoryId?.trim()?.takeIf(String::isNotEmpty) }
+        .filter { it in activeCategoryIds }
+        .groupingBy { it }
+        .eachCount()
+    val category = categoryCounts.entries.singleOrNull() ?: return null
+    return SuggestedCategory(categoryId = category.key, useCount = category.value)
+}
 
 private fun String.isSpecificMerchantKey(): Boolean {
     if (length < 3) return false

@@ -85,6 +85,7 @@
     <string name="history_bulk_category">التصنيف</string>
     <string name="history_bulk_category_title">اختر التصنيف</string>
     <string name="history_bulk_category_context" formatted="true">سيُطبق على %2$d حركة من %1$s</string>
+    <string name="history_bulk_category_suggestion" formatted="true">اقتراح من سجل نفس التاجر (%2$d): %1$s</string>
     <string name="history_bulk_cancel">إلغاء</string>
     <string name="history_bulk_apply">تطبيق</string>
     <string name="history_bulk_applied" formatted="true">حُدّثت %1$d حركة.</string>
