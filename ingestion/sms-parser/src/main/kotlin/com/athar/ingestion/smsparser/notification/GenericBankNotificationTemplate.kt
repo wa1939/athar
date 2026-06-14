@@ -664,7 +664,13 @@ class GenericBankNotificationTemplate : BankTemplate {
             ?.replace(amountWithCurrency, "")
             ?.replace(trailingBalancePartyContext, "")
             ?.replace(Regex("""\s+\band\s+earned\b.*$""", RegexOption.IGNORE_CASE), "")
-            ?.replace(Regex("""\s+\b(?:confirmed|successful|completed|approved|posted)\b\.?$""", RegexOption.IGNORE_CASE), "")
+            ?.replace(
+                Regex(
+                    """\s+\b(?:(?:was|were|is|has\s+been|have\s+been)\s+)?(?:confirmed|successful|completed|approved|posted)\b\.?$""",
+                    RegexOption.IGNORE_CASE,
+                ),
+                "",
+            )
             ?.replace(Regex("""\b(?:for|using|with|via|card|ending|منتهية|البطاقة)\b.*$""", RegexOption.IGNORE_CASE), "")
             ?.trim(' ', '.', ',', '-', '·', ':')
             ?.take(48)

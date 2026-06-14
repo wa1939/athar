@@ -638,6 +638,30 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses transaction of amount at merchant notification`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Transaction of USD 23.10 at Trader Joe's was approved"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("23.10"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Trader Joe's")
+    }
+
+    @Test
+    fun `parses pos transaction at merchant amount notification`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "POS transaction at Carrefour AED 42.00"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Carrefour")
+    }
+
+    @Test
     fun `parses compact trailing merchant after amount notification`() {
         val result = parser.parse(
             event("notification:com.emiratesnbd.android", "POS purchase SAR 42.00 Carrefour"),
