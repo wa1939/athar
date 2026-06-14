@@ -38,11 +38,15 @@ class MerchantBulkCsvTest {
         val exportRepo = FakeTransactionRepository(listOf(oldTx))
         val out = ByteArrayOutputStream()
 
-        val exported = MerchantBulkExporter(exportRepo).exportUncategorized(out)
+        val exported = MerchantBulkExporter(
+            transactions = exportRepo,
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+        ).exportUncategorized(out)
 
         assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 1))
         val csv = out.toString(Charsets.UTF_8)
-        assertThat(csv).contains("id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count")
+        assertThat(csv).contains("id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,category_options")
+        assertThat(csv).contains("cat-coffee=Coffee / قهوة")
         assertThat(csv).contains("\"شراء\nمبلغ:SAR 19\nمن:BARNS\"")
 
         val filledCsv = csv.trimEnd().removeSuffix(",") + ",cat-coffee\n"
@@ -116,13 +120,24 @@ class MerchantBulkCsvTest {
         )
         val out = ByteArrayOutputStream()
 
-        val exported = MerchantBulkExporter(FakeTransactionRepository(rows)).exportUncategorized(out)
+        val exported = MerchantBulkExporter(
+            transactions = FakeTransactionRepository(rows),
+            categories = FakeCategoryRepository(
+                listOf(
+                    homeCategory(),
+                    coffeeCategory(),
+                    salaryCategory(),
+                    coffeeCategory().copy(id = "cat-archived", archived = true),
+                ),
+            ),
+        ).exportUncategorized(out)
 
         assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 4))
         val lines = out.toString(Charsets.UTF_8).trim().lines()
         val header = lines.first().split(",")
         val merchantIdx = header.indexOf("merchant")
         val groupCountIdx = header.indexOf("merchant_group_count")
+        val optionsIdx = header.indexOf("category_options")
         val dataRows = lines.drop(1).map { it.split(",") }
 
         assertThat(dataRows.map { it[merchantIdx] })
@@ -131,8 +146,39 @@ class MerchantBulkCsvTest {
         assertThat(dataRows.map { it[groupCountIdx] })
             .containsExactly("2", "2", "1", "1")
             .inOrder()
+        assertThat(dataRows.first()[optionsIdx]).contains("cat-home-maintenance=Home maintenance")
+        assertThat(dataRows.first()[optionsIdx]).contains("cat-coffee=Coffee")
+        assertThat(dataRows.first()[optionsIdx]).doesNotContain("cat-salary")
+        assertThat(dataRows.first()[optionsIdx]).doesNotContain("cat-archived")
         assertThat(out.toString(Charsets.UTF_8)).doesNotContain("Internal Transfer")
         assertThat(out.toString(Charsets.UTF_8)).doesNotContain("Starbucks")
+    }
+
+    @Test
+    fun `export uses income category options for income rows`() = runTest {
+        val out = ByteArrayOutputStream()
+
+        val exported = MerchantBulkExporter(
+            transactions = FakeTransactionRepository(
+                listOf(
+                    tx(
+                        id = "income",
+                        sourceRefId = "inbox-income",
+                        merchant = "Monthly Profit",
+                        type = TxType.INCOME,
+                    ),
+                ),
+            ),
+            categories = FakeCategoryRepository(listOf(coffeeCategory(), salaryCategory())),
+        ).exportUncategorized(out)
+
+        assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 1))
+        val lines = out.toString(Charsets.UTF_8).trim().lines()
+        val header = lines.first().split(",")
+        val options = lines.drop(1).single().split(",")[header.indexOf("category_options")]
+
+        assertThat(options).contains("cat-salary=Salary / راتب")
+        assertThat(options).doesNotContain("cat-coffee")
     }
 
     private fun tx(
@@ -186,6 +232,17 @@ class MerchantBulkCsvTest {
         sortOrder = 1,
     )
 
+    private fun salaryCategory(): Category = Category(
+        id = "cat-salary",
+        name = "Salary",
+        nameAr = "راتب",
+        kind = CategoryKind.INCOME,
+        icon = null,
+        monthlyTarget = null,
+        archived = false,
+        sortOrder = 100,
+    )
+
     private class FakeTransactionRepository(initial: List<Transaction>) : TransactionRepository {
         private val rows = MutableStateFlow(initial.associateBy { it.id })
 
@@ -210,7 +267,14 @@ class MerchantBulkCsvTest {
     }
 
     private class FakeCategoryRepository(private val rows: List<Category>) : CategoryRepository {
-        override fun observeAll(kind: CategoryKind?, includeArchived: Boolean): Flow<List<Category>> = flowOf(rows)
+        override fun observeAll(kind: CategoryKind?, includeArchived: Boolean): Flow<List<Category>> =
+            flowOf(
+                rows.filter { category ->
+                    (kind == null || category.kind == kind) &&
+                        (includeArchived || !category.archived)
+                },
+            )
+
         override suspend fun get(id: String): Category? = rows.firstOrNull { it.id == id }
         override suspend fun upsert(category: Category) = unsupported()
         override suspend fun archive(id: String) = unsupported()

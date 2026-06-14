@@ -153,7 +153,7 @@
 
     <!-- Bulk-categorize via AI (Issue #5a) -->
     <string name="settings_bulk_cat_title">Bulk categorize with AI</string>
-    <string name="settings_bulk_cat_body">Export non-transfer uncategorized transactions to CSV, grouped by repeated merchant, run it through ChatGPT/Claude with the triage prompt, then import the filled file. Each row updates the transaction AND records a merchant→category rule so future SMS auto-categorize.</string>
+    <string name="settings_bulk_cat_body">Export non-transfer uncategorized transactions to CSV with repeated merchants grouped first and valid category options included, run it through ChatGPT/Claude with the triage prompt, then import the filled file. Each row updates the transaction AND records a merchant→category rule so future SMS auto-categorize.</string>
     <string name="settings_bulk_cat_exported" formatted="true">Exported %1$d uncategorized transactions.</string>
     <string name="settings_bulk_cat_imported" formatted="true">Updated %1$d · added %2$d rules · skipped %3$d.</string>
     <string name="settings_bulk_cat_action_export">Export uncategorized</string>

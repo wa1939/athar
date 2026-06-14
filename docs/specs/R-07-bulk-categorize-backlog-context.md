@@ -22,6 +22,8 @@ compatibility:
 - Add `merchant_group_count`, the count of export rows sharing the same
   normalized merchant key.
 - Sort repeated merchant groups first, then by merchant key and newest date.
+- Follow-up: [`R-07 bulk categorize category options`](R-07-bulk-categorize-category-options.md)
+  makes the CSV self-contained with row-level active category options.
 
 The importer already ignores unknown columns, so older imports and manually
 edited CSV files remain supported.

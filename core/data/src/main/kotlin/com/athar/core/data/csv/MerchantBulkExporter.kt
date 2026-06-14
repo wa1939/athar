@@ -1,8 +1,11 @@
 package com.athar.core.data.csv
 
+import com.athar.core.domain.model.Category
+import com.athar.core.domain.model.CategoryKind
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.MerchantBulkExportResult
 import com.athar.core.domain.repo.MerchantBulkExportTrigger
 import com.athar.core.domain.repo.TransactionRepository
@@ -25,11 +28,15 @@ import javax.inject.Singleton
 @Singleton
 internal class MerchantBulkExporter @Inject constructor(
     private val transactions: TransactionRepository,
+    private val categories: CategoryRepository,
 ) : MerchantBulkExportTrigger {
 
     override suspend fun exportUncategorized(out: OutputStream): MerchantBulkExportResult = runCatching {
         val all = transactions.observeAll().first()
         val candidates = all.filter { it.needsCategoryDecision() }
+        val categoryOptions = categories.observeAll(kind = null, includeArchived = false)
+            .first()
+            .groupBy { it.kind }
         val groupCounts = candidates.groupingBy { it.merchantGroupKey() }.eachCount()
         val orderedCandidates = candidates.sortedWith(
             compareByDescending<Transaction> { groupCounts[it.merchantGroupKey()] ?: 0 }
@@ -38,7 +45,7 @@ internal class MerchantBulkExporter @Inject constructor(
                 .thenByDescending { it.createdAt },
         )
         OutputStreamWriter(out, Charsets.UTF_8).use { writer ->
-            writer.write("id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,amount,currency,type,status,date,raw_body,category_id\n")
+            writer.write("id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,category_options,amount,currency,type,status,date,raw_body,category_id\n")
             orderedCandidates.forEach { tx ->
                 val raw = tx.notes.orEmpty() // raw SMS body lives in notes when ingested
                 writer.write(
@@ -49,6 +56,7 @@ internal class MerchantBulkExporter @Inject constructor(
                         tx.merchant,
                         tx.merchantNormalized,
                         (groupCounts[tx.merchantGroupKey()] ?: 1).toString(),
+                        categoryOptions.forType(tx.type),
                         tx.amount.amount.toPlainString(),
                         tx.amount.currency,
                         tx.type.name,
@@ -84,6 +92,17 @@ internal class MerchantBulkExporter @Inject constructor(
 
     private fun Transaction.merchantGroupKey(): String =
         merchantNormalized.ifBlank { merchant.lowercase().trim() }.ifBlank { "blank" }
+
+    private fun Map<CategoryKind, List<Category>>.forType(type: TxType): String {
+        val kind = when (type) {
+            TxType.EXPENSE -> CategoryKind.EXPENSE
+            TxType.INCOME -> CategoryKind.INCOME
+            TxType.TRANSFER -> return ""
+        }
+        return this[kind].orEmpty()
+            .sortedWith(compareBy<Category> { it.sortOrder }.thenBy { it.name })
+            .joinToString(" | ") { "${it.id}=${it.name} / ${it.nameAr}" }
+    }
 
     private fun csvEscape(s: String): String {
         if (s.isEmpty()) return ""

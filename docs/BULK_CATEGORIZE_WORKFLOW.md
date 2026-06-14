@@ -4,7 +4,7 @@ Use this when you have dozens or hundreds of uncategorized transactions sitting 
 
 ## The three-step loop
 
-1. **Open Settings → "تصنيف بالذكاء الاصطناعي · مجمّع" / "Bulk categorize with AI"** → tap **Export uncategorized**. Athar writes a CSV of every non-transfer transaction that is PENDING, DISMISSED, or CONFIRMED-without-category. Default filename: `athar-uncategorized.csv`. Save it somewhere you can reach from a desktop.
+1. **Open Settings → "تصنيف بالذكاء الاصطناعي · مجمّع" / "Bulk categorize with AI"** → tap **Export uncategorized**. Athar writes a CSV of every non-transfer transaction that is PENDING, DISMISSED, or CONFIRMED-without-category, including the valid active category options for each row's type. Default filename: `athar-uncategorized.csv`. Save it somewhere you can reach from a desktop.
 2. **Open ChatGPT / Claude / Z.ai** in a fresh chat. Drop in the prompt below, attach (or paste) the CSV, and ask for the filled-in CSV back.
 3. **Back in Athar → same Settings card → Import categorized.** Pick the filled CSV. Each row updates its transaction (status → CONFIRMED, category set) **and** records a learned `CategoryRule` per unique `merchant → category` pair so future SMS from the same merchant auto-categorize.
 
@@ -15,8 +15,8 @@ A typical 800-row export takes ChatGPT about 60–90 seconds; import takes a fra
 The export looks like:
 
 ```
-id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,amount,currency,type,status,date,raw_body,category_id
-3f7a-…,8d9e-…,inbox-4242,Hemmah,hemmah,8,99.00,SAR,EXPENSE,DISMISSED,2026-04-22,...raw SMS body...,
+id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,category_options,amount,currency,type,status,date,raw_body,category_id
+3f7a-…,8d9e-…,inbox-4242,Hemmah,hemmah,8,"cat-home-maintenance=Home maintenance / صيانة منزل | cat-other-expense=Other / متفرقات",99.00,SAR,EXPENSE,DISMISSED,2026-04-22,...raw SMS body...,
 ```
 
 - **`id`** — Athar's internal transaction id. Do not change. The importer tries this first.
@@ -24,13 +24,14 @@ id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,am
 - **`source_ref_id`** — the raw SMS/notification reference when available. Helps Athar rebuild the same stable key after a rescan. Do not change.
 - **`merchant`** / **`merchant_normalized`** — as parsed by the ingestion pipeline. Lower-case normalized version is what gets used for rule matching.
 - **`merchant_group_count`** — how many exported rows share the same normalized merchant. The export is sorted so repeated merchants appear first and together; assign one consistent category to the group unless the raw body proves otherwise.
+- **`category_options`** — read-only active category choices for this row's `type`, using the user's current category table. Do not edit. Pick one of these IDs for `category_id`; this keeps custom categories visible to ChatGPT/Claude without a separate lookup file.
 - **`amount` · `currency` · `type` · `status` · `date`** — context for the AI to disambiguate similar merchants. Do not change.
 - **`raw_body`** — the original SMS body (when available). Often the strongest categorization signal.
-- **`category_id`** — *blank in the export.* The AI fills this. Use one of the valid IDs from `core/data/src/main/assets/seed_categories.json`:
+- **`category_id`** — *blank in the export.* The AI fills this from the row's `category_options`. For older exports without `category_options`, use one of the bundled default IDs from `core/data/src/main/assets/seed_categories.json`:
    - Expense: `cat-rent`, `cat-mortgage`, `cat-groceries`, `cat-restaurant`, `cat-coffee`, `cat-going-out`, `cat-entertainment`, `cat-travel`, `cat-gas`, `cat-public-transport`, `cat-car-maintenance`, `cat-car-payment`, `cat-utilities`, `cat-telecom`, `cat-subscriptions`, `cat-home-maintenance`, `cat-medical`, `cat-insurance`, `cat-education`, `cat-childcare`, `cat-clothing`, `cat-electronics`, `cat-gym`, `cat-gifts`, `cat-charity`, `cat-wife-allowance`, `cat-debt`, `cat-other-expense`
    - Income: `cat-salary`, `cat-side-income`
 
-  Arabic and English display names also work as a fallback (`مطاعم` or `Restaurant`), but the id is unambiguous and survives translation changes — prefer it.
+  Arabic and English display names also work as a fallback (`مطاعم` or `Restaurant`), but the id is unambiguous and survives translation changes — prefer the id shown in `category_options`.
 
 ## The AI prompt
 
@@ -40,9 +41,9 @@ Paste this into ChatGPT/Claude/Z.ai, then attach (or paste) the CSV.
 You are categorizing financial transactions for a Saudi Arabic-first budgeting app called Athar.
 
 Input: a CSV with these columns:
-  id, stable_key, source_ref_id, merchant, merchant_normalized, merchant_group_count, amount, currency, type, status, date, raw_body, category_id
+  id, stable_key, source_ref_id, merchant, merchant_normalized, merchant_group_count, category_options, amount, currency, type, status, date, raw_body, category_id
 
-Your job: fill in the `category_id` column for every row. Use ONLY these category ids:
+Your job: fill in the `category_id` column for every row. Prefer one of the ids shown in that row's `category_options` column. If `category_options` is missing or incomplete, use ONLY these category ids:
 
 EXPENSE:
   cat-rent · cat-mortgage · cat-groceries · cat-restaurant · cat-coffee · cat-going-out
@@ -71,7 +72,7 @@ Rules:
 - "PANDA" / "OTHAIM" / "CARREFOUR" / "LULU" / "TAMIMI" → cat-groceries.
 
 Output: emit the CSV BACK with the same headers and rows in the same order, only `category_id`
-filled in. Do not add or remove rows. Do not change any other column. Use the same RFC-4180
+filled in. Do not add or remove rows. Do not change `category_options` or any other column. Use the same RFC-4180
 quoting as the input. Wrap your final output in a single ```csv code block.
 ```
 
