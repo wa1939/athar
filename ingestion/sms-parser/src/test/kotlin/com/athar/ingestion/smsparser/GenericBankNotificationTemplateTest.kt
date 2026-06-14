@@ -1697,6 +1697,32 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `ignores payment request notifications with payment action words`() {
+        assertThat(
+            parser.parse(event("notification:com.venmo", "Payment request from John for USD 25.00")),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores requesting payment notifications with amounts`() {
+        assertThat(
+            parser.parse(event("notification:com.squareup.cash", "John is requesting SAR 25.00 payment from you")),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores money request notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event(
+                    "notification:com.paypal.android.p2pmobile",
+                    "You have a money request for AED 75.00 from Ahmed",
+                ),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
     fun `ignores statement and minimum-payment notifications with amounts`() {
         assertThat(
             parser.parse(

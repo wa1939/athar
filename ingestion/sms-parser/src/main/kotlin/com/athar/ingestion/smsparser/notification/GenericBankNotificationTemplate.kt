@@ -285,7 +285,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (limitWords.containsMatchIn(normalized) && !hasExpenseAction(normalized) && !hasIncomeAction(normalized)) {
             return ParseResult.Ignored
         }
-        if (requestWords.containsMatchIn(normalized) && !hasAction) return ParseResult.Ignored
+        if (isMoneyRequestNotification(normalized)) return ParseResult.Ignored
         if (adminNoticeWords.containsMatchIn(normalized) && !hasAction) return ParseResult.Ignored
         if (securityWords.containsMatchIn(normalized) && !hasAction) return ParseResult.Ignored
         if (marketingWords.containsMatchIn(normalized) && !hasAction) return ParseResult.Ignored
@@ -502,6 +502,9 @@ class GenericBankNotificationTemplate : BankTemplate {
             .toList()
         return currencyAmounts.isNotEmpty() && currencyAmounts.all { it.isRewardAmount(body) }
     }
+
+    private fun isMoneyRequestNotification(body: String): Boolean =
+        requestWords.containsMatchIn(body) && amountWithCurrency.containsMatchIn(body)
 
     private fun selectTransactionAmount(body: String): MatchResult? {
         val matches = amountWithCurrency.findAll(body).toList()
