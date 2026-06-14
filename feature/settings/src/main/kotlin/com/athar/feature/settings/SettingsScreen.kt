@@ -51,6 +51,7 @@ import com.athar.core.domain.repo.CsvImportPreview
 import com.athar.core.domain.repo.CsvImportPreviewRow
 import com.athar.core.domain.repo.CsvImportRowEdit
 import com.athar.core.domain.repo.MerchantBulkImportSkipSummary
+import com.athar.core.domain.repo.merchantBulkAiPrompt
 import com.athar.core.designsystem.component.AtharCard
 import com.athar.core.designsystem.component.AtharText
 import com.athar.core.designsystem.component.AtharTextField
@@ -125,6 +126,8 @@ fun SettingsScreen(
         if (uri != null) viewModel.importCategorizations(context.contentResolver, uri)
     }
     val bulkStatus by viewModel.bulkCategorizeStatus.collectAsStateWithLifecycle()
+    var bulkPromptCopied by remember { mutableStateOf(false) }
+    val bulkPromptClipboardLabel = stringResource(R.string.settings_bulk_cat_prompt_clip_label)
     val communityShareLauncher = rememberLauncherForActivityResult(CreateDocument("application/json")) { uri ->
         if (uri != null) viewModel.exportLearnedRules(context.contentResolver, uri)
     }
@@ -235,6 +238,19 @@ fun SettingsScreen(
 
             BulkCategorizeCard(
                 status = bulkStatus,
+                promptCopied = bulkPromptCopied,
+                onCopyPrompt = {
+                    val clip = context.getSystemService(android.content.ClipboardManager::class.java)
+                    if (clip != null) {
+                        clip.setPrimaryClip(
+                            android.content.ClipData.newPlainText(
+                                bulkPromptClipboardLabel,
+                                merchantBulkAiPrompt,
+                            ),
+                        )
+                        bulkPromptCopied = true
+                    }
+                },
                 onExport = { bulkExportLauncher.launch("athar-uncategorized.csv") },
                 onImport = { bulkImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "*/*")) },
                 onClear = viewModel::clearBulkCategorizeStatus,
@@ -585,6 +601,8 @@ private fun buildGitHubIssueUrl(ruleCount: Int): String {
 @Composable
 private fun BulkCategorizeCard(
     status: BulkCategorizeStatus,
+    promptCopied: Boolean,
+    onCopyPrompt: () -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
     onClear: () -> Unit,
@@ -598,6 +616,17 @@ private fun BulkCategorizeCard(
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
+            SecondaryButton(
+                text = stringResource(R.string.settings_bulk_cat_action_copy_prompt),
+                onClick = onCopyPrompt,
+            )
+            if (promptCopied) {
+                AtharText(
+                    text = stringResource(R.string.settings_bulk_cat_prompt_copied),
+                    style = theme.typography.caption,
+                    color = theme.colors.olive,
+                )
+            }
             when (val s = status) {
                 BulkCategorizeStatus.Idle -> Unit
                 BulkCategorizeStatus.Working -> AtharText(

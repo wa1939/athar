@@ -153,7 +153,7 @@
 
     <!-- Bulk-categorize via AI (Issue #5a) -->
     <string name="settings_bulk_cat_title">تصنيف بالذكاء الاصطناعي · مجمّع</string>
-    <string name="settings_bulk_cat_body">صدّر الحركات غير المصنّفة، ما عدا التحويلات، كملف CSV مرتّب حسب التجار المتكررين ويتضمن خيارات الفئات الصالحة. أعطه لـ ChatGPT/Claude مع موجّه التصنيف، ثم استورد الملف المعبّأ. اختيار واضح واحد يمكن أن يحدّث الصفوف الفارغة لنفس التاجر ويضيف قاعدة محلية دقيقة للتصنيف القادم تلقائياً؛ والصفوف المتخطّاة تظهر بأسباب مختصرة.</string>
+    <string name="settings_bulk_cat_body">انسخ موجّه التصنيف، وصدّر الحركات غير المصنّفة، ما عدا التحويلات، كملف CSV مرتّب حسب التجار المتكررين ويتضمن خيارات الفئات الصالحة. أعطه لـ ChatGPT/Claude، ثم استورد الملف المعبّأ. اختيار واضح واحد يمكن أن يحدّث الصفوف الفارغة لنفس التاجر ويضيف قاعدة محلية دقيقة للتصنيف القادم تلقائياً؛ والصفوف المتخطّاة تظهر بأسباب مختصرة.</string>
     <string name="settings_bulk_cat_exported" formatted="true">تم تصدير %1$d حركة غير مصنّفة.</string>
     <string name="settings_bulk_cat_imported" formatted="true">تم تحديث %1$d حركة · أُضيفت %2$d قاعدة · تم تخطّي %3$d.</string>
     <string name="settings_bulk_cat_skip_details" formatted="true">تفاصيل التخطّي: %1$s.</string>
@@ -163,6 +163,9 @@
     <string name="settings_bulk_cat_skip_conflict" formatted="true">مجموعة متعارضة %1$d</string>
     <string name="settings_bulk_cat_skip_blank" formatted="true">تُركت فارغة %1$d</string>
     <string name="settings_bulk_cat_skip_malformed" formatted="true">صف غير صالح %1$d</string>
+    <string name="settings_bulk_cat_action_copy_prompt">نسخ موجّه التصنيف</string>
+    <string name="settings_bulk_cat_prompt_copied">تم نسخ الموجّه.</string>
+    <string name="settings_bulk_cat_prompt_clip_label">موجّه تصنيف أثر المجمّع</string>
     <string name="settings_bulk_cat_action_export">تصدير غير المصنّف</string>
     <string name="settings_bulk_cat_action_import">استيراد المصنّف</string>
 

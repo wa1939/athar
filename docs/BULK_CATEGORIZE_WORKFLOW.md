@@ -4,8 +4,8 @@ Use this when you have dozens or hundreds of uncategorized transactions sitting 
 
 ## The three-step loop
 
-1. **Open Settings → "تصنيف بالذكاء الاصطناعي · مجمّع" / "Bulk categorize with AI"** → tap **Export uncategorized**. Athar writes a CSV of every non-transfer transaction that is PENDING, DISMISSED, or CONFIRMED-without-category, including the valid active category options for each row's type. Default filename: `athar-uncategorized.csv`. Save it somewhere you can reach from a desktop.
-2. **Open ChatGPT / Claude / Z.ai** in a fresh chat. Drop in the prompt below, attach (or paste) the CSV, and ask for the filled-in CSV back.
+1. **Open Settings → "تصنيف بالذكاء الاصطناعي · مجمّع" / "Bulk categorize with AI"** → tap **Copy AI prompt**, then **Export uncategorized**. Athar writes a CSV of every non-transfer transaction that is PENDING, DISMISSED, or CONFIRMED-without-category, including the valid active category options for each row's type. Default filename: `athar-uncategorized.csv`. Save it somewhere you can reach from a desktop.
+2. **Open ChatGPT / Claude / Z.ai** in a fresh chat. Paste the copied prompt, attach (or paste) the CSV, and ask for the filled-in CSV back.
 3. **Back in Athar → same Settings card → Import categorized.** Pick the filled CSV. Filled rows update their transactions (status → CONFIRMED, category set) only when the chosen category matches the row's expense/income type. If a repeated merchant group has one unambiguous compatible filled category, blank peers in that imported CSV group inherit it. Athar also records an exact learned `CategoryRule` per unambiguous type-compatible `merchant → category` pair so future SMS from the same normalized merchant auto-categorize without broad substring matching.
 
 A typical 800-row export takes ChatGPT about 60–90 seconds; import takes a fraction of a second.
@@ -35,7 +35,8 @@ id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,ca
 
 ## The AI prompt
 
-Paste this into ChatGPT/Claude/Z.ai, then attach (or paste) the CSV.
+Tap **Copy AI prompt** in Settings, or paste this into ChatGPT/Claude/Z.ai,
+then attach (or paste) the CSV.
 
 ```
 You are categorizing financial transactions for a Saudi Arabic-first budgeting app called Athar.
