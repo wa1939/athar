@@ -40,4 +40,18 @@ class NormalizeTest {
     fun `parses space grouped comma decimal amount`() {
         assertThat(Normalize.amount("12 345,67")).isEqualTo(BigDecimal("12345.67"))
     }
+
+    @Test
+    fun `maps regional currency symbols to ISO codes`() {
+        assertThat(Normalize.currencyCode("S$")).isEqualTo("SGD")
+        assertThat(Normalize.currencyCode("R$")).isEqualTo("BRL")
+        assertThat(Normalize.currencyCode("RM")).isEqualTo("MYR")
+        assertThat(Normalize.currencyCode("Rp")).isEqualTo("IDR")
+        assertThat(Normalize.currencyCode("₱")).isEqualTo("PHP")
+        assertThat(Normalize.currencyCode("₩")).isEqualTo("KRW")
+        assertThat(Normalize.currencyCode("฿")).isEqualTo("THB")
+        assertThat(Normalize.currencyCode("₫")).isEqualTo("VND")
+        assertThat(Normalize.currencyCode("HK$")).isEqualTo("HKD")
+        assertThat(Normalize.currencyCode("Mex$")).isEqualTo("MXN")
+    }
 }

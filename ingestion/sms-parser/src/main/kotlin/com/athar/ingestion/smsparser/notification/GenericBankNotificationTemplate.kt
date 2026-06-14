@@ -21,7 +21,7 @@ class GenericBankNotificationTemplate : BankTemplate {
     override val senderMatcher: SenderMatcher = SenderMatcher.Regex(BankPackagePattern)
 
     private val amountWithCurrency = Regex(
-        """(?:(?<lead>CA\$|C\$|AU\$|A\$|[\$€£﷼₹¥₺]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|CNY|HKD|SGD|SEK|NOK|DKK|ZAR|BRL|MXN|THB|IDR|MYR|PHP|VND|KRW)\s*)?(?<num>${Normalize.LOCALIZED_AMOUNT_PATTERN})(?:\s*(?<trail>CA\$|C\$|AU\$|A\$|[\$€£﷼₹¥₺]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|CNY|HKD|SGD|SEK|NOK|DKK|ZAR|BRL|MXN|THB|IDR|MYR|PHP|VND|KRW|ر\.?\s*س|د\.?\s*إ))?""",
+        """(?:(?<lead>HK\$|S\$|R\$|MX\$|MEX\$|CA\$|C\$|AU\$|A\$|RM|RP|[\$€£﷼₹¥₺₱₩฿₫]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|CNY|HKD|SGD|SEK|NOK|DKK|ZAR|BRL|MXN|THB|IDR|MYR|PHP|VND|KRW)\s*)?(?<num>${Normalize.LOCALIZED_AMOUNT_PATTERN})(?:\s*(?<trail>HK\$|S\$|R\$|MX\$|MEX\$|CA\$|C\$|AU\$|A\$|RM|RP|[\$€£﷼₹¥₺₱₩฿₫]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|CNY|HKD|SGD|SEK|NOK|DKK|ZAR|BRL|MXN|THB|IDR|MYR|PHP|VND|KRW|ر\.?\s*س|د\.?\s*إ))?""",
         RegexOption.IGNORE_CASE,
     )
     private val expenseWords = Regex(
@@ -117,7 +117,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val trailingCurrencyContext = Regex(
-        """^\s*(?:CA\$|C\$|AU\$|A\$|[\$€£﷼₹¥₺]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|CNY|HKD|SGD|SEK|NOK|DKK|ZAR|BRL|MXN|THB|IDR|MYR|PHP|VND|KRW|ر\.?\s*س|د\.?\s*إ)""",
+        """^\s*(?:HK\$|S\$|R\$|MX\$|MEX\$|CA\$|C\$|AU\$|A\$|RM|RP|[\$€£﷼₹¥₺₱₩฿₫]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|CNY|HKD|SGD|SEK|NOK|DKK|ZAR|BRL|MXN|THB|IDR|MYR|PHP|VND|KRW|ر\.?\s*س|د\.?\s*إ)""",
         RegexOption.IGNORE_CASE,
     )
     private val merchantLabelHint = Regex(

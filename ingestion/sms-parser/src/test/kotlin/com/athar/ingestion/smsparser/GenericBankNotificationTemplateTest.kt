@@ -447,6 +447,77 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses regional currency symbol notifications`() {
+        val cases = listOf(
+            RegionalCurrencyCase(
+                sender = "notification:com.dbsmbanking.mobile",
+                body = "You spent S$ 6.40 at Toast Box",
+                amount = "6.40",
+                currency = "SGD",
+                merchant = "Toast Box",
+            ),
+            RegionalCurrencyCase(
+                sender = "notification:com.nu.production.nubank",
+                body = "You spent R$ 19,90 at iFood",
+                amount = "19.90",
+                currency = "BRL",
+                merchant = "iFood",
+            ),
+            RegionalCurrencyCase(
+                sender = "notification:com.maybank2u.life",
+                body = "You spent RM12.30 at Grab",
+                amount = "12.30",
+                currency = "MYR",
+                merchant = "Grab",
+            ),
+            RegionalCurrencyCase(
+                sender = "notification:com.transferwise.android",
+                body = "You spent Rp 75.000,00 at Alfamart",
+                amount = "75000.00",
+                currency = "IDR",
+                merchant = "Alfamart",
+            ),
+            RegionalCurrencyCase(
+                sender = "notification:com.cimb.mobile",
+                body = "Paid ₱250.00 to Jollibee",
+                amount = "250.00",
+                currency = "PHP",
+                merchant = "Jollibee",
+            ),
+            RegionalCurrencyCase(
+                sender = "notification:com.transferwise.android",
+                body = "You spent ₩1,000 at CU",
+                amount = "1000",
+                currency = "KRW",
+                merchant = "CU",
+            ),
+            RegionalCurrencyCase(
+                sender = "notification:com.transferwise.android",
+                body = "You spent ฿120.00 at BTS",
+                amount = "120.00",
+                currency = "THB",
+                merchant = "BTS",
+            ),
+            RegionalCurrencyCase(
+                sender = "notification:com.transferwise.android",
+                body = "You spent ₫120,000 at Highlands Coffee",
+                amount = "120000",
+                currency = "VND",
+                merchant = "Highlands Coffee",
+            ),
+        )
+
+        cases.forEach { case ->
+            val result = parser.parse(event(case.sender, case.body)) as ParseResult.Success
+
+            assertThat(result.type).isEqualTo(TxType.EXPENSE)
+            assertThat(result.amount.amount).isEqualTo(BigDecimal(case.amount))
+            assertThat(result.amount.currency).isEqualTo(case.currency)
+            assertThat(result.merchant).isEqualTo(case.merchant)
+        }
+    }
+
+    @Test
     fun `parses debit card transaction from merchant notification`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "Debit card transaction from Trader Joe's for $23.10"),
@@ -998,5 +1069,13 @@ class GenericBankNotificationTemplateTest {
         body = body,
         receivedAt = at,
         rawId = "notification-key",
+    )
+
+    private data class RegionalCurrencyCase(
+        val sender: String,
+        val body: String,
+        val amount: String,
+        val currency: String,
+        val merchant: String,
     )
 }
