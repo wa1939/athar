@@ -636,6 +636,10 @@ class GenericBankNotificationTemplate : BankTemplate {
                 """\b(?:your\s+)?card(?:\s+ending\s+(?:in\s+)?\d{2,4})?\s+(?:was\s+)?used\s*[:\-]\s*(.+)$""",
                 RegexOption.IGNORE_CASE,
             ),
+            Regex(
+                """\b(?:your\s+)?(?:(?:debit|credit)\s+)?card(?:\s+ending\s+(?:in\s+)?\d{2,4})?\s+(?:was\s+)?used\s+(?:at|on)\s+(.+?)(?:\s+for)?$""",
+                RegexOption.IGNORE_CASE,
+            ),
             Regex("""\b(?:new\s+(?:card\s+)?transaction|transaction)\s*[:\-]\s*(.+)$""", RegexOption.IGNORE_CASE),
             Regex("""\b(?:you\s+)?paid\s+(.+)$""", RegexOption.IGNORE_CASE),
             Regex("""^(?!your\s+card\b)(.+?)\s+charged(?:\s+(?:your\s+card|you|card))?$""", RegexOption.IGNORE_CASE),

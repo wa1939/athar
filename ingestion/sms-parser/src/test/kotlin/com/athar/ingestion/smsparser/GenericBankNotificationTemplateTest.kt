@@ -1253,6 +1253,30 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses card used at merchant before amount notification`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Your card was used at Lulu for SAR 55.00"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("55.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Lulu")
+    }
+
+    @Test
+    fun `parses debit card used at merchant before amount notification`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Debit card used at Carrefour AED 42.00"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Carrefour")
+    }
+
+    @Test
     fun `parses Arabic fi merchant hint notification`() {
         val result = parser.parse(
             event("notification:com.alrajhibank.alrajhimobile", "تم خصم ٣٥٫٥٠ ر.س في كارفور"),
