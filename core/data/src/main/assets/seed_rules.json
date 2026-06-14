@@ -3416,6 +3416,11 @@
       "priority": 90
     },
     {
+      "pattern": "buffet",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
       "pattern": "claude",
       "categoryId": "cat-subscriptions",
       "priority": 90
