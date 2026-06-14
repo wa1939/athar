@@ -1193,6 +1193,42 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses payment successful merchant before amount notification`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Payment successful: Noon SAR 99.00"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("99.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Noon")
+    }
+
+    @Test
+    fun `parses transaction completed merchant before amount notification`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Transaction completed - Carrefour AED 42.00"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Carrefour")
+    }
+
+    @Test
+    fun `parses purchase approved merchant before amount notification`() {
+        val result = parser.parse(
+            event("notification:com.dbsmbanking", "Purchase approved: Toast Box SGD 6.40"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("6.40"))
+        assertThat(result.amount.currency).isEqualTo("SGD")
+        assertThat(result.merchant).isEqualTo("Toast Box")
+    }
+
+    @Test
     fun `parses Arabic fi merchant hint notification`() {
         val result = parser.parse(
             event("notification:com.alrajhibank.alrajhimobile", "تم خصم ٣٥٫٥٠ ر.س في كارفور"),

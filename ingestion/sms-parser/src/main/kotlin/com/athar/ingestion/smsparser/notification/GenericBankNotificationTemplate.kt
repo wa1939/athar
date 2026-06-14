@@ -29,7 +29,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val expensePhrases = Regex(
-        """\b(?:card\s+(?:ending\s+\d{2,4}\s+)?(?:was\s+)?used|card\s+payment|card\s+transaction|card\s+charge|debit\s+card\s+transaction|direct\s+debit|payment\s+to|transaction\s+at|transaction\s+with|new\s+(?:card\s+)?transaction|purchase\s+from|charged\s+(?:your\s+card|you))\b""",
+        """(?:\b(?:card\s+(?:ending\s+\d{2,4}\s+)?(?:was\s+)?used|card\s+payment|card\s+transaction|card\s+charge|debit\s+card\s+transaction|direct\s+debit|payment\s+to|transaction\s+at|transaction\s+with|new\s+(?:card\s+)?transaction|purchase\s+from|charged\s+(?:your\s+card|you))\b|\b(?:payment|purchase|transaction|card\s+transaction|card\s+purchase|debit\s+card\s+transaction)\s+(?:successful|completed|approved|posted|confirmed)\s*[:\-])""",
         RegexOption.IGNORE_CASE,
     )
     private val incomeWords = Regex(
@@ -627,6 +627,10 @@ class GenericBankNotificationTemplate : BankTemplate {
             .orEmpty()
             .trim()
         val patterns = listOf(
+            Regex(
+                """\b(?:payment|purchase|transaction|card\s+transaction|card\s+purchase|debit\s+card\s+transaction)\s+(?:successful|completed|approved|posted|confirmed)\s*[:\-]\s*(.+)$""",
+                RegexOption.IGNORE_CASE,
+            ),
             Regex("""\b(?:new\s+(?:card\s+)?transaction|transaction)\s*[:\-]\s*(.+)$""", RegexOption.IGNORE_CASE),
             Regex("""\b(?:you\s+)?paid\s+(.+)$""", RegexOption.IGNORE_CASE),
             Regex("""^(?!your\s+card\b)(.+?)\s+charged(?:\s+(?:your\s+card|you|card))?$""", RegexOption.IGNORE_CASE),
