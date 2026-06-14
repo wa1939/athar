@@ -1212,6 +1212,81 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses car service payment notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Vehicle service payment SAR 450.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("450.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Car service payment")
+    }
+
+    @Test
+    fun `preserves automotive provider on oil change notification`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Oil change payment USD 90.00 at Petromin"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("90.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Petromin")
+    }
+
+    @Test
+    fun `parses car wash notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Car wash payment AED 30.00 posted"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("30.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Car wash payment")
+    }
+
+    @Test
+    fun `parses tire service notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.revolut.revolut", "Tyre replacement fee GBP 120.00 paid"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("120.00"))
+        assertThat(result.amount.currency).isEqualTo("GBP")
+        assertThat(result.merchant).isEqualTo("Tire service payment")
+    }
+
+    @Test
+    fun `parses Arabic oil change notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم سداد تغيير زيت بمبلغ ٩٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("90"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Oil change payment")
+    }
+
+    @Test
+    fun `ignores automotive maintenance quotes offers and reminders with amounts`() {
+        val nonPostedMessages = listOf(
+            "Car repair quote SAR 450.00 is ready",
+            "Oil change reminder USD 90.00 due tomorrow",
+            "Car wash offer AED 30.00 this week",
+            "عرض خصم ٥٠ ر.س على صيانة سيارة",
+        )
+
+        nonPostedMessages.forEach { body ->
+            assertThat(parser.parse(event("notification:com.alrajhibank.alrajhimobile", body)))
+                .isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
     fun `parses fuel payment notification with shared gas label`() {
         val result = parser.parse(
             event("notification:com.alrajhibank.alrajhimobile", "Fuel payment SAR 80.00 completed"),

@@ -3376,6 +3376,26 @@
       "priority": 90
     },
     {
+      "pattern": "car service payment",
+      "categoryId": "cat-car-maintenance",
+      "priority": 90
+    },
+    {
+      "pattern": "oil change payment",
+      "categoryId": "cat-car-maintenance",
+      "priority": 90
+    },
+    {
+      "pattern": "car wash payment",
+      "categoryId": "cat-car-maintenance",
+      "priority": 90
+    },
+    {
+      "pattern": "tire service payment",
+      "categoryId": "cat-car-maintenance",
+      "priority": 90
+    },
+    {
       "pattern": "fuel purchase",
       "categoryId": "cat-gas",
       "priority": 90

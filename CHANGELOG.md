@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Store-safe notification parsing now normalizes posted car-service, oil-change, car-wash, and tire-service payment pushes to exact seed-backed car-maintenance labels while preserving named providers when present and ignoring quotes, estimates, appointments, reminders, and offers with amounts; the active public seed is now 695 rules.
 - Store-safe notification parsing now normalizes posted home-service, gym-membership, and childcare/daycare payment pushes to exact seed-backed labels while preserving named providers when present and ignoring offers, quotes, and reminders with amounts; the active public seed is now 691 rules.
 - Private-corpus audit output now writes the rich redacted report to the repository-root `build/private-corpus-audit/latest.json` instead of a module-local build directory, keeping parser/categorization evidence in one predictable place.
 - Bulk categorization imports now accept copied category option values such as `cat-coffee=Coffee / قهوة`, bilingual display labels, and case-variant category IDs while still type-checking the resolved category before updating rows or training exact local rules.
