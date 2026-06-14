@@ -350,6 +350,63 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses credit card payment notification with shared debt label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Credit card payment SAR 500.00 posted"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("500.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Credit card payment")
+    }
+
+    @Test
+    fun `parses payment to credit card notification with shared debt label`() {
+        val result = parser.parse(
+            event("notification:com.capitalone.mobile", "Payment to your credit card ending 2106 USD 250.00 successful"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("250.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Credit card payment")
+    }
+
+    @Test
+    fun `parses loan installment notification with shared debt label`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Loan installment of AED 1,000.00 debited"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("1000.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Loan instalment")
+    }
+
+    @Test
+    fun `parses Arabic credit card repayment notification with shared debt label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم سداد بطاقة ائتمانية بمبلغ ٥٠٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("500"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Credit card payment")
+    }
+
+    @Test
+    fun `ignores loan installment due reminder notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.chase.sig.android", "Your loan installment of USD 300.00 is due tomorrow"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
     fun `parses transfer notification`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "You sent AED 100.00 to Ahmed"),

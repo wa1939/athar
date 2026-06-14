@@ -21,7 +21,7 @@ class GenericBankNotificationTemplate : BankTemplate {
     override val senderMatcher: SenderMatcher = SenderMatcher.Regex(BankPackagePattern)
 
     private val amountWithCurrency = Regex(
-        """(?:(?<lead>HK\$|S\$|R\$|MX\$|MEX\$|CA\$|C\$|AU\$|A\$|RM|RP|[\$€£﷼₹¥₺₱₩฿₫]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|CNY|HKD|SGD|SEK|NOK|DKK|ZAR|BRL|MXN|THB|IDR|MYR|PHP|VND|KRW)\s*)?(?<num>${Normalize.LOCALIZED_AMOUNT_PATTERN})(?:\s*(?<trail>HK\$|S\$|R\$|MX\$|MEX\$|CA\$|C\$|AU\$|A\$|RM|RP|[\$€£﷼₹¥₺₱₩฿₫]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|CNY|HKD|SGD|SEK|NOK|DKK|ZAR|BRL|MXN|THB|IDR|MYR|PHP|VND|KRW|ر\.?\s*س|د\.?\s*إ))?""",
+        """(?:(?<lead>HK\$|S\$|R\$|MX\$|MEX\$|CA\$|C\$|AU\$|A\$|RM|RP|[\$€£﷼₹¥₺₱₩฿₫]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|CNY|HKD|SGD|SEK|NOK|DKK|ZAR|BRL|MXN|THB|IDR|MYR|PHP|VND|KRW)\s*)?(?<num>${Normalize.LOCALIZED_AMOUNT_PATTERN})(?:\s*(?<trail>HK\$|S\$|R\$|MX\$|MEX\$|CA\$|C\$|AU\$|A\$|RM|RP|[\$€£﷼₹¥₺₱₩฿₫]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|CNY|HKD|SGD|SEK|NOK|DKK|ZAR|BRL|MXN|THB|IDR|MYR|PHP|VND|KRW|ر\.?\s*س|د\.?\s*إ)(?!\s*\d))?""",
         RegexOption.IGNORE_CASE,
     )
     private val expenseWords = Regex(
@@ -62,6 +62,18 @@ class GenericBankNotificationTemplate : BankTemplate {
     )
     private val feeScheduleWords = Regex(
         """(?:\b(?:fee\s+schedule|fees\s+(?:and\s+charges|schedule|changed|updated)|pricing\s+(?:update|change|changes)|tariff\s+(?:update|change|changes)|new\s+fees)\b|رسوم\s+التعرفة\s+البنكية|تحديث\s+قائمة\s+رسوم|قائمة\s+رسوم\s+التعرفة|تعرفة\s+بنكية)""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val creditCardPaymentWords = Regex(
+        """(?:\b(?:credit\s+card\s+(?:payment|repayment)|(?:payment|repayment)\s+(?:to|towards|for)\s+(?:your\s+)?credit\s+card)\b|بطاقة\s+ائتمانية\s*[:：]?\s*سداد|سداد\s+(?:بطاقة|البطاقة)\s+(?:ائتمانية|الائتمانية))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val loanInstalmentWords = Regex(
+        """(?:\b(?:loan\s+(?:instalment|installment|payment|repayment)|(?:instalment|installment)\s+(?:payment\s+)?(?:for\s+)?(?:loan|finance)|emi\s+(?:payment|paid|debited)|finance\s+(?:instalment|installment|payment))\b|قسط\s+(?:القرض|التمويل)|سداد\s+(?:القرض|التمويل))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val debtReminderWords = Regex(
+        """(?:\b(?:credit\s+card|loan|instalment|installment|emi|finance)[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder)\b|\b(?:due|scheduled|upcoming|reminder)[^\n\r]{0,80}\b(?:credit\s+card|loan|instalment|installment|emi|finance)\b|(?:قسط|تمويل|بطاقة\s+ائتمانية)[^\n\r]{0,80}(?:مستحق|استحقاق|موعد|قادم|مجدول))""",
         RegexOption.IGNORE_CASE,
     )
     private val declinedWords = Regex(
@@ -182,6 +194,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (scheduledWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (withdrawalLimitWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (feeScheduleWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (debtReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (spendingSummaryWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (limitWords.containsMatchIn(normalized) && !hasExpenseAction(normalized) && !hasIncomeAction(normalized)) {
             return ParseResult.Ignored
@@ -205,13 +218,16 @@ class GenericBankNotificationTemplate : BankTemplate {
         val type = when {
             hasIncomeAction(normalized) -> TxType.INCOME
             transferWords.containsMatchIn(normalized) -> TxType.TRANSFER
-            hasExpenseAction(normalized) || isBankFeeNotification(normalized) || hasMerchantHint(normalized) -> TxType.EXPENSE
+            hasExpenseAction(normalized) || isBankFeeNotification(normalized) ||
+                isDebtPaymentNotification(normalized) || hasMerchantHint(normalized) -> TxType.EXPENSE
             else -> return ParseResult.Failed("notification action not found", listOf(id))
         }
 
         val merchant = when (type) {
             TxType.EXPENSE -> "ATM Withdrawal".takeIf { isWithdrawalNotification(normalized) }
                 ?: "Bank fees".takeIf { isBankFeeNotification(normalized) }
+                ?: "Credit card payment".takeIf { isCreditCardPaymentNotification(normalized) }
+                ?: "Loan instalment".takeIf { isLoanInstalmentNotification(normalized) }
                 ?: cleanParty(merchantLabelHint.find(normalized)?.groupValues?.get(1)
                 ?: toHint.find(normalized)?.groupValues?.get(1)
                 ?: atHint.find(normalized)?.groupValues?.get(1)
@@ -254,7 +270,8 @@ class GenericBankNotificationTemplate : BankTemplate {
     }
 
     private fun hasAction(body: String): Boolean =
-        hasExpenseAction(body) || hasIncomeAction(body) || transferWords.containsMatchIn(body) || isBankFeeNotification(body)
+        hasExpenseAction(body) || hasIncomeAction(body) || transferWords.containsMatchIn(body) ||
+            isBankFeeNotification(body) || isDebtPaymentNotification(body)
 
     private fun hasExpenseAction(body: String): Boolean =
         expenseWords.containsMatchIn(body) || expensePhrases.containsMatchIn(body)
@@ -275,6 +292,15 @@ class GenericBankNotificationTemplate : BankTemplate {
     private fun isBankFeeNotification(body: String): Boolean =
         feeWords.containsMatchIn(body)
 
+    private fun isDebtPaymentNotification(body: String): Boolean =
+        isCreditCardPaymentNotification(body) || isLoanInstalmentNotification(body)
+
+    private fun isCreditCardPaymentNotification(body: String): Boolean =
+        creditCardPaymentWords.containsMatchIn(body)
+
+    private fun isLoanInstalmentNotification(body: String): Boolean =
+        loanInstalmentWords.containsMatchIn(body)
+
     private fun isMarketingOnlyPromotion(body: String): Boolean =
         marketingOnlyWords.containsMatchIn(body) && !postedTransactionEvidence.containsMatchIn(body)
 
@@ -290,8 +316,11 @@ class GenericBankNotificationTemplate : BankTemplate {
         val matches = amountWithCurrency.findAll(body).toList()
         if (matches.isEmpty()) return null
         val currencyMatches = matches.filter { it.hasCurrencyMarker(body) }
-        val candidates = currencyMatches.ifEmpty { matches }
+        val withoutReward = currencyMatches.ifEmpty { matches }
             .let { amountCandidates -> amountCandidates.filterNot { it.isRewardAmount(body) }.ifEmpty { amountCandidates } }
+        val candidates = withoutReward
+            .filterNot { it.isCardOrAccountIdentifier(body) }
+            .ifEmpty { withoutReward }
         val actionStart = firstActionIndex(body)
         val afterAction = actionStart?.let { index -> candidates.filter { it.range.first >= index } }.orEmpty()
         afterAction.firstOrNull { !it.isBalanceAmount(body) }?.let { return it }
@@ -319,6 +348,8 @@ class GenericBankNotificationTemplate : BankTemplate {
         incomeWords.find(body)?.range?.first,
         incomePhrases.find(body)?.range?.first,
         transferWords.find(body)?.range?.first,
+        creditCardPaymentWords.find(body)?.range?.first,
+        loanInstalmentWords.find(body)?.range?.first,
     ).minOrNull()
 
     private fun MatchResult.isBalanceAmount(body: String): Boolean {
@@ -344,6 +375,20 @@ class GenericBankNotificationTemplate : BankTemplate {
         val prefix = body.substring(prefixStart, range.first)
         val suffix = body.substring(range.last + 1, suffixEnd)
         return rewardAmountContext.containsMatchIn(prefix) || rewardAmountContext.containsMatchIn(suffix)
+    }
+
+    private fun MatchResult.isCardOrAccountIdentifier(body: String): Boolean {
+        val prefixStart = (range.first - IdentifierPrefixWindow).coerceAtLeast(0)
+        val prefix = body.substring(prefixStart, range.first)
+        val compactPrefix = prefix.lowercase().trimEnd()
+        return compactPrefix.endsWith("card ending") ||
+            compactPrefix.endsWith("credit card ending") ||
+            compactPrefix.endsWith("account ending") ||
+            compactPrefix.endsWith("acct ending") ||
+            compactPrefix.endsWith("ending") ||
+            compactPrefix.endsWith("last four") ||
+            compactPrefix.endsWith("last 4") ||
+            cardOrAccountIdentifierPrefix.containsMatchIn(prefix)
     }
 
     private fun hasBalanceAmountContext(text: String): Boolean {
@@ -432,6 +477,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         private const val RewardPrefixWindow = 24
         private const val RewardSuffixWindow = 16
         private const val CurrencySuffixWindow = 12
+        private const val IdentifierPrefixWindow = 32
         private val ArabicBalanceTerms = listOf("رصيد", "الرصيد", "المتاح", "الرصيد المتبقي")
         private val withdrawalWords = Regex(
             """(?:\b(?:atm\s+withdrawal|cash\s+withdrawal|withdrawal|withdrawn)\b|سحب|صراف)""",
@@ -448,6 +494,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         )
         private val trailingBalancePartyContext = Regex(
             """(?:\b(?:balance|available|remaining\s+balance|current\s+balance)\b|رصيد|الرصيد|المتاح).*""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val cardOrAccountIdentifierPrefix = Regex(
+            """(?:\b(?:card|account|acct)\s+(?:ending|ending\s+in|last\s+four|number)\s*$|\b(?:ending|last\s+four)\s*$|(?:بطاقة|البطاقة|حساب|الحساب)[^\n\r\d]{0,20}$)""",
             RegexOption.IGNORE_CASE,
         )
 
