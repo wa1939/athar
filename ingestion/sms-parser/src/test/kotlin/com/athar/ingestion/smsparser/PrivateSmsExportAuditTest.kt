@@ -40,6 +40,42 @@ class PrivateSmsExportAuditTest {
         assertThat(report.rawBodiesWritten).isEqualTo(0)
     }
 
+    @Test
+    fun `redacted report groups uncategorized merchants without raw labels`() {
+        val export = Files.createTempFile("athar-private-audit-synthetic", ".txt")
+        Files.writeString(
+            export,
+            """
+                Received from AlRajhiBank on 2026-05-27 17:55
+
+                PoS purchase
+                Card:1234
+                At: Local Test Merchant
+                Amount:25 SAR
+                --------------------------------------------------------------------------------
+                Received from AlRajhiBank on 2026-05-28 17:55
+
+                PoS purchase
+                Card:1234
+                At: Local Test Merchant
+                Amount:25 SAR
+            """.trimIndent(),
+        )
+
+        val report = audit(export)
+        val json = report.toJson()
+
+        assertThat(report.uncategorizedMerchantGroups).hasSize(1)
+        val group = report.uncategorizedMerchantGroups.single()
+        assertThat(group.sampleCount).isEqualTo(2)
+        assertThat(group.merchantHash).hasLength(12)
+        assertThat(group.merchantLengthBucket).isEqualTo("9-32")
+        assertThat(group.merchantScript).isEqualTo("latin")
+        assertThat(json).contains("uncategorizedMerchantGroups")
+        assertThat(json).doesNotContain("Local Test Merchant")
+        assertThat(report.rawBodiesWritten).isEqualTo(0)
+    }
+
     private fun audit(export: Path): AuditReport {
         val parser = TemplateBasedSmsParser(BuiltInSmsTemplateRegistry.templates())
         val seedRules = readRules(
@@ -63,6 +99,7 @@ class PrivateSmsExportAuditTest {
         var uncategorizedExpenses = 0
         var missingMerchantExpenses = 0
         val missingMerchantGroups = linkedMapOf<MissingMerchantKey, Int>()
+        val uncategorizedMerchantObservations = mutableListOf<UncategorizedMerchantObservation>()
 
         val messages = readExport(export)
         messages.forEachIndexed { index, message ->
@@ -94,6 +131,10 @@ class PrivateSmsExportAuditTest {
                             categorizedExpenses += 1
                         } else {
                             uncategorizedExpenses += 1
+                            uncategorizedMerchantObservations += UncategorizedMerchantObservation(
+                                merchant = effectiveMerchant,
+                                templateId = result.templateId,
+                            )
                             inactiveCatalogRules
                                 .filter { effectiveMerchant.contains(it.pattern.lowercase().trim()) }
                                 .forEach { rule ->
@@ -126,6 +167,7 @@ class PrivateSmsExportAuditTest {
                 )
                 .take(20)
                 .map { (key, count) -> key.toGroup(count) },
+            uncategorizedMerchantGroups = buildUncategorizedMerchantGroups(uncategorizedMerchantObservations),
         )
     }
 
@@ -205,6 +247,35 @@ class PrivateSmsExportAuditTest {
     }
 
     private fun String.unescapeJson(): String = replace("\\\"", "\"").replace("\\\\", "\\")
+
+    private fun buildUncategorizedMerchantGroups(
+        observations: List<UncategorizedMerchantObservation>,
+    ): List<UncategorizedMerchantGroup> =
+        observations
+            .groupBy { it.merchant.lowercase().trim() }
+            .map { (merchant, rows) ->
+                UncategorizedMerchantGroup(
+                    merchantHash = sha256Prefix("merchant:$merchant"),
+                    merchantLengthBucket = bucket(merchant.length),
+                    merchantScript = textScript(merchant),
+                    sampleCount = rows.size,
+                    templateCounts = rows.groupingBy { it.templateId }
+                        .eachCount()
+                        .map { (templateId, count) -> TemplateCount(templateId = templateId, count = count) }
+                        .sortedWith(compareByDescending<TemplateCount> { it.count }.thenBy { it.templateId }),
+                )
+            }
+            .sortedWith(compareByDescending<UncategorizedMerchantGroup> { it.sampleCount }.thenBy { it.merchantHash })
+            .take(20)
+
+    private fun textScript(text: String): String = when {
+        text.isBlank() -> "blank"
+        ArabicRegex.containsMatchIn(text) && LatinRegex.containsMatchIn(text) -> "mixed_arabic_latin"
+        ArabicRegex.containsMatchIn(text) -> "arabic"
+        LatinRegex.containsMatchIn(text) -> "latin"
+        text.any { it.isDigit() } -> "numeric_or_mixed"
+        else -> "other"
+    }
 
     private fun senderHash(sender: String): String = sha256Prefix(sender.trim().lowercase())
 
@@ -300,6 +371,11 @@ class PrivateSmsExportAuditTest {
         val receivedAt: Instant,
     )
 
+    private data class UncategorizedMerchantObservation(
+        val merchant: String,
+        val templateId: String,
+    )
+
     private data class AuditRule(
         val pattern: String,
         val categoryId: String,
@@ -392,6 +468,37 @@ class PrivateSmsExportAuditTest {
             """.trimMargin().replace("\n", "")
     }
 
+    private data class UncategorizedMerchantGroup(
+        val merchantHash: String,
+        val merchantLengthBucket: String,
+        val merchantScript: String,
+        val sampleCount: Int,
+        val templateCounts: List<TemplateCount>,
+    ) {
+        fun toJson(indent: String): String {
+            val templates = templateCounts.joinToString(",") { it.toJson() }
+            return """
+                |$indent{
+                |$indent  "merchantHash": "$merchantHash",
+                |$indent  "merchantLengthBucket": "$merchantLengthBucket",
+                |$indent  "merchantScript": "$merchantScript",
+                |$indent  "sampleCount": $sampleCount,
+                |$indent  "templateCounts": [$templates]
+                |$indent}
+            """.trimMargin()
+        }
+    }
+
+    private data class TemplateCount(
+        val templateId: String,
+        val count: Int,
+    ) {
+        fun toJson(): String = """{"templateId":"${jsonEscape(templateId)}","count":$count}"""
+
+        private fun jsonEscape(value: String): String =
+            value.replace("\\", "\\\\").replace("\"", "\\\"")
+    }
+
     private data class AuditReport(
         val records: Int,
         val successes: Int,
@@ -404,6 +511,7 @@ class PrivateSmsExportAuditTest {
         val missingMerchantExpenses: Int,
         val inactiveCatalogMatches: List<AuditCandidate>,
         val missingMerchantGroups: List<MissingMerchantGroup>,
+        val uncategorizedMerchantGroups: List<UncategorizedMerchantGroup>,
     ) {
         val rawBodiesWritten: Int = 0
 
@@ -412,6 +520,8 @@ class PrivateSmsExportAuditTest {
             val candidateBlock = if (candidates.isBlank()) "" else "\n$candidates\n  "
             val groups = missingMerchantGroups.joinToString(",\n") { it.toJson("    ") }
             val groupBlock = if (groups.isBlank()) "" else "\n$groups\n  "
+            val uncategorizedGroups = uncategorizedMerchantGroups.joinToString(",\n") { it.toJson("    ") }
+            val uncategorizedGroupBlock = if (uncategorizedGroups.isBlank()) "" else "\n$uncategorizedGroups\n  "
             return """
                 |{
                 |  "records": $records,
@@ -425,7 +535,8 @@ class PrivateSmsExportAuditTest {
                 |  "missingMerchantExpenses": $missingMerchantExpenses,
                 |  "rawBodiesWritten": $rawBodiesWritten,
                 |  "inactiveCatalogMatches": [$candidateBlock],
-                |  "missingMerchantGroups": [$groupBlock]
+                |  "missingMerchantGroups": [$groupBlock],
+                |  "uncategorizedMerchantGroups": [$uncategorizedGroupBlock]
                 |}
                 |
             """.trimMargin()

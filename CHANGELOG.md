@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- The gated private SMS audit now reports top hashed uncategorized merchant groups, including merchant length/script buckets, sample counts, and parser template counts, so categorization backlog work can focus on repeated merchants without exposing raw private labels.
 - SMS universal fallback parsing now detects Arabic action words without Latin word-boundary assumptions, so Arabic Al Rajhi transfer fallback rows no longer masquerade as uncategorized expenses. The gated private audit now reports redacted missing-merchant shape groups and the latest local audit is back to 0 parsed expense rows with missing merchants.
 - Bulk categorization CSV exports now skip transfer rows, place repeated merchant groups first, include `merchant_group_count`, and add row-level `category_options` from the user's active category table so ChatGPT/Claude or a human can assign consistent categories faster without wasting rows on transfers that normally have no category.
 - **Pending widget actions.** Each pending row now has Confirm / Dismiss / Categorize controls. Confirm and Dismiss enqueue a Hilt `CoroutineWorker` that calls `TransactionRepository.setStatus`; Categorize opens Athar so the user can use the full edit/category-learning flow.
