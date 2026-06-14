@@ -68,6 +68,7 @@ internal class MerchantBulkImporter @Inject constructor(
 
         val cats = categories.observeAll(kind = null, includeArchived = false).first()
         val byId = cats.associateBy { it.id }
+        val byIdLower = cats.associateBy { it.id.lowercase().trim() }
         val byName = cats.groupBy { it.name.lowercase().trim() }
         val byAr = cats.groupBy { it.nameAr.trim() }
 
@@ -125,7 +126,7 @@ internal class MerchantBulkImporter @Inject constructor(
             }
 
             val pattern = merchantPattern(tx, row, merchantIdx, merchantNormIdx)
-            val categoryCandidates = resolveCategoryCandidates(rawCat, byId, byName, byAr)
+            val categoryCandidates = resolveCategoryCandidates(rawCat, byId, byIdLower, byName, byAr)
             if (categoryCandidates.isEmpty()) {
                 Timber.w("CSV row %d skipped: unknown category '%s'", csvRow.number, rawCat)
                 skipped++
@@ -399,14 +400,43 @@ internal class MerchantBulkImporter @Inject constructor(
     private fun resolveCategoryCandidates(
         raw: String,
         byId: Map<String, Category>,
+        byIdLower: Map<String, Category>,
         byName: Map<String, List<Category>>,
         byAr: Map<String, List<Category>>,
     ): List<Category> {
-        // Prefer exact id match (cat-restaurant). Fall back to English / Arabic names.
-        byId[raw]?.let { return listOf(it) }
-        byAr[raw]?.let { return it }
-        return byName[raw.lowercase()].orEmpty()
+        // Prefer id match (cat-restaurant). Fall back to copied option labels or display names.
+        categoryInputCandidates(raw).forEach { candidate ->
+            byId[candidate]?.let { return listOf(it) }
+            byIdLower[candidate.lowercase()]?.let { return listOf(it) }
+            byAr[candidate]?.let { return it }
+            byName[candidate.lowercase()]?.let { return it }
+        }
+        return emptyList()
     }
+
+    private fun categoryInputCandidates(raw: String): List<String> {
+        val candidates = linkedSetOf<String>()
+        fun add(value: String) {
+            val cleaned = value.trim().stripCategoryWrappers()
+            if (cleaned.isNotEmpty()) candidates += cleaned
+        }
+
+        val cleaned = raw.trim().stripCategoryWrappers()
+        add(cleaned)
+        if ('=' in cleaned) {
+            add(cleaned.substringBefore('='))
+            cleaned.substringAfter('=').split('/').forEach(::add)
+        } else if ('/' in cleaned) {
+            cleaned.split('/').forEach(::add)
+        }
+        return candidates.toList()
+    }
+
+    private fun String.stripCategoryWrappers(): String =
+        removeSurrounding("`")
+            .removeSurrounding("\"")
+            .removeSurrounding("'")
+            .trim()
 
     private fun Category.isCompatibleWith(type: TxType): Boolean =
         when (type) {

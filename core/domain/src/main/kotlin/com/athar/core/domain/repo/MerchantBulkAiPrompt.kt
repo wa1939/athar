@@ -12,7 +12,7 @@ You are categorizing financial transactions for a Saudi Arabic-first budgeting a
 Input: a CSV with these columns:
   id, stable_key, source_ref_id, merchant, merchant_normalized, merchant_group_count, category_options, amount, currency, type, status, date, raw_body, category_id
 
-Your job: fill in the category_id column for every row you can classify confidently. Prefer one of the ids shown in that row's category_options column. For repeated rows with the same merchant_normalized, you may fill only the first representative row when every blank peer should inherit the same category. If a row in the same merchant group needs a different category, fill that row explicitly too; Athar will not train a learned rule for conflicting or incompatible-type groups. If category_options is missing or incomplete, use only these category ids:
+Your job: fill in the category_id column for every row you can classify confidently. Prefer one of the ids shown in that row's category_options column; Athar also tolerates the full copied option string such as cat-coffee=Coffee / قهوة, but the id alone is best. For repeated rows with the same merchant_normalized, you may fill only the first representative row when every blank peer should inherit the same category. If a row in the same merchant group needs a different category, fill that row explicitly too; Athar will not train a learned rule for conflicting or incompatible-type groups. If category_options is missing or incomplete, use only these category ids:
 
 EXPENSE:
   cat-rent, cat-mortgage, cat-groceries, cat-restaurant, cat-coffee, cat-going-out,

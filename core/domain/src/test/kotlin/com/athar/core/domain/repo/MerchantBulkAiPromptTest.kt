@@ -14,6 +14,7 @@ class MerchantBulkAiPromptTest {
         assertThat(merchantBulkAiPrompt).contains("same headers and rows in the same order")
         assertThat(merchantBulkAiPrompt).contains("Do not change category_options or any other column")
         assertThat(merchantBulkAiPrompt).contains("Private exports may leave raw_body blank")
+        assertThat(merchantBulkAiPrompt).contains("cat-coffee=Coffee / قهوة")
     }
 
     @Test
