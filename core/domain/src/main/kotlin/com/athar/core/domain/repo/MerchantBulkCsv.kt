@@ -7,9 +7,10 @@ import java.io.OutputStream
  * Bulk-categorize-via-AI workflow (Issue #5a).
  *
  * Flow:
- *  1. **Export** — write a CSV of every PENDING / DISMISSED / uncategorized-CONFIRMED
- *     transaction. Columns: id, stable_key, source_ref_id, merchant, amount, currency,
- *     type, status, date, raw_body, category_id (blank for user to fill).
+ *  1. **Export** — write a CSV of every non-transfer PENDING / DISMISSED /
+ *     uncategorized-CONFIRMED transaction. Columns: id, stable_key, source_ref_id,
+ *     merchant, merchant_group_count, amount, currency, type, status, date, raw_body,
+ *     category_id (blank for user to fill).
  *  2. **External** — user feeds the CSV to ChatGPT/Claude/Z.ai with the AI triage prompt
  *     (`docs/AI_SMS_TRIAGE_PROMPT.md`) and exports the filled-in CSV.
  *  3. **Import** — read the filled CSV. For each row with a non-blank category_id:

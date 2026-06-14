@@ -1,6 +1,8 @@
 package com.athar.core.data.csv
 
+import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
+import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.MerchantBulkExportResult
 import com.athar.core.domain.repo.MerchantBulkExportTrigger
 import com.athar.core.domain.repo.TransactionRepository
@@ -12,10 +14,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Exports every transaction that still needs a category decision: anything PENDING,
- * anything DISMISSED, and CONFIRMED rows that have no `categoryId` yet. The CSV is
- * meant to be fed to an external AI (ChatGPT/Claude) with the AI triage prompt and
- * imported back via [MerchantBulkImporter].
+ * Exports every non-transfer transaction that still needs a category decision:
+ * anything PENDING, anything DISMISSED, and CONFIRMED rows that have no
+ * `categoryId` yet. The CSV is meant to be fed to an external AI
+ * (ChatGPT/Claude) with the AI triage prompt and imported back via
+ * [MerchantBulkImporter].
  *
  * `category_id` is left blank in the export — that's the column the user (or AI) fills.
  */
@@ -26,14 +29,17 @@ internal class MerchantBulkExporter @Inject constructor(
 
     override suspend fun exportUncategorized(out: OutputStream): MerchantBulkExportResult = runCatching {
         val all = transactions.observeAll().first()
-        val candidates = all.filter { tx ->
-            tx.status == TxStatus.PENDING ||
-                tx.status == TxStatus.DISMISSED ||
-                (tx.status == TxStatus.CONFIRMED && tx.categoryId.isNullOrBlank())
-        }
+        val candidates = all.filter { it.needsCategoryDecision() }
+        val groupCounts = candidates.groupingBy { it.merchantGroupKey() }.eachCount()
+        val orderedCandidates = candidates.sortedWith(
+            compareByDescending<Transaction> { groupCounts[it.merchantGroupKey()] ?: 0 }
+                .thenBy { it.merchantGroupKey() }
+                .thenByDescending { it.date }
+                .thenByDescending { it.createdAt },
+        )
         OutputStreamWriter(out, Charsets.UTF_8).use { writer ->
-            writer.write("id,stable_key,source_ref_id,merchant,merchant_normalized,amount,currency,type,status,date,raw_body,category_id\n")
-            candidates.forEach { tx ->
+            writer.write("id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,amount,currency,type,status,date,raw_body,category_id\n")
+            orderedCandidates.forEach { tx ->
                 val raw = tx.notes.orEmpty() // raw SMS body lives in notes when ingested
                 writer.write(
                     listOf(
@@ -42,6 +48,7 @@ internal class MerchantBulkExporter @Inject constructor(
                         tx.sourceRefId.orEmpty(),
                         tx.merchant,
                         tx.merchantNormalized,
+                        (groupCounts[tx.merchantGroupKey()] ?: 1).toString(),
                         tx.amount.amount.toPlainString(),
                         tx.amount.currency,
                         tx.type.name,
@@ -66,6 +73,17 @@ internal class MerchantBulkExporter @Inject constructor(
             MerchantBulkExportResult.Failed(reason = it.message ?: "unknown error")
         },
     )
+
+    private fun Transaction.needsCategoryDecision(): Boolean =
+        type != TxType.TRANSFER &&
+            (
+                status == TxStatus.PENDING ||
+                    status == TxStatus.DISMISSED ||
+                    (status == TxStatus.CONFIRMED && categoryId.isNullOrBlank())
+                )
+
+    private fun Transaction.merchantGroupKey(): String =
+        merchantNormalized.ifBlank { merchant.lowercase().trim() }.ifBlank { "blank" }
 
     private fun csvEscape(s: String): String {
         if (s.isEmpty()) return ""

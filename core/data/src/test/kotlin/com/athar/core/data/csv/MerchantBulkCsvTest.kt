@@ -42,7 +42,7 @@ class MerchantBulkCsvTest {
 
         assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 1))
         val csv = out.toString(Charsets.UTF_8)
-        assertThat(csv).contains("id,stable_key,source_ref_id,merchant")
+        assertThat(csv).contains("id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count")
         assertThat(csv).contains("\"شراء\nمبلغ:SAR 19\nمن:BARNS\"")
 
         val filledCsv = csv.trimEnd().removeSuffix(",") + ",cat-coffee\n"
@@ -87,26 +87,78 @@ class MerchantBulkCsvTest {
         assertThat(repo.get("new-id")?.status).isEqualTo(TxStatus.CONFIRMED)
     }
 
+    @Test
+    fun `export groups repeated merchants first and skips transfers`() = runTest {
+        val rows = listOf(
+            tx(id = "singleton", sourceRefId = "inbox-1", merchant = "Zed Market"),
+            tx(id = "transfer", sourceRefId = "inbox-2", merchant = "Internal Transfer", type = TxType.TRANSFER),
+            tx(id = "repeated-new", sourceRefId = "inbox-3", merchant = "Hemmah", date = LocalDate(2026, 3, 2)),
+            tx(
+                id = "categorized",
+                sourceRefId = "inbox-4",
+                merchant = "Starbucks",
+                status = TxStatus.CONFIRMED,
+                categoryId = "cat-coffee",
+            ),
+            tx(
+                id = "repeated-old",
+                sourceRefId = "inbox-5",
+                merchant = "Hemmah",
+                status = TxStatus.DISMISSED,
+                date = LocalDate(2026, 3, 1),
+            ),
+            tx(
+                id = "confirmed-empty",
+                sourceRefId = "inbox-6",
+                merchant = "BARNS",
+                status = TxStatus.CONFIRMED,
+            ),
+        )
+        val out = ByteArrayOutputStream()
+
+        val exported = MerchantBulkExporter(FakeTransactionRepository(rows)).exportUncategorized(out)
+
+        assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 4))
+        val lines = out.toString(Charsets.UTF_8).trim().lines()
+        val header = lines.first().split(",")
+        val merchantIdx = header.indexOf("merchant")
+        val groupCountIdx = header.indexOf("merchant_group_count")
+        val dataRows = lines.drop(1).map { it.split(",") }
+
+        assertThat(dataRows.map { it[merchantIdx] })
+            .containsExactly("Hemmah", "Hemmah", "BARNS", "Zed Market")
+            .inOrder()
+        assertThat(dataRows.map { it[groupCountIdx] })
+            .containsExactly("2", "2", "1", "1")
+            .inOrder()
+        assertThat(out.toString(Charsets.UTF_8)).doesNotContain("Internal Transfer")
+        assertThat(out.toString(Charsets.UTF_8)).doesNotContain("Starbucks")
+    }
+
     private fun tx(
         id: String,
         sourceRefId: String?,
         merchant: String = "BARNS",
         amount: String = "19.00",
         notes: String? = null,
+        type: TxType = TxType.EXPENSE,
+        status: TxStatus = TxStatus.PENDING,
+        categoryId: String? = null,
+        date: LocalDate = LocalDate(2026, 2, 14),
     ): Transaction = Transaction(
         id = id,
         accountId = "acc-1",
-        type = TxType.EXPENSE,
+        type = type,
         amount = Money.of(amount),
-        date = LocalDate(2026, 2, 14),
+        date = date,
         occurredAt = FixedInstant,
         merchant = merchant,
         merchantNormalized = merchant.lowercase().trim(),
-        categoryId = null,
+        categoryId = categoryId,
         notes = notes,
         source = IngestSource.SMS,
         sourceRefId = sourceRefId,
-        status = TxStatus.PENDING,
+        status = status,
         confidence = 0.8f,
         createdAt = FixedInstant,
         updatedAt = FixedInstant,

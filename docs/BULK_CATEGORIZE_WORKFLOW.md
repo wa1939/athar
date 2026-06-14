@@ -4,7 +4,7 @@ Use this when you have dozens or hundreds of uncategorized transactions sitting 
 
 ## The three-step loop
 
-1. **Open Settings → "تصنيف بالذكاء الاصطناعي · مجمّع" / "Bulk categorize with AI"** → tap **Export uncategorized**. Athar writes a CSV of every transaction that is PENDING, DISMISSED, or CONFIRMED-without-category. Default filename: `athar-uncategorized.csv`. Save it somewhere you can reach from a desktop.
+1. **Open Settings → "تصنيف بالذكاء الاصطناعي · مجمّع" / "Bulk categorize with AI"** → tap **Export uncategorized**. Athar writes a CSV of every non-transfer transaction that is PENDING, DISMISSED, or CONFIRMED-without-category. Default filename: `athar-uncategorized.csv`. Save it somewhere you can reach from a desktop.
 2. **Open ChatGPT / Claude / Z.ai** in a fresh chat. Drop in the prompt below, attach (or paste) the CSV, and ask for the filled-in CSV back.
 3. **Back in Athar → same Settings card → Import categorized.** Pick the filled CSV. Each row updates its transaction (status → CONFIRMED, category set) **and** records a learned `CategoryRule` per unique `merchant → category` pair so future SMS from the same merchant auto-categorize.
 
@@ -15,14 +15,15 @@ A typical 800-row export takes ChatGPT about 60–90 seconds; import takes a fra
 The export looks like:
 
 ```
-id,stable_key,source_ref_id,merchant,merchant_normalized,amount,currency,type,status,date,raw_body,category_id
-3f7a-…,8d9e-…,inbox-4242,Hemmah,hemmah,99.00,SAR,EXPENSE,DISMISSED,2026-04-22,...raw SMS body...,
+id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,amount,currency,type,status,date,raw_body,category_id
+3f7a-…,8d9e-…,inbox-4242,Hemmah,hemmah,8,99.00,SAR,EXPENSE,DISMISSED,2026-04-22,...raw SMS body...,
 ```
 
 - **`id`** — Athar's internal transaction id. Do not change. The importer tries this first.
 - **`stable_key`** — a deterministic fingerprint Athar uses if the transaction id changed after a rescan/backfill. Do not change.
 - **`source_ref_id`** — the raw SMS/notification reference when available. Helps Athar rebuild the same stable key after a rescan. Do not change.
 - **`merchant`** / **`merchant_normalized`** — as parsed by the ingestion pipeline. Lower-case normalized version is what gets used for rule matching.
+- **`merchant_group_count`** — how many exported rows share the same normalized merchant. The export is sorted so repeated merchants appear first and together; assign one consistent category to the group unless the raw body proves otherwise.
 - **`amount` · `currency` · `type` · `status` · `date`** — context for the AI to disambiguate similar merchants. Do not change.
 - **`raw_body`** — the original SMS body (when available). Often the strongest categorization signal.
 - **`category_id`** — *blank in the export.* The AI fills this. Use one of the valid IDs from `core/data/src/main/assets/seed_categories.json`:
@@ -39,7 +40,7 @@ Paste this into ChatGPT/Claude/Z.ai, then attach (or paste) the CSV.
 You are categorizing financial transactions for a Saudi Arabic-first budgeting app called Athar.
 
 Input: a CSV with these columns:
-  id, stable_key, source_ref_id, merchant, merchant_normalized, amount, currency, type, status, date, raw_body, category_id
+  id, stable_key, source_ref_id, merchant, merchant_normalized, merchant_group_count, amount, currency, type, status, date, raw_body, category_id
 
 Your job: fill in the `category_id` column for every row. Use ONLY these category ids:
 
@@ -56,7 +57,7 @@ INCOME:
 Rules:
 - If type=INCOME, pick cat-salary if the merchant looks like a known employer / "salary"
   / "راتب", otherwise cat-side-income.
-- If type=TRANSFER, leave category_id blank (transfers don't have categories).
+- Transfers are normally not exported. If an older CSV contains type=TRANSFER, leave category_id blank.
 - If you cannot tell, leave category_id blank — do not guess. Better to skip than mis-categorize.
 - Use `raw_body` aggressively — Arabic SMS often spells the merchant differently than
   the parsed `merchant` field. Look for keywords ("مطعم", "صيدلية", "محطة", "اتصالات").
