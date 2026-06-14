@@ -434,6 +434,57 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses mortgage payment notification with shared mortgage label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Mortgage payment USD 2,100.00 posted"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("2100.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Mortgage payment")
+    }
+
+    @Test
+    fun `parses home loan repayment notification with shared mortgage label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Home loan repayment SAR 3,500.00 debited"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("3500.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Mortgage payment")
+    }
+
+    @Test
+    fun `parses Arabic mortgage installment notification with shared mortgage label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم سداد قسط عقاري بمبلغ ٤٠٠٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("4000"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Mortgage payment")
+    }
+
+    @Test
+    fun `ignores mortgage offers rates and reminders with amounts`() {
+        val nonPostedMessages = listOf(
+            "Your mortgage payment of USD 2,100.00 is due tomorrow",
+            "Home loan refinance offer SAR 500,000.00 available",
+            "Housing finance rate estimate AED 250,000.00 today",
+            "عرض تمويل عقاري بمبلغ ٥٠٠٠٠٠ ر.س متاح الآن",
+        )
+
+        nonPostedMessages.forEach { body ->
+            assertThat(parser.parse(event("notification:com.chase.sig.android", body)))
+                .isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
     fun `parses auto loan payment notification with shared car payment label`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "Auto loan payment USD 420.00 posted"),

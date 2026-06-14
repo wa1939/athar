@@ -84,12 +84,20 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\b(?:(?:car|vehicle)\s+payment|(?:auto|car|vehicle)\s+(?:loan|finance|financing|lease)\s+(?:payment|repayment|instalment|installment|emi|paid|debited)|(?:payment|repayment|instalment|installment|emi)\s+(?:for|towards|to)\s+(?:your\s+)?(?:auto|car|vehicle)\s+(?:loan|finance|financing|lease)|(?:auto|car|vehicle)\s+(?:instalment|installment)\s+(?:payment|paid|debited))\b|(?:سداد|دفع|خصم)\s+(?:قسط\s+)?(?:تمويل|قرض)\s+(?:سيارة|السيارة)|(?:سداد|دفع|خصم)\s+قسط\s+(?:سيارة|السيارة)|قسط\s+(?:سيارة|السيارة)\s+(?:تم\s+)?(?:سداد|دفع|خصم))""",
         RegexOption.IGNORE_CASE,
     )
+    private val mortgagePaymentWords = Regex(
+        """(?:\b(?:(?:mortgage|home\s+loan)\s+(?:payment|repayment|instalment|installment|emi|paid|debited)|(?:housing|property)\s+(?:loan|finance|financing)\s+(?:payment|repayment|instalment|installment|emi|paid|debited)|(?:payment|repayment|instalment|installment|emi)\s+(?:for|towards|to)\s+(?:your\s+)?(?:mortgage|home\s+loan|housing\s+(?:loan|finance|financing)|property\s+(?:loan|finance|financing)))\b|(?:سداد|دفع|خصم)\s+(?:قسط\s+)?(?:قرض|تمويل|رهن)\s+(?:عقاري|العقاري|سكني|السكني)|(?:سداد|دفع|خصم)\s+قسط\s+(?:عقاري|العقاري|سكني|السكني)|قسط\s+(?:عقاري|العقاري|سكني|السكني)\s+(?:تم\s+)?(?:سداد|دفع|خصم))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val debtReminderWords = Regex(
         """(?:\b(?:credit\s+card|loan|instalment|installment|emi|finance)[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder)\b|\b(?:due|scheduled|upcoming|reminder)[^\n\r]{0,80}\b(?:credit\s+card|loan|instalment|installment|emi|finance)\b|(?:قسط|تمويل|بطاقة\s+ائتمانية)[^\n\r]{0,80}(?:مستحق|استحقاق|موعد|قادم|مجدول))""",
         RegexOption.IGNORE_CASE,
     )
     private val carPaymentNonPostedWords = Regex(
         """(?:\b(?:(?:car|vehicle)\s+payment|(?:auto|car|vehicle)\s+(?:loan|finance|financing|lease|instalment|installment|emi))[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder|offer|promo|pre[-\s]?approved|approval|apply|quote|estimate|eligible)\b|\b(?:due|scheduled|upcoming|reminder|offer|promo|pre[-\s]?approved|approval|apply|quote|estimate|eligible)[^\n\r]{0,80}\b(?:(?:car|vehicle)\s+payment|(?:auto|car|vehicle)\s+(?:loan|finance|financing|lease|instalment|installment|emi))\b|(?:قسط|تمويل|قرض)[^\n\r]{0,40}(?:سيارة|السيارة)[^\n\r]{0,80}(?:مستحق|استحقاق|موعد|قادم|مجدول|عرض|موافقة|تقديم|تقدير|مؤهل)|(?:عرض|موافقة|تقديم|تقدير|مؤهل)[^\n\r]{0,80}(?:قسط|تمويل|قرض)[^\n\r]{0,40}(?:سيارة|السيارة))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val mortgagePaymentNonPostedWords = Regex(
+        """(?:\b(?:mortgage|home\s+loan|housing\s+(?:loan|finance|financing)|property\s+(?:loan|finance|financing))[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder|offer|promo|pre[-\s]?approved|approval|apply|quote|estimate|eligible|rate|refinance)\b|\b(?:due|scheduled|upcoming|reminder|offer|promo|pre[-\s]?approved|approval|apply|quote|estimate|eligible|rate|refinance)[^\n\r]{0,80}\b(?:mortgage|home\s+loan|housing\s+(?:loan|finance|financing)|property\s+(?:loan|finance|financing))\b|(?:قسط|تمويل|قرض|رهن)[^\n\r]{0,40}(?:عقاري|العقاري|سكني|السكني)[^\n\r]{0,80}(?:مستحق|استحقاق|موعد|قادم|مجدول|عرض|موافقة|تقديم|تقدير|مؤهل|سعر|إعادة\s+تمويل|اعادة\s+تمويل)|(?:عرض|موافقة|تقديم|تقدير|مؤهل|سعر|إعادة\s+تمويل|اعادة\s+تمويل)[^\n\r]{0,80}(?:قسط|تمويل|قرض|رهن)[^\n\r]{0,40}(?:عقاري|العقاري|سكني|السكني))""",
         RegexOption.IGNORE_CASE,
     )
     private val salaryFinancingOfferWords = Regex(
@@ -423,6 +431,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (scheduledWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (withdrawalLimitWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (feeScheduleWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (mortgagePaymentNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (carPaymentNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (debtReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (utilityBillReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
@@ -460,6 +469,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         val type = when {
             isTelecomRechargeNotification(normalized) -> TxType.EXPENSE
             hasIncomeAction(normalized) -> TxType.INCOME
+            isMortgagePaymentNotification(normalized) -> TxType.EXPENSE
             isCarPaymentNotification(normalized) -> TxType.EXPENSE
             isRecurringExpenseNotification(normalized) -> TxType.EXPENSE
             isPublicServicePaymentNotification(normalized) -> TxType.EXPENSE
@@ -482,6 +492,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             TxType.EXPENSE -> "ATM Withdrawal".takeIf { isWithdrawalNotification(normalized) }
                 ?: "Bank fees".takeIf { isBankFeeNotification(normalized) }
                 ?: "Credit card payment".takeIf { isCreditCardPaymentNotification(normalized) }
+                ?: "Mortgage payment".takeIf { isMortgagePaymentNotification(normalized) }
                 ?: "Car payment".takeIf { isCarPaymentNotification(normalized) }
                 ?: "Loan instalment".takeIf { isLoanInstalmentNotification(normalized) }
                 ?: "Mobile recharge".takeIf { isTelecomRechargeNotification(normalized) && merchantCandidate == null }
@@ -528,6 +539,7 @@ class GenericBankNotificationTemplate : BankTemplate {
     private fun hasAction(body: String): Boolean =
         hasExpenseAction(body) || hasIncomeAction(body) || transferWords.containsMatchIn(body) ||
             isBankFeeNotification(body) || isDebtPaymentNotification(body) ||
+            isMortgagePaymentNotification(body) ||
             isCarPaymentNotification(body) ||
             isRecurringExpenseNotification(body) || isTelecomRechargeNotification(body) ||
             isPublicServicePaymentNotification(body) || isMobilityPaymentNotification(body) ||
@@ -570,6 +582,9 @@ class GenericBankNotificationTemplate : BankTemplate {
 
     private fun isCreditCardPaymentNotification(body: String): Boolean =
         creditCardPaymentWords.containsMatchIn(body)
+
+    private fun isMortgagePaymentNotification(body: String): Boolean =
+        mortgagePaymentWords.containsMatchIn(body)
 
     private fun isCarPaymentNotification(body: String): Boolean =
         carPaymentWords.containsMatchIn(body)
@@ -880,6 +895,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         transitFareWords.find(body)?.range?.first,
         transferWords.find(body)?.range?.first,
         creditCardPaymentWords.find(body)?.range?.first,
+        mortgagePaymentWords.find(body)?.range?.first,
         carPaymentWords.find(body)?.range?.first,
         loanInstalmentWords.find(body)?.range?.first,
         subscriptionPaymentWords.find(body)?.range?.first,
