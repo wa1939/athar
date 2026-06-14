@@ -473,6 +473,8 @@ data class HistoryBulkCategoryState(
     val categories: List<Category>,
 ) {
     val canApply: Boolean = selectionMode && selectedCount > 0 && eligibleCount > 0 && !hasMixedCategoryKinds
+    val canApplySuggestedCategory: Boolean =
+        canApply && suggestedCategoryId != null && categories.any { it.id == suggestedCategoryId }
     val canSelectTopRepeatedGroup: Boolean =
         topRepeatedGroupCount > 0 &&
             (selectedCount != topRepeatedGroupCount || selectedTopRepeatedGroupCount != topRepeatedGroupCount)

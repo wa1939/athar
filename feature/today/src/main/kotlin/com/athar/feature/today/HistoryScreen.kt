@@ -207,6 +207,7 @@ fun HistoryScreen(
                     onSelectTopRepeatedGroup = viewModel::selectTopRepeatedBacklogGroup,
                     onSelectVisible = viewModel::selectVisibleRows,
                     onSelectMatchingMerchant = viewModel::selectMatchingSelectedMerchants,
+                    onApplySuggestedCategory = viewModel::applyBulkCategory,
                     onApplyCategory = { choosingBulkCategory = true },
                     onClear = viewModel::clearSelection,
                 )
@@ -361,10 +362,13 @@ private fun BulkSelectionCard(
     onSelectTopRepeatedGroup: () -> Unit,
     onSelectVisible: () -> Unit,
     onSelectMatchingMerchant: () -> Unit,
+    onApplySuggestedCategory: (String) -> Unit,
     onApplyCategory: () -> Unit,
     onClear: () -> Unit,
 ) {
     val theme = AtharTheme
+    val suggestedCategory = state.suggestedCategoryId
+        ?.let { id -> state.categories.firstOrNull { it.id == id } }
     AtharCard {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
             AtharText(
@@ -428,10 +432,20 @@ private fun BulkSelectionCard(
                     text = stringResource(R.string.history_bulk_clear),
                     onClick = onClear,
                 )
+                if (state.canApplySuggestedCategory && suggestedCategory != null) {
+                    HistoryActionChip(
+                        text = stringResource(
+                            R.string.history_bulk_apply_suggestion,
+                            suggestedCategory.localizedName(),
+                        ),
+                        onClick = { onApplySuggestedCategory(suggestedCategory.id) },
+                        selected = true,
+                    )
+                }
                 HistoryActionChip(
                     text = stringResource(R.string.history_bulk_category),
                     onClick = onApplyCategory,
-                    selected = true,
+                    selected = !state.canApplySuggestedCategory,
                     enabled = state.canApply,
                 )
             }

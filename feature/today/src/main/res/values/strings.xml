@@ -82,6 +82,7 @@
     <string name="history_bulk_select_visible">تحديد الظاهر</string>
     <string name="history_bulk_select_same_merchant">نفس التاجر</string>
     <string name="history_bulk_clear">مسح</string>
+    <string name="history_bulk_apply_suggestion" formatted="true">تطبيق %1$s</string>
     <string name="history_bulk_category">التصنيف</string>
     <string name="history_bulk_category_title">اختر التصنيف</string>
     <string name="history_bulk_category_context" formatted="true">سيُطبق على %2$d حركة من %1$s</string>

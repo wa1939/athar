@@ -717,6 +717,7 @@ class HistoryFilterTest {
 
         assertThat(state.suggestedCategoryId).isEqualTo("cat-coffee")
         assertThat(state.suggestedCategoryUseCount).isEqualTo(2)
+        assertThat(state.canApplySuggestedCategory).isTrue()
     }
 
     @Test
@@ -782,8 +783,11 @@ class HistoryFilterTest {
         )
 
         assertThat(conflictingState.suggestedCategoryId).isNull()
+        assertThat(conflictingState.canApplySuggestedCategory).isFalse()
         assertThat(inactiveState.suggestedCategoryId).isNull()
+        assertThat(inactiveState.canApplySuggestedCategory).isFalse()
         assertThat(genericState.suggestedCategoryId).isNull()
+        assertThat(genericState.canApplySuggestedCategory).isFalse()
     }
 
     @Test

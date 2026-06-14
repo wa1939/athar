@@ -81,6 +81,7 @@
     <string name="history_bulk_select_visible">Select shown</string>
     <string name="history_bulk_select_same_merchant">Same merchant</string>
     <string name="history_bulk_clear">Clear</string>
+    <string name="history_bulk_apply_suggestion" formatted="true">Apply %1$s</string>
     <string name="history_bulk_category">Category</string>
     <string name="history_bulk_category_title">Choose category</string>
     <string name="history_bulk_category_context" formatted="true">Applying to %2$d transactions from %1$s</string>
