@@ -25,6 +25,10 @@ import com.athar.core.domain.repo.CsvImportResult
 import com.athar.core.domain.repo.CsvImportRowDecision
 import com.athar.core.domain.repo.CsvImportRowEdit
 import com.athar.core.domain.repo.CsvImportTrigger
+import com.athar.core.domain.repo.InvestmentImportPreview
+import com.athar.core.domain.repo.InvestmentImportPreviewResult
+import com.athar.core.domain.repo.InvestmentImportResult
+import com.athar.core.domain.repo.InvestmentImportTrigger
 import com.athar.core.domain.repo.MerchantBulkExportResult
 import com.athar.core.domain.repo.MerchantBulkExportMode
 import com.athar.core.domain.repo.MerchantBulkExportTrigger
@@ -91,6 +95,19 @@ sealed interface WishlistImportStatus {
     data class Preview(val preview: WishlistImportPreview) : WishlistImportStatus
     data class Done(val imported: Int, val newItems: Int, val updatedItems: Int, val skipped: Int) : WishlistImportStatus
     data class Failed(val reason: String) : WishlistImportStatus
+}
+
+sealed interface InvestmentImportStatus {
+    data object Idle : InvestmentImportStatus
+    data object Working : InvestmentImportStatus
+    data class Preview(val preview: InvestmentImportPreview) : InvestmentImportStatus
+    data class Done(
+        val importedContributions: Int,
+        val replacedContributions: Int,
+        val skipped: Int,
+        val existingPool: Boolean,
+    ) : InvestmentImportStatus
+    data class Failed(val reason: String) : InvestmentImportStatus
 }
 
 sealed interface RescanStatus {
@@ -168,6 +185,7 @@ class SettingsViewModel @Inject constructor(
     private val csvImporter: CsvImportTrigger,
     private val budgetTargetsImporter: BudgetTargetImportTrigger,
     private val wishlistImporter: WishlistImportTrigger,
+    private val investmentImporter: InvestmentImportTrigger,
     private val csvExporter: CsvExportTrigger,
     private val bulkExporter: MerchantBulkExportTrigger,
     private val bulkImporter: MerchantBulkImportTrigger,
@@ -204,6 +222,10 @@ class SettingsViewModel @Inject constructor(
     private val _wishlistImport = MutableStateFlow<WishlistImportStatus>(WishlistImportStatus.Idle)
     val wishlistImportStatus: StateFlow<WishlistImportStatus> = _wishlistImport.asStateFlow()
     private var pendingWishlistImportBytes: ByteArray? = null
+
+    private val _investmentImport = MutableStateFlow<InvestmentImportStatus>(InvestmentImportStatus.Idle)
+    val investmentImportStatus: StateFlow<InvestmentImportStatus> = _investmentImport.asStateFlow()
+    private var pendingInvestmentImportBytes: ByteArray? = null
 
     val statementImportAccounts: StateFlow<List<Account>> = accounts.observeActive()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -545,6 +567,63 @@ class SettingsViewModel @Inject constructor(
         _wishlistImport.value = WishlistImportStatus.Idle
     }
 
+    fun previewInvestmentImport(resolver: ContentResolver, uri: Uri) {
+        viewModelScope.launch {
+            _investmentImport.value = InvestmentImportStatus.Working
+            val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+            if (bytes == null) {
+                pendingInvestmentImportBytes = null
+                _investmentImport.value = InvestmentImportStatus.Failed("Couldn't open workbook.")
+                return@launch
+            }
+            previewInvestmentImportBytes(bytes)
+        }
+    }
+
+    internal fun previewInvestmentImportBytes(bytes: ByteArray) {
+        viewModelScope.launch {
+            _investmentImport.value = InvestmentImportStatus.Working
+            _investmentImport.value = when (val result = investmentImporter.preview(bytes.inputStream())) {
+                is InvestmentImportPreviewResult.Done -> {
+                    pendingInvestmentImportBytes = bytes
+                    InvestmentImportStatus.Preview(result.preview)
+                }
+                is InvestmentImportPreviewResult.Failed -> {
+                    pendingInvestmentImportBytes = null
+                    InvestmentImportStatus.Failed(result.reason)
+                }
+            }
+        }
+    }
+
+    fun confirmInvestmentImport() {
+        viewModelScope.launch {
+            val bytes = pendingInvestmentImportBytes
+            if (bytes == null) {
+                _investmentImport.value = InvestmentImportStatus.Failed("No investment preview is ready to import.")
+                return@launch
+            }
+            _investmentImport.value = InvestmentImportStatus.Working
+            _investmentImport.value = when (val result = investmentImporter.import(bytes.inputStream())) {
+                is InvestmentImportResult.Done -> {
+                    pendingInvestmentImportBytes = null
+                    InvestmentImportStatus.Done(
+                        importedContributions = result.importedContributions,
+                        replacedContributions = result.replacedContributions,
+                        skipped = result.skipped,
+                        existingPool = result.existingPool,
+                    )
+                }
+                is InvestmentImportResult.Failed -> InvestmentImportStatus.Failed(result.reason)
+            }
+        }
+    }
+
+    fun cancelInvestmentImportPreview() {
+        pendingInvestmentImportBytes = null
+        _investmentImport.value = InvestmentImportStatus.Idle
+    }
+
     fun cancelCsvImportPreview() {
         pendingCsvImportBytes = null
         pendingCsvImportMapping = null
@@ -650,6 +729,11 @@ class SettingsViewModel @Inject constructor(
     fun clearWishlistImportStatus() {
         pendingWishlistImportBytes = null
         _wishlistImport.value = WishlistImportStatus.Idle
+    }
+
+    fun clearInvestmentImportStatus() {
+        pendingInvestmentImportBytes = null
+        _investmentImport.value = InvestmentImportStatus.Idle
     }
 
     fun clearTaxExportStatus() {

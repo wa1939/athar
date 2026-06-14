@@ -53,6 +53,7 @@ import com.athar.core.domain.repo.CsvImportCurrencySummary
 import com.athar.core.domain.repo.CsvImportPreview
 import com.athar.core.domain.repo.CsvImportPreviewRow
 import com.athar.core.domain.repo.CsvImportRowEdit
+import com.athar.core.domain.repo.InvestmentImportPreview
 import com.athar.core.domain.repo.MerchantBulkExportMode
 import com.athar.core.domain.repo.MerchantBulkImportSkipSummary
 import com.athar.core.domain.repo.WishlistImportPreview
@@ -114,6 +115,7 @@ fun SettingsScreen(
     val selectedStatementImportAccountId by viewModel.selectedStatementImportAccountId.collectAsStateWithLifecycle()
     val budgetTargetStatus by viewModel.budgetTargetStatus.collectAsStateWithLifecycle()
     val wishlistImportStatus by viewModel.wishlistImportStatus.collectAsStateWithLifecycle()
+    val investmentImportStatus by viewModel.investmentImportStatus.collectAsStateWithLifecycle()
 
     val exportLauncher = rememberLauncherForActivityResult(CreateDocument("application/octet-stream")) { uri ->
         if (uri != null) pendingExportUri = uri
@@ -129,6 +131,9 @@ fun SettingsScreen(
     }
     val wishlistImportLauncher = rememberLauncherForActivityResult(OpenDocument()) { uri ->
         if (uri != null) viewModel.previewWishlistImport(context.contentResolver, uri)
+    }
+    val investmentImportLauncher = rememberLauncherForActivityResult(OpenDocument()) { uri ->
+        if (uri != null) viewModel.previewInvestmentImport(context.contentResolver, uri)
     }
     val csvExportLauncher = rememberLauncherForActivityResult(CreateDocument("text/csv")) { uri ->
         if (uri != null) viewModel.exportCsv(context.contentResolver, uri)
@@ -289,6 +294,23 @@ fun SettingsScreen(
                 onConfirmImport = viewModel::confirmWishlistImport,
                 onCancelPreview = viewModel::cancelWishlistImportPreview,
                 onClear = viewModel::clearWishlistImportStatus,
+            )
+
+            InvestmentImportCard(
+                status = investmentImportStatus,
+                onImport = {
+                    investmentImportLauncher.launch(
+                        arrayOf(
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            "application/vnd.ms-excel",
+                            "application/octet-stream",
+                            "*/*",
+                        ),
+                    )
+                },
+                onConfirmImport = viewModel::confirmInvestmentImport,
+                onCancelPreview = viewModel::cancelInvestmentImportPreview,
+                onClear = viewModel::clearInvestmentImportStatus,
             )
 
             TaxExportCard(
@@ -1236,6 +1258,155 @@ private fun WishlistImportPreviewSummary(preview: WishlistImportPreview) {
 
 private fun YearMonth.formatWishlistMonth(): String =
     "$year/${monthValue.toString().padStart(2, '0')}"
+
+@Composable
+private fun InvestmentImportCard(
+    status: InvestmentImportStatus,
+    onImport: () -> Unit,
+    onConfirmImport: () -> Unit,
+    onCancelPreview: () -> Unit,
+    onClear: () -> Unit,
+) {
+    val theme = AtharTheme
+    AtharCard {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = stringResource(R.string.settings_investment_import_title), style = theme.typography.headline)
+            AtharText(
+                text = stringResource(R.string.settings_investment_import_body),
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
+            when (val s = status) {
+                InvestmentImportStatus.Idle -> Unit
+                InvestmentImportStatus.Working -> AtharText(
+                    text = stringResource(R.string.settings_status_working),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+                is InvestmentImportStatus.Preview -> {
+                    InvestmentImportPreviewSummary(preview = s.preview)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+                    ) {
+                        PrimaryButton(
+                            text = stringResource(R.string.settings_investment_import_preview_confirm),
+                            onClick = onConfirmImport,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Box(modifier = Modifier.weight(1f)) {
+                            SecondaryButton(
+                                text = stringResource(R.string.settings_csv_preview_cancel),
+                                onClick = onCancelPreview,
+                            )
+                        }
+                    }
+                }
+                is InvestmentImportStatus.Done -> {
+                    val doneText = if (s.existingPool) {
+                        stringResource(
+                            R.string.settings_investment_import_done_existing,
+                            s.importedContributions,
+                            s.replacedContributions,
+                            s.skipped,
+                        )
+                    } else {
+                        stringResource(
+                            R.string.settings_investment_import_done_new,
+                            s.importedContributions,
+                            s.skipped,
+                        )
+                    }
+                    AtharText(
+                        text = doneText,
+                        style = theme.typography.caption,
+                        color = theme.colors.olive,
+                    )
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
+                }
+                is InvestmentImportStatus.Failed -> {
+                    AtharText(text = s.reason, style = theme.typography.caption, color = theme.colors.crimson)
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
+                }
+            }
+            val isWorking = status is InvestmentImportStatus.Working
+            if (status !is InvestmentImportStatus.Preview) {
+                PrimaryButton(
+                    text = if (isWorking) {
+                        stringResource(R.string.settings_status_in_progress)
+                    } else {
+                        stringResource(R.string.settings_investment_import_action_import)
+                    },
+                    onClick = { if (!isWorking) onImport() },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun InvestmentImportPreviewSummary(preview: InvestmentImportPreview) {
+    val theme = AtharTheme
+    Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+        AtharText(
+            text = stringResource(
+                R.string.settings_investment_import_preview_summary,
+                preview.poolName,
+                preview.contributionRows,
+                preview.skipped,
+            ),
+            style = theme.typography.caption,
+            color = theme.colors.olive,
+        )
+        AtharText(
+            text = stringResource(
+                R.string.settings_investment_import_preview_totals,
+                preview.period,
+                preview.totalCorpus.compactMoney(),
+                preview.totalReturn.compactMoney(),
+            ),
+            style = theme.typography.caption,
+            color = theme.colors.muted,
+        )
+        if (preview.existingPool) {
+            AtharText(
+                text = stringResource(
+                    R.string.settings_investment_import_preview_replace,
+                    preview.replacedContributions,
+                ),
+                style = theme.typography.caption,
+                color = theme.colors.crimson,
+            )
+        }
+        preview.sampleRows.forEach { row ->
+            AtharText(
+                text = stringResource(
+                    R.string.settings_investment_import_preview_row,
+                    row.ownerName,
+                    row.amount.compactMoney(),
+                ),
+                style = theme.typography.caption,
+                color = theme.colors.ink,
+            )
+        }
+        preview.skippedRows.firstOrNull()?.let { skipped ->
+            AtharText(
+                text = stringResource(
+                    R.string.settings_investment_import_preview_first_skip,
+                    skipped.rowNumber,
+                    skipped.label,
+                    skipped.reason,
+                ),
+                style = theme.typography.caption,
+                color = theme.colors.crimson,
+            )
+        }
+    }
+}
 
 private fun Money.compactMoney(): String =
     "${rounded().amount.stripTrailingZeros().toPlainString()} $currency"

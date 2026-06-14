@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Settings now imports the TMOAP workbook's Family Investments sheet through a separate preview-confirm flow, creating the investment pool or replacing matched pool contributors after confirmation so repeat imports do not duplicate rows.
 - Settings now imports the TMOAP workbook's Wishlist sheet through a separate preview-confirm flow, creating new wishes or updating matching existing wishes by item name only after confirmation.
 - Settings now imports the TMOAP workbook's Budget Targets sheet through a separate preview-confirm flow, applying matched monthly expense/income category targets only after confirmation and reusing the TMOAP-aware category aliases from statement import.
 - Bundled categories now match the concrete TMOAP workbook category setup more closely by adding Condo fees, Work, Tax refund, Expense reimbursement, Bonus, and Other income. Statement CSV/XLSX category lookup is now transaction-type aware and resolves TMOAP labels such as Public transportation, Wife, Job, Side project, and income Other without crossing expense/income category kinds.

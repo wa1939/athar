@@ -146,6 +146,19 @@
     <string name="settings_wishlist_import_preview_flexible_months">مرن</string>
     <string name="settings_wishlist_import_done" formatted="true">تم استيراد %1$d عنصر أمنيات. %2$d جديد. %3$d محدّث. تم تخطي %4$d صف.</string>
 
+    <!-- Investment import card -->
+    <string name="settings_investment_import_title">استيراد استثمارات العائلة</string>
+    <string name="settings_investment_import_body">استورد ورقة استثمارات العائلة من ملف TMOAP إلى التخطيط. يعرض أثر الصندوق أولًا؛ وعند التأكيد يحدّث العائد ويستبدل مساهمي الصندوق المطابق حتى لا تتكرر الصفوف عند إعادة الاستيراد.</string>
+    <string name="settings_investment_import_action_import">استيراد الاستثمارات</string>
+    <string name="settings_investment_import_preview_summary" formatted="true">%1$s: جاهز لاستيراد %2$d مساهمة. سيتم تخطي %3$d صف.</string>
+    <string name="settings_investment_import_preview_totals" formatted="true">الفترة: %1$s · رأس المال: %2$s · العائد: %3$s</string>
+    <string name="settings_investment_import_preview_replace" formatted="true">هذا يطابق صندوقًا موجودًا. عند التأكيد سيتم استبدال %1$d صف مساهمين موجود.</string>
+    <string name="settings_investment_import_preview_row" formatted="true">%1$s · مساهمة %2$s</string>
+    <string name="settings_investment_import_preview_first_skip" formatted="true">أول صف استثمار متخطى: #%1$d · %2$s · %3$s</string>
+    <string name="settings_investment_import_preview_confirm">تأكيد الاستثمارات</string>
+    <string name="settings_investment_import_done_new" formatted="true">تم استيراد %1$d مساهمة استثمارية. تم تخطي %2$d صف.</string>
+    <string name="settings_investment_import_done_existing" formatted="true">تم استيراد %1$d مساهمة واستبدال %2$d صف قديم. تم تخطي %3$d صف.</string>
+
     <!-- Tax export card -->
     <string name="settings_tax_title">تصدير للمحاسب والضرائب</string>
     <string name="settings_tax_body">أنشئ ملف PDF سنوي يحتوي ملخص الدخل والمصروفات، إجمالي كل فئة، وقائمة الحركات المؤكدة. تُستبعد تسويات الرصيد لأنها ليست دخلًا أو مصروفًا حقيقيًا.</string>

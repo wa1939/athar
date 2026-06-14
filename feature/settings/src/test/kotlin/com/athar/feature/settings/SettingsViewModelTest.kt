@@ -30,6 +30,10 @@ import com.athar.core.domain.repo.CsvImportResult
 import com.athar.core.domain.repo.CsvImportRowDecision
 import com.athar.core.domain.repo.CsvImportRowEdit
 import com.athar.core.domain.repo.CsvImportTrigger
+import com.athar.core.domain.repo.InvestmentImportPreview
+import com.athar.core.domain.repo.InvestmentImportPreviewResult
+import com.athar.core.domain.repo.InvestmentImportResult
+import com.athar.core.domain.repo.InvestmentImportTrigger
 import com.athar.core.domain.repo.MerchantBulkExportResult
 import com.athar.core.domain.repo.MerchantBulkExportMode
 import com.athar.core.domain.repo.MerchantBulkExportTrigger
@@ -299,11 +303,52 @@ class SettingsViewModelTest {
         assertThat(wishlist.importedBytes).isEmpty()
     }
 
+    @Test
+    fun `confirm investment import applies the previewed bytes`() = runTest(mainDispatcher) {
+        val investments = RecordingInvestmentImportTrigger()
+        val viewModel = settingsViewModel(investmentImporter = investments)
+
+        viewModel.previewInvestmentImportBytes("previewed workbook".toByteArray())
+        advanceUntilIdle()
+        viewModel.confirmInvestmentImport()
+        advanceUntilIdle()
+
+        assertThat(investments.previewedBytes.map { it.decodeToString() }).containsExactly("previewed workbook")
+        assertThat(investments.importedBytes.map { it.decodeToString() }).containsExactly("previewed workbook")
+        assertThat(viewModel.investmentImportStatus.value)
+            .isEqualTo(
+                InvestmentImportStatus.Done(
+                    importedContributions = 6,
+                    replacedContributions = 2,
+                    skipped = 1,
+                    existingPool = true,
+                ),
+            )
+    }
+
+    @Test
+    fun `failed investment preview clears pending import bytes`() = runTest(mainDispatcher) {
+        val investments = RecordingInvestmentImportTrigger(
+            previewResult = InvestmentImportPreviewResult.Failed("Not a TMOAP workbook."),
+        )
+        val viewModel = settingsViewModel(investmentImporter = investments)
+
+        viewModel.previewInvestmentImportBytes("bad workbook".toByteArray())
+        advanceUntilIdle()
+        viewModel.confirmInvestmentImport()
+        advanceUntilIdle()
+
+        assertThat(viewModel.investmentImportStatus.value)
+            .isEqualTo(InvestmentImportStatus.Failed("No investment preview is ready to import."))
+        assertThat(investments.importedBytes).isEmpty()
+    }
+
     private fun settingsViewModel(
         backfill: SmsBackfillTrigger = FakeSmsBackfillTrigger(),
         csvImporter: CsvImportTrigger = FakeCsvImportTrigger,
         budgetTargetsImporter: BudgetTargetImportTrigger = FakeBudgetTargetImportTrigger,
         wishlistImporter: WishlistImportTrigger = FakeWishlistImportTrigger,
+        investmentImporter: InvestmentImportTrigger = FakeInvestmentImportTrigger,
         transactions: TransactionRepository = FakeTransactionRepository(),
         accounts: AccountRepository = FakeAccountRepository(),
     ) = SettingsViewModel(
@@ -312,6 +357,7 @@ class SettingsViewModelTest {
         csvImporter = csvImporter,
         budgetTargetsImporter = budgetTargetsImporter,
         wishlistImporter = wishlistImporter,
+        investmentImporter = investmentImporter,
         csvExporter = FakeCsvExportTrigger,
         bulkExporter = FakeMerchantBulkExportTrigger,
         bulkImporter = FakeMerchantBulkImportTrigger,
@@ -418,6 +464,19 @@ private object FakeWishlistImportTrigger : WishlistImportTrigger {
         WishlistImportResult.Done(imported = 0, newItems = 0, updatedItems = 0, skipped = 0)
 }
 
+private object FakeInvestmentImportTrigger : InvestmentImportTrigger {
+    override suspend fun preview(input: InputStream): InvestmentImportPreviewResult =
+        InvestmentImportPreviewResult.Done(emptyInvestmentPreview())
+
+    override suspend fun import(input: InputStream): InvestmentImportResult =
+        InvestmentImportResult.Done(
+            importedContributions = 0,
+            replacedContributions = 0,
+            skipped = 0,
+            existingPool = false,
+        )
+}
+
 private class RecordingBudgetTargetImportTrigger(
     var previewResult: BudgetTargetImportPreviewResult =
         BudgetTargetImportPreviewResult.Done(emptyBudgetPreview()),
@@ -451,6 +510,29 @@ private class RecordingWishlistImportTrigger(
     override suspend fun import(input: InputStream): WishlistImportResult {
         importedBytes += input.readBytes()
         return WishlistImportResult.Done(imported = 5, newItems = 3, updatedItems = 2, skipped = 1)
+    }
+}
+
+private class RecordingInvestmentImportTrigger(
+    var previewResult: InvestmentImportPreviewResult =
+        InvestmentImportPreviewResult.Done(emptyInvestmentPreview()),
+) : InvestmentImportTrigger {
+    val previewedBytes = mutableListOf<ByteArray>()
+    val importedBytes = mutableListOf<ByteArray>()
+
+    override suspend fun preview(input: InputStream): InvestmentImportPreviewResult {
+        previewedBytes += input.readBytes()
+        return previewResult
+    }
+
+    override suspend fun import(input: InputStream): InvestmentImportResult {
+        importedBytes += input.readBytes()
+        return InvestmentImportResult.Done(
+            importedContributions = 6,
+            replacedContributions = 2,
+            skipped = 1,
+            existingPool = true,
+        )
     }
 }
 
@@ -550,6 +632,19 @@ private fun emptyWishlistPreview(): WishlistImportPreview = WishlistImportPrevie
     skipped = 0,
     totalCost = Money.zero(),
     totalSaved = Money.zero(),
+    sampleRows = emptyList(),
+    skippedRows = emptyList(),
+)
+
+private fun emptyInvestmentPreview(): InvestmentImportPreview = InvestmentImportPreview(
+    poolName = "Family Investments",
+    period = "Imported",
+    existingPool = false,
+    contributionRows = 0,
+    replacedContributions = 0,
+    skipped = 0,
+    totalCorpus = Money.zero(),
+    totalReturn = Money.zero(),
     sampleRows = emptyList(),
     skippedRows = emptyList(),
 )

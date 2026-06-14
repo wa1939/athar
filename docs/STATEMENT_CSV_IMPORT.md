@@ -18,9 +18,9 @@ XLSX workbooks, OFX/QFX, and MT940 files.
   headers and use the same mapper as CSV. TMOAP-style separate `Expenses` and
   `Income` sheets preserve positive Amount columns as expenses/income from the
   sheet name when no explicit type column exists.
-- TMOAP Budget Targets and Wishlist rows are handled by separate Settings import
-  cards. Statement import stays transaction-only and never changes Plan data as
-  a side effect.
+- TMOAP Budget Targets, Wishlist rows, and Family Investments rows are handled
+  by separate Settings import cards. Statement import stays transaction-only and
+  never changes Plan data as a side effect.
 
 ## Conservative rules
 

@@ -19,6 +19,7 @@ import com.athar.core.data.csv.BudgetTargetImporter
 import com.athar.core.data.csv.CommunityRulesShareExporter
 import com.athar.core.data.csv.CsvExporter
 import com.athar.core.data.csv.CsvImporter
+import com.athar.core.data.csv.InvestmentImporter
 import com.athar.core.data.csv.MerchantBulkExporter
 import com.athar.core.data.csv.MerchantBulkImporter
 import com.athar.core.data.csv.WishlistImporter
@@ -44,6 +45,7 @@ import com.athar.core.domain.repo.BudgetTargetImportTrigger
 import com.athar.core.domain.repo.CommunityRulesShareTrigger
 import com.athar.core.domain.repo.CsvExportTrigger
 import com.athar.core.domain.repo.CsvImportTrigger
+import com.athar.core.domain.repo.InvestmentImportTrigger
 import com.athar.core.domain.repo.MerchantBulkExportTrigger
 import com.athar.core.domain.repo.MerchantBulkImportTrigger
 import com.athar.core.domain.repo.InvestmentRepository
@@ -186,6 +188,9 @@ internal abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindWishlistImportTrigger(impl: WishlistImporter): WishlistImportTrigger
+
+    @Binds @Singleton
+    abstract fun bindInvestmentImportTrigger(impl: InvestmentImporter): InvestmentImportTrigger
 
     @Binds @Singleton
     abstract fun bindSmsAuditRepository(impl: SmsAuditRepositoryImpl): SmsAuditRepository

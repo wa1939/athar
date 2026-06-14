@@ -146,6 +146,19 @@
     <string name="settings_wishlist_import_preview_flexible_months">flexible</string>
     <string name="settings_wishlist_import_done" formatted="true">Imported %1$d wishlist items. %2$d new. %3$d updated. %4$d rows skipped.</string>
 
+    <!-- Investment import card -->
+    <string name="settings_investment_import_title">Family investments import</string>
+    <string name="settings_investment_import_body">Import the TMOAP Family Investments sheet into Plan. Athar previews the pool first; confirming updates the pool return and replaces the matched pool\'s contributor rows to avoid duplicate re-imports.</string>
+    <string name="settings_investment_import_action_import">Import investments</string>
+    <string name="settings_investment_import_preview_summary" formatted="true">%1$s: ready to import %2$d contributions. %3$d rows will be skipped.</string>
+    <string name="settings_investment_import_preview_totals" formatted="true">Period: %1$s · Corpus: %2$s · Return: %3$s</string>
+    <string name="settings_investment_import_preview_replace" formatted="true">This matches an existing pool. Confirming will replace %1$d existing contributor rows.</string>
+    <string name="settings_investment_import_preview_row" formatted="true">%1$s · %2$s contribution</string>
+    <string name="settings_investment_import_preview_first_skip" formatted="true">First skipped investment row: #%1$d · %2$s · %3$s</string>
+    <string name="settings_investment_import_preview_confirm">Confirm investments</string>
+    <string name="settings_investment_import_done_new" formatted="true">Imported %1$d investment contributions. %2$d rows skipped.</string>
+    <string name="settings_investment_import_done_existing" formatted="true">Imported %1$d investment contributions and replaced %2$d old rows. %3$d rows skipped.</string>
+
     <!-- Tax export card -->
     <string name="settings_tax_title">Export for taxes and accountant</string>
     <string name="settings_tax_body">Create an annual PDF with income/expense summary, category totals, and the confirmed transaction list. Balance reconciliation adjustments are excluded because they are not real income or spending.</string>
