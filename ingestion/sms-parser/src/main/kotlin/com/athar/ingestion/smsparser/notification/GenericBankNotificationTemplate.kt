@@ -202,6 +202,7 @@ class GenericBankNotificationTemplate : BankTemplate {
                 ?: forHint.find(normalized)?.groupValues?.get(1)
                 ?: fromHint.find(normalized)?.groupValues?.get(1))
                 ?: partyBeforeAmount(normalized, amountMatch)
+                ?: partyAfterAmount(normalized, amountMatch)
             TxType.INCOME -> null
             TxType.TRANSFER -> null
         }
@@ -342,6 +343,21 @@ class GenericBankNotificationTemplate : BankTemplate {
             .firstOrNull()
     }
 
+    private fun partyAfterAmount(body: String, amountMatch: MatchResult): String? {
+        val afterAmount = body
+            .substring(amountMatch.range.last + 1)
+            .lineSequence()
+            .firstOrNull()
+            .orEmpty()
+            .trim(' ', '.', ',', '-', '·', ':')
+        if (!partyStartsWithLetter.matches(afterAmount)) return null
+
+        val candidate = afterAmount
+            .replace(trailingNonPartyContext, "")
+            .trim(' ', '.', ',', '-', '·', ':')
+        return cleanParty(candidate)
+    }
+
     private fun cleanParty(raw: String?): String? {
         if (raw.isNullOrBlank()) return null
         val cleaned = raw
@@ -364,6 +380,11 @@ class GenericBankNotificationTemplate : BankTemplate {
         private const val RewardSuffixWindow = 16
         private const val CurrencySuffixWindow = 12
         private val ArabicBalanceTerms = listOf("رصيد", "الرصيد", "المتاح", "الرصيد المتبقي")
+        private val partyStartsWithLetter = Regex("""^[A-Za-z\u0600-\u06FF].*""")
+        private val trailingNonPartyContext = Regex(
+            """(?:\b(?:balance|available|remaining\s+balance|current\s+balance|card|ending|account|acct|approved|confirmed|successful|completed|posted|declined)\b|رصيد|الرصيد|المتاح|بطاقة|البطاقة|حساب|معتمد|مؤكد|ناجح|مكتمل).*""",
+            RegexOption.IGNORE_CASE,
+        )
 
         val BankPackagePattern = Regex(
             """^notification:.*(alrajhi|stcpay|stcbank|d360|barq|alinma|riyad|snb|alahli|anb|albilad|bsf|saib|jazira|emiratesnbd|adcb|mashreq|bankfab|qnb|boubyan|kfh|bankmuscat|wise|transferwise|revolut|chase|capitalone|mercury|monzo|n26|starling|hsbc|barclays|lloyds|natwest|santander|halifax|usbank|pnc|sofi|walletnfcrel|paisa|samsung\.android\.spay|paypal|venmo|squareup\.cash|americanexpress|amex|bankofamerica|bofa|wellsfargo|citimobile|usaa|discoverfinancial|truist|citizensbank|payoneer|remitly|westernunion|bunq|nubank|bbva|scotiabank|tdbank|rbc|commbank|westpac|nab\.mobile|anz\.android|dbsmbanking|ocbc|uob|maybank|cimb|hdfcbank|icici|axisbank|kotak).*""",

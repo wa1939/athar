@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Store-safe notification parsing now preserves compact merchant/biller labels that appear immediately after the transaction amount, such as POS purchase and Arabic bill-payment copy, while stripping trailing balance/card/status suffixes.
 - Bulk categorization imports now train exact merchant rules instead of broad substring rules, and community-rule exports omit exact local rules so private/imported merchant labels stay on device unless the user explicitly creates an "Always categorize" substring rule.
 - Bulk categorization imports now propagate one unambiguous category choice to blank rows for the same repeated merchant inside the imported CSV, while conflicting merchant-group categories update only the explicit rows and do not train a learned rule.
 - The gated private SMS audit now reports top hashed uncategorized merchant groups, including merchant length/script buckets, sample counts, and parser template counts, so categorization backlog work can focus on repeated merchants without exposing raw private labels.

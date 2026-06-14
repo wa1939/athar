@@ -387,6 +387,54 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses compact trailing merchant after amount notification`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "POS purchase SAR 42.00 Carrefour"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Carrefour")
+    }
+
+    @Test
+    fun `parses trailing merchant before balance suffix notification`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "POS purchase SAR 42.00 Carrefour الرصيد ١٠٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Carrefour")
+    }
+
+    @Test
+    fun `parses Arabic trailing biller after amount notification`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم دفع ١٢٥ ر.س فاتورة الكهرباء"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("125"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("فاتورة الكهرباء")
+    }
+
+    @Test
+    fun `does not treat trailing status as merchant`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Card purchase SAR 42.00 approved"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isNull()
+    }
+
+    @Test
     fun `parses broader global currency code notification`() {
         val result = parser.parse(
             event("notification:com.revolut.revolut", "You spent SEK 129,00 at IKEA"),
