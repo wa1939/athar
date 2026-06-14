@@ -42,9 +42,10 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""تم\s+تفعيل\s+المستفيد"""),
         Regex("""تمت?\s+ا(?:ضافة|ضافه)\s+المستفيد"""),
         Regex("""تم\s+تنشيط\s+المستفيد"""),
+        Regex("""تم\s+تنشيط\s+مستفيد\s*:"""),
         Regex("""تم\s+إ?ضافة\s+مستفيد\s*[-–]"""),
         Regex("""تم\s+تنشيط\s+مستفيد\s*[-–]"""),
-        Regex("""اسم\s+المستفيد[\s\S]{0,180}(?:حالة\s*:\s*غير\s+نشط|الحالة\s*:\s*تم\s+التنشيط|تم\s+التنشيط)"""),
+        Regex("""اسم\s+المستفيد[\s\S]{0,180}(?:حالة\s*:\s*غير\s+نشط|حالة\s*:\s*نشط|الحالة\s*:\s*تم\s+التنشيط|تم\s+التنشيط)"""),
 
         // Card management (activation, digital wallet provisioning, renewal)
         Regex("""\bcard\s+(?:has\s+been\s+)?added\s+to\s+(?:digital\s+wallet|wallet)""", RegexOption.IGNORE_CASE),
@@ -64,6 +65,9 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""الانتهاء[\s\S]{0,160}تجديد\s+البطاقة"""),
         Regex("""عملية\s+مرفوضة[^\n\r]{0,80}بطاقتك\s+غير\s+مفعلة"""),
         Regex("""عملية\s+مرفوضة[\s\S]{0,120}البطاقة\s+غير\s+مفعلة"""),
+        Regex("""تم\s+ربط\s+رقم\s+الجوال[\s\S]{0,120}بالبطاقة[\s\S]{0,80}بنجاح"""),
+        Regex("""تم\s+اصدار\s+بطاقتك\s+الرقمية[\s\S]{0,100}بنجاح"""),
+        Regex("""تم\s+تحديث\s+شروط\s+البطاقات\s+الائتمانية\s+ومسبقة\s+الدفع"""),
 
         // System / scheduled maintenance / service announcements
         Regex("""\bscheduled\s+(?:update|maintenance)\b""", RegexOption.IGNORE_CASE),
@@ -109,6 +113,7 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""فرصة\s+الفوز|سجّل\s+الآن|سجل\s+الآن"""),
         Regex("""نقاط\s+مكافأة|نقطة\s+مكافأة"""),
         Regex("""برنامج\s+مكافآتي[^\n\r]{0,80}نقط[^\n\r]{0,80}سينتهي"""),
+        Regex("""إجمالي\s+رصيد\s+نقاطك[\s\S]{0,80}برنامج\s+مكافآتي"""),
         Regex("""تطبق\s+الشروط"""),
         Regex("""تقسيط|التقسيط"""),
         Regex("""موافقة\s+فورية"""),
@@ -135,6 +140,9 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""تم\s+تسجيل\s+جهاز\s+جديد"""),
         Regex("""تم\s+تسجيل\s+الدخول[^\n\r]{0,80}جهاز\s+جديد"""),
         Regex("""تم\s+تفعيل\s+خدمة\s+الدخول\s+السريع"""),
+        Regex("""اسم\s+المستخدم\s+الخاص\s+بك\s+للخدمات\s+الالكترونية"""),
+        Regex("""تم\s+تغيير\s+حد\s+التحويل\s+اليومي"""),
+        Regex("""تم\s+تغيير\s+الحد\s+اليومي\s+للعمليات\s+بنجاح"""),
         Regex("""تم\s+التسجيل\s+في\s+خاصية\s+(?:البصمة|الدخول\s+السريع)"""),
         Regex("""تم\s+إلغاء\s+خاصية\s+البصمة"""),
         Regex("""تفعيل\s+خدمة\s+الدخول[^\n\r]{0,80}بصمة"""),

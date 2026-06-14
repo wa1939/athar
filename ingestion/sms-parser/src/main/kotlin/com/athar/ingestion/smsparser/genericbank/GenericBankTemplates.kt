@@ -61,7 +61,7 @@ abstract class StructuredBankTemplate(
         RegexOption.IGNORE_CASE,
     )
     private val incomeMarker = Regex(
-        """(?:Credit|Deposit|incoming|حوالة\s+واردة|ايداع|إيداع|وارد|استلام)""",
+        """(?:Credit|Deposit|incoming|refund|reversal|حوالة\s+واردة|ايداع|إيداع|وارد|استلام|استرداد)""",
         RegexOption.IGNORE_CASE,
     )
     private val merchantAt = Regex(

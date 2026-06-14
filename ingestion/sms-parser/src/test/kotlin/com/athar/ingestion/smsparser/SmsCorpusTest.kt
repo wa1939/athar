@@ -765,6 +765,21 @@ class SmsCorpusTest {
         assertThat(r.templateId).isEqualTo("urpay-structured")
     }
 
+    @Test fun `urpay Arabic refund is income`() {
+        val body = """
+            استرداد مبلغ
+            من:SAMPLE MERCHANT
+            بطاقة:1234; بطاقة مدى
+            مبلغ:SAR 42.50
+            16-01-2026 20:27
+        """.trimIndent()
+        val r = parser().parse(event("urpay", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.INCOME)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("42.50"))
+        assertThat(r.counterparty).isEqualTo("SAMPLE MERCHANT")
+        assertThat(r.templateId).isEqualTo("urpay-structured")
+    }
+
     @Test fun `urpay device-linking notice is Ignored`() {
         val body = "تم إلغاء ربط جهاز android v33 بحسابك"
         assertThat(parser().parse(event("urpay", body))).isEqualTo(ParseResult.Ignored)
@@ -957,6 +972,42 @@ class SmsCorpusTest {
             بنك الجزيرة .. هنا تنمو الثروات.
         """.trimIndent()
         assertThat(parser().parse(event("Jazira Bank", brandAnnouncement))).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `account card and reward state notices with amounts are Ignored`() {
+        assertThat(
+            parser().parse(event("AlRajhiBank", "تم ربط رقم الجوال 0500000000 بالبطاقة 1234 بنجاح")),
+        ).isEqualTo(ParseResult.Ignored)
+        assertThat(
+            parser().parse(event("AlJaziraSMS", "إجمالي رصيد نقاطك في برنامج مكافآتي هو 12345.0 نقطة.")),
+        ).isEqualTo(ParseResult.Ignored)
+        assertThat(
+            parser().parse(event("AlRajhiBank", "تم تغيير حد التحويل اليومي\nالحد:50000SAR")),
+        ).isEqualTo(ParseResult.Ignored)
+        assertThat(
+            parser().parse(event("SNB-AlAhli", "تم تغيير الحد اليومي للعمليات بنجاح\nإلى 50000.00 SAR\nفي 16/01/26 20:27")),
+        ).isEqualTo(ParseResult.Ignored)
+        assertThat(
+            parser().parse(event("SNB-AlAhli", "اسم المستخدم الخاص بك للخدمات الالكترونية هو 123456789")),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test fun `compact beneficiary and digital-card administration notices are Ignored`() {
+        assertThat(
+            parser().parse(event("D360 Bank", "تم تنشيط مستفيد:مستفيد تجريبي فى : 16-01-2026 20:27:00")),
+        ).isEqualTo(ParseResult.Ignored)
+        assertThat(
+            parser().parse(event("D360 Bank", "تم اصدار بطاقتك الرقمية المنتهية ب *1234 بنجاح")),
+        ).isEqualTo(ParseResult.Ignored)
+        val activeBeneficiary = """
+            اسم المستفيد : مستفيد تجريبي
+            اسم المخصص : مستفيد
+            حالة: نشط
+            SA0000000000000000000000 : حساب
+            مصرف الراجحي : مصرف
+            في : 20:27 16-01-2026
+        """.trimIndent()
+        assertThat(parser().parse(event("AlJaziraSMS", activeBeneficiary))).isEqualTo(ParseResult.Ignored)
     }
 
     // ─── Cross-cutting: unknown sender ────────────────────────────────────
