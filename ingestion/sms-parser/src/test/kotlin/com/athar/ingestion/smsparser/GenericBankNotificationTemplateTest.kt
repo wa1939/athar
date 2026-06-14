@@ -784,6 +784,75 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses generic mobile top up notification as telecom expense`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Mobile top up SAR 50.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("50.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Mobile recharge")
+    }
+
+    @Test
+    fun `parses airtime purchase notification as telecom expense`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Airtime purchase AED 25.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("25.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Mobile recharge")
+    }
+
+    @Test
+    fun `preserves mobile carrier on recharge notification`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Mobile recharge paid to Mobily SAR 50.00"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("50.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Mobily")
+    }
+
+    @Test
+    fun `parses Arabic mobile recharge notification as telecom expense`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم شحن رصيد الجوال بمبلغ ٥٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("50"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Mobile recharge")
+    }
+
+    @Test
+    fun `keeps non telecom wallet top up notification as income`() {
+        val result = parser.parse(
+            event("notification:com.revolut.revolut", "Wallet top up SAR 100.00 from Bank Account"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("100.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.counterparty).isEqualTo("Bank Account")
+    }
+
+    @Test
+    fun `ignores mobile recharge promotional notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.alrajhibank.alrajhimobile", "Get 20% bonus on your next mobile top-up SAR 50.00"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
     fun `does not treat trailing status as merchant`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "Card purchase SAR 42.00 approved"),

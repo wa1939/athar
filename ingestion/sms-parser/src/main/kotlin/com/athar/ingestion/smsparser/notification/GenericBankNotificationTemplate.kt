@@ -120,6 +120,14 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\b(?:subscription|membership|recurring\s+payment|insurance\s+premium|policy\s+premium|rent\s+payment|rent)\b[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder|renews?|renewal|expires?)\b|\b(?:due|scheduled|upcoming|reminder|renews?|renewal|expires?)[^\n\r]{0,80}\b(?:subscription|membership|insurance\s+premium|policy\s+premium|rent\s+payment|rent)\b|(?:إيجار|ايجار|اشتراك|تأمين|قسط\s+التأمين)[^\n\r]{0,80}(?:مستحق|استحقاق|موعد|قادم|مجدول|تجديد))""",
         RegexOption.IGNORE_CASE,
     )
+    private val telecomRechargeWords = Regex(
+        """(?:\b(?:mobile|phone|airtime|prepaid)\s+(?:recharge|top[-\s]?up)\b|\b(?:recharge|top[-\s]?up)\s+(?:for\s+)?(?:mobile|phone|airtime|prepaid)\b|\bairtime\s+(?:purchase|payment)\b|(?:شحن|تعبئة|تعبئه)\s+(?:رصيد\s+)?(?:الجوال|الهاتف|الموبايل|المحمول)|(?:رصيد\s+)?(?:الجوال|الهاتف|الموبايل|المحمول)\s+(?:تم\s+)?(?:شحن|تعبئة|تعبئه))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val telecomRechargeReminderWords = Regex(
+        """(?:\b(?:next|offer|promo|bonus|discount|bundle|data)\b[^\n\r]{0,80}\b(?:mobile|phone|airtime|prepaid)\s+(?:recharge|top[-\s]?up)\b|\b(?:mobile|phone|airtime|prepaid)\s+(?:recharge|top[-\s]?up)\b[^\n\r]{0,80}\b(?:offer|promo|bonus|discount|bundle|data|scheduled|upcoming|reminder)\b|(?:عرض|عروض|خصم|بونص|مكافأة|باقة|بيانات)[^\n\r]{0,80}(?:شحن|تعبئة|تعبئه)\s+(?:رصيد\s+)?(?:الجوال|الهاتف|الموبايل|المحمول))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val declinedWords = Regex(
         """\b(?:declined|rejected|failed|unsuccessful|مرفوض|رُفض|فشل|غير\s+ناجحة)\b""",
         RegexOption.IGNORE_CASE,
@@ -242,6 +250,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (debtReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (utilityBillReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (recurringExpenseReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (telecomRechargeReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (spendingSummaryWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (limitWords.containsMatchIn(normalized) && !hasExpenseAction(normalized) && !hasIncomeAction(normalized)) {
             return ParseResult.Ignored
@@ -263,6 +272,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         val balanceAfter = extractBalanceAfter(normalized, amountMatch, currency)
 
         val type = when {
+            isTelecomRechargeNotification(normalized) -> TxType.EXPENSE
             hasIncomeAction(normalized) -> TxType.INCOME
             isRecurringExpenseNotification(normalized) -> TxType.EXPENSE
             transferWords.containsMatchIn(normalized) -> TxType.TRANSFER
@@ -271,14 +281,16 @@ class GenericBankNotificationTemplate : BankTemplate {
             else -> return ParseResult.Failed("notification action not found", listOf(id))
         }
 
+        val merchantCandidate = if (type == TxType.EXPENSE) normalized.cleanMerchantCandidate(amountMatch) else null
         val merchant = when (type) {
             TxType.EXPENSE -> "ATM Withdrawal".takeIf { isWithdrawalNotification(normalized) }
                 ?: "Bank fees".takeIf { isBankFeeNotification(normalized) }
                 ?: "Credit card payment".takeIf { isCreditCardPaymentNotification(normalized) }
                 ?: "Loan instalment".takeIf { isLoanInstalmentNotification(normalized) }
+                ?: "Mobile recharge".takeIf { isTelecomRechargeNotification(normalized) && merchantCandidate == null }
                 ?: normalizeExpenseMerchant(
                     body = normalized,
-                    merchant = normalized.cleanMerchantCandidate(amountMatch),
+                    merchant = merchantCandidate,
                 )
             TxType.INCOME -> null
             TxType.TRANSFER -> null
@@ -318,7 +330,8 @@ class GenericBankNotificationTemplate : BankTemplate {
 
     private fun hasAction(body: String): Boolean =
         hasExpenseAction(body) || hasIncomeAction(body) || transferWords.containsMatchIn(body) ||
-            isBankFeeNotification(body) || isDebtPaymentNotification(body) || isRecurringExpenseNotification(body)
+            isBankFeeNotification(body) || isDebtPaymentNotification(body) ||
+            isRecurringExpenseNotification(body) || isTelecomRechargeNotification(body)
 
     private fun hasExpenseAction(body: String): Boolean =
         expenseWords.containsMatchIn(body) || expensePhrases.containsMatchIn(body)
@@ -353,6 +366,9 @@ class GenericBankNotificationTemplate : BankTemplate {
         subscriptionPaymentWords.containsMatchIn(body) ||
             insurancePremiumWords.containsMatchIn(body) ||
             rentPaymentWords.containsMatchIn(body)
+
+    private fun isTelecomRechargeNotification(body: String): Boolean =
+        telecomRechargeWords.containsMatchIn(body)
 
     private fun String.cleanMerchantCandidate(amountMatch: MatchResult): String? =
         cleanParty(merchantLabelHint.find(this)?.groupValues?.get(1)
@@ -454,6 +470,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         incomeWords.find(body)?.range?.first,
         incomePhrases.find(body)?.range?.first,
         salaryIncomeWords.find(body)?.range?.first,
+        telecomRechargeWords.find(body)?.range?.first,
         transferWords.find(body)?.range?.first,
         creditCardPaymentWords.find(body)?.range?.first,
         loanInstalmentWords.find(body)?.range?.first,

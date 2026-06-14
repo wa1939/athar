@@ -3559,6 +3559,11 @@
       "pattern": "rent payment",
       "categoryId": "cat-rent",
       "priority": 90
+    },
+    {
+      "pattern": "mobile recharge",
+      "categoryId": "cat-telecom",
+      "priority": 90
     }
   ]
 }
