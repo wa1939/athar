@@ -228,6 +228,22 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\b(?:flight|airline|air\s+ticket|hotel|lodging|accommodation|travel|trip|holiday|vacation|car\s+rental|rental\s+car|vehicle\s+rental)\b[^\n\r]{0,80}\b(?:offer|promo|discount|coupon|deal|save|bonus|reward|cashback|points|miles|itinerary|reservation|reserved|check[-\s]?in|boarding\s+pass|quote|estimate|estimated|scheduled|upcoming|reminder)\b|\b(?:offer|promo|discount|coupon|deal|save|bonus|reward|cashback|points|miles|itinerary|reservation|reserved|check[-\s]?in|boarding\s+pass|quote|estimate|estimated|scheduled|upcoming|reminder)\b[^\n\r]{0,80}\b(?:flight|airline|air\s+ticket|hotel|lodging|accommodation|travel|trip|holiday|vacation|car\s+rental|rental\s+car|vehicle\s+rental)\b|(?:عرض|عروض|قسيمة|كوبون|وفر|مكافأة|نقاط|أميال|اميال|استرداد|تذكير|مجدول|قادم|حجز|تقدير|مسار\s+رحلة|بطاقة\s+صعود)[^\n\r]{0,80}(?:طيران|تذكرة\s+طيران|فندق|فنادق|سفر|تأجير\s+سيارة|تاجير\s+سيارة|استئجار\s+سيارة))""",
         RegexOption.IGNORE_CASE,
     )
+    private val clothingPurchaseWords = Regex(
+        """(?:\b(?:clothing|clothes|apparel|fashion|footwear|shoes)\s+(?:purchase|payment|paid|charge|shopping)\b|\b(?:purchase|payment|paid|charged)\s+(?:for\s+)?(?:clothing|clothes|apparel|fashion|footwear|shoes)\b|(?:سداد|دفع|خصم|شراء)\s+(?:ملابس|ثياب|أزياء|ازياء|أحذية|احذية)|(?:ملابس|ثياب|أزياء|ازياء|أحذية|احذية)\s+(?:تم\s+)?(?:سداد|دفع|خصم|شراء))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val electronicsPurchaseWords = Regex(
+        """(?:\b(?:electronics?|electronic\s+goods|devices?|mobile\s+phone|smartphone|laptop|computer|gadget)\s+(?:purchase|payment|paid|charge)\b|\b(?:purchase|payment|paid|charged)\s+(?:for\s+)?(?:electronics?|electronic\s+goods|a\s+device|devices?|mobile\s+phone|smartphone|laptop|computer|gadget)\b|(?:سداد|دفع|خصم|شراء)\s+(?:إلكترونيات|الكترونيات|أجهزة|اجهزة|جوال|هاتف|كمبيوتر|لابتوب)|(?:إلكترونيات|الكترونيات|أجهزة|اجهزة|جوال|هاتف|كمبيوتر|لابتوب)\s+(?:تم\s+)?(?:سداد|دفع|خصم|شراء))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val onlineShoppingPurchaseWords = Regex(
+        """(?:\b(?:online\s+shopping|online\s+purchase|e[-\s]?commerce|marketplace)\s+(?:purchase|payment|paid|charge)\b|\b(?:purchase|payment|paid|charged)\s+(?:for\s+)?(?:online\s+shopping|online\s+purchase|e[-\s]?commerce|marketplace)\b|(?:سداد|دفع|خصم|شراء)\s+(?:تسوق\s+إلكتروني|تسوق\s+الكتروني|شراء\s+إلكتروني|شراء\s+الكتروني)|(?:تسوق\s+إلكتروني|تسوق\s+الكتروني|شراء\s+إلكتروني|شراء\s+الكتروني)\s+(?:تم\s+)?(?:سداد|دفع|خصم|شراء))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val retailShoppingNonPostedWords = Regex(
+        """(?:\b(?:clothing|clothes|apparel|fashion|footwear|shoes|electronics?|electronic\s+goods|devices?|mobile\s+phone|smartphone|laptop|computer|gadget|online\s+shopping|online\s+purchase|e[-\s]?commerce|marketplace)\b[^\n\r]{0,80}\b(?:offer|promo|discount|coupon|deal|save|price\s+drop|cart|wishlist|back\s+in\s+stock|preorder|pre-order|shipping|shipped|delivered|out\s+for\s+delivery|delivery\s+update|order\s+status|ready\s+for\s+pickup|reminder)\b|\b(?:offer|promo|discount|coupon|deal|save|price\s+drop|cart|wishlist|back\s+in\s+stock|preorder|pre-order|shipping|shipped|delivered|out\s+for\s+delivery|delivery\s+update|order\s+status|ready\s+for\s+pickup|reminder)\b[^\n\r]{0,80}\b(?:clothing|clothes|apparel|fashion|footwear|shoes|electronics?|electronic\s+goods|devices?|mobile\s+phone|smartphone|laptop|computer|gadget|online\s+shopping|online\s+purchase|e[-\s]?commerce|marketplace)\b|(?:عرض|عروض|خصم|قسيمة|كوبون|وفر|سلة|عربة|قائمة\s+الأماني|قائمة\s+الاماني|تم\s+شحن|تم\s+توصيل|قيد\s+التوصيل|تحديث\s+الطلب|تذكير)[^\n\r]{0,80}(?:ملابس|ثياب|أزياء|ازياء|أحذية|احذية|إلكترونيات|الكترونيات|أجهزة|اجهزة|تسوق\s+إلكتروني|تسوق\s+الكتروني|شراء\s+إلكتروني|شراء\s+الكتروني))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val declinedWords = Regex(
         """\b(?:declined|rejected|failed|unsuccessful|مرفوض|رُفض|فشل|غير\s+ناجحة)\b""",
         RegexOption.IGNORE_CASE,
@@ -356,6 +372,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (essentialLifeReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (everydayCommerceNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (travelNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (retailShoppingNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (spendingSummaryWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (limitWords.containsMatchIn(normalized) && !hasExpenseAction(normalized) && !hasIncomeAction(normalized)) {
             return ParseResult.Ignored
@@ -385,6 +402,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             isEssentialLifeExpenseNotification(normalized) -> TxType.EXPENSE
             isEverydayCommerceExpenseNotification(normalized) -> TxType.EXPENSE
             isTravelExpenseNotification(normalized) -> TxType.EXPENSE
+            isRetailShoppingExpenseNotification(normalized) -> TxType.EXPENSE
             transferWords.containsMatchIn(normalized) -> TxType.TRANSFER
             hasExpenseAction(normalized) || isBankFeeNotification(normalized) ||
                 isDebtPaymentNotification(normalized) || hasMerchantHint(normalized) -> TxType.EXPENSE
@@ -444,7 +462,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             isRecurringExpenseNotification(body) || isTelecomRechargeNotification(body) ||
             isPublicServicePaymentNotification(body) || isMobilityPaymentNotification(body) ||
             isEssentialLifeExpenseNotification(body) || isEverydayCommerceExpenseNotification(body) ||
-            isTravelExpenseNotification(body)
+            isTravelExpenseNotification(body) || isRetailShoppingExpenseNotification(body)
 
     private fun hasExpenseAction(body: String): Boolean =
         expenseWords.containsMatchIn(body) || expensePhrases.containsMatchIn(body)
@@ -468,7 +486,8 @@ class GenericBankNotificationTemplate : BankTemplate {
             !isPublicServicePaymentNotification(body) &&
             !isEssentialLifeExpenseNotification(body) &&
             !isEverydayCommerceExpenseNotification(body) &&
-            !isTravelExpenseNotification(body)
+            !isTravelExpenseNotification(body) &&
+            !isRetailShoppingExpenseNotification(body)
 
     private fun isDebtPaymentNotification(body: String): Boolean =
         isCreditCardPaymentNotification(body) || isLoanInstalmentNotification(body)
@@ -517,6 +536,11 @@ class GenericBankNotificationTemplate : BankTemplate {
             travelBookingPaymentWords.containsMatchIn(body) ||
             carRentalPaymentWords.containsMatchIn(body)
 
+    private fun isRetailShoppingExpenseNotification(body: String): Boolean =
+        clothingPurchaseWords.containsMatchIn(body) ||
+            electronicsPurchaseWords.containsMatchIn(body) ||
+            onlineShoppingPurchaseWords.containsMatchIn(body)
+
     private fun String.cleanMerchantCandidate(amountMatch: MatchResult): String? =
         cleanParty(merchantLabelHint.find(this)?.groupValues?.get(1)
             ?: recipientLabelHint.find(this)?.groupValues?.get(1)
@@ -536,6 +560,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             ?: normalizeEssentialLifeMerchant(body, merchant)
             ?: normalizeEverydayCommerceMerchant(body, merchant)
             ?: normalizeTravelMerchant(body, merchant)
+            ?: normalizeRetailShoppingMerchant(body, merchant)
             ?: merchant
 
     private fun normalizePublicServiceMerchant(body: String, merchant: String?): String? {
@@ -638,6 +663,19 @@ class GenericBankNotificationTemplate : BankTemplate {
         else -> null
     }
 
+    private fun normalizeRetailShoppingMerchant(body: String, merchant: String?): String? {
+        val label = retailShoppingLabel(body) ?: return null
+        if (merchant == null || genericRetailShoppingMerchantWords.matches(merchant.trim())) return label
+        return merchant
+    }
+
+    private fun retailShoppingLabel(body: String): String? = when {
+        clothingPurchaseWords.containsMatchIn(body) -> "Clothing purchase"
+        electronicsPurchaseWords.containsMatchIn(body) -> "Electronics purchase"
+        onlineShoppingPurchaseWords.containsMatchIn(body) -> "Online shopping purchase"
+        else -> null
+    }
+
     private fun normalizeIncomeCounterparty(body: String, counterparty: String?): String? {
         if (!salaryIncomeWords.containsMatchIn(body)) return counterparty
         val label = if (ArabicSalaryTerms.any { body.contains(it) }) "راتب" else "Salary"
@@ -723,6 +761,9 @@ class GenericBankNotificationTemplate : BankTemplate {
         hotelPaymentWords.find(body)?.range?.first,
         travelBookingPaymentWords.find(body)?.range?.first,
         carRentalPaymentWords.find(body)?.range?.first,
+        clothingPurchaseWords.find(body)?.range?.first,
+        electronicsPurchaseWords.find(body)?.range?.first,
+        onlineShoppingPurchaseWords.find(body)?.range?.first,
     ).minOrNull()
 
     private fun MatchResult.isBalanceAmount(body: String): Boolean {
@@ -902,6 +943,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         )
         private val genericTravelMerchantWords = Regex(
             """(?:flight\s+ticket|flight\s+payment|airline\s+payment|air\s+ticket|hotel\s+payment|travel\s+booking|travel\s+payment|trip\s+payment|car\s+rental\s+payment|rental\s+car\s+payment|تذكرة\s+طيران|تذاكر\s+طيران|تذكرة\s+سفر|تذاكر\s+سفر|فندق|إقامة|اقامة|حجز\s+سفر|تأجير\s+سيارة|تاجير\s+سيارة|استئجار\s+سيارة)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val genericRetailShoppingMerchantWords = Regex(
+            """(?:clothing\s+purchase|clothing\s+payment|apparel\s+payment|fashion\s+payment|footwear\s+payment|shoes\s+payment|electronics\s+purchase|electronics\s+payment|electronic\s+goods\s+payment|device\s+purchase|device\s+payment|online\s+shopping\s+purchase|online\s+shopping\s+payment|online\s+purchase|e[-\s]?commerce\s+payment|marketplace\s+payment|ملابس|ثياب|أزياء|ازياء|أحذية|احذية|إلكترونيات|الكترونيات|أجهزة|اجهزة|تسوق\s+إلكتروني|تسوق\s+الكتروني|شراء\s+إلكتروني|شراء\s+الكتروني)""",
             RegexOption.IGNORE_CASE,
         )
 

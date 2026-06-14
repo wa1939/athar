@@ -3409,6 +3409,21 @@
       "pattern": "car rental payment",
       "categoryId": "cat-travel",
       "priority": 90
+    },
+    {
+      "pattern": "clothing purchase",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "electronics purchase",
+      "categoryId": "cat-electronics",
+      "priority": 90
+    },
+    {
+      "pattern": "online shopping purchase",
+      "categoryId": "cat-other-expense",
+      "priority": 90
     }
   ]
 }

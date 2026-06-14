@@ -1361,6 +1361,94 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses clothing purchase notification with shared clothing label`() {
+        val result = parser.parse(
+            event("notification:com.revolut.revolut", "Clothing purchase GBP 89.99 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("89.99"))
+        assertThat(result.amount.currency).isEqualTo("GBP")
+        assertThat(result.merchant).isEqualTo("Clothing purchase")
+    }
+
+    @Test
+    fun `preserves clothing merchant on clothing notification`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Clothing purchase SAR 220.00 at Zara"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("220.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Zara")
+    }
+
+    @Test
+    fun `parses electronics purchase notification with shared electronics label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Electronics purchase USD 399.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("399.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Electronics purchase")
+    }
+
+    @Test
+    fun `preserves electronics merchant on electronics notification`() {
+        val result = parser.parse(
+            event("notification:com.cibc.android.mobi", "Electronics purchase CAD 129.95 at Best Buy"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("129.95"))
+        assertThat(result.amount.currency).isEqualTo("CAD")
+        assertThat(result.merchant).isEqualTo("Best Buy")
+    }
+
+    @Test
+    fun `parses online shopping payment notification with shared shopping label`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Online shopping payment AED 79.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("79.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Online shopping purchase")
+    }
+
+    @Test
+    fun `parses Arabic clothing purchase notification with shared clothing label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم شراء ملابس بمبلغ ٢٠٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("200"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Clothing purchase")
+    }
+
+    @Test
+    fun `ignores retail shopping offers carts and shipping status with amounts`() {
+        val nonPostedMessages = listOf(
+            "Save SAR 50.00 on your next clothing purchase",
+            "Electronics order shipped for USD 399.00",
+            "Online shopping cart reminder AED 120.00",
+            "Price drop CAD 20.00 on shoes",
+            "عرض خصم ٢٠ ر.س على الإلكترونيات",
+        )
+
+        nonPostedMessages.forEach { body ->
+            assertThat(parser.parse(event("notification:com.alrajhibank.alrajhimobile", body)))
+                .isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
     fun `does not treat trailing status as merchant`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "Card purchase SAR 42.00 approved"),
