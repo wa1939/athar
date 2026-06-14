@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Store-safe notification parsing now normalizes posted furniture, home-goods, and appliance purchase pushes to exact seed-backed home/electronics labels while preserving named stores when present and ignoring quotes, carts/wishlists, delivery/order-status, installation/assembly, warranty, reminder, and offer copy with amounts; the active public seed is now 703 rules.
 - Store-safe notification parsing now normalizes posted gift-card, gift, and flower-delivery payment pushes to exact seed-backed gift labels while preserving specific florists when present and ignoring free-gift promos, gift-card balances, expiry/reminder copy, and offers with amounts; the active public seed is now 700 rules.
 - Store-safe notification parsing now normalizes posted mortgage, home-loan, housing-finance, and Arabic mortgage-instalment payment pushes to the exact seed-backed `Mortgage payment` label while ignoring mortgage offers, due reminders, schedules, refinance/rate estimates, pre-approvals, and eligibility copy with amounts; the active public seed is now 697 rules.
 - Store-safe notification parsing now normalizes posted auto-loan, vehicle-finance, and Arabic car-instalment payment pushes to the exact seed-backed `Car payment` label while ignoring auto-finance offers, due reminders, schedules, and estimates with amounts; the active public seed is now 696 rules.

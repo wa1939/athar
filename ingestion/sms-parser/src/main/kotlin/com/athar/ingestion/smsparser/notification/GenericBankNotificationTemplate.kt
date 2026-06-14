@@ -208,6 +208,22 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\b(?:gift|present|gift\s+card|e[-\s]?gift\s+card|voucher|flower|flowers|florist|flower\s+delivery)\b[^\n\r]{0,80}\b(?:offer|promo|discount|coupon|deal|save|reward|points|win|giveaway|free|balance|available|expiry|expires?|valid|unredeemed|scheduled|upcoming|reminder|due)\b|\b(?:offer|promo|discount|coupon|deal|save|reward|points|win|giveaway|free|balance|available|expiry|expires?|valid|unredeemed|scheduled|upcoming|reminder|due)\b[^\n\r]{0,80}\b(?:gift|present|gift\s+card|e[-\s]?gift\s+card|voucher|flower|flowers|florist|flower\s+delivery)\b|(?:عرض|عروض|خصم|قسيمة|كوبون|وفر|مكافأة|نقاط|اربح|مجاني|رصيد|متاح|ينتهي|انتهاء|صالح|تذكير|مستحق|قادم)[^\n\r]{0,80}(?:هدية|هديه|هدايا|بطاقة\s+هدية|بطاقات\s+هدايا|بطاقة\s+إهداء|بطاقات\s+إهداء|ورد|زهور|ورود|توصيل\s+ورد|توصيل\s+زهور))""",
         RegexOption.IGNORE_CASE,
     )
+    private val furniturePurchaseWords = Regex(
+        """(?:\b(?:furniture|sofa|bed|mattress|table|chair|wardrobe)\s+(?:purchase|payment|paid|charge|charged)\b|\b(?:purchase|payment|paid|charged)\s+(?:for\s+)?(?:furniture|sofa|bed|mattress|table|chair|wardrobe)\b|(?:سداد|دفع|خصم|شراء)\s+(?:أثاث|اثاث|كنبة|سرير|مرتبة|طاولة|كرسي|خزانة)|(?:أثاث|اثاث|كنبة|سرير|مرتبة|طاولة|كرسي|خزانة)\s+(?:تم\s+)?(?:سداد|دفع|خصم|شراء))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val homeGoodsPurchaseWords = Regex(
+        """(?:\b(?:home\s+goods|homeware|household\s+goods|household\s+items|home\s+decor|decor|kitchenware)\s+(?:purchase|payment|paid|charge|charged)\b|\b(?:purchase|payment|paid|charged)\s+(?:for\s+)?(?:home\s+goods|homeware|household\s+goods|household\s+items|home\s+decor|decor|kitchenware)\b|(?:سداد|دفع|خصم|شراء)\s+(?:مستلزمات\s+منزلية|أدوات\s+منزلية|ادوات\s+منزلية|ديكور|أدوات\s+مطبخ|ادوات\s+مطبخ)|(?:مستلزمات\s+منزلية|أدوات\s+منزلية|ادوات\s+منزلية|ديكور|أدوات\s+مطبخ|ادوات\s+مطبخ)\s+(?:تم\s+)?(?:سداد|دفع|خصم|شراء))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val appliancePurchaseWords = Regex(
+        """(?:\b(?:appliance|appliances|home\s+appliance|kitchen\s+appliance|washing\s+machine|washer|refrigerator|fridge|oven|microwave|dishwasher|air\s+conditioner)\s+(?:purchase|payment|paid|charge|charged)\b|\b(?:purchase|payment|paid|charged)\s+(?:for\s+)?(?:an?\s+)?(?:appliance|home\s+appliance|kitchen\s+appliance|washing\s+machine|washer|refrigerator|fridge|oven|microwave|dishwasher|air\s+conditioner)\b|(?:سداد|دفع|خصم|شراء)\s+(?:جهاز\s+منزلي|أجهزة\s+منزلية|اجهزة\s+منزلية|غسالة|ثلاجة|فرن|ميكروويف|غسالة\s+صحون|مكيف)|(?:جهاز\s+منزلي|أجهزة\s+منزلية|اجهزة\s+منزلية|غسالة|ثلاجة|فرن|ميكروويف|غسالة\s+صحون|مكيف)\s+(?:تم\s+)?(?:سداد|دفع|خصم|شراء))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val homeGoodsNonPostedWords = Regex(
+        """(?:\b(?:furniture|sofa|bed|mattress|table|chair|wardrobe|home\s+goods|homeware|household\s+goods|household\s+items|home\s+decor|decor|kitchenware|appliance|appliances|home\s+appliance|kitchen\s+appliance|washing\s+machine|washer|refrigerator|fridge|oven|microwave|dishwasher|air\s+conditioner)\b[^\n\r]{0,80}\b(?:offer|promo|discount|coupon|deal|save|quote|estimate|estimated|cart|wishlist|back\s+in\s+stock|preorder|pre-order|shipping|shipped|delivered|out\s+for\s+delivery|delivery\s+(?:update|status|window|scheduled)|order\s+status|installation\s+(?:appointment|scheduled)|assembly\s+(?:appointment|scheduled)|warranty|reminder)\b|\b(?:offer|promo|discount|coupon|deal|save|quote|estimate|estimated|cart|wishlist|back\s+in\s+stock|preorder|pre-order|shipping|shipped|delivered|out\s+for\s+delivery|delivery\s+(?:update|status|window|scheduled)|order\s+status|installation\s+(?:appointment|scheduled)|assembly\s+(?:appointment|scheduled)|warranty|reminder)\b[^\n\r]{0,80}\b(?:furniture|sofa|bed|mattress|table|chair|wardrobe|home\s+goods|homeware|household\s+goods|household\s+items|home\s+decor|decor|kitchenware|appliance|appliances|home\s+appliance|kitchen\s+appliance|washing\s+machine|washer|refrigerator|fridge|oven|microwave|dishwasher|air\s+conditioner)\b|(?:عرض|عروض|خصم|قسيمة|كوبون|وفر|تقدير|عرض\s+سعر|سلة|عربة|قائمة\s+الأماني|قائمة\s+الاماني|تم\s+شحن|تم\s+توصيل|قيد\s+التوصيل|تحديث\s+الطلب|موعد\s+تركيب|تركيب|ضمان|تذكير)[^\n\r]{0,80}(?:أثاث|اثاث|كنبة|سرير|مرتبة|طاولة|كرسي|خزانة|مستلزمات\s+منزلية|أدوات\s+منزلية|ادوات\s+منزلية|ديكور|أدوات\s+مطبخ|ادوات\s+مطبخ|جهاز\s+منزلي|أجهزة\s+منزلية|اجهزة\s+منزلية|غسالة|ثلاجة|فرن|ميكروويف|غسالة\s+صحون|مكيف))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val essentialLifeReminderWords = Regex(
         """(?:\b(?:medical|healthcare|hospital|clinic|dental|doctor|laboratory|lab|pharmacy|prescription|school|tuition|university|college|education)\b[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder|unpaid|overdue)\b|\b(?:due|scheduled|upcoming|reminder|unpaid|overdue)\b[^\n\r]{0,80}\b(?:medical|healthcare|hospital|clinic|dental|doctor|laboratory|lab|pharmacy|prescription|school|tuition|university|college|education)\b|\bdonate\b[^\n\r]{0,80}\b(?:now|today|support|help|campaign|appeal)\b|\b(?:donation|charity|zakat|sadaqah|sadaka)\b[^\n\r]{0,80}\b(?:appeal|campaign|support|help|pledge|target|calculator|due)\b|(?:تذكير|مستحق|استحقاق|موعد|قادم|مجدول|غير\s+مدفوع)[^\n\r]{0,80}(?:رسوم\s+مدرسية|تعليم|جامعة|مدرسة|طبية|مستشفى|عيادة|صيدلية|زكاة|زكاه)|(?:تبرع|صدقة|صدقه|زكاة|زكاه)[^\n\r]{0,80}(?:حملة|ساهم|ادعم|دعم|حاسبة))""",
         RegexOption.IGNORE_CASE,
@@ -457,6 +473,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (mobilityPaymentReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (essentialLifeReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (giftNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (homeGoodsNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (lifeAdminNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (automotiveMaintenanceNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (everydayCommerceNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
@@ -493,6 +510,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             isMobilityPaymentNotification(normalized) -> TxType.EXPENSE
             isEssentialLifeExpenseNotification(normalized) -> TxType.EXPENSE
             isGiftExpenseNotification(normalized) -> TxType.EXPENSE
+            isHomeGoodsExpenseNotification(normalized) -> TxType.EXPENSE
             isLifeAdminExpenseNotification(normalized) -> TxType.EXPENSE
             isAutomotiveMaintenanceNotification(normalized) -> TxType.EXPENSE
             isEverydayCommerceExpenseNotification(normalized) -> TxType.EXPENSE
@@ -562,6 +580,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             isRecurringExpenseNotification(body) || isTelecomRechargeNotification(body) ||
             isPublicServicePaymentNotification(body) || isMobilityPaymentNotification(body) ||
             isEssentialLifeExpenseNotification(body) || isGiftExpenseNotification(body) ||
+            isHomeGoodsExpenseNotification(body) ||
             isLifeAdminExpenseNotification(body) ||
             isAutomotiveMaintenanceNotification(body) ||
             isEverydayCommerceExpenseNotification(body) ||
@@ -589,6 +608,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         feeWords.containsMatchIn(body) &&
             !isPublicServicePaymentNotification(body) &&
             !isEssentialLifeExpenseNotification(body) &&
+            !isHomeGoodsExpenseNotification(body) &&
             !isLifeAdminExpenseNotification(body) &&
             !isAutomotiveMaintenanceNotification(body) &&
             !isEverydayCommerceExpenseNotification(body) &&
@@ -639,6 +659,11 @@ class GenericBankNotificationTemplate : BankTemplate {
         giftCardPurchaseWords.containsMatchIn(body) ||
             flowerDeliveryPaymentWords.containsMatchIn(body) ||
             giftPurchaseWords.containsMatchIn(body)
+
+    private fun isHomeGoodsExpenseNotification(body: String): Boolean =
+        furniturePurchaseWords.containsMatchIn(body) ||
+            homeGoodsPurchaseWords.containsMatchIn(body) ||
+            appliancePurchaseWords.containsMatchIn(body)
 
     private fun isLifeAdminExpenseNotification(body: String): Boolean =
         homeServicePaymentWords.containsMatchIn(body) ||
@@ -695,6 +720,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             ?: normalizeRecurringExpenseMerchant(body, merchant)
             ?: normalizeEssentialLifeMerchant(body, merchant)
             ?: normalizeGiftMerchant(body, merchant)
+            ?: normalizeHomeGoodsMerchant(body, merchant)
             ?: normalizeEverydayCommerceMerchant(body, merchant)
             ?: normalizeTravelMerchant(body, merchant)
             ?: normalizeRetailShoppingMerchant(body, merchant)
@@ -781,6 +807,19 @@ class GenericBankNotificationTemplate : BankTemplate {
         giftCardPurchaseWords.containsMatchIn(body) -> "Gift card purchase"
         flowerDeliveryPaymentWords.containsMatchIn(body) -> "Flower delivery"
         giftPurchaseWords.containsMatchIn(body) -> "Gift purchase"
+        else -> null
+    }
+
+    private fun normalizeHomeGoodsMerchant(body: String, merchant: String?): String? {
+        val label = homeGoodsLabel(body) ?: return null
+        if (merchant == null || genericHomeGoodsMerchantWords.matches(merchant.trim())) return label
+        return merchant
+    }
+
+    private fun homeGoodsLabel(body: String): String? = when {
+        furniturePurchaseWords.containsMatchIn(body) -> "Furniture purchase"
+        homeGoodsPurchaseWords.containsMatchIn(body) -> "Home goods purchase"
+        appliancePurchaseWords.containsMatchIn(body) -> "Appliance purchase"
         else -> null
     }
 
@@ -947,6 +986,9 @@ class GenericBankNotificationTemplate : BankTemplate {
         giftCardPurchaseWords.find(body)?.range?.first,
         flowerDeliveryPaymentWords.find(body)?.range?.first,
         giftPurchaseWords.find(body)?.range?.first,
+        furniturePurchaseWords.find(body)?.range?.first,
+        homeGoodsPurchaseWords.find(body)?.range?.first,
+        appliancePurchaseWords.find(body)?.range?.first,
         homeServicePaymentWords.find(body)?.range?.first,
         gymMembershipWords.find(body)?.range?.first,
         childcarePaymentWords.find(body)?.range?.first,
@@ -1145,6 +1187,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         )
         private val genericGiftMerchantWords = Regex(
             """(?:gift\s+purchase|gift\s+payment|gift\s+card\s+purchase|e[-\s]?gift\s+card\s+purchase|voucher\s+purchase|flower\s+delivery|flower\s+payment|florist\s+payment|هدية|هديه|هدايا|بطاقة\s+هدية|بطاقات\s+هدايا|بطاقة\s+إهداء|بطاقات\s+إهداء|ورد|زهور|ورود|توصيل\s+ورد|توصيل\s+زهور)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val genericHomeGoodsMerchantWords = Regex(
+            """(?:furniture\s+purchase|furniture\s+payment|sofa\s+purchase|mattress\s+purchase|home\s+goods\s+purchase|home\s+goods\s+payment|homeware\s+purchase|household\s+goods\s+purchase|home\s+decor\s+purchase|decor\s+purchase|kitchenware\s+purchase|appliance\s+purchase|appliance\s+payment|home\s+appliance\s+purchase|kitchen\s+appliance\s+purchase|washing\s+machine\s+purchase|refrigerator\s+purchase|fridge\s+purchase|oven\s+purchase|microwave\s+purchase|dishwasher\s+purchase|air\s+conditioner\s+purchase|أثاث|اثاث|كنبة|سرير|مرتبة|طاولة|كرسي|خزانة|مستلزمات\s+منزلية|أدوات\s+منزلية|ادوات\s+منزلية|ديكور|أدوات\s+مطبخ|ادوات\s+مطبخ|جهاز\s+منزلي|أجهزة\s+منزلية|اجهزة\s+منزلية|غسالة|ثلاجة|فرن|ميكروويف|غسالة\s+صحون|مكيف)""",
             RegexOption.IGNORE_CASE,
         )
         private val genericEverydayCommerceMerchantWords = Regex(

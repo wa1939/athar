@@ -3386,6 +3386,21 @@
       "priority": 90
     },
     {
+      "pattern": "furniture purchase",
+      "categoryId": "cat-home-maintenance",
+      "priority": 90
+    },
+    {
+      "pattern": "home goods purchase",
+      "categoryId": "cat-home-maintenance",
+      "priority": 90
+    },
+    {
+      "pattern": "appliance purchase",
+      "categoryId": "cat-electronics",
+      "priority": 90
+    },
+    {
       "pattern": "home service payment",
       "categoryId": "cat-home-maintenance",
       "priority": 90

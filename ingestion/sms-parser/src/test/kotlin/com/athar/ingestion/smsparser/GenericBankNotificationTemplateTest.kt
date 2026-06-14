@@ -1315,6 +1315,69 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses furniture purchase notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Furniture purchase SAR 900.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("900.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Furniture purchase")
+    }
+
+    @Test
+    fun `parses home goods purchase notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.revolut.revolut", "Home goods payment USD 75.00 posted"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("75.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Home goods purchase")
+    }
+
+    @Test
+    fun `preserves home goods store on appliance purchase notification`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Appliance purchase AED 1,200.00 at IKEA"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("1200.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("IKEA")
+    }
+
+    @Test
+    fun `parses Arabic furniture purchase notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم شراء أثاث بمبلغ ٨٠٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("800"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Furniture purchase")
+    }
+
+    @Test
+    fun `ignores home goods quotes carts delivery statuses and offers with amounts`() {
+        val nonPostedMessages = listOf(
+            "Furniture quote SAR 900.00 is ready",
+            "Appliance delivery update AED 1,200.00 scheduled tomorrow",
+            "Home decor cart reminder USD 75.00",
+            "عرض خصم ٢٠٠ ر.س على أثاث المنزل",
+        )
+
+        nonPostedMessages.forEach { body ->
+            assertThat(parser.parse(event("notification:com.chase.sig.android", body)))
+                .isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
     fun `parses home service payment notification with shared label`() {
         val result = parser.parse(
             event("notification:com.alrajhibank.alrajhimobile", "Home repair payment SAR 350.00 completed"),
