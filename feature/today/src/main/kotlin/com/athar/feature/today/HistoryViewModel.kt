@@ -101,12 +101,19 @@ class HistoryViewModel @Inject constructor(
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     val bulkCategoryState: StateFlow<HistoryBulkCategoryState> =
-        combine(items, _selectedIds, _selectionMode, activeCategories) { visibleRows, selectedIds, selectionMode, categories ->
+        combine(
+            items,
+            _selectedIds,
+            _selectionMode,
+            activeCategories,
+            _category,
+        ) { visibleRows, selectedIds, selectionMode, categories, category ->
             buildHistoryBulkCategoryState(
                 visibleRows = visibleRows,
                 selectedIds = selectedIds,
                 selectionMode = selectionMode,
                 activeCategories = categories,
+                category = category,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HistoryBulkCategoryState.Empty)
 
@@ -164,6 +171,17 @@ class HistoryViewModel @Inject constructor(
         if (visibleIds.isNotEmpty()) {
             _selectionMode.value = true
             _selectedIds.value = visibleIds
+        }
+    }
+
+    fun selectTopRepeatedBacklogGroup() {
+        val topGroupIds = topRepeatedBacklogGroupIds(
+            visibleRows = items.value,
+            category = _category.value,
+        )
+        if (topGroupIds.isNotEmpty()) {
+            _selectionMode.value = true
+            _selectedIds.value = topGroupIds
         }
     }
 
@@ -392,11 +410,44 @@ internal fun buildRepeatedBacklogCountById(
     }.toMap()
 }
 
+internal fun topRepeatedBacklogGroupIds(
+    visibleRows: List<Transaction>,
+    category: HistoryCategoryFilter,
+): Set<String> {
+    if (category != HistoryCategoryFilter.REPEATED_UNCATEGORIZED) return emptySet()
+    return visibleRows
+        .mapIndexedNotNull { index, tx ->
+            tx.uncategorizedMerchantGroupKey()?.let { key ->
+                RepeatedBacklogCandidate(tx = tx, key = key, originalIndex = index)
+            }
+        }
+        .groupBy { it.key }
+        .mapNotNull { (_, rows) ->
+            rows.takeIf { it.size > 1 }?.let {
+                RepeatedBacklogCandidateGroup(
+                    rows = it,
+                    count = it.size,
+                    firstIndex = it.minOf { row -> row.originalIndex },
+                )
+            }
+        }
+        .minWithOrNull(
+            compareByDescending<RepeatedBacklogCandidateGroup> { it.count }
+                .thenBy { it.firstIndex },
+        )
+        ?.rows
+        ?.sortedBy { it.originalIndex }
+        ?.mapTo(mutableSetOf()) { it.tx.id }
+        .orEmpty()
+}
+
 data class HistoryBulkCategoryState(
     val selectionMode: Boolean,
     val selectedIds: Set<String>,
     val selectedCount: Int,
     val visibleCount: Int,
+    val topRepeatedGroupCount: Int,
+    val selectedTopRepeatedGroupCount: Int,
     val matchingMerchantCount: Int,
     val eligibleCount: Int,
     val skippedCount: Int,
@@ -404,6 +455,9 @@ data class HistoryBulkCategoryState(
     val categories: List<Category>,
 ) {
     val canApply: Boolean = selectionMode && selectedCount > 0 && eligibleCount > 0 && !hasMixedCategoryKinds
+    val canSelectTopRepeatedGroup: Boolean =
+        topRepeatedGroupCount > 0 &&
+            (selectedCount != topRepeatedGroupCount || selectedTopRepeatedGroupCount != topRepeatedGroupCount)
 
     companion object {
         val Empty = HistoryBulkCategoryState(
@@ -411,6 +465,8 @@ data class HistoryBulkCategoryState(
             selectedIds = emptySet(),
             selectedCount = 0,
             visibleCount = 0,
+            topRepeatedGroupCount = 0,
+            selectedTopRepeatedGroupCount = 0,
             matchingMerchantCount = 0,
             eligibleCount = 0,
             skippedCount = 0,
@@ -425,16 +481,24 @@ internal fun buildHistoryBulkCategoryState(
     selectedIds: Set<String>,
     selectionMode: Boolean,
     activeCategories: List<Category>,
+    category: HistoryCategoryFilter = HistoryCategoryFilter.ALL,
 ): HistoryBulkCategoryState {
     val selectedRows = visibleRows.filter { it.id in selectedIds }
+    val selectedVisibleIds = selectedRows.mapTo(mutableSetOf()) { it.id }
     val selectedKinds = selectedRows.mapNotNull { it.categoryKind() }.distinct()
     val categoryKind = selectedKinds.singleOrNull()
     val selectedMerchantKeys = selectedRows.mapNotNull { it.merchantSelectionKey() }.toSet()
+    val topRepeatedGroupIds = topRepeatedBacklogGroupIds(
+        visibleRows = visibleRows,
+        category = category,
+    )
     return HistoryBulkCategoryState(
         selectionMode = selectionMode,
-        selectedIds = selectedRows.mapTo(mutableSetOf()) { it.id },
+        selectedIds = selectedVisibleIds,
         selectedCount = selectedRows.size,
         visibleCount = visibleRows.size,
+        topRepeatedGroupCount = topRepeatedGroupIds.size,
+        selectedTopRepeatedGroupCount = topRepeatedGroupIds.count { it in selectedVisibleIds },
         matchingMerchantCount = if (selectedMerchantKeys.isEmpty()) {
             0
         } else {
@@ -476,6 +540,18 @@ private data class RepeatedBacklogRow(
     val transaction: Transaction,
     val stats: RepeatedBacklogGroupStats,
     val originalIndex: Int,
+)
+
+private data class RepeatedBacklogCandidate(
+    val tx: Transaction,
+    val key: UncategorizedMerchantGroupKey,
+    val originalIndex: Int,
+)
+
+private data class RepeatedBacklogCandidateGroup(
+    val rows: List<RepeatedBacklogCandidate>,
+    val count: Int,
+    val firstIndex: Int,
 )
 
 private fun Transaction.uncategorizedMerchantGroupKey(): UncategorizedMerchantGroupKey? {

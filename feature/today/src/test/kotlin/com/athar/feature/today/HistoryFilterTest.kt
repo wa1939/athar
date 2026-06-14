@@ -375,6 +375,115 @@ class HistoryFilterTest {
     }
 
     @Test
+    fun `top repeated backlog group ids choose largest visible group`() {
+        val rows = listOf(
+            tx(
+                id = "coffee-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Coffee first",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "tea-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Tea first",
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "coffee-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Coffee second",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "tea-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Tea second",
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "tea-c",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Tea third",
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "grocery-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Grocery first",
+                merchantNormalized = "grocery",
+            ),
+            tx(
+                id = "grocery-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Grocery second",
+                merchantNormalized = "grocery",
+            ),
+        )
+
+        val topGroup = topRepeatedBacklogGroupIds(
+            visibleRows = rows,
+            category = HistoryCategoryFilter.REPEATED_UNCATEGORIZED,
+        )
+
+        assertThat(topGroup).containsExactly("tea-a", "tea-b", "tea-c")
+        assertThat(
+            topRepeatedBacklogGroupIds(
+                visibleRows = rows,
+                category = HistoryCategoryFilter.UNCATEGORIZED,
+            ),
+        ).isEmpty()
+    }
+
+    @Test
+    fun `top repeated backlog group ids break equal group ties by first visible row`() {
+        val rows = listOf(
+            tx(
+                id = "coffee-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Coffee first",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "tea-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Tea first",
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "tea-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Tea second",
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "coffee-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Coffee second",
+                merchantNormalized = "coffee shop",
+            ),
+        )
+
+        val topGroup = topRepeatedBacklogGroupIds(
+            visibleRows = rows,
+            category = HistoryCategoryFilter.REPEATED_UNCATEGORIZED,
+        )
+
+        assertThat(topGroup).containsExactly("coffee-a", "coffee-b")
+    }
+
+    @Test
     fun `repeated backlog count map annotates repeated visible rows only`() {
         val rows = listOf(
             tx(
@@ -504,6 +613,39 @@ class HistoryFilterTest {
 
         assertThat(state.selectedIds).containsExactly("coffee-a")
         assertThat(state.matchingMerchantCount).isEqualTo(2)
+    }
+
+    @Test
+    fun `bulk category state exposes top repeated group selection state`() {
+        val rows = listOf(
+            tx(id = "tea-a", source = IngestSource.SMS, merchantNormalized = "tea shop"),
+            tx(id = "tea-b", source = IngestSource.SMS, merchantNormalized = "tea shop"),
+            tx(id = "tea-c", source = IngestSource.SMS, merchantNormalized = "tea shop"),
+            tx(id = "coffee-a", source = IngestSource.SMS, merchantNormalized = "coffee shop"),
+            tx(id = "coffee-b", source = IngestSource.SMS, merchantNormalized = "coffee shop"),
+        )
+
+        val emptySelection = buildHistoryBulkCategoryState(
+            visibleRows = rows,
+            selectedIds = emptySet(),
+            selectionMode = true,
+            activeCategories = listOf(category(id = "cat-food", kind = CategoryKind.EXPENSE)),
+            category = HistoryCategoryFilter.REPEATED_UNCATEGORIZED,
+        )
+        val topSelection = buildHistoryBulkCategoryState(
+            visibleRows = rows,
+            selectedIds = setOf("tea-a", "tea-b", "tea-c"),
+            selectionMode = true,
+            activeCategories = listOf(category(id = "cat-food", kind = CategoryKind.EXPENSE)),
+            category = HistoryCategoryFilter.REPEATED_UNCATEGORIZED,
+        )
+
+        assertThat(emptySelection.topRepeatedGroupCount).isEqualTo(3)
+        assertThat(emptySelection.selectedTopRepeatedGroupCount).isEqualTo(0)
+        assertThat(emptySelection.canSelectTopRepeatedGroup).isTrue()
+        assertThat(topSelection.topRepeatedGroupCount).isEqualTo(3)
+        assertThat(topSelection.selectedTopRepeatedGroupCount).isEqualTo(3)
+        assertThat(topSelection.canSelectTopRepeatedGroup).isFalse()
     }
 
     private fun tx(

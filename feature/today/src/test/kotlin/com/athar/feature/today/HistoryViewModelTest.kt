@@ -160,6 +160,61 @@ class HistoryViewModelTest {
     }
 
     @Test
+    fun `select top repeated backlog group selects largest visible merchant group`() = runTest(mainDispatcher) {
+        val viewModel = HistoryViewModel(
+            transactions = HistoryFakeTransactionRepository(
+                listOf(
+                    tx(
+                        id = "coffee-a",
+                        type = TxType.EXPENSE,
+                        status = TxStatus.PENDING,
+                        merchantNormalized = "coffee shop",
+                    ),
+                    tx(
+                        id = "tea-a",
+                        type = TxType.EXPENSE,
+                        status = TxStatus.PENDING,
+                        merchantNormalized = "tea shop",
+                    ),
+                    tx(
+                        id = "coffee-b",
+                        type = TxType.EXPENSE,
+                        status = TxStatus.PENDING,
+                        merchantNormalized = "coffee shop",
+                    ),
+                    tx(
+                        id = "tea-b",
+                        type = TxType.EXPENSE,
+                        status = TxStatus.PENDING,
+                        merchantNormalized = "tea shop",
+                    ),
+                    tx(
+                        id = "tea-c",
+                        type = TxType.EXPENSE,
+                        status = TxStatus.PENDING,
+                        merchantNormalized = "tea shop",
+                    ),
+                ),
+            ),
+            rules = HistoryFakeRuleRepository(),
+            categories = HistoryFakeCategoryRepository(emptyList()),
+            clock = FixedHistoryClock,
+        )
+        val collection = launch {
+            viewModel.items.collect {}
+        }
+
+        viewModel.setCategory(HistoryCategoryFilter.REPEATED_UNCATEGORIZED)
+        advanceUntilIdle()
+        viewModel.selectTopRepeatedBacklogGroup()
+
+        assertThat(viewModel.selectionMode.value).isTrue()
+        assertThat(viewModel.selectedIds.value).containsExactly("tea-a", "tea-b", "tea-c")
+
+        collection.cancel()
+    }
+
+    @Test
     fun `bulk category assignment learns one exact rule for repeated selected merchant`() = runTest(mainDispatcher) {
         val txRepo = HistoryFakeTransactionRepository(
             listOf(

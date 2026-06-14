@@ -204,6 +204,7 @@ fun HistoryScreen(
             if (bulkCategory.selectionMode) {
                 BulkSelectionCard(
                     state = bulkCategory,
+                    onSelectTopRepeatedGroup = viewModel::selectTopRepeatedBacklogGroup,
                     onSelectVisible = viewModel::selectVisibleRows,
                     onSelectMatchingMerchant = viewModel::selectMatchingSelectedMerchants,
                     onApplyCategory = { choosingBulkCategory = true },
@@ -357,6 +358,7 @@ private fun BulkCategoryToast(
 @Composable
 private fun BulkSelectionCard(
     state: HistoryBulkCategoryState,
+    onSelectTopRepeatedGroup: () -> Unit,
     onSelectVisible: () -> Unit,
     onSelectMatchingMerchant: () -> Unit,
     onApplyCategory: () -> Unit,
@@ -391,6 +393,16 @@ private fun BulkSelectionCard(
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
             ) {
+                if (state.topRepeatedGroupCount > 0) {
+                    HistoryActionChip(
+                        text = stringResource(
+                            R.string.history_bulk_select_top_repeated_group,
+                            state.topRepeatedGroupCount,
+                        ),
+                        onClick = onSelectTopRepeatedGroup,
+                        enabled = state.canSelectTopRepeatedGroup,
+                    )
+                }
                 HistoryActionChip(
                     text = stringResource(R.string.history_bulk_select_visible),
                     onClick = onSelectVisible,
