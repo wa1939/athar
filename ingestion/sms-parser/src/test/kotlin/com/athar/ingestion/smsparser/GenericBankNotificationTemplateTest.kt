@@ -1252,6 +1252,69 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses gift card purchase notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Gift card purchase USD 50.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("50.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Gift card purchase")
+    }
+
+    @Test
+    fun `parses gift purchase notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Gift payment AED 220.00 posted"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("220.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Gift purchase")
+    }
+
+    @Test
+    fun `preserves flower merchant on delivery notification`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Flower delivery payment SAR 180.00 to Floward"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("180.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Floward")
+    }
+
+    @Test
+    fun `parses Arabic gift card purchase notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم شراء بطاقة هدية بمبلغ ١٠٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("100"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Gift card purchase")
+    }
+
+    @Test
+    fun `ignores gift promos balances and reminders with amounts`() {
+        val nonPostedMessages = listOf(
+            "Free gift card offer USD 25.00 today",
+            "Gift card balance USD 50.00 available",
+            "Flower delivery reminder SAR 180.00 due tomorrow",
+            "عرض بطاقة هدية بقيمة ١٠٠ ر.س اليوم",
+        )
+
+        nonPostedMessages.forEach { body ->
+            assertThat(parser.parse(event("notification:com.chase.sig.android", body)))
+                .isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
     fun `parses home service payment notification with shared label`() {
         val result = parser.parse(
             event("notification:com.alrajhibank.alrajhimobile", "Home repair payment SAR 350.00 completed"),

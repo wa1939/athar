@@ -3371,6 +3371,21 @@
       "priority": 90
     },
     {
+      "pattern": "gift purchase",
+      "categoryId": "cat-gifts",
+      "priority": 90
+    },
+    {
+      "pattern": "gift card purchase",
+      "categoryId": "cat-gifts",
+      "priority": 90
+    },
+    {
+      "pattern": "flower delivery",
+      "categoryId": "cat-gifts",
+      "priority": 90
+    },
+    {
       "pattern": "home service payment",
       "categoryId": "cat-home-maintenance",
       "priority": 90
