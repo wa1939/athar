@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Store-safe notification parsing now normalizes posted home-service, gym-membership, and childcare/daycare payment pushes to exact seed-backed labels while preserving named providers when present and ignoring offers, quotes, and reminders with amounts; the active public seed is now 691 rules.
 - Private-corpus audit output now writes the rich redacted report to the repository-root `build/private-corpus-audit/latest.json` instead of a module-local build directory, keeping parser/categorization evidence in one predictable place.
 - Bulk categorization imports now accept copied category option values such as `cat-coffee=Coffee / قهوة`, bilingual display labels, and case-variant category IDs while still type-checking the resolved category before updating rows or training exact local rules.
 - Store-safe notification parsing now normalizes posted cinema-ticket, event-ticket, and game-purchase pushes to exact seed-backed entertainment labels while preserving named venues/events when present and ignoring entertainment promos, showtimes, presales, reservations, and game offers with amounts.

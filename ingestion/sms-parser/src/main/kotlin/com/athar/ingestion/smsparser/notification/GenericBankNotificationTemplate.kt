@@ -180,6 +180,22 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\b(?:medical|healthcare|hospital|clinic|dental|doctor|laboratory|lab|pharmacy|prescription|school|tuition|university|college|education)\b[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder|unpaid|overdue)\b|\b(?:due|scheduled|upcoming|reminder|unpaid|overdue)\b[^\n\r]{0,80}\b(?:medical|healthcare|hospital|clinic|dental|doctor|laboratory|lab|pharmacy|prescription|school|tuition|university|college|education)\b|\bdonate\b[^\n\r]{0,80}\b(?:now|today|support|help|campaign|appeal)\b|\b(?:donation|charity|zakat|sadaqah|sadaka)\b[^\n\r]{0,80}\b(?:appeal|campaign|support|help|pledge|target|calculator|due)\b|(?:تذكير|مستحق|استحقاق|موعد|قادم|مجدول|غير\s+مدفوع)[^\n\r]{0,80}(?:رسوم\s+مدرسية|تعليم|جامعة|مدرسة|طبية|مستشفى|عيادة|صيدلية|زكاة|زكاه)|(?:تبرع|صدقة|صدقه|زكاة|زكاه)[^\n\r]{0,80}(?:حملة|ساهم|ادعم|دعم|حاسبة))""",
         RegexOption.IGNORE_CASE,
     )
+    private val homeServicePaymentWords = Regex(
+        """(?:\b(?:home\s+(?:repair|maintenance|service)|house\s+(?:repair|maintenance|service)|cleaning\s+service|plumbing|electrician|handyman)\s+(?:payment|paid|fee|charge)\b|\b(?:payment|paid|charged)\s+(?:for\s+)?(?:home\s+(?:repair|maintenance|service)|house\s+(?:repair|maintenance|service)|cleaning\s+service|plumbing|electrician|handyman)\b|(?:سداد|دفع|خصم)\s+(?:رسوم\s+)?(?:صيانة\s+منزلية|خدمة\s+منزلية|خدمات\s+منزلية|تنظيف|سباكة|كهربائي)|(?:صيانة\s+منزلية|خدمة\s+منزلية|خدمات\s+منزلية|تنظيف|سباكة|كهربائي)\s+(?:تم\s+)?(?:سداد|دفع|خصم))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val gymMembershipWords = Regex(
+        """(?:\b(?:gym|fitness|health\s+club)\s+(?:membership|payment|fee|charge|paid)\b|\b(?:membership|payment|fee|charge|paid)\s+(?:for\s+)?(?:gym|fitness|health\s+club)\b|(?:سداد|دفع|خصم)\s+(?:رسوم\s+)?(?:نادي\s+رياضي|النادي\s+الرياضي|جيم|لياقة)|(?:نادي\s+رياضي|النادي\s+الرياضي|جيم|لياقة)\s+(?:تم\s+)?(?:سداد|دفع|خصم))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val childcarePaymentWords = Regex(
+        """(?:\b(?:childcare|child\s+care|daycare|nursery|preschool)\s+(?:payment|fee|fees|paid|charge)\b|\b(?:payment|paid|charged)\s+(?:for\s+)?(?:childcare|child\s+care|daycare|nursery|preschool)\b|(?:سداد|دفع|خصم)\s+(?:رسوم\s+)?(?:حضانة|الحضانة|روضة|الروضة|رعاية\s+الأطفال|رعاية\s+الاطفال)|(?:حضانة|الحضانة|روضة|الروضة|رعاية\s+الأطفال|رعاية\s+الاطفال)\s+(?:تم\s+)?(?:سداد|دفع|خصم))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val lifeAdminNonPostedWords = Regex(
+        """(?:\b(?:home\s+(?:repair|maintenance|service)|house\s+(?:repair|maintenance|service)|cleaning\s+service|plumbing|electrician|handyman|gym|fitness|health\s+club|childcare|child\s+care|daycare|nursery|preschool)\b[^\n\r]{0,80}\b(?:offer|promo|discount|coupon|deal|save|quote|estimate|estimated|scheduled|upcoming|reminder|due|renewal|trial)\b|\b(?:offer|promo|discount|coupon|deal|save|quote|estimate|estimated|scheduled|upcoming|reminder|due|renewal|trial)\b[^\n\r]{0,80}\b(?:home\s+(?:repair|maintenance|service)|house\s+(?:repair|maintenance|service)|cleaning\s+service|plumbing|electrician|handyman|gym|fitness|health\s+club|childcare|child\s+care|daycare|nursery|preschool)\b|(?:عرض|عروض|خصم|قسيمة|كوبون|وفر|تقدير|عرض\s+سعر|تذكير|مستحق|قادم|تجربة)[^\n\r]{0,80}(?:صيانة\s+منزلية|خدمة\s+منزلية|خدمات\s+منزلية|تنظيف|سباكة|كهربائي|نادي\s+رياضي|جيم|لياقة|حضانة|روضة|رعاية\s+الأطفال|رعاية\s+الاطفال))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val fuelPaymentWords = Regex(
         """(?:\b(?:fuel|petrol|gasoline|gas\s+station)\s+(?:purchase|payment|paid|charge|refill)\b|\b(?:purchase|payment|paid|charged)\s+(?:for\s+)?(?:fuel|petrol|gasoline)\b|(?:سداد|دفع|خصم|شراء)\s+(?:وقود|بنزين)|(?:وقود|بنزين)\s+(?:تم\s+)?(?:سداد|دفع|خصم|شراء))""",
         RegexOption.IGNORE_CASE,
@@ -386,6 +402,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (publicServiceReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (mobilityPaymentReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (essentialLifeReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (lifeAdminNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (everydayCommerceNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (travelNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (retailShoppingNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
@@ -417,6 +434,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             isPublicServicePaymentNotification(normalized) -> TxType.EXPENSE
             isMobilityPaymentNotification(normalized) -> TxType.EXPENSE
             isEssentialLifeExpenseNotification(normalized) -> TxType.EXPENSE
+            isLifeAdminExpenseNotification(normalized) -> TxType.EXPENSE
             isEverydayCommerceExpenseNotification(normalized) -> TxType.EXPENSE
             isTravelExpenseNotification(normalized) -> TxType.EXPENSE
             isRetailShoppingExpenseNotification(normalized) -> TxType.EXPENSE
@@ -479,7 +497,8 @@ class GenericBankNotificationTemplate : BankTemplate {
             isBankFeeNotification(body) || isDebtPaymentNotification(body) ||
             isRecurringExpenseNotification(body) || isTelecomRechargeNotification(body) ||
             isPublicServicePaymentNotification(body) || isMobilityPaymentNotification(body) ||
-            isEssentialLifeExpenseNotification(body) || isEverydayCommerceExpenseNotification(body) ||
+            isEssentialLifeExpenseNotification(body) || isLifeAdminExpenseNotification(body) ||
+            isEverydayCommerceExpenseNotification(body) ||
             isTravelExpenseNotification(body) || isRetailShoppingExpenseNotification(body) ||
             isEntertainmentExpenseNotification(body)
 
@@ -504,6 +523,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         feeWords.containsMatchIn(body) &&
             !isPublicServicePaymentNotification(body) &&
             !isEssentialLifeExpenseNotification(body) &&
+            !isLifeAdminExpenseNotification(body) &&
             !isEverydayCommerceExpenseNotification(body) &&
             !isTravelExpenseNotification(body) &&
             !isRetailShoppingExpenseNotification(body) &&
@@ -541,6 +561,11 @@ class GenericBankNotificationTemplate : BankTemplate {
             educationPaymentWords.containsMatchIn(body) ||
             zakatPaymentWords.containsMatchIn(body) ||
             charityDonationWords.containsMatchIn(body)
+
+    private fun isLifeAdminExpenseNotification(body: String): Boolean =
+        homeServicePaymentWords.containsMatchIn(body) ||
+            gymMembershipWords.containsMatchIn(body) ||
+            childcarePaymentWords.containsMatchIn(body)
 
     private fun isEverydayCommerceExpenseNotification(body: String): Boolean =
         fuelPaymentWords.containsMatchIn(body) ||
@@ -581,6 +606,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         normalizePublicServiceMerchant(body, merchant)
             ?: normalizeMobilityPaymentMerchant(body, merchant)
             ?: normalizeUtilityBillMerchant(body, merchant)
+            ?: normalizeLifeAdminMerchant(body, merchant)
             ?: normalizeRecurringExpenseMerchant(body, merchant)
             ?: normalizeEssentialLifeMerchant(body, merchant)
             ?: normalizeEverydayCommerceMerchant(body, merchant)
@@ -656,6 +682,19 @@ class GenericBankNotificationTemplate : BankTemplate {
         educationPaymentWords.containsMatchIn(body) -> "Education payment"
         zakatPaymentWords.containsMatchIn(body) -> "Zakat payment"
         charityDonationWords.containsMatchIn(body) -> "Charity donation"
+        else -> null
+    }
+
+    private fun normalizeLifeAdminMerchant(body: String, merchant: String?): String? {
+        val label = lifeAdminLabel(body) ?: return null
+        if (merchant == null || genericLifeAdminMerchantWords.matches(merchant.trim())) return label
+        return merchant
+    }
+
+    private fun lifeAdminLabel(body: String): String? = when {
+        homeServicePaymentWords.containsMatchIn(body) -> "Home service payment"
+        gymMembershipWords.containsMatchIn(body) -> "Gym membership"
+        childcarePaymentWords.containsMatchIn(body) -> "Childcare payment"
         else -> null
     }
 
@@ -790,6 +829,9 @@ class GenericBankNotificationTemplate : BankTemplate {
         educationPaymentWords.find(body)?.range?.first,
         zakatPaymentWords.find(body)?.range?.first,
         charityDonationWords.find(body)?.range?.first,
+        homeServicePaymentWords.find(body)?.range?.first,
+        gymMembershipWords.find(body)?.range?.first,
+        childcarePaymentWords.find(body)?.range?.first,
         fuelPaymentWords.find(body)?.range?.first,
         groceryPaymentWords.find(body)?.range?.first,
         restaurantPaymentWords.find(body)?.range?.first,
@@ -981,6 +1023,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         )
         private val genericEverydayCommerceMerchantWords = Regex(
             """(?:fuel\s+purchase|fuel\s+payment|petrol\s+payment|grocery\s+purchase|grocery\s+payment|supermarket\s+purchase|restaurant\s+payment|coffee\s+payment|cafe\s+payment|coffee\s+shop\s+payment|food\s+delivery\s+payment|delivery\s+order|taxi\s+ride\s+payment|taxi\s+fare|ride\s+fare|وقود|بنزين|بقالة|سوبر\s*ماركت|مطعم|قهوة|مقهى|كافيه|توصيل\s+طعام|مشوار|تاكسي)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val genericLifeAdminMerchantWords = Regex(
+            """(?:home\s+service\s+payment|home\s+repair\s+payment|home\s+maintenance\s+payment|cleaning\s+service\s+payment|gym\s+membership|fitness\s+membership|childcare\s+payment|child\s+care\s+payment|daycare\s+fee|daycare\s+payment|nursery\s+fee|nursery\s+payment|صيانة\s+منزلية|خدمة\s+منزلية|تنظيف|نادي\s+رياضي|جيم|لياقة|حضانة|روضة)""",
             RegexOption.IGNORE_CASE,
         )
         private val genericTravelMerchantWords = Regex(

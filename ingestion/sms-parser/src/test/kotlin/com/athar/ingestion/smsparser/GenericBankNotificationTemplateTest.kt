@@ -1137,6 +1137,81 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses home service payment notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Home repair payment SAR 350.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("350.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Home service payment")
+    }
+
+    @Test
+    fun `preserves home service merchant on maintenance notification`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Cleaning service payment USD 120.00 to Handy"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("120.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Handy")
+    }
+
+    @Test
+    fun `parses gym membership notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.revolut.revolut", "Gym membership payment GBP 45.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("45.00"))
+        assertThat(result.amount.currency).isEqualTo("GBP")
+        assertThat(result.merchant).isEqualTo("Gym membership")
+    }
+
+    @Test
+    fun `parses childcare fee notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Daycare fee payment AED 800.00 posted"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("800.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Childcare payment")
+    }
+
+    @Test
+    fun `parses Arabic home service notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم سداد صيانة منزلية بمبلغ ٣٠٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("300"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Home service payment")
+    }
+
+    @Test
+    fun `ignores life admin offers quotes and reminders with amounts`() {
+        val nonPostedMessages = listOf(
+            "Home repair quote SAR 350.00 is ready",
+            "Gym membership offer GBP 45.00 this month",
+            "Daycare fee reminder AED 800.00 due tomorrow",
+            "عرض خصم ٥٠ ر.س على خدمات التنظيف",
+        )
+
+        nonPostedMessages.forEach { body ->
+            assertThat(parser.parse(event("notification:com.alrajhibank.alrajhimobile", body)))
+                .isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
     fun `parses fuel payment notification with shared gas label`() {
         val result = parser.parse(
             event("notification:com.alrajhibank.alrajhimobile", "Fuel payment SAR 80.00 completed"),

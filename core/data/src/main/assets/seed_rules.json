@@ -3361,6 +3361,21 @@
       "priority": 90
     },
     {
+      "pattern": "home service payment",
+      "categoryId": "cat-home-maintenance",
+      "priority": 90
+    },
+    {
+      "pattern": "gym membership",
+      "categoryId": "cat-gym",
+      "priority": 90
+    },
+    {
+      "pattern": "childcare payment",
+      "categoryId": "cat-childcare",
+      "priority": 90
+    },
+    {
       "pattern": "fuel purchase",
       "categoryId": "cat-gas",
       "priority": 90

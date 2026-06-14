@@ -18,7 +18,7 @@ class SeedRulesAssetTest {
         val categoryIds = seedCategories()
         val rules = seedRules()
 
-        assertThat(rules).hasSize(688)
+        assertThat(rules).hasSize(691)
         assertThat(rules.map { it.categoryId }.filterNot { it in categoryIds }).isEmpty()
 
         val duplicates = rules
@@ -259,6 +259,9 @@ class SeedRulesAssetTest {
             "education payment" to "cat-education",
             "charity donation" to "cat-charity",
             "zakat payment" to "cat-charity",
+            "home service payment" to "cat-home-maintenance",
+            "gym membership" to "cat-gym",
+            "childcare payment" to "cat-childcare",
             "fuel purchase" to "cat-gas",
             "grocery purchase" to "cat-groceries",
             "restaurant payment" to "cat-restaurant",
