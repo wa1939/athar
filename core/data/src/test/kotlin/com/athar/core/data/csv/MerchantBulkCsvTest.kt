@@ -92,6 +92,105 @@ class MerchantBulkCsvTest {
     }
 
     @Test
+    fun `importer propagates one category choice to blank rows for the same merchant group`() = runTest {
+        val repo = FakeTransactionRepository(
+            listOf(
+                tx(id = "hemmah-1", sourceRefId = "inbox-1", merchant = "Hemmah", amount = "25.00"),
+                tx(id = "hemmah-2", sourceRefId = "inbox-2", merchant = "Hemmah", amount = "35.00"),
+                tx(id = "other", sourceRefId = "inbox-3", merchant = "Other Shop", amount = "45.00"),
+            ),
+        )
+        val rules = FakeCategoryRuleRepository()
+        val importer = MerchantBulkImporter(
+            transactions = repo,
+            rules = rules,
+            categories = FakeCategoryRepository(listOf(homeCategory(), coffeeCategory())),
+            clock = FixedClock,
+        )
+        val csv = """
+            id,merchant,merchant_normalized,amount,currency,type,status,date,category_id
+            hemmah-1,Hemmah,hemmah,25.00,SAR,EXPENSE,PENDING,2026-02-14,cat-home-maintenance
+            hemmah-2,Hemmah,hemmah,35.00,SAR,EXPENSE,PENDING,2026-02-14,
+            other,Other Shop,other shop,45.00,SAR,EXPENSE,PENDING,2026-02-14,
+        """.trimIndent()
+
+        val result = importer.importCategorizations(ByteArrayInputStream(csv.toByteArray()))
+
+        assertThat(result).isEqualTo(MerchantBulkImportResult.Done(updated = 2, rulesAdded = 1, skipped = 1))
+        assertThat(repo.get("hemmah-1")?.categoryId).isEqualTo("cat-home-maintenance")
+        assertThat(repo.get("hemmah-2")?.categoryId).isEqualTo("cat-home-maintenance")
+        assertThat(repo.get("hemmah-1")?.status).isEqualTo(TxStatus.CONFIRMED)
+        assertThat(repo.get("hemmah-2")?.status).isEqualTo(TxStatus.CONFIRMED)
+        assertThat(repo.get("other")?.categoryId).isNull()
+        assertThat(rules.learnedPatterns).containsExactly("hemmah", "cat-home-maintenance")
+    }
+
+    @Test
+    fun `importer does not update same merchant transactions outside the imported csv`() = runTest {
+        val repo = FakeTransactionRepository(
+            listOf(
+                tx(id = "hemmah-1", sourceRefId = "inbox-1", merchant = "Hemmah", amount = "25.00"),
+                tx(id = "hemmah-2", sourceRefId = "inbox-2", merchant = "Hemmah", amount = "35.00"),
+                tx(id = "outside-csv", sourceRefId = "inbox-outside", merchant = "Hemmah", amount = "95.00"),
+            ),
+        )
+        val rules = FakeCategoryRuleRepository()
+        val importer = MerchantBulkImporter(
+            transactions = repo,
+            rules = rules,
+            categories = FakeCategoryRepository(listOf(homeCategory(), coffeeCategory())),
+            clock = FixedClock,
+        )
+        val csv = """
+            id,merchant,merchant_normalized,amount,currency,type,status,date,category_id
+            hemmah-1,Hemmah,hemmah,25.00,SAR,EXPENSE,PENDING,2026-02-14,cat-home-maintenance
+            hemmah-2,Hemmah,hemmah,35.00,SAR,EXPENSE,PENDING,2026-02-14,
+        """.trimIndent()
+
+        val result = importer.importCategorizations(ByteArrayInputStream(csv.toByteArray()))
+
+        assertThat(result).isEqualTo(MerchantBulkImportResult.Done(updated = 2, rulesAdded = 1, skipped = 0))
+        assertThat(repo.get("hemmah-1")?.categoryId).isEqualTo("cat-home-maintenance")
+        assertThat(repo.get("hemmah-2")?.categoryId).isEqualTo("cat-home-maintenance")
+        assertThat(repo.get("outside-csv")?.categoryId).isNull()
+        assertThat(repo.get("outside-csv")?.status).isEqualTo(TxStatus.PENDING)
+        assertThat(rules.learnedPatterns).containsExactly("hemmah", "cat-home-maintenance")
+    }
+
+    @Test
+    fun `importer does not train or propagate a merchant group with conflicting categories`() = runTest {
+        val repo = FakeTransactionRepository(
+            listOf(
+                tx(id = "hemmah-1", sourceRefId = "inbox-1", merchant = "Hemmah", amount = "25.00"),
+                tx(id = "hemmah-2", sourceRefId = "inbox-2", merchant = "Hemmah", amount = "35.00"),
+                tx(id = "hemmah-3", sourceRefId = "inbox-3", merchant = "Hemmah", amount = "45.00"),
+            ),
+        )
+        val rules = FakeCategoryRuleRepository()
+        val importer = MerchantBulkImporter(
+            transactions = repo,
+            rules = rules,
+            categories = FakeCategoryRepository(listOf(homeCategory(), coffeeCategory())),
+            clock = FixedClock,
+        )
+        val csv = """
+            id,merchant,merchant_normalized,amount,currency,type,status,date,category_id
+            hemmah-1,Hemmah,hemmah,25.00,SAR,EXPENSE,PENDING,2026-02-14,cat-home-maintenance
+            hemmah-2,Hemmah,hemmah,35.00,SAR,EXPENSE,PENDING,2026-02-14,cat-coffee
+            hemmah-3,Hemmah,hemmah,45.00,SAR,EXPENSE,PENDING,2026-02-14,
+        """.trimIndent()
+
+        val result = importer.importCategorizations(ByteArrayInputStream(csv.toByteArray()))
+
+        assertThat(result).isEqualTo(MerchantBulkImportResult.Done(updated = 2, rulesAdded = 0, skipped = 1))
+        assertThat(repo.get("hemmah-1")?.categoryId).isEqualTo("cat-home-maintenance")
+        assertThat(repo.get("hemmah-2")?.categoryId).isEqualTo("cat-coffee")
+        assertThat(repo.get("hemmah-3")?.categoryId).isNull()
+        assertThat(repo.get("hemmah-3")?.status).isEqualTo(TxStatus.PENDING)
+        assertThat(rules.learnedPatterns).isEmpty()
+    }
+
+    @Test
     fun `export groups repeated merchants first and skips transfers`() = runTest {
         val rows = listOf(
             tx(id = "singleton", sourceRefId = "inbox-1", merchant = "Zed Market"),
@@ -263,7 +362,26 @@ class MerchantBulkCsvTest {
         override suspend fun dismissAllLowConfidence(maxConfidence: Float): Int = unsupported()
         override suspend fun dismissAllPending(): Int = unsupported()
         override suspend fun recoverDismissedToPending(): Int = unsupported()
-        override suspend fun applyCategoryToMatching(pattern: String, categoryId: String): Int = unsupported()
+        override suspend fun applyCategoryToMatching(pattern: String, categoryId: String): Int {
+            val normalized = pattern.lowercase().trim()
+            var updated = 0
+            rows.value = rows.value.mapValues { (_, tx) ->
+                if (
+                    tx.status in setOf(TxStatus.PENDING, TxStatus.DISMISSED) &&
+                    tx.merchantNormalized.contains(normalized)
+                ) {
+                    updated += 1
+                    tx.copy(
+                        categoryId = categoryId,
+                        status = TxStatus.CONFIRMED,
+                        updatedAt = FixedInstant,
+                    )
+                } else {
+                    tx
+                }
+            }
+            return updated
+        }
     }
 
     private class FakeCategoryRepository(private val rows: List<Category>) : CategoryRepository {

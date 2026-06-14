@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Bulk categorization imports now propagate one unambiguous category choice to blank rows for the same repeated merchant inside the imported CSV, while conflicting merchant-group categories update only the explicit rows and do not train a learned rule.
 - The gated private SMS audit now reports top hashed uncategorized merchant groups, including merchant length/script buckets, sample counts, and parser template counts, so categorization backlog work can focus on repeated merchants without exposing raw private labels.
 - SMS universal fallback parsing now detects Arabic action words without Latin word-boundary assumptions, so Arabic Al Rajhi transfer fallback rows no longer masquerade as uncategorized expenses. The gated private audit now reports redacted missing-merchant shape groups and the latest local audit is back to 0 parsed expense rows with missing merchants.
 - Bulk categorization CSV exports now skip transfer rows, place repeated merchant groups first, include `merchant_group_count`, and add row-level `category_options` from the user's active category table so ChatGPT/Claude or a human can assign consistent categories faster without wasting rows on transfers that normally have no category.

@@ -1,6 +1,7 @@
 package com.athar.core.data.csv
 
 import com.athar.core.domain.model.PatternType
+import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.CategoryRuleRepository
@@ -17,8 +18,11 @@ import javax.inject.Singleton
 /**
  * Reads a CSV emitted by [MerchantBulkExporter] (or any CSV with `id`/`stable_key` +
  * `category_id` columns), applies the chosen category to each matching transaction
- * (status → CONFIRMED), and records a learned `CategoryRule` per unique
- * (merchant_normalized → category_id) pair so future ingests benefit too.
+ * (status → CONFIRMED). When one repeated-merchant row is filled and its blank
+ * peers are left blank, the same category propagates to those peers inside the
+ * imported CSV as long as the merchant group has no conflicting filled category.
+ * Unambiguous merchant groups also record a learned `CategoryRule` so future
+ * ingests benefit too.
  *
  * The category column may be either a category **id** (`cat-restaurant`) or the English /
  * Arabic display name — for AI-edited files the id is preferred since it's unambiguous.
@@ -69,15 +73,22 @@ internal class MerchantBulkImporter @Inject constructor(
         val byStableKey = uniqueBy(allTransactions, MerchantBulkStableKey::sourceAware)
         val byContentKey = uniqueBy(allTransactions, MerchantBulkStableKey::contentOnly)
 
-        for ((rowIndex, row) in rows.drop(1).withIndex()) {
-            if (row.size <= requiredMaxIndex(idIdx, stableKeyIdx, categoryIdx)) { skipped++; continue }
+        val dataRows = rows.drop(1).mapIndexed { index, row ->
+            CsvDataRow(number = index + 2, cells = row)
+        }
+        val updatedTransactionIds = mutableSetOf<String>()
+        val categoriesByPattern = linkedMapOf<String, MutableSet<String>>()
+
+        for (csvRow in dataRows) {
+            val row = csvRow.cells
+            if (!hasRequiredColumns(row, idIdx, stableKeyIdx, categoryIdx)) { skipped++; continue }
             val txId = if (idIdx >= 0 && idIdx < row.size) row[idIdx].trim() else ""
             val rawCat = row[categoryIdx].trim()
-            if (rawCat.isEmpty()) { skipped++; continue }
+            if (rawCat.isEmpty()) continue
 
             val categoryId = resolveCategoryId(rawCat, byId, byName, byAr)
             if (categoryId == null) {
-                Timber.w("CSV row %d skipped: unknown category '%s'", rowIndex + 2, rawCat)
+                Timber.w("CSV row %d skipped: unknown category '%s'", csvRow.number, rawCat)
                 skipped++
                 continue
             }
@@ -97,28 +108,58 @@ internal class MerchantBulkImporter @Inject constructor(
                 byContentKey = byContentKey,
             )
             if (tx == null) {
-                Timber.w("CSV row %d skipped: no matching transaction for id/stable key", rowIndex + 2)
+                Timber.w("CSV row %d skipped: no matching transaction for id/stable key", csvRow.number)
                 skipped++
                 continue
             }
-            transactions.upsert(
-                tx.copy(
-                    categoryId = categoryId,
-                    status = TxStatus.CONFIRMED,
-                    updatedAt = clock.now(),
-                ),
-            )
-            updated++
+            if (applyCategory(tx, categoryId, updatedTransactionIds)) updated++
 
-            val pattern = tx.merchantNormalized.ifBlank {
-                val provided = if (merchantNormIdx >= 0 && merchantNormIdx < row.size) row[merchantNormIdx] else ""
-                provided.ifBlank {
-                    (if (merchantIdx >= 0 && merchantIdx < row.size) row[merchantIdx] else tx.merchant)
-                        .lowercase().trim()
-                }
+            val pattern = merchantPattern(tx, row, merchantIdx, merchantNormIdx)
+            if (pattern.isNotBlank()) {
+                categoriesByPattern.getOrPut(pattern) { linkedSetOf() }.add(categoryId)
             }
-            if (pattern.isNotBlank()) rulesToAdd[pattern] = categoryId
         }
+
+        val unambiguousGroups = categoriesByPattern
+            .filterValues { it.size == 1 }
+            .mapValues { it.value.single() }
+
+        for (csvRow in dataRows) {
+            val row = csvRow.cells
+            if (!hasRequiredColumns(row, idIdx, stableKeyIdx, categoryIdx)) continue
+            if (row[categoryIdx].trim().isNotEmpty()) continue
+
+            val txId = if (idIdx >= 0 && idIdx < row.size) row[idIdx].trim() else ""
+            val tx = resolveTransaction(
+                txId = txId,
+                row = row,
+                stableKeyIdx = stableKeyIdx,
+                sourceRefIdx = sourceRefIdx,
+                merchantIdx = merchantIdx,
+                merchantNormIdx = merchantNormIdx,
+                amountIdx = amountIdx,
+                currencyIdx = currencyIdx,
+                typeIdx = typeIdx,
+                dateIdx = dateIdx,
+                byStableKey = byStableKey,
+                byContentKey = byContentKey,
+            )
+            if (tx == null) {
+                Timber.w("CSV row %d skipped: no matching transaction for group propagation", csvRow.number)
+                skipped++
+                continue
+            }
+
+            val pattern = merchantPattern(tx, row, merchantIdx, merchantNormIdx)
+            val categoryId = unambiguousGroups[pattern]
+            if (categoryId == null) {
+                skipped++
+                continue
+            }
+            if (applyCategory(tx, categoryId, updatedTransactionIds)) updated++
+        }
+
+        rulesToAdd.putAll(unambiguousGroups)
 
         var rulesAdded = 0
         rulesToAdd.forEach { (pattern, cat) ->
@@ -140,6 +181,33 @@ internal class MerchantBulkImporter @Inject constructor(
         )
     }
 
+    private suspend fun applyCategory(
+        tx: Transaction,
+        categoryId: String,
+        updatedTransactionIds: MutableSet<String>,
+    ): Boolean {
+        if (!updatedTransactionIds.add(tx.id)) return false
+        transactions.upsert(
+            tx.copy(
+                categoryId = categoryId,
+                status = TxStatus.CONFIRMED,
+                updatedAt = clock.now(),
+            ),
+        )
+        return true
+    }
+
+    private fun merchantPattern(
+        tx: Transaction,
+        row: List<String>,
+        merchantIdx: Int,
+        merchantNormIdx: Int,
+    ): String =
+        tx.merchantNormalized.ifBlank {
+            rowMerchantNormalized(row, merchantIdx, merchantNormIdx)
+                ?: tx.merchant.lowercase().trim()
+        }
+
     private suspend fun resolveTransaction(
         txId: String,
         row: List<String>,
@@ -151,9 +219,9 @@ internal class MerchantBulkImporter @Inject constructor(
         currencyIdx: Int,
         typeIdx: Int,
         dateIdx: Int,
-        byStableKey: Map<String, com.athar.core.domain.model.Transaction>,
-        byContentKey: Map<String, com.athar.core.domain.model.Transaction>,
-    ): com.athar.core.domain.model.Transaction? {
+        byStableKey: Map<String, Transaction>,
+        byContentKey: Map<String, Transaction>,
+    ): Transaction? {
         if (txId.isNotEmpty()) {
             transactions.get(txId)?.let { return it }
         }
@@ -226,12 +294,15 @@ internal class MerchantBulkImporter @Inject constructor(
     }
 
     private fun uniqueBy(
-        transactions: List<com.athar.core.domain.model.Transaction>,
-        keyOf: (com.athar.core.domain.model.Transaction) -> String,
-    ): Map<String, com.athar.core.domain.model.Transaction> =
+        transactions: List<Transaction>,
+        keyOf: (Transaction) -> String,
+    ): Map<String, Transaction> =
         transactions.groupBy(keyOf)
             .filterValues { it.size == 1 }
             .mapValues { it.value.single() }
+
+    private fun hasRequiredColumns(row: List<String>, vararg indexes: Int): Boolean =
+        row.size > requiredMaxIndex(*indexes)
 
     private fun requiredMaxIndex(vararg indexes: Int): Int =
         indexes.filter { it >= 0 }.maxOrNull() ?: -1
@@ -247,6 +318,11 @@ internal class MerchantBulkImporter @Inject constructor(
         byAr[raw]?.let { return it.id }
         return byName[raw.lowercase()]?.id
     }
+
+    private data class CsvDataRow(
+        val number: Int,
+        val cells: List<String>,
+    )
 
     private fun parseRows(text: String): List<List<String>> {
         val rows = mutableListOf<List<String>>()

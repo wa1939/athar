@@ -17,8 +17,10 @@ import java.io.OutputStream
  *       - validate the category exists,
  *       - set categoryId on the matching transaction AND move it to CONFIRMED
  *         (matched by id first, stable_key/source/content fingerprint second),
- *       - record a learned `CategoryRule` per unique (merchant → categoryId) pair so
- *         future ingests auto-categorize the same merchant.
+ *       - apply that category to blank rows in the same imported merchant group when
+ *         the group has no conflicting filled categories,
+ *       - record a learned `CategoryRule` per unambiguous (merchant → categoryId) pair
+ *         so future ingests auto-categorize the same merchant.
  *
  * The pair builds a permanent personal merchant library without needing inline AI API keys.
  */
