@@ -602,17 +602,54 @@ class HistoryFilterTest {
     fun `bulk category state counts visible rows matching selected merchants`() {
         val state = buildHistoryBulkCategoryState(
             visibleRows = listOf(
-                tx(id = "coffee-a", source = IngestSource.IMPORT, merchantNormalized = "Coffee Shop"),
-                tx(id = "coffee-b", source = IngestSource.IMPORT, merchantNormalized = "coffee shop"),
+                tx(
+                    id = "coffee-a",
+                    source = IngestSource.IMPORT,
+                    merchant = "Coffee First",
+                    merchantNormalized = "Coffee Shop",
+                ),
+                tx(
+                    id = "coffee-b",
+                    source = IngestSource.IMPORT,
+                    merchant = "Coffee Second",
+                    merchantNormalized = "coffee shop",
+                ),
                 tx(id = "grocery", source = IngestSource.IMPORT, merchantNormalized = "grocery"),
             ),
-            selectedIds = setOf("coffee-a"),
+            selectedIds = setOf("coffee-a", "coffee-b"),
             selectionMode = true,
             activeCategories = listOf(category(id = "cat-food", kind = CategoryKind.EXPENSE)),
         )
 
-        assertThat(state.selectedIds).containsExactly("coffee-a")
+        assertThat(state.selectedIds).containsExactly("coffee-a", "coffee-b")
+        assertThat(state.selectedMerchantName).isEqualTo("Coffee First")
         assertThat(state.matchingMerchantCount).isEqualTo(2)
+    }
+
+    @Test
+    fun `bulk category state hides selected merchant context for mixed or generic merchants`() {
+        val activeCategories = listOf(category(id = "cat-food", kind = CategoryKind.EXPENSE))
+        val mixedState = buildHistoryBulkCategoryState(
+            visibleRows = listOf(
+                tx(id = "coffee", source = IngestSource.IMPORT, merchantNormalized = "coffee shop"),
+                tx(id = "grocery", source = IngestSource.IMPORT, merchantNormalized = "grocery"),
+            ),
+            selectedIds = setOf("coffee", "grocery"),
+            selectionMode = true,
+            activeCategories = activeCategories,
+        )
+        val genericState = buildHistoryBulkCategoryState(
+            visibleRows = listOf(
+                tx(id = "unknown-a", source = IngestSource.IMPORT, merchant = "Unknown", merchantNormalized = "unknown"),
+                tx(id = "unknown-b", source = IngestSource.IMPORT, merchant = "Unknown", merchantNormalized = "unknown"),
+            ),
+            selectedIds = setOf("unknown-a", "unknown-b"),
+            selectionMode = true,
+            activeCategories = activeCategories,
+        )
+
+        assertThat(mixedState.selectedMerchantName).isNull()
+        assertThat(genericState.selectedMerchantName).isNull()
     }
 
     @Test

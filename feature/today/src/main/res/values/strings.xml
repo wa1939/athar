@@ -72,6 +72,7 @@
     <string name="history_bulk_select">تحديد</string>
     <string name="history_bulk_done">تم</string>
     <string name="history_bulk_selected" formatted="true">المحدد: %1$d</string>
+    <string name="history_bulk_selected_merchant" formatted="true">التاجر المحدد: %1$s · %2$d</string>
     <string name="history_bulk_select_rows">انقر الحركات لتحديدها.</string>
     <string name="history_bulk_mixed_types">حدد مصاريف فقط أو دخلًا فقط.</string>
     <string name="history_bulk_no_eligible">التحويلات لا تحتاج تصنيفًا.</string>
@@ -83,6 +84,7 @@
     <string name="history_bulk_clear">مسح</string>
     <string name="history_bulk_category">التصنيف</string>
     <string name="history_bulk_category_title">اختر التصنيف</string>
+    <string name="history_bulk_category_context" formatted="true">سيُطبق على %2$d حركة من %1$s</string>
     <string name="history_bulk_cancel">إلغاء</string>
     <string name="history_bulk_apply">تطبيق</string>
     <string name="history_bulk_applied" formatted="true">حُدّثت %1$d حركة.</string>

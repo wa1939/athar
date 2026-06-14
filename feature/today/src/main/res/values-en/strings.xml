@@ -71,6 +71,7 @@
     <string name="history_bulk_select">Select</string>
     <string name="history_bulk_done">Done</string>
     <string name="history_bulk_selected" formatted="true">%1$d selected</string>
+    <string name="history_bulk_selected_merchant" formatted="true">Selected merchant: %1$s · %2$d</string>
     <string name="history_bulk_select_rows">Tap rows to select them.</string>
     <string name="history_bulk_mixed_types">Select expenses or income, not both.</string>
     <string name="history_bulk_no_eligible">Transfers do not need categories.</string>
@@ -82,6 +83,7 @@
     <string name="history_bulk_clear">Clear</string>
     <string name="history_bulk_category">Category</string>
     <string name="history_bulk_category_title">Choose category</string>
+    <string name="history_bulk_category_context" formatted="true">Applying to %2$d transactions from %1$s</string>
     <string name="history_bulk_cancel">Cancel</string>
     <string name="history_bulk_apply">Apply</string>
     <string name="history_bulk_applied" formatted="true">Updated %1$d transactions.</string>

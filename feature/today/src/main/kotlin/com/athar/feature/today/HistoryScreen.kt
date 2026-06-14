@@ -372,6 +372,17 @@ private fun BulkSelectionCard(
                 style = theme.typography.body,
                 color = theme.colors.ink,
             )
+            state.selectedMerchantName?.let { merchantName ->
+                AtharText(
+                    text = stringResource(
+                        R.string.history_bulk_selected_merchant,
+                        merchantName,
+                        state.selectedCount,
+                    ),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+            }
             AtharText(
                 text = when {
                     state.selectedCount == 0 -> stringResource(R.string.history_bulk_select_rows)
@@ -455,6 +466,17 @@ private fun BulkCategorySheet(
                 style = theme.typography.headline,
                 color = theme.colors.ink,
             )
+            state.selectedMerchantName?.let { merchantName ->
+                AtharText(
+                    text = stringResource(
+                        R.string.history_bulk_category_context,
+                        merchantName,
+                        state.selectedCount,
+                    ),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+            }
             AtharCategoryPicker(
                 items = state.categories.map {
                     AtharPickerItem(key = it.id, labelEn = it.name, labelAr = it.nameAr)

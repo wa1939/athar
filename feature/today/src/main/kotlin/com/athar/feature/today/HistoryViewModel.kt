@@ -448,6 +448,7 @@ data class HistoryBulkCategoryState(
     val visibleCount: Int,
     val topRepeatedGroupCount: Int,
     val selectedTopRepeatedGroupCount: Int,
+    val selectedMerchantName: String?,
     val matchingMerchantCount: Int,
     val eligibleCount: Int,
     val skippedCount: Int,
@@ -467,6 +468,7 @@ data class HistoryBulkCategoryState(
             visibleCount = 0,
             topRepeatedGroupCount = 0,
             selectedTopRepeatedGroupCount = 0,
+            selectedMerchantName = null,
             matchingMerchantCount = 0,
             eligibleCount = 0,
             skippedCount = 0,
@@ -488,6 +490,7 @@ internal fun buildHistoryBulkCategoryState(
     val selectedKinds = selectedRows.mapNotNull { it.categoryKind() }.distinct()
     val categoryKind = selectedKinds.singleOrNull()
     val selectedMerchantKeys = selectedRows.mapNotNull { it.merchantSelectionKey() }.toSet()
+    val selectedMerchantName = selectedRows.selectedMerchantName()
     val topRepeatedGroupIds = topRepeatedBacklogGroupIds(
         visibleRows = visibleRows,
         category = category,
@@ -499,6 +502,7 @@ internal fun buildHistoryBulkCategoryState(
         visibleCount = visibleRows.size,
         topRepeatedGroupCount = topRepeatedGroupIds.size,
         selectedTopRepeatedGroupCount = topRepeatedGroupIds.count { it in selectedVisibleIds },
+        selectedMerchantName = selectedMerchantName,
         matchingMerchantCount = if (selectedMerchantKeys.isEmpty()) {
             0
         } else {
@@ -566,6 +570,23 @@ private fun Transaction.merchantSelectionKey(): String? =
         .ifBlank { merchant }
         .trim()
         .lowercase()
+        .takeIf { it.isNotBlank() }
+
+private fun List<Transaction>.selectedMerchantName(): String? {
+    if (isEmpty()) return null
+    val merchantKey = mapNotNull { it.merchantSelectionKey() }
+        .distinct()
+        .singleOrNull()
+        ?.takeIf { it.isSpecificMerchantKey() }
+        ?: return null
+    return firstOrNull { it.merchantSelectionKey() == merchantKey }
+        ?.merchantDisplayName()
+}
+
+private fun Transaction.merchantDisplayName(): String? =
+    merchant
+        .ifBlank { merchantNormalized }
+        .trim()
         .takeIf { it.isNotBlank() }
 
 private fun String.isSpecificMerchantKey(): Boolean {
