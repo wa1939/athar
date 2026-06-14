@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Store-safe notification parsing now normalizes posted cinema-ticket, event-ticket, and game-purchase pushes to exact seed-backed entertainment labels while preserving named venues/events when present and ignoring entertainment promos, showtimes, presales, reservations, and game offers with amounts.
 - Store-safe notification parsing now normalizes posted clothing, electronics, and online-shopping payment pushes to exact seed-backed retail labels while preserving named merchants when present and ignoring retail offers, cart reminders, shipping/order-status, and price-drop copy with amounts.
 - Store-safe notification parsing now normalizes posted flight-ticket, hotel, travel-booking, and car-rental payment pushes to exact seed-backed travel labels while preserving named airlines/providers when present and ignoring travel offers, itineraries, reservations, quotes, and reminders with amounts.
 - Store-safe notification parsing now normalizes posted fuel, grocery, restaurant, coffee, food-delivery, and taxi-ride payment pushes to exact seed-backed labels while preserving specific stations/ride merchants when present and ignoring everyday-commerce offers, estimates, reservations, and reminders with amounts.

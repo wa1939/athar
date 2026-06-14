@@ -3424,6 +3424,21 @@
       "pattern": "online shopping purchase",
       "categoryId": "cat-other-expense",
       "priority": 90
+    },
+    {
+      "pattern": "cinema ticket",
+      "categoryId": "cat-entertainment",
+      "priority": 90
+    },
+    {
+      "pattern": "event ticket",
+      "categoryId": "cat-going-out",
+      "priority": 90
+    },
+    {
+      "pattern": "game purchase",
+      "categoryId": "cat-entertainment",
+      "priority": 90
     }
   ]
 }

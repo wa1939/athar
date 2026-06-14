@@ -244,6 +244,22 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\b(?:clothing|clothes|apparel|fashion|footwear|shoes|electronics?|electronic\s+goods|devices?|mobile\s+phone|smartphone|laptop|computer|gadget|online\s+shopping|online\s+purchase|e[-\s]?commerce|marketplace)\b[^\n\r]{0,80}\b(?:offer|promo|discount|coupon|deal|save|price\s+drop|cart|wishlist|back\s+in\s+stock|preorder|pre-order|shipping|shipped|delivered|out\s+for\s+delivery|delivery\s+update|order\s+status|ready\s+for\s+pickup|reminder)\b|\b(?:offer|promo|discount|coupon|deal|save|price\s+drop|cart|wishlist|back\s+in\s+stock|preorder|pre-order|shipping|shipped|delivered|out\s+for\s+delivery|delivery\s+update|order\s+status|ready\s+for\s+pickup|reminder)\b[^\n\r]{0,80}\b(?:clothing|clothes|apparel|fashion|footwear|shoes|electronics?|electronic\s+goods|devices?|mobile\s+phone|smartphone|laptop|computer|gadget|online\s+shopping|online\s+purchase|e[-\s]?commerce|marketplace)\b|(?:عرض|عروض|خصم|قسيمة|كوبون|وفر|سلة|عربة|قائمة\s+الأماني|قائمة\s+الاماني|تم\s+شحن|تم\s+توصيل|قيد\s+التوصيل|تحديث\s+الطلب|تذكير)[^\n\r]{0,80}(?:ملابس|ثياب|أزياء|ازياء|أحذية|احذية|إلكترونيات|الكترونيات|أجهزة|اجهزة|تسوق\s+إلكتروني|تسوق\s+الكتروني|شراء\s+إلكتروني|شراء\s+الكتروني))""",
         RegexOption.IGNORE_CASE,
     )
+    private val cinemaTicketPaymentWords = Regex(
+        """(?:\b(?:cinema|movie|film)\s+(?:ticket|tickets)\s+(?:purchase|payment|paid|charge)\b|\b(?:purchase|payment|paid|charged)\s+(?:for\s+)?(?:cinema|movie|film)\s+(?:ticket|tickets)\b|(?:سداد|دفع|خصم|شراء)\s+(?:تذكرة|تذاكر)\s+(?:سينما|فيلم|أفلام|افلام)|(?:تذكرة|تذاكر)\s+(?:سينما|فيلم|أفلام|افلام)\s+(?:تم\s+)?(?:سداد|دفع|خصم|شراء))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val eventTicketPaymentWords = Regex(
+        """(?:\b(?:event|concert|show|theatre|theater|festival)\s+(?:ticket|tickets)\s+(?:purchase|payment|paid|charge)\b|\b(?:purchase|payment|paid|charged)\s+(?:for\s+)?(?:event|concert|show|theatre|theater|festival)\s+(?:ticket|tickets)\b|(?:سداد|دفع|خصم|شراء)\s+(?:تذكرة|تذاكر)\s+(?:فعالية|حفلة|حفل|عرض|مسرح|مهرجان)|(?:تذكرة|تذاكر)\s+(?:فعالية|حفلة|حفل|عرض|مسرح|مهرجان)\s+(?:تم\s+)?(?:سداد|دفع|خصم|شراء))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val gamePurchaseWords = Regex(
+        """(?:\b(?:game|gaming|video\s+game)\s+(?:purchase|payment|paid|charge)\b|\b(?:purchase|payment|paid|charged)\s+(?:for\s+)?(?:game|gaming|video\s+game)\b|(?:سداد|دفع|خصم|شراء)\s+(?:لعبة|العاب|ألعاب|اللعبة)|(?:لعبة|العاب|ألعاب|اللعبة)\s+(?:تم\s+)?(?:سداد|دفع|خصم|شراء))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val entertainmentNonPostedWords = Regex(
+        """(?:\b(?:cinema|movie|film|event|concert|show|theatre|theater|festival|game|gaming|video\s+game)\b[^\n\r]{0,80}\b(?:offer|promo|discount|coupon|deal|save|points|reward|win|giveaway|free|presale|pre-sale|trailer|showtime|schedule|reservation|reserved|booking|wishlist|reminder|upcoming)\b|\b(?:offer|promo|discount|coupon|deal|save|points|reward|win|giveaway|free|presale|pre-sale|trailer|showtime|schedule|reservation|reserved|booking|wishlist|reminder|upcoming)\b[^\n\r]{0,80}\b(?:cinema|movie|film|event|concert|show|theatre|theater|festival|game|gaming|video\s+game)\b|(?:عرض|عروض|خصم|قسيمة|كوبون|وفر|نقاط|مكافأة|اربح|مجاني|تذكير|قادم|حجز|جدول|موعد|إعلان|اعلان)[^\n\r]{0,80}(?:سينما|فيلم|أفلام|افلام|فعالية|حفلة|حفل|عرض|مسرح|مهرجان|لعبة|العاب|ألعاب))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val declinedWords = Regex(
         """\b(?:declined|rejected|failed|unsuccessful|مرفوض|رُفض|فشل|غير\s+ناجحة)\b""",
         RegexOption.IGNORE_CASE,
@@ -373,6 +389,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (everydayCommerceNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (travelNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (retailShoppingNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (entertainmentNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (spendingSummaryWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (limitWords.containsMatchIn(normalized) && !hasExpenseAction(normalized) && !hasIncomeAction(normalized)) {
             return ParseResult.Ignored
@@ -403,6 +420,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             isEverydayCommerceExpenseNotification(normalized) -> TxType.EXPENSE
             isTravelExpenseNotification(normalized) -> TxType.EXPENSE
             isRetailShoppingExpenseNotification(normalized) -> TxType.EXPENSE
+            isEntertainmentExpenseNotification(normalized) -> TxType.EXPENSE
             transferWords.containsMatchIn(normalized) -> TxType.TRANSFER
             hasExpenseAction(normalized) || isBankFeeNotification(normalized) ||
                 isDebtPaymentNotification(normalized) || hasMerchantHint(normalized) -> TxType.EXPENSE
@@ -462,7 +480,8 @@ class GenericBankNotificationTemplate : BankTemplate {
             isRecurringExpenseNotification(body) || isTelecomRechargeNotification(body) ||
             isPublicServicePaymentNotification(body) || isMobilityPaymentNotification(body) ||
             isEssentialLifeExpenseNotification(body) || isEverydayCommerceExpenseNotification(body) ||
-            isTravelExpenseNotification(body) || isRetailShoppingExpenseNotification(body)
+            isTravelExpenseNotification(body) || isRetailShoppingExpenseNotification(body) ||
+            isEntertainmentExpenseNotification(body)
 
     private fun hasExpenseAction(body: String): Boolean =
         expenseWords.containsMatchIn(body) || expensePhrases.containsMatchIn(body)
@@ -487,7 +506,8 @@ class GenericBankNotificationTemplate : BankTemplate {
             !isEssentialLifeExpenseNotification(body) &&
             !isEverydayCommerceExpenseNotification(body) &&
             !isTravelExpenseNotification(body) &&
-            !isRetailShoppingExpenseNotification(body)
+            !isRetailShoppingExpenseNotification(body) &&
+            !isEntertainmentExpenseNotification(body)
 
     private fun isDebtPaymentNotification(body: String): Boolean =
         isCreditCardPaymentNotification(body) || isLoanInstalmentNotification(body)
@@ -541,6 +561,11 @@ class GenericBankNotificationTemplate : BankTemplate {
             electronicsPurchaseWords.containsMatchIn(body) ||
             onlineShoppingPurchaseWords.containsMatchIn(body)
 
+    private fun isEntertainmentExpenseNotification(body: String): Boolean =
+        cinemaTicketPaymentWords.containsMatchIn(body) ||
+            eventTicketPaymentWords.containsMatchIn(body) ||
+            gamePurchaseWords.containsMatchIn(body)
+
     private fun String.cleanMerchantCandidate(amountMatch: MatchResult): String? =
         cleanParty(merchantLabelHint.find(this)?.groupValues?.get(1)
             ?: recipientLabelHint.find(this)?.groupValues?.get(1)
@@ -561,6 +586,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             ?: normalizeEverydayCommerceMerchant(body, merchant)
             ?: normalizeTravelMerchant(body, merchant)
             ?: normalizeRetailShoppingMerchant(body, merchant)
+            ?: normalizeEntertainmentMerchant(body, merchant)
             ?: merchant
 
     private fun normalizePublicServiceMerchant(body: String, merchant: String?): String? {
@@ -676,6 +702,19 @@ class GenericBankNotificationTemplate : BankTemplate {
         else -> null
     }
 
+    private fun normalizeEntertainmentMerchant(body: String, merchant: String?): String? {
+        val label = entertainmentLabel(body) ?: return null
+        if (merchant == null || genericEntertainmentMerchantWords.matches(merchant.trim())) return label
+        return merchant
+    }
+
+    private fun entertainmentLabel(body: String): String? = when {
+        cinemaTicketPaymentWords.containsMatchIn(body) -> "Cinema ticket"
+        eventTicketPaymentWords.containsMatchIn(body) -> "Event ticket"
+        gamePurchaseWords.containsMatchIn(body) -> "Game purchase"
+        else -> null
+    }
+
     private fun normalizeIncomeCounterparty(body: String, counterparty: String?): String? {
         if (!salaryIncomeWords.containsMatchIn(body)) return counterparty
         val label = if (ArabicSalaryTerms.any { body.contains(it) }) "راتب" else "Salary"
@@ -764,6 +803,9 @@ class GenericBankNotificationTemplate : BankTemplate {
         clothingPurchaseWords.find(body)?.range?.first,
         electronicsPurchaseWords.find(body)?.range?.first,
         onlineShoppingPurchaseWords.find(body)?.range?.first,
+        cinemaTicketPaymentWords.find(body)?.range?.first,
+        eventTicketPaymentWords.find(body)?.range?.first,
+        gamePurchaseWords.find(body)?.range?.first,
     ).minOrNull()
 
     private fun MatchResult.isBalanceAmount(body: String): Boolean {
@@ -947,6 +989,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         )
         private val genericRetailShoppingMerchantWords = Regex(
             """(?:clothing\s+purchase|clothing\s+payment|apparel\s+payment|fashion\s+payment|footwear\s+payment|shoes\s+payment|electronics\s+purchase|electronics\s+payment|electronic\s+goods\s+payment|device\s+purchase|device\s+payment|online\s+shopping\s+purchase|online\s+shopping\s+payment|online\s+purchase|e[-\s]?commerce\s+payment|marketplace\s+payment|ملابس|ثياب|أزياء|ازياء|أحذية|احذية|إلكترونيات|الكترونيات|أجهزة|اجهزة|تسوق\s+إلكتروني|تسوق\s+الكتروني|شراء\s+إلكتروني|شراء\s+الكتروني)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val genericEntertainmentMerchantWords = Regex(
+            """(?:cinema\s+ticket|movie\s+ticket|film\s+ticket|event\s+ticket|concert\s+ticket|show\s+ticket|theat(?:re|er)\s+ticket|festival\s+ticket|game\s+purchase|gaming\s+purchase|video\s+game\s+purchase|تذكرة\s+سينما|تذاكر\s+سينما|تذكرة\s+فيلم|تذاكر\s+أفلام|تذاكر\s+افلام|تذكرة\s+فعالية|تذاكر\s+فعالية|تذكرة\s+حفلة|تذاكر\s+حفلة|تذكرة\s+مسرح|تذاكر\s+مسرح|لعبة|العاب|ألعاب)""",
             RegexOption.IGNORE_CASE,
         )
 

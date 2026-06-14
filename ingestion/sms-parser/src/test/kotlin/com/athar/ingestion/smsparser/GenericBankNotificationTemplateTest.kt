@@ -1449,6 +1449,94 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses cinema ticket notification with shared entertainment label`() {
+        val result = parser.parse(
+            event("notification:com.revolut.revolut", "Cinema ticket payment GBP 18.50 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("18.50"))
+        assertThat(result.amount.currency).isEqualTo("GBP")
+        assertThat(result.merchant).isEqualTo("Cinema ticket")
+    }
+
+    @Test
+    fun `preserves cinema merchant on cinema ticket notification`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Movie ticket payment SAR 65.00 at VOX Cinemas"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("65.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("VOX Cinemas")
+    }
+
+    @Test
+    fun `parses event ticket notification with shared going out label`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Event ticket payment AED 150.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("150.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Event ticket")
+    }
+
+    @Test
+    fun `preserves event merchant on event ticket notification`() {
+        val result = parser.parse(
+            event("notification:com.cibc.android.mobi", "Concert ticket payment CAD 85.00 at Riyadh Season"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("85.00"))
+        assertThat(result.amount.currency).isEqualTo("CAD")
+        assertThat(result.merchant).isEqualTo("Riyadh Season")
+    }
+
+    @Test
+    fun `parses game purchase notification with shared entertainment label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Game purchase USD 59.99 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("59.99"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Game purchase")
+    }
+
+    @Test
+    fun `parses Arabic cinema ticket notification with shared entertainment label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم شراء تذكرة سينما بمبلغ ٥٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("50"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Cinema ticket")
+    }
+
+    @Test
+    fun `ignores entertainment promos showtimes reservations and game offers with amounts`() {
+        val nonPostedMessages = listOf(
+            "Movie ticket discount SAR 20.00 this weekend",
+            "Cinema showtime reminder SAR 50.00",
+            "Event ticket presale starts at AED 150.00",
+            "Game offer USD 5.00 bonus credits",
+            "عرض خصم ٢٠ ر.س على تذاكر السينما",
+        )
+
+        nonPostedMessages.forEach { body ->
+            assertThat(parser.parse(event("notification:com.alrajhibank.alrajhimobile", body)))
+                .isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
     fun `does not treat trailing status as merchant`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "Card purchase SAR 42.00 approved"),
