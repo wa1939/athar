@@ -98,6 +98,151 @@ class HistoryFilterTest {
     }
 
     @Test
+    fun `filters repeated uncategorized actionable merchant groups within current filters`() {
+        val rows = listOf(
+            tx(
+                id = "coffee-a",
+                source = IngestSource.SMS,
+                status = TxStatus.PENDING,
+                categoryId = null,
+                merchant = "Coffee A",
+                merchantNormalized = "Coffee Shop",
+            ),
+            tx(
+                id = "coffee-b",
+                source = IngestSource.SMS,
+                status = TxStatus.PENDING,
+                categoryId = " ",
+                merchant = "Coffee B",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "coffee-income",
+                source = IngestSource.SMS,
+                status = TxStatus.PENDING,
+                type = TxType.INCOME,
+                categoryId = null,
+                merchant = "Coffee Rebate",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "coffee-categorized",
+                source = IngestSource.SMS,
+                status = TxStatus.PENDING,
+                categoryId = "cat-coffee",
+                merchant = "Coffee Done",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "grocery-single",
+                source = IngestSource.SMS,
+                status = TxStatus.PENDING,
+                categoryId = null,
+                merchant = "Grocery",
+                merchantNormalized = "grocery",
+            ),
+            tx(
+                id = "transfer-a",
+                source = IngestSource.SMS,
+                status = TxStatus.PENDING,
+                type = TxType.TRANSFER,
+                categoryId = null,
+                merchant = "Wallet",
+                merchantNormalized = "wallet",
+            ),
+            tx(
+                id = "transfer-b",
+                source = IngestSource.SMS,
+                status = TxStatus.PENDING,
+                type = TxType.TRANSFER,
+                categoryId = null,
+                merchant = "Wallet",
+                merchantNormalized = "wallet",
+            ),
+            tx(
+                id = "manual-coffee",
+                source = IngestSource.MANUAL,
+                status = TxStatus.PENDING,
+                categoryId = null,
+                merchant = "Coffee Manual",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "unknown-a",
+                source = IngestSource.SMS,
+                status = TxStatus.PENDING,
+                categoryId = null,
+                merchant = "Unknown",
+                merchantNormalized = "unknown",
+            ),
+            tx(
+                id = "unknown-b",
+                source = IngestSource.SMS,
+                status = TxStatus.PENDING,
+                categoryId = null,
+                merchant = "Unknown",
+                merchantNormalized = "unknown",
+            ),
+        )
+
+        val filtered = filterHistoryTransactions(
+            all = rows,
+            query = "",
+            status = HistoryStatusFilter.PENDING,
+            type = HistoryTypeFilter.ALL,
+            source = HistorySourceFilter.SMS,
+            category = HistoryCategoryFilter.REPEATED_UNCATEGORIZED,
+        )
+
+        assertThat(filtered.map { it.id }).containsExactly("coffee-a", "coffee-b").inOrder()
+    }
+
+    @Test
+    fun `repeated uncategorized filter respects merchant search before grouping`() {
+        val rows = listOf(
+            tx(
+                id = "coffee-a",
+                source = IngestSource.IMPORT,
+                categoryId = null,
+                merchant = "Coffee first",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "coffee-b",
+                source = IngestSource.IMPORT,
+                categoryId = null,
+                merchant = "Coffee second",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "tea-a",
+                source = IngestSource.IMPORT,
+                categoryId = null,
+                merchant = "Tea first",
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "tea-b",
+                source = IngestSource.IMPORT,
+                categoryId = null,
+                merchant = "Tea second",
+                merchantNormalized = "tea shop",
+            ),
+        )
+
+        val filtered = filterHistoryTransactions(
+            all = rows,
+            query = "coffee",
+            status = HistoryStatusFilter.ALL,
+            type = HistoryTypeFilter.EXPENSE,
+            source = HistorySourceFilter.IMPORT,
+            category = HistoryCategoryFilter.REPEATED_UNCATEGORIZED,
+        )
+
+        assertThat(filtered.map { it.id }).containsExactly("coffee-a", "coffee-b").inOrder()
+    }
+
+    @Test
     fun `filters categorized rows without hiding searched merchants`() {
         val rows = listOf(
             tx(id = "coffee-categorized", source = IngestSource.IMPORT, categoryId = "cat-coffee"),

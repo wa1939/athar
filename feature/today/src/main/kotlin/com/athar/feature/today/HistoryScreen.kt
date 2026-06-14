@@ -167,6 +167,9 @@ fun HistoryScreen(
                 labels = listOf(
                     HistoryCategoryFilter.ALL to stringResource(R.string.history_category_all),
                     HistoryCategoryFilter.UNCATEGORIZED to stringResource(R.string.history_category_uncategorized),
+                    HistoryCategoryFilter.REPEATED_UNCATEGORIZED to stringResource(
+                        R.string.history_category_repeated_uncategorized,
+                    ),
                     HistoryCategoryFilter.CATEGORIZED to stringResource(R.string.history_category_categorized),
                 ),
                 selected = category,

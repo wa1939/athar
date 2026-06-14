@@ -62,6 +62,7 @@
     <string name="history_source_share">Share</string>
     <string name="history_category_all">All categories</string>
     <string name="history_category_uncategorized">Uncategorized</string>
+    <string name="history_category_repeated_uncategorized">Repeated backlog</string>
     <string name="history_category_categorized">Categorized</string>
     <string name="history_row_subtitle" formatted="true">%1$s · %2$s · %3$s · %4$s · %5$s</string>
     <string name="history_count" formatted="true">%1$d transactions</string>

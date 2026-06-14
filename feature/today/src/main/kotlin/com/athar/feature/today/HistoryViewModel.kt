@@ -30,7 +30,7 @@ import javax.inject.Inject
 enum class HistoryStatusFilter { ALL, CONFIRMED, PENDING, DISMISSED }
 enum class HistoryTypeFilter { ALL, INCOME, EXPENSE, TRANSFER }
 enum class HistorySourceFilter { ALL, SMS, NOTIFICATION, MANUAL, IMPORT, RECURRING, SHARE }
-enum class HistoryCategoryFilter { ALL, UNCATEGORIZED, CATEGORIZED }
+enum class HistoryCategoryFilter { ALL, UNCATEGORIZED, REPEATED_UNCATEGORIZED, CATEGORIZED }
 
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
@@ -287,8 +287,8 @@ internal fun filterHistoryTransactions(
     type: HistoryTypeFilter,
     source: HistorySourceFilter,
     category: HistoryCategoryFilter,
-): List<Transaction> =
-    all.asSequence()
+): List<Transaction> {
+    val baseRows = all.asSequence()
         .filter { tx ->
             when (status) {
                 HistoryStatusFilter.ALL -> true
@@ -317,13 +317,6 @@ internal fun filterHistoryTransactions(
             }
         }
         .filter { tx ->
-            when (category) {
-                HistoryCategoryFilter.ALL -> true
-                HistoryCategoryFilter.UNCATEGORIZED -> tx.categoryId.isNullOrBlank()
-                HistoryCategoryFilter.CATEGORIZED -> !tx.categoryId.isNullOrBlank()
-            }
-        }
-        .filter { tx ->
             if (query.isBlank()) {
                 true
             } else {
@@ -334,6 +327,27 @@ internal fun filterHistoryTransactions(
             }
         }
         .toList()
+
+    if (category != HistoryCategoryFilter.REPEATED_UNCATEGORIZED) {
+        return baseRows.filter { tx ->
+            when (category) {
+                HistoryCategoryFilter.ALL -> true
+                HistoryCategoryFilter.UNCATEGORIZED -> tx.categoryId.isNullOrBlank()
+                HistoryCategoryFilter.CATEGORIZED -> !tx.categoryId.isNullOrBlank()
+                HistoryCategoryFilter.REPEATED_UNCATEGORIZED -> false
+            }
+        }
+    }
+
+    val repeatedKeys = baseRows
+        .mapNotNull { it.uncategorizedMerchantGroupKey() }
+        .groupingBy { it }
+        .eachCount()
+        .filterValues { it > 1 }
+        .keys
+
+    return baseRows.filter { it.uncategorizedMerchantGroupKey() in repeatedKeys }
+}
 
 data class HistoryBulkCategoryState(
     val selectionMode: Boolean,
@@ -403,6 +417,18 @@ private fun Transaction.categoryKind(): CategoryKind? = when (type) {
     TxType.EXPENSE -> CategoryKind.EXPENSE
     TxType.INCOME -> CategoryKind.INCOME
     TxType.TRANSFER -> null
+}
+
+private data class UncategorizedMerchantGroupKey(
+    val merchantKey: String,
+    val categoryKind: CategoryKind,
+)
+
+private fun Transaction.uncategorizedMerchantGroupKey(): UncategorizedMerchantGroupKey? {
+    if (!categoryId.isNullOrBlank()) return null
+    val kind = categoryKind() ?: return null
+    val merchantKey = merchantSelectionKey()?.takeIf { it.isSpecificMerchantKey() } ?: return null
+    return UncategorizedMerchantGroupKey(merchantKey = merchantKey, categoryKind = kind)
 }
 
 private fun Transaction.merchantSelectionKey(): String? =
