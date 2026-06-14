@@ -43,6 +43,10 @@ import com.athar.core.domain.repo.TaxExportTrigger
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
 import com.athar.core.domain.repo.ReconcileResult
+import com.athar.core.domain.repo.WishlistImportPreview
+import com.athar.core.domain.repo.WishlistImportPreviewResult
+import com.athar.core.domain.repo.WishlistImportResult
+import com.athar.core.domain.repo.WishlistImportTrigger
 import com.athar.core.testing.Fixtures
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
@@ -262,10 +266,44 @@ class SettingsViewModelTest {
         assertThat(budgetTargets.importedBytes).isEmpty()
     }
 
+    @Test
+    fun `confirm wishlist import applies the previewed bytes`() = runTest(mainDispatcher) {
+        val wishlist = RecordingWishlistImportTrigger()
+        val viewModel = settingsViewModel(wishlistImporter = wishlist)
+
+        viewModel.previewWishlistImportBytes("previewed workbook".toByteArray())
+        advanceUntilIdle()
+        viewModel.confirmWishlistImport()
+        advanceUntilIdle()
+
+        assertThat(wishlist.previewedBytes.map { it.decodeToString() }).containsExactly("previewed workbook")
+        assertThat(wishlist.importedBytes.map { it.decodeToString() }).containsExactly("previewed workbook")
+        assertThat(viewModel.wishlistImportStatus.value)
+            .isEqualTo(WishlistImportStatus.Done(imported = 5, newItems = 3, updatedItems = 2, skipped = 1))
+    }
+
+    @Test
+    fun `failed wishlist preview clears pending import bytes`() = runTest(mainDispatcher) {
+        val wishlist = RecordingWishlistImportTrigger(
+            previewResult = WishlistImportPreviewResult.Failed("Not a TMOAP workbook."),
+        )
+        val viewModel = settingsViewModel(wishlistImporter = wishlist)
+
+        viewModel.previewWishlistImportBytes("bad workbook".toByteArray())
+        advanceUntilIdle()
+        viewModel.confirmWishlistImport()
+        advanceUntilIdle()
+
+        assertThat(viewModel.wishlistImportStatus.value)
+            .isEqualTo(WishlistImportStatus.Failed("No wishlist preview is ready to import."))
+        assertThat(wishlist.importedBytes).isEmpty()
+    }
+
     private fun settingsViewModel(
         backfill: SmsBackfillTrigger = FakeSmsBackfillTrigger(),
         csvImporter: CsvImportTrigger = FakeCsvImportTrigger,
         budgetTargetsImporter: BudgetTargetImportTrigger = FakeBudgetTargetImportTrigger,
+        wishlistImporter: WishlistImportTrigger = FakeWishlistImportTrigger,
         transactions: TransactionRepository = FakeTransactionRepository(),
         accounts: AccountRepository = FakeAccountRepository(),
     ) = SettingsViewModel(
@@ -273,6 +311,7 @@ class SettingsViewModelTest {
         backfillTrigger = backfill,
         csvImporter = csvImporter,
         budgetTargetsImporter = budgetTargetsImporter,
+        wishlistImporter = wishlistImporter,
         csvExporter = FakeCsvExportTrigger,
         bulkExporter = FakeMerchantBulkExportTrigger,
         bulkImporter = FakeMerchantBulkImportTrigger,
@@ -371,6 +410,14 @@ private object FakeBudgetTargetImportTrigger : BudgetTargetImportTrigger {
         BudgetTargetImportResult.Done(applied = 0, changed = 0, skipped = 0)
 }
 
+private object FakeWishlistImportTrigger : WishlistImportTrigger {
+    override suspend fun preview(input: InputStream): WishlistImportPreviewResult =
+        WishlistImportPreviewResult.Done(emptyWishlistPreview())
+
+    override suspend fun import(input: InputStream): WishlistImportResult =
+        WishlistImportResult.Done(imported = 0, newItems = 0, updatedItems = 0, skipped = 0)
+}
+
 private class RecordingBudgetTargetImportTrigger(
     var previewResult: BudgetTargetImportPreviewResult =
         BudgetTargetImportPreviewResult.Done(emptyBudgetPreview()),
@@ -386,6 +433,24 @@ private class RecordingBudgetTargetImportTrigger(
     override suspend fun import(input: InputStream): BudgetTargetImportResult {
         importedBytes += input.readBytes()
         return BudgetTargetImportResult.Done(applied = 4, changed = 3, skipped = 1)
+    }
+}
+
+private class RecordingWishlistImportTrigger(
+    var previewResult: WishlistImportPreviewResult =
+        WishlistImportPreviewResult.Done(emptyWishlistPreview()),
+) : WishlistImportTrigger {
+    val previewedBytes = mutableListOf<ByteArray>()
+    val importedBytes = mutableListOf<ByteArray>()
+
+    override suspend fun preview(input: InputStream): WishlistImportPreviewResult {
+        previewedBytes += input.readBytes()
+        return previewResult
+    }
+
+    override suspend fun import(input: InputStream): WishlistImportResult {
+        importedBytes += input.readBytes()
+        return WishlistImportResult.Done(imported = 5, newItems = 3, updatedItems = 2, skipped = 1)
     }
 }
 
@@ -474,6 +539,17 @@ private fun emptyBudgetPreview(): BudgetTargetImportPreview = BudgetTargetImport
     incomeTargets = 0,
     monthlyExpenseTotal = Money.zero(),
     monthlyIncomeTotal = Money.zero(),
+    sampleRows = emptyList(),
+    skippedRows = emptyList(),
+)
+
+private fun emptyWishlistPreview(): WishlistImportPreview = WishlistImportPreview(
+    itemRows = 0,
+    newItems = 0,
+    updatedItems = 0,
+    skipped = 0,
+    totalCost = Money.zero(),
+    totalSaved = Money.zero(),
     sampleRows = emptyList(),
     skippedRows = emptyList(),
 )

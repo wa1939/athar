@@ -132,6 +132,20 @@
     <string name="settings_budget_targets_preview_confirm">Confirm targets</string>
     <string name="settings_budget_targets_done" formatted="true">Applied %1$d targets. %2$d changed. %3$d rows skipped.</string>
 
+    <!-- Wishlist import card -->
+    <string name="settings_wishlist_import_title">Wishlist import</string>
+    <string name="settings_wishlist_import_body">Import items from the TMOAP Wishlist sheet. Athar previews new and matching existing items first, then updates the Wishlist planner only after confirmation.</string>
+    <string name="settings_wishlist_import_action_import">Import wishlist</string>
+    <string name="settings_wishlist_import_preview_summary" formatted="true">Ready to import %1$d items: %2$d new, %3$d updates. %4$d rows will be skipped.</string>
+    <string name="settings_wishlist_import_preview_totals" formatted="true">Total cost: %1$s · Saved: %2$s</string>
+    <string name="settings_wishlist_import_preview_row" formatted="true">%1$s · %2$s cost · %3$s saved · %4$s months · starts %5$s · %6$s</string>
+    <string name="settings_wishlist_import_preview_first_skip" formatted="true">First skipped wishlist row: #%1$d · %2$s · %3$s</string>
+    <string name="settings_wishlist_import_preview_confirm">Confirm wishlist</string>
+    <string name="settings_wishlist_import_preview_new">new</string>
+    <string name="settings_wishlist_import_preview_existing">update</string>
+    <string name="settings_wishlist_import_preview_flexible_months">flexible</string>
+    <string name="settings_wishlist_import_done" formatted="true">Imported %1$d wishlist items. %2$d new. %3$d updated. %4$d rows skipped.</string>
+
     <!-- Tax export card -->
     <string name="settings_tax_title">Export for taxes and accountant</string>
     <string name="settings_tax_body">Create an annual PDF with income/expense summary, category totals, and the confirmed transaction list. Balance reconciliation adjustments are excluded because they are not real income or spending.</string>

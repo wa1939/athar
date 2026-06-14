@@ -23,7 +23,7 @@ The implementation stays dependency-light: parse the zipped OpenXML parts with J
 
 - Legacy `.xls` binary parsing.
 - Full Excel formula evaluation beyond cached workbook values.
-- Importing non-transaction TMOAP sheets through statement exchange. Budget Targets now have a separate explicit Settings import flow; Wishlist and Investments remain covered by existing app surfaces and the private seeded build pipeline.
+- Importing non-transaction TMOAP sheets through statement exchange. Budget Targets and Wishlist now have separate explicit Settings import flows; Investments remains covered by existing app surfaces and the private seeded build pipeline.
 
 ## Validation
 

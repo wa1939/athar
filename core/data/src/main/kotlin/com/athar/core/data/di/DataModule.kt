@@ -21,6 +21,7 @@ import com.athar.core.data.csv.CsvExporter
 import com.athar.core.data.csv.CsvImporter
 import com.athar.core.data.csv.MerchantBulkExporter
 import com.athar.core.data.csv.MerchantBulkImporter
+import com.athar.core.data.csv.WishlistImporter
 import com.athar.core.data.report.TaxPdfExporter
 import com.athar.core.data.repo.AccountRepositoryImpl
 import com.athar.core.data.repo.ActivityLogRepositoryImpl
@@ -53,6 +54,7 @@ import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.ReceiptAttachmentRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
 import com.athar.core.domain.repo.UserTemplateRepository
+import com.athar.core.domain.repo.WishlistImportTrigger
 import com.athar.core.domain.repo.WishlistRepository
 import dagger.Binds
 import dagger.Module
@@ -181,6 +183,9 @@ internal abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindBudgetTargetImportTrigger(impl: BudgetTargetImporter): BudgetTargetImportTrigger
+
+    @Binds @Singleton
+    abstract fun bindWishlistImportTrigger(impl: WishlistImporter): WishlistImportTrigger
 
     @Binds @Singleton
     abstract fun bindSmsAuditRepository(impl: SmsAuditRepositoryImpl): SmsAuditRepository

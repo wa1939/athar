@@ -38,6 +38,10 @@ import com.athar.core.domain.repo.TaxExportResult
 import com.athar.core.domain.repo.TaxExportTrigger
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
+import com.athar.core.domain.repo.WishlistImportPreview
+import com.athar.core.domain.repo.WishlistImportPreviewResult
+import com.athar.core.domain.repo.WishlistImportResult
+import com.athar.core.domain.repo.WishlistImportTrigger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -79,6 +83,14 @@ sealed interface BudgetTargetStatus {
     data class Preview(val preview: BudgetTargetImportPreview) : BudgetTargetStatus
     data class Done(val applied: Int, val changed: Int, val skipped: Int) : BudgetTargetStatus
     data class Failed(val reason: String) : BudgetTargetStatus
+}
+
+sealed interface WishlistImportStatus {
+    data object Idle : WishlistImportStatus
+    data object Working : WishlistImportStatus
+    data class Preview(val preview: WishlistImportPreview) : WishlistImportStatus
+    data class Done(val imported: Int, val newItems: Int, val updatedItems: Int, val skipped: Int) : WishlistImportStatus
+    data class Failed(val reason: String) : WishlistImportStatus
 }
 
 sealed interface RescanStatus {
@@ -155,6 +167,7 @@ class SettingsViewModel @Inject constructor(
     private val backfillTrigger: SmsBackfillTrigger,
     private val csvImporter: CsvImportTrigger,
     private val budgetTargetsImporter: BudgetTargetImportTrigger,
+    private val wishlistImporter: WishlistImportTrigger,
     private val csvExporter: CsvExportTrigger,
     private val bulkExporter: MerchantBulkExportTrigger,
     private val bulkImporter: MerchantBulkImportTrigger,
@@ -187,6 +200,10 @@ class SettingsViewModel @Inject constructor(
     private val _budgetTargets = MutableStateFlow<BudgetTargetStatus>(BudgetTargetStatus.Idle)
     val budgetTargetStatus: StateFlow<BudgetTargetStatus> = _budgetTargets.asStateFlow()
     private var pendingBudgetTargetImportBytes: ByteArray? = null
+
+    private val _wishlistImport = MutableStateFlow<WishlistImportStatus>(WishlistImportStatus.Idle)
+    val wishlistImportStatus: StateFlow<WishlistImportStatus> = _wishlistImport.asStateFlow()
+    private var pendingWishlistImportBytes: ByteArray? = null
 
     val statementImportAccounts: StateFlow<List<Account>> = accounts.observeActive()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -471,6 +488,63 @@ class SettingsViewModel @Inject constructor(
         _budgetTargets.value = BudgetTargetStatus.Idle
     }
 
+    fun previewWishlistImport(resolver: ContentResolver, uri: Uri) {
+        viewModelScope.launch {
+            _wishlistImport.value = WishlistImportStatus.Working
+            val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+            if (bytes == null) {
+                pendingWishlistImportBytes = null
+                _wishlistImport.value = WishlistImportStatus.Failed("Couldn't open workbook.")
+                return@launch
+            }
+            previewWishlistImportBytes(bytes)
+        }
+    }
+
+    internal fun previewWishlistImportBytes(bytes: ByteArray) {
+        viewModelScope.launch {
+            _wishlistImport.value = WishlistImportStatus.Working
+            _wishlistImport.value = when (val result = wishlistImporter.preview(bytes.inputStream())) {
+                is WishlistImportPreviewResult.Done -> {
+                    pendingWishlistImportBytes = bytes
+                    WishlistImportStatus.Preview(result.preview)
+                }
+                is WishlistImportPreviewResult.Failed -> {
+                    pendingWishlistImportBytes = null
+                    WishlistImportStatus.Failed(result.reason)
+                }
+            }
+        }
+    }
+
+    fun confirmWishlistImport() {
+        viewModelScope.launch {
+            val bytes = pendingWishlistImportBytes
+            if (bytes == null) {
+                _wishlistImport.value = WishlistImportStatus.Failed("No wishlist preview is ready to import.")
+                return@launch
+            }
+            _wishlistImport.value = WishlistImportStatus.Working
+            _wishlistImport.value = when (val result = wishlistImporter.import(bytes.inputStream())) {
+                is WishlistImportResult.Done -> {
+                    pendingWishlistImportBytes = null
+                    WishlistImportStatus.Done(
+                        imported = result.imported,
+                        newItems = result.newItems,
+                        updatedItems = result.updatedItems,
+                        skipped = result.skipped,
+                    )
+                }
+                is WishlistImportResult.Failed -> WishlistImportStatus.Failed(result.reason)
+            }
+        }
+    }
+
+    fun cancelWishlistImportPreview() {
+        pendingWishlistImportBytes = null
+        _wishlistImport.value = WishlistImportStatus.Idle
+    }
+
     fun cancelCsvImportPreview() {
         pendingCsvImportBytes = null
         pendingCsvImportMapping = null
@@ -571,6 +645,11 @@ class SettingsViewModel @Inject constructor(
     fun clearBudgetTargetStatus() {
         pendingBudgetTargetImportBytes = null
         _budgetTargets.value = BudgetTargetStatus.Idle
+    }
+
+    fun clearWishlistImportStatus() {
+        pendingWishlistImportBytes = null
+        _wishlistImport.value = WishlistImportStatus.Idle
     }
 
     fun clearTaxExportStatus() {

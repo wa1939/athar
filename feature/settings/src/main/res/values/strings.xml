@@ -132,6 +132,20 @@
     <string name="settings_budget_targets_preview_confirm">تأكيد الأهداف</string>
     <string name="settings_budget_targets_done" formatted="true">تم تطبيق %1$d هدف. تغيّر %2$d هدف. تم تخطي %3$d صف.</string>
 
+    <!-- Wishlist import card -->
+    <string name="settings_wishlist_import_title">استيراد قائمة الأمنيات</string>
+    <string name="settings_wishlist_import_body">استورد العناصر من ورقة Wishlist في ملف TMOAP. يعرض أثر العناصر الجديدة والعناصر المطابقة أولًا، ثم يحدّث مخطط الأمنيات بعد التأكيد فقط.</string>
+    <string name="settings_wishlist_import_action_import">استيراد الأمنيات</string>
+    <string name="settings_wishlist_import_preview_summary" formatted="true">جاهز لاستيراد %1$d عنصر: %2$d جديد، %3$d تحديث. سيتم تخطي %4$d صف.</string>
+    <string name="settings_wishlist_import_preview_totals" formatted="true">إجمالي التكلفة: %1$s · المدخر: %2$s</string>
+    <string name="settings_wishlist_import_preview_row" formatted="true">%1$s · التكلفة %2$s · المدخر %3$s · %4$s شهر · يبدأ %5$s · %6$s</string>
+    <string name="settings_wishlist_import_preview_first_skip" formatted="true">أول صف أمنيات متخطى: #%1$d · %2$s · %3$s</string>
+    <string name="settings_wishlist_import_preview_confirm">تأكيد الأمنيات</string>
+    <string name="settings_wishlist_import_preview_new">جديد</string>
+    <string name="settings_wishlist_import_preview_existing">تحديث</string>
+    <string name="settings_wishlist_import_preview_flexible_months">مرن</string>
+    <string name="settings_wishlist_import_done" formatted="true">تم استيراد %1$d عنصر أمنيات. %2$d جديد. %3$d محدّث. تم تخطي %4$d صف.</string>
+
     <!-- Tax export card -->
     <string name="settings_tax_title">تصدير للمحاسب والضرائب</string>
     <string name="settings_tax_body">أنشئ ملف PDF سنوي يحتوي ملخص الدخل والمصروفات، إجمالي كل فئة، وقائمة الحركات المؤكدة. تُستبعد تسويات الرصيد لأنها ليست دخلًا أو مصروفًا حقيقيًا.</string>

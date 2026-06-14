@@ -55,6 +55,7 @@ import com.athar.core.domain.repo.CsvImportPreviewRow
 import com.athar.core.domain.repo.CsvImportRowEdit
 import com.athar.core.domain.repo.MerchantBulkExportMode
 import com.athar.core.domain.repo.MerchantBulkImportSkipSummary
+import com.athar.core.domain.repo.WishlistImportPreview
 import com.athar.core.domain.repo.merchantBulkAiPrompt
 import com.athar.core.designsystem.component.AtharCard
 import com.athar.core.designsystem.component.AtharText
@@ -62,6 +63,7 @@ import com.athar.core.designsystem.component.AtharTextField
 import com.athar.core.designsystem.display.CurrencyCatalog
 import com.athar.core.designsystem.theme.AtharTheme
 import java.math.BigDecimal
+import java.time.YearMonth
 
 @Composable
 fun SettingsScreen(
@@ -111,6 +113,7 @@ fun SettingsScreen(
     val statementImportAccounts by viewModel.statementImportAccounts.collectAsStateWithLifecycle()
     val selectedStatementImportAccountId by viewModel.selectedStatementImportAccountId.collectAsStateWithLifecycle()
     val budgetTargetStatus by viewModel.budgetTargetStatus.collectAsStateWithLifecycle()
+    val wishlistImportStatus by viewModel.wishlistImportStatus.collectAsStateWithLifecycle()
 
     val exportLauncher = rememberLauncherForActivityResult(CreateDocument("application/octet-stream")) { uri ->
         if (uri != null) pendingExportUri = uri
@@ -123,6 +126,9 @@ fun SettingsScreen(
     }
     val budgetTargetLauncher = rememberLauncherForActivityResult(OpenDocument()) { uri ->
         if (uri != null) viewModel.previewBudgetTargetsImport(context.contentResolver, uri)
+    }
+    val wishlistImportLauncher = rememberLauncherForActivityResult(OpenDocument()) { uri ->
+        if (uri != null) viewModel.previewWishlistImport(context.contentResolver, uri)
     }
     val csvExportLauncher = rememberLauncherForActivityResult(CreateDocument("text/csv")) { uri ->
         if (uri != null) viewModel.exportCsv(context.contentResolver, uri)
@@ -266,6 +272,23 @@ fun SettingsScreen(
                 onConfirmImport = viewModel::confirmBudgetTargetsImport,
                 onCancelPreview = viewModel::cancelBudgetTargetsImportPreview,
                 onClear = viewModel::clearBudgetTargetStatus,
+            )
+
+            WishlistImportCard(
+                status = wishlistImportStatus,
+                onImport = {
+                    wishlistImportLauncher.launch(
+                        arrayOf(
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            "application/vnd.ms-excel",
+                            "application/octet-stream",
+                            "*/*",
+                        ),
+                    )
+                },
+                onConfirmImport = viewModel::confirmWishlistImport,
+                onCancelPreview = viewModel::cancelWishlistImportPreview,
+                onClear = viewModel::clearWishlistImportStatus,
             )
 
             TaxExportCard(
@@ -1068,6 +1091,151 @@ private fun CategoryKind.budgetTargetLabel(): String = when (this) {
     CategoryKind.EXPENSE -> stringResource(R.string.settings_csv_preview_type_expense)
     CategoryKind.INCOME -> stringResource(R.string.settings_csv_preview_type_income)
 }
+
+@Composable
+private fun WishlistImportCard(
+    status: WishlistImportStatus,
+    onImport: () -> Unit,
+    onConfirmImport: () -> Unit,
+    onCancelPreview: () -> Unit,
+    onClear: () -> Unit,
+) {
+    val theme = AtharTheme
+    AtharCard {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(text = stringResource(R.string.settings_wishlist_import_title), style = theme.typography.headline)
+            AtharText(
+                text = stringResource(R.string.settings_wishlist_import_body),
+                style = theme.typography.body,
+                color = theme.colors.muted,
+            )
+            when (val s = status) {
+                WishlistImportStatus.Idle -> Unit
+                WishlistImportStatus.Working -> AtharText(
+                    text = stringResource(R.string.settings_status_working),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+                is WishlistImportStatus.Preview -> {
+                    WishlistImportPreviewSummary(preview = s.preview)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+                    ) {
+                        PrimaryButton(
+                            text = stringResource(R.string.settings_wishlist_import_preview_confirm),
+                            onClick = onConfirmImport,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Box(modifier = Modifier.weight(1f)) {
+                            SecondaryButton(
+                                text = stringResource(R.string.settings_csv_preview_cancel),
+                                onClick = onCancelPreview,
+                            )
+                        }
+                    }
+                }
+                is WishlistImportStatus.Done -> {
+                    AtharText(
+                        text = stringResource(
+                            R.string.settings_wishlist_import_done,
+                            s.imported,
+                            s.newItems,
+                            s.updatedItems,
+                            s.skipped,
+                        ),
+                        style = theme.typography.caption,
+                        color = theme.colors.olive,
+                    )
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
+                }
+                is WishlistImportStatus.Failed -> {
+                    AtharText(text = s.reason, style = theme.typography.caption, color = theme.colors.crimson)
+                    TextButton(onClick = onClear) {
+                        AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
+                    }
+                }
+            }
+            val isWorking = status is WishlistImportStatus.Working
+            if (status !is WishlistImportStatus.Preview) {
+                PrimaryButton(
+                    text = if (isWorking) {
+                        stringResource(R.string.settings_status_in_progress)
+                    } else {
+                        stringResource(R.string.settings_wishlist_import_action_import)
+                    },
+                    onClick = { if (!isWorking) onImport() },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WishlistImportPreviewSummary(preview: WishlistImportPreview) {
+    val theme = AtharTheme
+    Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+        AtharText(
+            text = stringResource(
+                R.string.settings_wishlist_import_preview_summary,
+                preview.itemRows,
+                preview.newItems,
+                preview.updatedItems,
+                preview.skipped,
+            ),
+            style = theme.typography.caption,
+            color = theme.colors.olive,
+        )
+        AtharText(
+            text = stringResource(
+                R.string.settings_wishlist_import_preview_totals,
+                preview.totalCost.compactMoney(),
+                preview.totalSaved.compactMoney(),
+            ),
+            style = theme.typography.caption,
+            color = theme.colors.muted,
+        )
+        preview.sampleRows.forEach { row ->
+            val mode = if (row.existing) {
+                stringResource(R.string.settings_wishlist_import_preview_existing)
+            } else {
+                stringResource(R.string.settings_wishlist_import_preview_new)
+            }
+            val desiredMonths = row.desiredMonths?.toString()
+                ?: stringResource(R.string.settings_wishlist_import_preview_flexible_months)
+            AtharText(
+                text = stringResource(
+                    R.string.settings_wishlist_import_preview_row,
+                    row.name,
+                    row.cost.compactMoney(),
+                    row.currentSaved.compactMoney(),
+                    desiredMonths,
+                    row.startMonth.formatWishlistMonth(),
+                    mode,
+                ),
+                style = theme.typography.caption,
+                color = if (row.existing) theme.colors.muted else theme.colors.ink,
+            )
+        }
+        preview.skippedRows.firstOrNull()?.let { skipped ->
+            AtharText(
+                text = stringResource(
+                    R.string.settings_wishlist_import_preview_first_skip,
+                    skipped.rowNumber,
+                    skipped.label,
+                    skipped.reason,
+                ),
+                style = theme.typography.caption,
+                color = theme.colors.crimson,
+            )
+        }
+    }
+}
+
+private fun YearMonth.formatWishlistMonth(): String =
+    "$year/${monthValue.toString().padStart(2, '0')}"
 
 private fun Money.compactMoney(): String =
     "${rounded().amount.stripTrailingZeros().toPlainString()} $currency"
