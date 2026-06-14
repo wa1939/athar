@@ -32,12 +32,19 @@ class PrivateSmsExportAuditTest {
         }
 
         val report = audit(export)
-        val output = Path.of("build/private-corpus-audit/latest.json")
+        val output = auditOutputPath()
         Files.createDirectories(output.parent)
         Files.writeString(output, report.toJson())
 
         assertThat(report.records).isGreaterThan(0)
         assertThat(report.rawBodiesWritten).isEqualTo(0)
+    }
+
+    @Test
+    fun `audit output path is rooted at repository build directory`() {
+        val output = auditOutputPath()
+
+        assertThat(output).isEqualTo(repositoryRoot().resolve("build/private-corpus-audit/latest.json"))
     }
 
     @Test
@@ -180,6 +187,12 @@ class PrivateSmsExportAuditTest {
             ?.let { return Path.of(it) }
         return findUpwardOrNull("All Conversations 2026-05-27 175517.txt")
     }
+
+    private fun auditOutputPath(): Path =
+        repositoryRoot().resolve("build/private-corpus-audit/latest.json")
+
+    private fun repositoryRoot(): Path =
+        findUpward("settings.gradle.kts").parent.toAbsolutePath().normalize()
 
     private fun readExport(path: Path): List<ExportMessage> {
         val messages = mutableListOf<ExportMessage>()

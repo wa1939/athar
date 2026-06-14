@@ -18,8 +18,9 @@ next audit slower and easier to drift from production parser and seed behavior.
 - Read the export from `-Dathar.privateSmsExport=...`,
   `ATHAR_PRIVATE_SMS_EXPORT`, or the maintainer's local default path when it
   exists.
-- Write only redacted aggregate JSON to
-  `ingestion/sms-parser/build/private-corpus-audit/latest.json`.
+- Write only redacted aggregate JSON to the repository-root
+  `build/private-corpus-audit/latest.json`, regardless of the Gradle module
+  working directory.
 - Record `rawBodiesWritten = 0` and avoid writing raw SMS bodies, amounts by
   row, senders, or merchant samples.
 - Promote the one post-R16 public catalog hit, `buffet`, as a priority-90
