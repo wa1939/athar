@@ -203,6 +203,96 @@ class MerchantBulkCsvTest {
     }
 
     @Test
+    fun `importer does not duplicate an existing exact local rule for same category`() = runTest {
+        val repo = FakeTransactionRepository(
+            listOf(tx(id = "hemmah", sourceRefId = "inbox-hemmah", merchant = "Hemmah")),
+        )
+        val rules = FakeCategoryRuleRepository(
+            listOf(
+                learnedRule(
+                    id = "existing-exact-hemmah",
+                    pattern = "hemmah",
+                    categoryId = "cat-home-maintenance",
+                    patternType = PatternType.EXACT,
+                ),
+            ),
+        )
+        val importer = MerchantBulkImporter(
+            transactions = repo,
+            rules = rules,
+            categories = FakeCategoryRepository(listOf(homeCategory(), coffeeCategory())),
+            clock = FixedClock,
+        )
+        val csv = """
+            id,merchant,merchant_normalized,amount,currency,type,status,date,category_id
+            hemmah,Hemmah,hemmah,19.00,SAR,EXPENSE,PENDING,2026-02-14,cat-home-maintenance
+        """.trimIndent()
+
+        val result = importer.importCategorizations(ByteArrayInputStream(csv.toByteArray()))
+
+        assertThat(result).isEqualTo(MerchantBulkImportResult.Done(updated = 1, rulesAdded = 0, skipped = 0))
+        assertThat(repo.get("hemmah")?.categoryId).isEqualTo("cat-home-maintenance")
+        assertThat(rules.learnedRules.map { Triple(it.id, it.pattern, it.categoryId) })
+            .containsExactly(Triple("existing-exact-hemmah", "hemmah", "cat-home-maintenance"))
+    }
+
+    @Test
+    fun `importer replaces stale exact local rule when category changes`() = runTest {
+        val repo = FakeTransactionRepository(
+            listOf(tx(id = "hemmah", sourceRefId = "inbox-hemmah", merchant = "Hemmah")),
+        )
+        val rules = FakeCategoryRuleRepository(
+            listOf(
+                learnedRule(
+                    id = "old-exact-hemmah",
+                    pattern = "hemmah",
+                    categoryId = "cat-coffee",
+                    patternType = PatternType.EXACT,
+                ),
+                learnedRule(
+                    id = "always-hemmah",
+                    pattern = "hemmah",
+                    categoryId = "cat-coffee",
+                    patternType = PatternType.SUBSTRING,
+                ),
+                learnedRule(
+                    id = "seed-hemmah",
+                    pattern = "hemmah",
+                    categoryId = "cat-coffee",
+                    patternType = PatternType.EXACT,
+                    learnedFromUser = false,
+                    priority = 90,
+                ),
+            ),
+        )
+        val importer = MerchantBulkImporter(
+            transactions = repo,
+            rules = rules,
+            categories = FakeCategoryRepository(listOf(homeCategory(), coffeeCategory())),
+            clock = FixedClock,
+        )
+        val csv = """
+            id,merchant,merchant_normalized,amount,currency,type,status,date,category_id
+            hemmah,Hemmah,hemmah,19.00,SAR,EXPENSE,PENDING,2026-02-14,cat-home-maintenance
+        """.trimIndent()
+
+        val result = importer.importCategorizations(ByteArrayInputStream(csv.toByteArray()))
+
+        assertThat(result).isEqualTo(MerchantBulkImportResult.Done(updated = 1, rulesAdded = 1, skipped = 0))
+        assertThat(repo.get("hemmah")?.categoryId).isEqualTo("cat-home-maintenance")
+        assertThat(rules.learnedRules.map { it.id }).doesNotContain("old-exact-hemmah")
+        assertThat(rules.learnedRules.map { it.id }).contains("always-hemmah")
+        assertThat(rules.learnedRules.map { it.id }).contains("seed-hemmah")
+        assertThat(
+            rules.learnedRules.filter {
+                it.learnedFromUser &&
+                    it.patternType == PatternType.EXACT &&
+                    it.pattern == "hemmah"
+            }.map { it.categoryId },
+        ).containsExactly("cat-home-maintenance")
+    }
+
+    @Test
     fun `importer propagates one category choice to blank rows for the same merchant group`() = runTest {
         val repo = FakeTransactionRepository(
             listOf(
@@ -675,20 +765,27 @@ class MerchantBulkCsvTest {
         override suspend fun reorder(ids: List<String>) = unsupported()
     }
 
-    private class FakeCategoryRuleRepository : CategoryRuleRepository {
-        val learnedRules = mutableListOf<CategoryRule>()
+    private class FakeCategoryRuleRepository(
+        initial: List<CategoryRule> = emptyList(),
+    ) : CategoryRuleRepository {
+        val learnedRules = initial.toMutableList()
 
-        override fun observeAll(): Flow<List<CategoryRule>> = flowOf(emptyList())
+        override fun observeAll(): Flow<List<CategoryRule>> = flowOf(learnedRules.toList())
         override suspend fun findMatching(merchantNormalized: String): List<CategoryRule> = emptyList()
-        override suspend fun upsert(rule: CategoryRule) = unsupported()
-        override suspend fun delete(id: String) = unsupported()
+        override suspend fun upsert(rule: CategoryRule) {
+            learnedRules.removeAll { it.id == rule.id }
+            learnedRules += rule
+        }
+        override suspend fun delete(id: String) {
+            learnedRules.removeAll { it.id == id }
+        }
         override suspend fun learnFromCorrection(
             merchantNormalized: String,
             categoryId: String,
             patternType: PatternType,
         ): CategoryRule {
             val rule = CategoryRule(
-                id = merchantNormalized,
+                id = "learned-$merchantNormalized-$categoryId",
                 pattern = merchantNormalized,
                 patternType = patternType,
                 categoryId = categoryId,
@@ -725,5 +822,22 @@ class MerchantBulkCsvTest {
         }
 
         fun unsupported(): Nothing = throw UnsupportedOperationException("not used in this test")
+
+        fun learnedRule(
+            id: String,
+            pattern: String,
+            categoryId: String,
+            patternType: PatternType,
+            learnedFromUser: Boolean = true,
+            priority: Int = 200,
+        ): CategoryRule = CategoryRule(
+            id = id,
+            pattern = pattern,
+            patternType = patternType,
+            categoryId = categoryId,
+            priority = priority,
+            learnedFromUser = learnedFromUser,
+            createdAt = FixedInstant,
+        )
     }
 }

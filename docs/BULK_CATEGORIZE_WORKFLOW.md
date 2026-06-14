@@ -6,7 +6,7 @@ Use this when you have dozens or hundreds of uncategorized transactions sitting 
 
 1. **Open Settings → "تصنيف بالذكاء الاصطناعي · مجمّع" / "Bulk categorize with AI"** → tap **Copy AI prompt**, then choose an export. **Export with SMS text** writes the highest-context CSV, including the linked ingestion-audit message body in `raw_body` when available and falling back to transaction notes for manual/imported rows. **Export private CSV** writes the same import-compatible columns but leaves `raw_body` blank. Both files include every non-transfer transaction that is PENDING, DISMISSED, or CONFIRMED-without-category, plus valid active category options for each row's type. Default filenames: `athar-uncategorized.csv` and `athar-uncategorized-private.csv`. Save the file somewhere you can reach from a desktop.
 2. **Open ChatGPT / Claude / Z.ai** in a fresh chat. Paste the copied prompt, attach (or paste) the CSV, and ask for the filled-in CSV back.
-3. **Back in Athar → same Settings card → Import categorized.** Pick the filled CSV. If you saved the full AI response with prose and a fenced `csv` block, Athar extracts the valid CSV block automatically. Filled rows update their transactions (status → CONFIRMED, category set) only when the chosen category matches the row's expense/income type. If a repeated merchant group has one unambiguous compatible filled category, blank peers in that imported CSV group inherit it. Athar also records an exact learned `CategoryRule` per unambiguous type-compatible `merchant → category` pair so future SMS from the same normalized merchant auto-categorize without broad substring matching.
+3. **Back in Athar → same Settings card → Import categorized.** Pick the filled CSV. If you saved the full AI response with prose and a fenced `csv` block, Athar extracts the valid CSV block automatically. Filled rows update their transactions (status → CONFIRMED, category set) only when the chosen category matches the row's expense/income type. If a repeated merchant group has one unambiguous compatible filled category, blank peers in that imported CSV group inherit it. Athar also upserts one exact learned `CategoryRule` per unambiguous type-compatible `merchant → category` pair so future SMS from the same normalized merchant auto-categorize without broad substring matching or duplicate exact rules.
 
 A typical 800-row export takes ChatGPT about 60–90 seconds; import takes a fraction of a second.
 
@@ -89,11 +89,12 @@ order.
 
 - Every filled row's transaction is now CONFIRMED with a category — visible on Today's lists, in Trends, and counted in budget targets.
 - Blank rows in the same imported repeated-merchant group inherit the category when the group has exactly one filled category and that category matches the blank row's type. If the CSV contains conflicting categories for one merchant, or the repeated group mixes incompatible expense/income rows, only the compatible explicit rows update and the blank peers stay untouched.
-- Every unambiguous type-compatible merchant in the filled rows became an exact `learnedFromUser = true` `CategoryRule` at priority 200. Mixed-type or incompatible groups do not train a rule. This means:
+- Every unambiguous type-compatible merchant in the filled rows upserts an exact `learnedFromUser = true` `CategoryRule` at priority 200. Mixed-type or incompatible groups do not train a rule. This means:
   - Next time an SMS from that exact normalized merchant arrives, the ingestion pipeline auto-categorizes it before it ever hits the pending tray.
   - The rule wins over Athar's curated seed rules (priority 100) and the 507 AI-seeded rules (priority 60–80), so the user's personal taste always overrides the defaults.
   - The rule is *never* overwritten by future seed-file updates (see `RuleSeed.kt`).
   - Exact bulk-import rules stay local and are omitted from the community-rule export; public seed proposals still come from explicit "Always categorize X" substring rules.
+  - Re-importing the same decision does not create duplicate exact rules. Importing a corrected category replaces stale exact local rules for that merchant while leaving seed rules and explicit "Always categorize" substring rules intact.
 
 ## When the import skips a row
 

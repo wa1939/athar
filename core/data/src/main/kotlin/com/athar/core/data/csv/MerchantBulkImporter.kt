@@ -2,6 +2,7 @@ package com.athar.core.data.csv
 
 import com.athar.core.domain.model.Category
 import com.athar.core.domain.model.CategoryKind
+import com.athar.core.domain.model.CategoryRule
 import com.athar.core.domain.model.PatternType
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
@@ -78,7 +79,7 @@ internal class MerchantBulkImporter @Inject constructor(
         var missingTransactions = 0
         var conflictingGroups = 0
         var blankRowsWithoutGroupChoice = 0
-        // Track unique (pattern → categoryId) so we add one rule per merchant, not per row.
+        // Track unique (pattern → categoryId) so we train one exact rule per merchant, not per row.
         val rulesToAdd = mutableMapOf<String, String>()
         val allTransactions = transactions.observeAll().first()
         val byStableKey = uniqueBy(allTransactions, MerchantBulkStableKey::sourceAware)
@@ -217,15 +218,17 @@ internal class MerchantBulkImporter @Inject constructor(
             unambiguousGroups.filterKeys { it !in patternsWithIncompatibleTypes },
         )
 
+        val existingExactLocalRules = rules.observeAll()
+            .first()
+            .filter { it.learnedFromUser && it.patternType == PatternType.EXACT }
+            .groupBy { it.pattern.lowercase().trim() }
+
         var rulesAdded = 0
         rulesToAdd.forEach { (pattern, cat) ->
             runCatching {
-                rules.learnFromCorrection(
-                    merchantNormalized = pattern,
-                    categoryId = cat,
-                    patternType = PatternType.EXACT,
-                )
-                rulesAdded++
+                if (upsertExactLocalRule(pattern, cat, existingExactLocalRules[pattern].orEmpty())) {
+                    rulesAdded++
+                }
             }.onFailure { Timber.w(it, "Failed to add rule for '$pattern'") }
         }
 
@@ -243,6 +246,28 @@ internal class MerchantBulkImporter @Inject constructor(
                 blankRowsWithoutGroupChoice = blankRowsWithoutGroupChoice,
             ),
         )
+    }
+
+    private suspend fun upsertExactLocalRule(
+        pattern: String,
+        categoryId: String,
+        existingRules: List<CategoryRule>,
+    ): Boolean {
+        val normalizedPattern = pattern.lowercase().trim()
+        val exactRules = existingRules.filter {
+            it.learnedFromUser &&
+                it.patternType == PatternType.EXACT &&
+                it.pattern.equals(normalizedPattern, ignoreCase = true)
+        }
+        if (exactRules.size == 1 && exactRules.single().categoryId == categoryId) return false
+
+        exactRules.forEach { rules.delete(it.id) }
+        rules.learnFromCorrection(
+            merchantNormalized = normalizedPattern,
+            categoryId = categoryId,
+            patternType = PatternType.EXACT,
+        )
+        return true
     }
 
     private suspend fun applyCategory(

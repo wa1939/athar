@@ -23,10 +23,10 @@ import java.io.OutputStream
  *       - apply that category to blank rows in the same imported merchant group when
  *         the group has no conflicting filled categories and the category matches
  *         each row's type,
- *       - record an exact learned `CategoryRule` per unambiguous
+ *       - upsert an exact learned `CategoryRule` per unambiguous
  *         type-compatible (merchant → categoryId) pair so future ingests
  *         auto-categorize the same normalized merchant without broad substring
- *         matching,
+ *         matching or duplicate/stale exact local rules,
  *       - return aggregate skip reasons so the user can repair AI-filled CSV
  *         mistakes without exposing raw row contents in the UI.
  *
