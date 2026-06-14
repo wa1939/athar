@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bulk categorization Settings now offers a private CSV export that keeps import-matching fields and category options but omits raw SMS bodies before sending the file to external AI.
 - Bulk categorization imports now accept saved AI responses that contain a valid fenced `csv` block, so users do not need to strip ChatGPT/Claude prose before importing.
 - Bulk categorization imports now reject categories whose kind does not match the matched transaction type, avoid propagating incompatible categories to blank repeated-merchant peers, and skip exact-rule training for mixed-type import groups.
+- Store-safe notification parsing now preserves merchants from card-used status labels such as `Card used: merchant amount` and `Card ending in 1234 was used - merchant amount`.
 - Store-safe notification parsing now uses structured `Recipient:`, `Receiver:`, and `Beneficiary:` labels as merchant hints for posted expense notifications after the body has already qualified as an expense, while keeping transfer recipient labels as transfer counterparties.
 - Store-safe notification parsing now preserves merchants from status-prefixed posted transaction copy such as `Payment successful: merchant amount`, `Transaction completed - merchant amount`, and `Purchase approved: merchant amount`.
 - Store-safe notification parsing now ignores amount-bearing payment/money request notifications before the generic payment action parser can turn them into fake expenses.
