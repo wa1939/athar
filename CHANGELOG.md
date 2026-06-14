@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Store-safe notification parsing now normalizes posted bank-fee pushes to the shared `Bank fees` merchant label and ignores fee-schedule/tariff notices with amounts.
 - Store-safe notification parsing now normalizes ATM/cash-withdrawal pushes to the shared `ATM Withdrawal` merchant label and ignores ATM withdrawal-limit notices with amounts.
 - Store-safe notification parsing now treats posted refund/reversal/chargeback push copy as income, preserving the source counterparty for shapes such as `refunded`, `purchase reversal`, and `chargeback`.
 - Curated seed rules now include three additional public/reusable merchant labels from private-audit follow-up review, bringing active seed coverage to 709 rules and reducing the redacted private audit's uncategorized parsed expenses from 1,112 to 1,077 without committing raw SMS data.

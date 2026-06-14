@@ -305,6 +305,51 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses service fee notification with shared merchant label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Monthly service fee SAR 15.00 charged"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("15.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Bank fees")
+    }
+
+    @Test
+    fun `parses foreign transaction fee notification with shared merchant label`() {
+        val result = parser.parse(
+            event("notification:com.capitalone.mobile", "Foreign transaction fee of USD 1.20"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("1.20"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Bank fees")
+    }
+
+    @Test
+    fun `parses Arabic bank fee notification with shared merchant label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم خصم رسوم ١٥ ر.س من حسابك"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("15"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Bank fees")
+    }
+
+    @Test
+    fun `ignores fee schedule notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.chase.sig.android", "New fee schedule: ATM fee USD 3.00 from July 1"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
     fun `parses transfer notification`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "You sent AED 100.00 to Ahmed"),

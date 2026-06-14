@@ -56,6 +56,14 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\b(?:atm\s+withdrawal\s+limit|cash\s+withdrawal\s+limit|withdrawal\s+limit|atm\s+limit)\b|حد\s+السحب|سقف\s+السحب)""",
         RegexOption.IGNORE_CASE,
     )
+    private val feeWords = Regex(
+        """(?:\b(?:service\s+fee|monthly\s+fee|maintenance\s+fee|foreign\s+transaction\s+fee|international\s+transaction\s+fee|atm\s+fee|bank\s+fee|fee(?:s)?)\b|رسوم|رسم|عمولة)""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val feeScheduleWords = Regex(
+        """(?:\b(?:fee\s+schedule|fees\s+(?:and\s+charges|schedule|changed|updated)|pricing\s+(?:update|change|changes)|tariff\s+(?:update|change|changes)|new\s+fees)\b|رسوم\s+التعرفة\s+البنكية|تحديث\s+قائمة\s+رسوم|قائمة\s+رسوم\s+التعرفة|تعرفة\s+بنكية)""",
+        RegexOption.IGNORE_CASE,
+    )
     private val declinedWords = Regex(
         """\b(?:declined|rejected|failed|unsuccessful|مرفوض|رُفض|فشل|غير\s+ناجحة)\b""",
         RegexOption.IGNORE_CASE,
@@ -173,6 +181,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (statementWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (scheduledWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (withdrawalLimitWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (feeScheduleWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (spendingSummaryWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (limitWords.containsMatchIn(normalized) && !hasExpenseAction(normalized) && !hasIncomeAction(normalized)) {
             return ParseResult.Ignored
@@ -196,12 +205,13 @@ class GenericBankNotificationTemplate : BankTemplate {
         val type = when {
             hasIncomeAction(normalized) -> TxType.INCOME
             transferWords.containsMatchIn(normalized) -> TxType.TRANSFER
-            hasExpenseAction(normalized) || hasMerchantHint(normalized) -> TxType.EXPENSE
+            hasExpenseAction(normalized) || isBankFeeNotification(normalized) || hasMerchantHint(normalized) -> TxType.EXPENSE
             else -> return ParseResult.Failed("notification action not found", listOf(id))
         }
 
         val merchant = when (type) {
             TxType.EXPENSE -> "ATM Withdrawal".takeIf { isWithdrawalNotification(normalized) }
+                ?: "Bank fees".takeIf { isBankFeeNotification(normalized) }
                 ?: cleanParty(merchantLabelHint.find(normalized)?.groupValues?.get(1)
                 ?: toHint.find(normalized)?.groupValues?.get(1)
                 ?: atHint.find(normalized)?.groupValues?.get(1)
@@ -244,7 +254,7 @@ class GenericBankNotificationTemplate : BankTemplate {
     }
 
     private fun hasAction(body: String): Boolean =
-        hasExpenseAction(body) || hasIncomeAction(body) || transferWords.containsMatchIn(body)
+        hasExpenseAction(body) || hasIncomeAction(body) || transferWords.containsMatchIn(body) || isBankFeeNotification(body)
 
     private fun hasExpenseAction(body: String): Boolean =
         expenseWords.containsMatchIn(body) || expensePhrases.containsMatchIn(body)
@@ -261,6 +271,9 @@ class GenericBankNotificationTemplate : BankTemplate {
 
     private fun isWithdrawalNotification(body: String): Boolean =
         withdrawalWords.containsMatchIn(body)
+
+    private fun isBankFeeNotification(body: String): Boolean =
+        feeWords.containsMatchIn(body)
 
     private fun isMarketingOnlyPromotion(body: String): Boolean =
         marketingOnlyWords.containsMatchIn(body) && !postedTransactionEvidence.containsMatchIn(body)
