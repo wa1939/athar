@@ -153,6 +153,33 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `ignores weekly spending recap notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.wise.android", "Weekly recap: You spent USD 500.00 this week"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores monthly spending summary notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.revolut.revolut", "You spent SAR 1,200.00 this month"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores Arabic spending summary notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.alrajhibank.alrajhimobile", "ملخص الإنفاق: دفع ٥٠٠ ر.س هذا الشهر"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
     fun `parses Arabic debit without offer wording`() {
         val result = parser.parse(
             event("notification:com.alrajhibank.alrajhimobile", "خصم ٣٥٫٥٠ ر.س لدى كارفور"),
