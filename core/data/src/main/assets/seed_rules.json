@@ -3564,6 +3564,16 @@
       "pattern": "mobile recharge",
       "categoryId": "cat-telecom",
       "priority": 90
+    },
+    {
+      "pattern": "traffic fine payment",
+      "categoryId": "cat-utilities",
+      "priority": 90
+    },
+    {
+      "pattern": "government service payment",
+      "categoryId": "cat-utilities",
+      "priority": 90
     }
   ]
 }

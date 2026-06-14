@@ -853,6 +853,82 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses traffic fine payment notification with shared public service label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Traffic fine payment SAR 300.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("300.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Traffic fine payment")
+    }
+
+    @Test
+    fun `parses government service payment notification with shared public service label`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Government service payment AED 150.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("150.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Government service payment")
+    }
+
+    @Test
+    fun `preserves specific agency on government service payment notification`() {
+        val result = parser.parse(
+            event(
+                "notification:com.alrajhibank.alrajhimobile",
+                "Government service payment SAR 100.00 to Ministry of Interior",
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("100.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Ministry of Interior")
+    }
+
+    @Test
+    fun `parses Arabic traffic fine payment notification with shared public service label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم سداد مخالفة مرورية بمبلغ ٣٠٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("300"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Traffic fine payment")
+    }
+
+    @Test
+    fun `ignores public service due reminder notifications with amounts`() {
+        val reminders = listOf(
+            "Your traffic fine of SAR 300.00 is due tomorrow",
+            "Government service fee of AED 150.00 is due tomorrow",
+            "تذكير: مخالفة مرورية مستحقة ٣٠٠ ر.س",
+        )
+
+        reminders.forEach { body ->
+            assertThat(parser.parse(event("notification:com.alrajhibank.alrajhimobile", body))).isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
+    fun `does not treat fine dining notification as traffic fine payment`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Fine Dining charged your card SAR 80.00"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("80.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Fine Dining")
+    }
+
+    @Test
     fun `does not treat trailing status as merchant`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "Card purchase SAR 42.00 approved"),

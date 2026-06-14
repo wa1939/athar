@@ -128,6 +128,18 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\b(?:next|offer|promo|bonus|discount|bundle|data)\b[^\n\r]{0,80}\b(?:mobile|phone|airtime|prepaid)\s+(?:recharge|top[-\s]?up)\b|\b(?:mobile|phone|airtime|prepaid)\s+(?:recharge|top[-\s]?up)\b[^\n\r]{0,80}\b(?:offer|promo|bonus|discount|bundle|data|scheduled|upcoming|reminder)\b|(?:عرض|عروض|خصم|بونص|مكافأة|باقة|بيانات)[^\n\r]{0,80}(?:شحن|تعبئة|تعبئه)\s+(?:رصيد\s+)?(?:الجوال|الهاتف|الموبايل|المحمول))""",
         RegexOption.IGNORE_CASE,
     )
+    private val trafficFinePaymentWords = Regex(
+        """(?:\b(?:traffic|parking)\s+(?:fine|violation)\s+(?:payment|paid|settled)\b|\b(?:payment|paid|settled)\s+(?:for\s+)?(?:traffic|parking)\s+(?:fine|violation)\b|\b(?:traffic|parking)\s+(?:fine|violation)\b[^\n\r]{0,40}\b(?:paid|settled|posted|completed)\b|(?:سداد|دفع|خصم)\s+(?:مخالفة|مخالفات)\s+(?:مرورية|المرور)|(?:مخالفة|مخالفات)\s+(?:مرورية|المرور)\s+(?:تم\s+)?(?:سداد|دفع|خصم))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val governmentServicePaymentWords = Regex(
+        """(?:\b(?:government|public)\s+service\s+(?:payment|paid|fee|charge)\b|\b(?:payment|paid)\s+(?:for\s+)?(?:government|public)\s+service\b|\b(?:government|public)\s+(?:fee|charge)\s+(?:payment|paid|debited|posted)\b|\bministry\s+(?:service\s+)?(?:payment|fee|charge)\b|مدفوعات\s+(?:حكومية|وزارة\s+الداخلية)|(?:سداد|دفع|خصم)\s+(?:رسوم\s+)?(?:حكومية|خدمة\s+حكومية|خدمات\s+حكومية|خدمات\s+المقيمين))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val publicServiceReminderWords = Regex(
+        """(?:\b(?:(?:traffic|parking)\s+(?:fine|violation)|(?:government|public)\s+service|government\s+(?:fee|charge))\b[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder|deadline|expires?)\b|\b(?:due|scheduled|upcoming|reminder|deadline|expires?)\b[^\n\r]{0,80}\b(?:(?:traffic|parking)\s+(?:fine|violation)|(?:government|public)\s+service|government\s+(?:fee|charge))\b|(?:مخالفة|مخالفات|رسوم\s+حكومية|خدمة\s+حكومية|خدمات\s+حكومية|خدمات\s+المقيمين)[^\n\r]{0,80}(?:مستحق|استحقاق|موعد|قادم|مجدول|تذكير)|(?:تذكير|مستحق|استحقاق|موعد|قادم|مجدول)[^\n\r]{0,80}(?:مخالفة|مخالفات|رسوم\s+حكومية|خدمة\s+حكومية|خدمات\s+حكومية|خدمات\s+المقيمين))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val declinedWords = Regex(
         """\b(?:declined|rejected|failed|unsuccessful|مرفوض|رُفض|فشل|غير\s+ناجحة)\b""",
         RegexOption.IGNORE_CASE,
@@ -251,6 +263,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (utilityBillReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (recurringExpenseReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (telecomRechargeReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (publicServiceReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (spendingSummaryWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (limitWords.containsMatchIn(normalized) && !hasExpenseAction(normalized) && !hasIncomeAction(normalized)) {
             return ParseResult.Ignored
@@ -275,6 +288,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             isTelecomRechargeNotification(normalized) -> TxType.EXPENSE
             hasIncomeAction(normalized) -> TxType.INCOME
             isRecurringExpenseNotification(normalized) -> TxType.EXPENSE
+            isPublicServicePaymentNotification(normalized) -> TxType.EXPENSE
             transferWords.containsMatchIn(normalized) -> TxType.TRANSFER
             hasExpenseAction(normalized) || isBankFeeNotification(normalized) ||
                 isDebtPaymentNotification(normalized) || hasMerchantHint(normalized) -> TxType.EXPENSE
@@ -331,7 +345,8 @@ class GenericBankNotificationTemplate : BankTemplate {
     private fun hasAction(body: String): Boolean =
         hasExpenseAction(body) || hasIncomeAction(body) || transferWords.containsMatchIn(body) ||
             isBankFeeNotification(body) || isDebtPaymentNotification(body) ||
-            isRecurringExpenseNotification(body) || isTelecomRechargeNotification(body)
+            isRecurringExpenseNotification(body) || isTelecomRechargeNotification(body) ||
+            isPublicServicePaymentNotification(body)
 
     private fun hasExpenseAction(body: String): Boolean =
         expenseWords.containsMatchIn(body) || expensePhrases.containsMatchIn(body)
@@ -370,6 +385,10 @@ class GenericBankNotificationTemplate : BankTemplate {
     private fun isTelecomRechargeNotification(body: String): Boolean =
         telecomRechargeWords.containsMatchIn(body)
 
+    private fun isPublicServicePaymentNotification(body: String): Boolean =
+        trafficFinePaymentWords.containsMatchIn(body) ||
+            governmentServicePaymentWords.containsMatchIn(body)
+
     private fun String.cleanMerchantCandidate(amountMatch: MatchResult): String? =
         cleanParty(merchantLabelHint.find(this)?.groupValues?.get(1)
             ?: toHint.find(this)?.groupValues?.get(1)
@@ -381,9 +400,22 @@ class GenericBankNotificationTemplate : BankTemplate {
             ?: partyAfterAmount(this, amountMatch)
 
     private fun normalizeExpenseMerchant(body: String, merchant: String?): String? =
-        normalizeUtilityBillMerchant(body, merchant)
+        normalizePublicServiceMerchant(body, merchant)
+            ?: normalizeUtilityBillMerchant(body, merchant)
             ?: normalizeRecurringExpenseMerchant(body, merchant)
             ?: merchant
+
+    private fun normalizePublicServiceMerchant(body: String, merchant: String?): String? {
+        val label = publicServiceLabel(body) ?: return null
+        if (merchant == null || publicServiceLabel(merchant) != null) return label
+        return merchant
+    }
+
+    private fun publicServiceLabel(body: String): String? = when {
+        trafficFinePaymentWords.containsMatchIn(body) -> "Traffic fine payment"
+        governmentServicePaymentWords.containsMatchIn(body) -> "Government service payment"
+        else -> null
+    }
 
     private fun normalizeUtilityBillMerchant(body: String, merchant: String?): String? {
         if (merchant != null) {
@@ -471,6 +503,8 @@ class GenericBankNotificationTemplate : BankTemplate {
         incomePhrases.find(body)?.range?.first,
         salaryIncomeWords.find(body)?.range?.first,
         telecomRechargeWords.find(body)?.range?.first,
+        trafficFinePaymentWords.find(body)?.range?.first,
+        governmentServicePaymentWords.find(body)?.range?.first,
         transferWords.find(body)?.range?.first,
         creditCardPaymentWords.find(body)?.range?.first,
         loanInstalmentWords.find(body)?.range?.first,
@@ -617,7 +651,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         )
         private val partyStartsWithLetter = Regex("""^[A-Za-z\u0600-\u06FF].*""")
         private val trailingNonPartyContext = Regex(
-            """(?:\b(?:balance|available|remaining\s+balance|current\s+balance|card|ending|account|acct|approved|confirmed|successful|completed|posted|declined)\b|رصيد|الرصيد|المتاح|بطاقة|البطاقة|حساب|معتمد|مؤكد|ناجح|مكتمل).*""",
+            """(?:\b(?:balance|available|remaining\s+balance|current\s+balance|card|ending|account|acct|approved|confirmed|successful|completed|posted|paid|settled|declined)\b|رصيد|الرصيد|المتاح|بطاقة|البطاقة|حساب|معتمد|مؤكد|ناجح|مكتمل).*""",
             RegexOption.IGNORE_CASE,
         )
         private val trailingBalancePartyContext = Regex(
