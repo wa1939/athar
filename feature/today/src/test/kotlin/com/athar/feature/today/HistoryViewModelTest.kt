@@ -18,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -82,6 +83,32 @@ class HistoryViewModelTest {
         )
         assertThat(viewModel.selectionMode.value).isFalse()
         assertThat(viewModel.selectedIds.value).isEmpty()
+    }
+
+    @Test
+    fun `select visible rows selects the currently filtered rows only`() = runTest(mainDispatcher) {
+        val viewModel = HistoryViewModel(
+            transactions = HistoryFakeTransactionRepository(
+                listOf(
+                    tx(id = "expense-a", type = TxType.EXPENSE, status = TxStatus.PENDING),
+                    tx(id = "income", type = TxType.INCOME, status = TxStatus.PENDING),
+                    tx(id = "expense-b", type = TxType.EXPENSE, status = TxStatus.CONFIRMED),
+                ),
+            ),
+            rules = HistoryFakeRuleRepository,
+            categories = HistoryFakeCategoryRepository(emptyList()),
+            clock = FixedHistoryClock,
+        )
+        val collection = launch { viewModel.items.collect {} }
+
+        viewModel.setType(HistoryTypeFilter.EXPENSE)
+        advanceUntilIdle()
+        viewModel.selectVisibleRows()
+
+        assertThat(viewModel.selectionMode.value).isTrue()
+        assertThat(viewModel.selectedIds.value).containsExactly("expense-a", "expense-b")
+
+        collection.cancel()
     }
 }
 

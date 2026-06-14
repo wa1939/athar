@@ -199,6 +199,7 @@ fun HistoryScreen(
             if (bulkCategory.selectionMode) {
                 BulkSelectionCard(
                     state = bulkCategory,
+                    onSelectVisible = viewModel::selectVisibleRows,
                     onApplyCategory = { choosingBulkCategory = true },
                     onClear = viewModel::clearSelection,
                 )
@@ -314,6 +315,7 @@ private fun BulkCategoryToast(applied: Int, skipped: Int, onDismiss: () -> Unit)
 @Composable
 private fun BulkSelectionCard(
     state: HistoryBulkCategoryState,
+    onSelectVisible: () -> Unit,
     onApplyCategory: () -> Unit,
     onClear: () -> Unit,
 ) {
@@ -340,7 +342,17 @@ private fun BulkSelectionCard(
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+            ) {
+                HistoryActionChip(
+                    text = stringResource(R.string.history_bulk_select_visible),
+                    onClick = onSelectVisible,
+                    enabled = state.visibleCount > 0 && state.selectedCount < state.visibleCount,
+                )
                 HistoryActionChip(
                     text = stringResource(R.string.history_bulk_clear),
                     onClick = onClear,

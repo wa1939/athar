@@ -135,6 +135,7 @@ class HistoryFilterTest {
         assertThat(state.canApply).isTrue()
         assertThat(state.selectedIds).containsExactly("expense", "transfer")
         assertThat(state.selectedCount).isEqualTo(2)
+        assertThat(state.visibleCount).isEqualTo(2)
         assertThat(state.eligibleCount).isEqualTo(1)
         assertThat(state.skippedCount).isEqualTo(1)
         assertThat(state.categories.map { it.id }).containsExactly("cat-food")

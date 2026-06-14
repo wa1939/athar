@@ -151,6 +151,14 @@ class HistoryViewModel @Inject constructor(
         _selectedIds.value = _selectedIds.value.toggle(id)
     }
 
+    fun selectVisibleRows() {
+        val visibleIds = items.value.mapTo(mutableSetOf()) { it.id }
+        if (visibleIds.isNotEmpty()) {
+            _selectionMode.value = true
+            _selectedIds.value = visibleIds
+        }
+    }
+
     fun updateTransaction(tx: Transaction, learnRule: Boolean) {
         viewModelScope.launch {
             val now = clock.now()
@@ -276,6 +284,7 @@ data class HistoryBulkCategoryState(
     val selectionMode: Boolean,
     val selectedIds: Set<String>,
     val selectedCount: Int,
+    val visibleCount: Int,
     val eligibleCount: Int,
     val skippedCount: Int,
     val hasMixedCategoryKinds: Boolean,
@@ -288,6 +297,7 @@ data class HistoryBulkCategoryState(
             selectionMode = false,
             selectedIds = emptySet(),
             selectedCount = 0,
+            visibleCount = 0,
             eligibleCount = 0,
             skippedCount = 0,
             hasMixedCategoryKinds = false,
@@ -309,6 +319,7 @@ internal fun buildHistoryBulkCategoryState(
         selectionMode = selectionMode,
         selectedIds = selectedRows.mapTo(mutableSetOf()) { it.id },
         selectedCount = selectedRows.size,
+        visibleCount = visibleRows.size,
         eligibleCount = selectedRows.count { it.categoryKind() != null },
         skippedCount = selectedRows.count { it.categoryKind() == null },
         hasMixedCategoryKinds = selectedKinds.size > 1,

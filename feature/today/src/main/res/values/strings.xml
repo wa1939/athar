@@ -75,6 +75,7 @@
     <string name="history_bulk_no_eligible">التحويلات لا تحتاج تصنيفًا.</string>
     <string name="history_bulk_ready" formatted="true">جاهز لتصنيف %1$d حركة.</string>
     <string name="history_bulk_ready_with_skips" formatted="true">جاهز لتصنيف %1$d حركة. ستبقى %2$d تحويلات دون تغيير.</string>
+    <string name="history_bulk_select_visible">تحديد الظاهر</string>
     <string name="history_bulk_clear">مسح</string>
     <string name="history_bulk_category">التصنيف</string>
     <string name="history_bulk_category_title">اختر التصنيف</string>
