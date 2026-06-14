@@ -3,45 +3,6 @@ package com.athar.ingestion.smsparser
 import com.athar.core.domain.model.IngestSource
 import com.athar.core.domain.model.RawIngestEvent
 import com.athar.core.domain.model.TxType
-import com.athar.ingestion.smsparser.alrajhi.AlRajhiBalanceAlertTemplate
-import com.athar.ingestion.smsparser.alrajhi.AlRajhiBillPaymentTemplate
-import com.athar.ingestion.smsparser.alrajhi.AlRajhiCreditCardPaymentTemplate
-import com.athar.ingestion.smsparser.alrajhi.AlRajhiCreditLocalTransferTemplate
-import com.athar.ingestion.smsparser.alrajhi.AlRajhiDebitInternalTransferTemplate
-import com.athar.ingestion.smsparser.alrajhi.AlRajhiDebitLocalTransferTemplate
-import com.athar.ingestion.smsparser.alrajhi.AlRajhiDeclinedTemplate
-import com.athar.ingestion.smsparser.alrajhi.AlRajhiDepositRealTemplate
-import com.athar.ingestion.smsparser.alrajhi.AlRajhiGenericAmountTemplate
-import com.athar.ingestion.smsparser.alrajhi.AlRajhiLoanInstalmentTemplate
-import com.athar.ingestion.smsparser.alrajhi.AlRajhiOnlinePurchaseRealTemplate
-import com.athar.ingestion.smsparser.alrajhi.AlRajhiPosPurchaseRealTemplate
-import com.athar.ingestion.smsparser.alrajhi.AlRajhiPosPurchaseTemplate
-import com.athar.ingestion.smsparser.alrajhi.AlRajhiReverseTemplate
-import com.athar.ingestion.smsparser.alrajhi.AlRajhiTransferBetweenOwnTemplate
-import com.athar.ingestion.smsparser.barq.BarqAtmWithdrawalTemplate
-import com.athar.ingestion.smsparser.barq.BarqCreditTransferTemplate
-import com.athar.ingestion.smsparser.barq.BarqDebitTransferTemplate
-import com.athar.ingestion.smsparser.barq.BarqOnlinePurchaseTemplate
-import com.athar.ingestion.smsparser.barq.BarqPosInternationalTemplate
-import com.athar.ingestion.smsparser.barq.BarqRejectedTemplate
-import com.athar.ingestion.smsparser.d360.D360AccountFundingTemplate
-import com.athar.ingestion.smsparser.d360.D360DeclinedTemplate
-import com.athar.ingestion.smsparser.d360.D360IncomingTransferTemplate
-import com.athar.ingestion.smsparser.d360.D360InternationalPurchaseTemplate
-import com.athar.ingestion.smsparser.d360.D360InternationalTransferTemplate
-import com.athar.ingestion.smsparser.d360.D360LocalPurchaseTemplate
-import com.athar.ingestion.smsparser.d360.D360OnlinePurchaseTemplate
-import com.athar.ingestion.smsparser.genericbank.D360Template
-import com.athar.ingestion.smsparser.genericbank.AlJaziraTemplate
-import com.athar.ingestion.smsparser.genericbank.AlinmaTemplate
-import com.athar.ingestion.smsparser.genericbank.SnbTemplate
-import com.athar.ingestion.smsparser.genericbank.UrpayTemplate
-import com.athar.ingestion.smsparser.stcbank.StcBankIncomingTransferTemplate
-import com.athar.ingestion.smsparser.stcbank.StcBankOnlinePurchaseTemplate
-import com.athar.ingestion.smsparser.stcbank.StcBankOutgoingTransferTemplate
-import com.athar.ingestion.smsparser.stcbank.StcBankPayQattahTemplate
-import com.athar.ingestion.smsparser.stcbank.StcBankSarieOutwardTemplate
-import com.athar.ingestion.smsparser.universal.UniversalAmountTemplate
 import com.google.common.truth.Truth.assertThat
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.Test
@@ -56,50 +17,7 @@ class SmsCorpusTest {
 
     private val at = Instant.parse("2026-01-01T12:00:00Z")
 
-    private fun parser() = TemplateBasedSmsParser(
-        listOf(
-            GlobalBankIgnoreTemplate(),
-            AlRajhiDeclinedTemplate(),
-            AlRajhiBalanceAlertTemplate(),
-            AlRajhiOnlinePurchaseRealTemplate(),
-            AlRajhiPosPurchaseRealTemplate(),
-            AlRajhiReverseTemplate(),
-            AlRajhiBillPaymentTemplate(),
-            AlRajhiLoanInstalmentTemplate(),
-            AlRajhiCreditCardPaymentTemplate(),
-            AlRajhiCreditLocalTransferTemplate(),
-            AlRajhiDebitLocalTransferTemplate(),
-            AlRajhiDebitInternalTransferTemplate(),
-            AlRajhiTransferBetweenOwnTemplate(),
-            AlRajhiDepositRealTemplate(),
-            AlRajhiPosPurchaseTemplate(),
-            AlRajhiGenericAmountTemplate(),
-            StcBankIncomingTransferTemplate(),
-            StcBankOutgoingTransferTemplate(),
-            StcBankSarieOutwardTemplate(),
-            StcBankOnlinePurchaseTemplate(),
-            StcBankPayQattahTemplate(),
-            D360DeclinedTemplate(),
-            D360OnlinePurchaseTemplate(),
-            D360InternationalPurchaseTemplate(),
-            D360LocalPurchaseTemplate(),
-            D360AccountFundingTemplate(),
-            D360IncomingTransferTemplate(),
-            D360InternationalTransferTemplate(),
-            D360Template(),
-            BarqRejectedTemplate(),
-            BarqOnlinePurchaseTemplate(),
-            BarqPosInternationalTemplate(),
-            BarqAtmWithdrawalTemplate(),
-            BarqDebitTransferTemplate(),
-            BarqCreditTransferTemplate(),
-            AlinmaTemplate(),
-            SnbTemplate(),
-            AlJaziraTemplate(),
-            UrpayTemplate(),
-            UniversalAmountTemplate(),
-        ),
-    )
+    private fun parser() = TemplateBasedSmsParser(BuiltInSmsTemplateRegistry.templates())
 
     private fun event(sender: String, body: String) = RawIngestEvent(
         id = "x", source = IngestSource.SMS, sender = sender, body = body, receivedAt = at, rawId = "1",
