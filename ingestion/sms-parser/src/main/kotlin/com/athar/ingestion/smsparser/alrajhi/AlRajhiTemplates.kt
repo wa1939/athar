@@ -278,6 +278,10 @@ class AlRajhiGenericAmountTemplate : BankTemplate {
     private val fromField = Regex("""(?:From|من)\s*[:\s]\s*([^\n\r]+?)(?:\n|$)""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
     private val feeDescription = Regex("""^خصم\s*:\s*([^\n\r]+)$""", setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))
     private val billPaymentDescription = Regex("""^سداد\s+فاتورة\s*$""", setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))
+    private val publicServiceDescription = Regex(
+        """^(?:اليكترون|مدفوعات\s+وزارة\s+الداخلية(?:-[^\n\r]+)?)\s*$""",
+        setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE),
+    )
 
     override fun tryParse(body: String, receivedAt: Instant): ParseResult {
         val normalized = Normalize.digits(body)
@@ -295,6 +299,7 @@ class AlRajhiGenericAmountTemplate : BankTemplate {
             ?: party.find(normalized)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }
             ?: feeDescription.find(normalized)?.groupValues?.get(1)?.trim()?.takeIf { type == TxType.EXPENSE && it.isNotBlank() }
             ?: billPaymentDescription.find(normalized)?.value?.trim()?.takeIf { type == TxType.EXPENSE && it.isNotBlank() }
+            ?: publicServiceDescription.find(normalized)?.value?.trim()?.takeIf { type == TxType.EXPENSE && it.isNotBlank() }
         val counterparty = when (type) {
             TxType.INCOME -> fromField.find(normalized)?.groupValues?.get(1)?.trim()
             TxType.TRANSFER -> toField.find(normalized)?.groupValues?.get(1)?.trim()

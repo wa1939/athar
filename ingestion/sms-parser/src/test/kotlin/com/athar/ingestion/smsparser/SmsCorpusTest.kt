@@ -161,6 +161,35 @@ class SmsCorpusTest {
         assertThat(r.templateId).isEqualTo("al-rajhi-generic-amount")
     }
 
+    @Test fun `AlRajhi Arabic electronic payment headline becomes merchant`() {
+        val body = """
+            اليكترون
+            مبلغ:SAR 75.00
+            إلى:123456
+            في:16-01-26 20:27
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.EXPENSE)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("75.00"))
+        assertThat(r.merchant).isEqualTo("اليكترون")
+        assertThat(r.templateId).isEqualTo("al-rajhi-generic-amount")
+    }
+
+    @Test fun `AlRajhi Arabic Interior Ministry traffic payment headline becomes merchant`() {
+        val body = """
+            مدفوعات وزارة الداخلية-المخالفات المرورية
+            من:1234
+            مبلغ:SAR 300
+            رقم الفاتورة:1234567890
+            16/1/26 20:27
+        """.trimIndent()
+        val r = parser().parse(event("AlRajhiBank", body)) as ParseResult.Success
+        assertThat(r.type).isEqualTo(TxType.EXPENSE)
+        assertThat(r.amount.amount).isEqualTo(BigDecimal("300"))
+        assertThat(r.merchant).isEqualTo("مدفوعات وزارة الداخلية-المخالفات المرورية")
+        assertThat(r.templateId).isEqualTo("al-rajhi-generic-amount")
+    }
+
     @Test fun `AlRajhi Deposit Saving Monthly Profit = INCOME`() {
         val body = """
             Deposit:Saving Account Monthly Profit
