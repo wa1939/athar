@@ -224,6 +224,42 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses refunded notification as income`() {
+        val result = parser.parse(
+            event("notification:com.capitalone.mobile", "You were refunded GBP 12.50 from Amazon"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("12.50"))
+        assertThat(result.amount.currency).isEqualTo("GBP")
+        assertThat(result.counterparty).isEqualTo("Amazon")
+    }
+
+    @Test
+    fun `parses card purchase reversal notification as income`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Purchase reversal AED 18.75 from Uber Trip"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("18.75"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.counterparty).isEqualTo("Uber Trip")
+    }
+
+    @Test
+    fun `parses chargeback notification as income`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Chargeback of USD 15.00 from Hotel Desk"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("15.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.counterparty).isEqualTo("Hotel Desk")
+    }
+
+    @Test
     fun `parses transfer notification`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "You sent AED 100.00 to Ahmed"),

@@ -33,7 +33,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val incomeWords = Regex(
-        """\b(?:received|deposit|deposited|credited|refund|salary|incoming|top\s*up|إيداع|ايداع|وارد|استلام|استلمت|راتب)\b""",
+        """\b(?:received|deposit|deposited|credited|refund|refunded|reversal|reversed|chargeback|salary|incoming|top\s*up|إيداع|ايداع|وارد|استلام|استلمت|راتب)\b""",
         RegexOption.IGNORE_CASE,
     )
     private val incomePhrases = Regex(
