@@ -1329,6 +1329,80 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses recipient label as merchant on posted payment notification`() {
+        val result = parser.parse(
+            event(
+                "notification:com.chase.sig.android",
+                """
+                Payment completed
+                Amount: SAR 75.00
+                Recipient: Amazon
+                """.trimIndent(),
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("75.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Amazon")
+    }
+
+    @Test
+    fun `parses beneficiary label as merchant on card purchase notification`() {
+        val result = parser.parse(
+            event(
+                "notification:com.barclays.android",
+                """
+                Card purchase
+                Amount: GBP 9.99
+                Beneficiary: Spotify
+                """.trimIndent(),
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("9.99"))
+        assertThat(result.amount.currency).isEqualTo("GBP")
+        assertThat(result.merchant).isEqualTo("Spotify")
+    }
+
+    @Test
+    fun `parses receiver label as merchant on paid notification`() {
+        val result = parser.parse(
+            event(
+                "notification:com.squareup.cash",
+                """
+                Paid AED 24.50
+                Receiver: Careem
+                """.trimIndent(),
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("24.50"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Careem")
+    }
+
+    @Test
+    fun `parses Arabic beneficiary label as merchant on payment notification`() {
+        val result = parser.parse(
+            event(
+                "notification:com.alrajhibank.alrajhimobile",
+                """
+                تم دفع ٤٥ ر.س
+                المستفيد: هنقرستيشن
+                """.trimIndent(),
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("45"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("هنقرستيشن")
+    }
+
+    @Test
     fun `parses labeled sender income notification fields`() {
         val result = parser.parse(
             event(

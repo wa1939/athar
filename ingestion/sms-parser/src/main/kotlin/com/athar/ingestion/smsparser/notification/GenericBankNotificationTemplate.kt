@@ -414,6 +414,7 @@ class GenericBankNotificationTemplate : BankTemplate {
 
     private fun String.cleanMerchantCandidate(amountMatch: MatchResult): String? =
         cleanParty(merchantLabelHint.find(this)?.groupValues?.get(1)
+            ?: recipientLabelHint.find(this)?.groupValues?.get(1)
             ?: toHint.find(this)?.groupValues?.get(1)
             ?: atHint.find(this)?.groupValues?.get(1)
             ?: byHint.find(this)?.groupValues?.get(1)
