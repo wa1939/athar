@@ -75,10 +75,17 @@ class PrivateSmsExportAuditTest {
         assertThat(report.uncategorizedMerchantGroups).hasSize(1)
         val group = report.uncategorizedMerchantGroups.single()
         assertThat(group.sampleCount).isEqualTo(2)
+        assertThat(group.shareOfUncategorizedPermille).isEqualTo(1000)
+        assertThat(group.cumulativeShareOfUncategorizedPermille).isEqualTo(1000)
         assertThat(group.merchantHash).hasLength(12)
         assertThat(group.merchantLengthBucket).isEqualTo("9-32")
         assertThat(group.merchantScript).isEqualTo("latin")
+        assertThat(report.categoryCoverage.categorizedExpenseCoveragePermille).isEqualTo(0)
+        assertThat(report.categoryCoverage.uncategorizedExpenseBacklogPermille).isEqualTo(1000)
+        assertThat(report.categoryCoverage.topUncategorizedGroupCoveragePermille).isEqualTo(1000)
+        assertThat(report.categoryCoverage.otherUncategorizedExpenseCount).isEqualTo(0)
         assertThat(json).contains("uncategorizedMerchantGroups")
+        assertThat(json).contains("categoryCoverage")
         assertThat(json).doesNotContain("Local Test Merchant")
         assertThat(report.rawBodiesWritten).isEqualTo(0)
     }
@@ -263,8 +270,9 @@ class PrivateSmsExportAuditTest {
 
     private fun buildUncategorizedMerchantGroups(
         observations: List<UncategorizedMerchantObservation>,
-    ): List<UncategorizedMerchantGroup> =
-        observations
+    ): List<UncategorizedMerchantGroup> {
+        var cumulativeSamples = 0
+        return observations
             .groupBy { it.merchant.lowercase().trim() }
             .map { (merchant, rows) ->
                 UncategorizedMerchantGroup(
@@ -272,6 +280,8 @@ class PrivateSmsExportAuditTest {
                     merchantLengthBucket = bucket(merchant.length),
                     merchantScript = textScript(merchant),
                     sampleCount = rows.size,
+                    shareOfUncategorizedPermille = permille(rows.size, observations.size),
+                    cumulativeShareOfUncategorizedPermille = 0,
                     templateCounts = rows.groupingBy { it.templateId }
                         .eachCount()
                         .map { (templateId, count) -> TemplateCount(templateId = templateId, count = count) }
@@ -280,6 +290,11 @@ class PrivateSmsExportAuditTest {
             }
             .sortedWith(compareByDescending<UncategorizedMerchantGroup> { it.sampleCount }.thenBy { it.merchantHash })
             .take(20)
+            .map { group ->
+                cumulativeSamples += group.sampleCount
+                group.copy(cumulativeShareOfUncategorizedPermille = permille(cumulativeSamples, observations.size))
+            }
+    }
 
     private fun textScript(text: String): String = when {
         text.isBlank() -> "blank"
@@ -486,6 +501,8 @@ class PrivateSmsExportAuditTest {
         val merchantLengthBucket: String,
         val merchantScript: String,
         val sampleCount: Int,
+        val shareOfUncategorizedPermille: Int,
+        val cumulativeShareOfUncategorizedPermille: Int,
         val templateCounts: List<TemplateCount>,
     ) {
         fun toJson(indent: String): String {
@@ -496,9 +513,58 @@ class PrivateSmsExportAuditTest {
                 |$indent  "merchantLengthBucket": "$merchantLengthBucket",
                 |$indent  "merchantScript": "$merchantScript",
                 |$indent  "sampleCount": $sampleCount,
+                |$indent  "shareOfUncategorizedPermille": $shareOfUncategorizedPermille,
+                |$indent  "cumulativeShareOfUncategorizedPermille": $cumulativeShareOfUncategorizedPermille,
                 |$indent  "templateCounts": [$templates]
                 |$indent}
             """.trimMargin()
+        }
+    }
+
+    private data class CategoryCoverageSummary(
+        val categorizedExpenseCoveragePermille: Int,
+        val uncategorizedExpenseBacklogPermille: Int,
+        val topUncategorizedGroupCount: Int,
+        val topUncategorizedSampleCount: Int,
+        val topUncategorizedGroupCoveragePermille: Int,
+        val otherUncategorizedExpenseCount: Int,
+        val largestUncategorizedGroupSampleCount: Int,
+        val largestUncategorizedGroupCoveragePermille: Int,
+    ) {
+        fun toJson(indent: String): String =
+            """
+                |$indent{
+                |$indent  "categorizedExpenseCoveragePermille": $categorizedExpenseCoveragePermille,
+                |$indent  "uncategorizedExpenseBacklogPermille": $uncategorizedExpenseBacklogPermille,
+                |$indent  "topUncategorizedGroupCount": $topUncategorizedGroupCount,
+                |$indent  "topUncategorizedSampleCount": $topUncategorizedSampleCount,
+                |$indent  "topUncategorizedGroupCoveragePermille": $topUncategorizedGroupCoveragePermille,
+                |$indent  "otherUncategorizedExpenseCount": $otherUncategorizedExpenseCount,
+                |$indent  "largestUncategorizedGroupSampleCount": $largestUncategorizedGroupSampleCount,
+                |$indent  "largestUncategorizedGroupCoveragePermille": $largestUncategorizedGroupCoveragePermille
+                |$indent}
+            """.trimMargin()
+
+        companion object {
+            fun from(
+                parsedExpenses: Int,
+                categorizedExpenses: Int,
+                uncategorizedExpenses: Int,
+                groups: List<UncategorizedMerchantGroup>,
+            ): CategoryCoverageSummary {
+                val topGroupSampleCount = groups.sumOf { it.sampleCount }
+                val largestGroupSampleCount = groups.firstOrNull()?.sampleCount ?: 0
+                return CategoryCoverageSummary(
+                    categorizedExpenseCoveragePermille = permille(categorizedExpenses, parsedExpenses),
+                    uncategorizedExpenseBacklogPermille = permille(uncategorizedExpenses, parsedExpenses),
+                    topUncategorizedGroupCount = groups.size,
+                    topUncategorizedSampleCount = topGroupSampleCount,
+                    topUncategorizedGroupCoveragePermille = permille(topGroupSampleCount, uncategorizedExpenses),
+                    otherUncategorizedExpenseCount = (uncategorizedExpenses - topGroupSampleCount).coerceAtLeast(0),
+                    largestUncategorizedGroupSampleCount = largestGroupSampleCount,
+                    largestUncategorizedGroupCoveragePermille = permille(largestGroupSampleCount, uncategorizedExpenses),
+                )
+            }
         }
     }
 
@@ -527,6 +593,12 @@ class PrivateSmsExportAuditTest {
         val uncategorizedMerchantGroups: List<UncategorizedMerchantGroup>,
     ) {
         val rawBodiesWritten: Int = 0
+        val categoryCoverage: CategoryCoverageSummary = CategoryCoverageSummary.from(
+            parsedExpenses = parsedExpenses,
+            categorizedExpenses = categorizedExpenses,
+            uncategorizedExpenses = uncategorizedExpenses,
+            groups = uncategorizedMerchantGroups,
+        )
 
         fun toJson(): String {
             val candidates = inactiveCatalogMatches.joinToString(",\n") { it.toJson("    ") }
@@ -535,6 +607,7 @@ class PrivateSmsExportAuditTest {
             val groupBlock = if (groups.isBlank()) "" else "\n$groups\n  "
             val uncategorizedGroups = uncategorizedMerchantGroups.joinToString(",\n") { it.toJson("    ") }
             val uncategorizedGroupBlock = if (uncategorizedGroups.isBlank()) "" else "\n$uncategorizedGroups\n  "
+            val coverage = categoryCoverage.toJson("    ")
             return """
                 |{
                 |  "records": $records,
@@ -547,6 +620,7 @@ class PrivateSmsExportAuditTest {
                 |  "uncategorizedExpenses": $uncategorizedExpenses,
                 |  "missingMerchantExpenses": $missingMerchantExpenses,
                 |  "rawBodiesWritten": $rawBodiesWritten,
+                |  "categoryCoverage": $coverage,
                 |  "inactiveCatalogMatches": [$candidateBlock],
                 |  "missingMerchantGroups": [$groupBlock],
                 |  "uncategorizedMerchantGroups": [$uncategorizedGroupBlock]
@@ -557,6 +631,13 @@ class PrivateSmsExportAuditTest {
     }
 
     companion object {
+        private fun permille(numerator: Int, denominator: Int): Int =
+            if (denominator <= 0) {
+                0
+            } else {
+                ((numerator.toLong() * 1000L) / denominator.toLong()).toInt()
+            }
+
         private val WhitespaceRegex = Regex("""\s+""")
         private val ArabicRegex = Regex("""[\u0600-\u06FF]""")
         private val LatinRegex = Regex("""[A-Za-z]""")
