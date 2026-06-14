@@ -17,7 +17,9 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
@@ -299,21 +301,119 @@ class HistoryViewModelTest {
             HistoryViewModel.BulkCategoryEvent(applied = 2, skipped = 0),
         )
     }
+
+    @Test
+    fun `top repeated suggestion apply keeps cleanup mode open for next group`() = runTest(mainDispatcher) {
+        val txRepo = HistoryFakeTransactionRepository(
+            listOf(
+                tx(
+                    id = "tea-a",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.PENDING,
+                    merchantNormalized = "tea shop",
+                ),
+                tx(
+                    id = "tea-b",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.PENDING,
+                    merchantNormalized = "tea shop",
+                ),
+                tx(
+                    id = "tea-c",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.PENDING,
+                    merchantNormalized = "tea shop",
+                ),
+                tx(
+                    id = "coffee-a",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.PENDING,
+                    merchantNormalized = "coffee shop",
+                ),
+                tx(
+                    id = "coffee-b",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.PENDING,
+                    merchantNormalized = "coffee shop",
+                ),
+                tx(
+                    id = "tea-old",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.CONFIRMED,
+                    categoryId = "cat-cafe",
+                    merchantNormalized = "tea shop",
+                ),
+                tx(
+                    id = "coffee-old",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.CONFIRMED,
+                    categoryId = "cat-groceries",
+                    merchantNormalized = "coffee shop",
+                ),
+            ),
+        )
+        val ruleRepo = HistoryFakeRuleRepository()
+        val viewModel = HistoryViewModel(
+            transactions = txRepo,
+            rules = ruleRepo,
+            categories = HistoryFakeCategoryRepository(
+                listOf(
+                    category(id = "cat-cafe", kind = CategoryKind.EXPENSE),
+                    category(id = "cat-groceries", kind = CategoryKind.EXPENSE),
+                ),
+            ),
+            clock = FixedHistoryClock,
+        )
+        val itemsCollection = launch { viewModel.items.collect {} }
+        val bulkCollection = launch { viewModel.bulkCategoryState.collect {} }
+
+        viewModel.setCategory(HistoryCategoryFilter.REPEATED_UNCATEGORIZED)
+        viewModel.toggleSelectionMode()
+        advanceUntilIdle()
+
+        assertThat(viewModel.bulkCategoryState.value.topRepeatedSuggestedCategory?.id)
+            .isEqualTo("cat-cafe")
+
+        viewModel.applyTopRepeatedBacklogSuggestedCategory()
+        advanceUntilIdle()
+
+        assertThat(txRepo.upserts.map { it.id }).containsExactly("tea-a", "tea-b", "tea-c")
+        assertThat(txRepo.upserts.map { it.categoryId }.distinct()).containsExactly("cat-cafe")
+        assertThat(ruleRepo.learnedRules.map { it.pattern }).containsExactly("tea shop")
+        assertThat(viewModel.lastBulkCategory.value).isEqualTo(
+            HistoryViewModel.BulkCategoryEvent(
+                applied = 3,
+                skipped = 0,
+                exactRuleLearned = true,
+            ),
+        )
+        assertThat(viewModel.selectionMode.value).isTrue()
+        assertThat(viewModel.selectedIds.value).isEmpty()
+        assertThat(viewModel.items.value.map { it.id }).containsExactly("coffee-a", "coffee-b").inOrder()
+        assertThat(viewModel.bulkCategoryState.value.topRepeatedSuggestedCategory?.id)
+            .isEqualTo("cat-groceries")
+
+        itemsCollection.cancel()
+        bulkCollection.cancel()
+    }
 }
 
 private class HistoryFakeTransactionRepository(rows: List<Transaction>) : TransactionRepository {
     private val rowsById = rows.associateBy { it.id }.toMutableMap()
+    private val rowsFlow = MutableStateFlow(rowsById.values.toList())
     val upserts = mutableListOf<Transaction>()
 
-    override fun observeByPeriod(period: Period, status: TxStatus?): Flow<List<Transaction>> = flowOf(
-        rowsById.values.filter { status == null || it.status == status },
-    )
+    override fun observeByPeriod(period: Period, status: TxStatus?): Flow<List<Transaction>> =
+        rowsFlow.map { rows -> rows.filter { status == null || it.status == status } }
 
-    override fun observePending(): Flow<List<Transaction>> = flowOf(rowsById.values.filter { it.status == TxStatus.PENDING })
-    override fun observeAll(): Flow<List<Transaction>> = flowOf(rowsById.values.toList())
+    override fun observePending(): Flow<List<Transaction>> =
+        rowsFlow.map { rows -> rows.filter { it.status == TxStatus.PENDING } }
+
+    override fun observeAll(): Flow<List<Transaction>> = rowsFlow
     override suspend fun get(id: String): Transaction? = rowsById[id]
     override suspend fun upsert(transaction: Transaction) {
         rowsById[transaction.id] = transaction
+        rowsFlow.value = rowsById.values.toList()
         upserts += transaction
     }
 
@@ -394,6 +494,7 @@ private fun tx(
     id: String,
     type: TxType,
     status: TxStatus,
+    categoryId: String? = null,
     merchant: String = id,
     merchantNormalized: String = id,
 ): Transaction = Transaction(
@@ -405,7 +506,7 @@ private fun tx(
     occurredAt = Instant.parse("2026-06-14T12:00:00Z"),
     merchant = merchant,
     merchantNormalized = merchantNormalized,
-    categoryId = null,
+    categoryId = categoryId,
     notes = null,
     source = IngestSource.SMS,
     sourceRefId = "sms-$id",

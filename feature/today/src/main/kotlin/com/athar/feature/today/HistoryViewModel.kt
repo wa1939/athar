@@ -260,11 +260,19 @@ class HistoryViewModel @Inject constructor(
                 categoryKind = topCategoryKind,
                 activeCategoryIds = activeCategoryIds,
             ) ?: return@launch
-            applyBulkCategoryToIds(ids = topGroupIds, categoryId = suggestion.categoryId)
+            applyBulkCategoryToIds(
+                ids = topGroupIds,
+                categoryId = suggestion.categoryId,
+                keepSelectionMode = true,
+            )
         }
     }
 
-    private suspend fun applyBulkCategoryToIds(ids: Set<String>, categoryId: String) {
+    private suspend fun applyBulkCategoryToIds(
+        ids: Set<String>,
+        categoryId: String,
+        keepSelectionMode: Boolean = false,
+    ) {
         val category = categories.get(categoryId)?.takeUnless { it.archived } ?: return
         val now = clock.now()
         var applied = 0
@@ -291,7 +299,12 @@ class HistoryViewModel @Inject constructor(
             skipped = skipped,
             exactRuleLearned = exactRuleLearned,
         )
-        clearSelection()
+        if (keepSelectionMode) {
+            _selectionMode.value = true
+            _selectedIds.value = emptySet()
+        } else {
+            clearSelection()
+        }
     }
 
     private suspend fun learnExactRuleForRepeatedMerchant(
