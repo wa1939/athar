@@ -1,7 +1,9 @@
 package com.athar.core.data.support
 
 import com.athar.core.data.db.dao.SmsMessageDao
+import com.athar.core.data.db.dao.TransactionDao
 import com.athar.core.data.db.entity.SmsMessageEntity
+import com.athar.core.data.db.entity.TransactionEntity
 import com.athar.core.domain.model.SmsParseStatus
 import com.athar.core.domain.repo.SupportDiagnosticsExportResult
 import com.athar.core.domain.repo.SupportDiagnosticsExportTrigger
@@ -24,6 +26,7 @@ import javax.inject.Singleton
 @Singleton
 internal class SupportDiagnosticsExporter @Inject constructor(
     private val smsDao: SmsMessageDao,
+    private val transactionDao: TransactionDao,
     private val clock: Clock,
 ) : SupportDiagnosticsExportTrigger {
 
@@ -40,6 +43,7 @@ internal class SupportDiagnosticsExporter @Inject constructor(
                 rows = smsDao.recent(SupportDiagnosticsReportBuilder.MaxRecentSamples),
                 totalRows = counts.sumOf { it.count },
                 statusCounts = countMap,
+                transactions = transactionDao.all(),
                 generatedAt = clock.now().toString(),
             )
             OutputStreamWriter(out, Charsets.UTF_8).use { writer ->
@@ -74,6 +78,7 @@ internal object SupportDiagnosticsReportBuilder {
         totalRows: Int,
         statusCounts: Map<String, Int>,
         generatedAt: String,
+        transactions: List<TransactionEntity> = emptyList(),
     ): SupportDiagnosticsPayload {
         val recentRows = rows.take(MaxRecentSamples)
         val normalizedCounts = statusCounts
@@ -94,6 +99,8 @@ internal object SupportDiagnosticsReportBuilder {
             statusCounts = normalizedCounts.map { StatusCount(it.first, it.second) },
             senderGroups = buildSenderGroups(recentRows),
             errorGroups = buildErrorGroups(recentRows),
+            transactionSummary = buildTransactionSummary(transactions),
+            uncategorizedMerchantGroups = buildUncategorizedMerchantGroups(transactions),
             recentAuditSamples = recentRows.map { it.toAuditSample() },
         )
     }
@@ -141,6 +148,46 @@ internal object SupportDiagnosticsReportBuilder {
             .sortedWith(compareByDescending<ErrorGroup> { it.count }.thenBy { it.category })
             .take(TopGroupLimit)
 
+    private fun buildTransactionSummary(rows: List<TransactionEntity>): TransactionDiagnosticsSummary {
+        val categoryBacklog = rows.filter { it.isCategoryBacklog() }
+        return TransactionDiagnosticsSummary(
+            totalTransactions = rows.size,
+            categorizedTransactions = rows.count { !it.categoryId.isNullOrBlank() },
+            uncategorizedTransactions = rows.count { it.categoryId.isNullOrBlank() },
+            categoryBacklogTransactions = categoryBacklog.size,
+            pendingCategoryBacklog = categoryBacklog.count { it.status == "PENDING" },
+            dismissedCategoryBacklog = categoryBacklog.count { it.status == "DISMISSED" },
+            confirmedWithoutCategory = categoryBacklog.count { it.status == "CONFIRMED" },
+            transferRowsExcluded = rows.count { it.type == "TRANSFER" && it.categoryId.isNullOrBlank() },
+            statusCounts = rows.countBy { it.status },
+            sourceCounts = rows.countBy { it.source },
+            typeCounts = rows.countBy { it.type },
+        )
+    }
+
+    private fun buildUncategorizedMerchantGroups(rows: List<TransactionEntity>): List<UncategorizedMerchantGroup> =
+        rows.filter { it.isCategoryBacklog() && it.merchantNormalized.isNotBlank() }
+            .groupBy { it.merchantNormalized.trim().lowercase() }
+            .map { (merchant, groupedRows) ->
+                UncategorizedMerchantGroup(
+                    merchantHash = sha256Prefix("merchant:$merchant"),
+                    merchantLengthBucket = bucket(merchant.length),
+                    merchantScript = textScript(merchant),
+                    sampleCount = groupedRows.size,
+                    pending = groupedRows.count { it.status == "PENDING" },
+                    dismissed = groupedRows.count { it.status == "DISMISSED" },
+                    confirmedWithoutCategory = groupedRows.count { it.status == "CONFIRMED" },
+                    firstSeen = groupedRows.minOf { it.date }.toString(),
+                    lastSeen = groupedRows.maxOf { it.date }.toString(),
+                    sourceCounts = groupedRows.countBy { it.source },
+                    typeCounts = groupedRows.countBy { it.type },
+                    currencyCounts = groupedRows.countBy { it.currency },
+                    confidenceBuckets = groupedRows.countBy { confidenceBucket(it.confidence) },
+                )
+            }
+            .sortedWith(compareByDescending<UncategorizedMerchantGroup> { it.sampleCount }.thenBy { it.merchantHash })
+            .take(TopGroupLimit)
+
     private fun SmsMessageEntity.toAuditSample(): AuditSample {
         val reason = reasonWithoutTemplateAttempts()
         return AuditSample(
@@ -161,6 +208,17 @@ internal object SupportDiagnosticsReportBuilder {
 
     private fun List<SmsMessageEntity>.countStatus(status: String): Int =
         count { it.parseStatus == status }
+
+    private fun TransactionEntity.isCategoryBacklog(): Boolean =
+        type != "TRANSFER" &&
+            categoryId.isNullOrBlank() &&
+            status in setOf("PENDING", "DISMISSED", "CONFIRMED")
+
+    private inline fun <T> List<T>.countBy(crossinline selector: (T) -> String): List<DiagnosticsCount> =
+        groupingBy { selector(it).ifBlank { "blank" } }
+            .eachCount()
+            .map { DiagnosticsCount(label = it.key, count = it.value) }
+            .sortedWith(compareByDescending<DiagnosticsCount> { it.count }.thenBy { it.label })
 
     private fun SmsMessageEntity.senderHash(): String = sha256Prefix(sender.trim().lowercase())
 
@@ -221,6 +279,23 @@ internal object SupportDiagnosticsReportBuilder {
             trimmed.all { it.isLetter() || it.isWhitespace() || it == '-' } -> "alpha"
             else -> "mixed"
         }
+    }
+
+    private fun textScript(text: String): String = when {
+        text.isBlank() -> "blank"
+        ArabicRegex.containsMatchIn(text) && LatinRegex.containsMatchIn(text) -> "mixed_arabic_latin"
+        ArabicRegex.containsMatchIn(text) -> "arabic"
+        LatinRegex.containsMatchIn(text) -> "latin"
+        text.any { it.isDigit() } -> "numeric_or_mixed"
+        else -> "other"
+    }
+
+    private fun confidenceBucket(confidence: Float?): String = when {
+        confidence == null -> "none"
+        confidence < 0.5f -> "0.00-0.49"
+        confidence < 0.7f -> "0.50-0.69"
+        confidence < 0.85f -> "0.70-0.84"
+        else -> "0.85-1.00"
     }
 
     private fun actionHints(body: String): List<String> =
@@ -328,6 +403,8 @@ internal data class SupportDiagnosticsPayload(
     @SerialName("status_counts") val statusCounts: List<StatusCount>,
     @SerialName("sender_groups") val senderGroups: List<SenderGroup>,
     @SerialName("error_groups") val errorGroups: List<ErrorGroup>,
+    @SerialName("transaction_summary") val transactionSummary: TransactionDiagnosticsSummary,
+    @SerialName("uncategorized_merchant_groups") val uncategorizedMerchantGroups: List<UncategorizedMerchantGroup>,
     @SerialName("recent_audit_samples") val recentAuditSamples: List<AuditSample>,
 )
 
@@ -338,6 +415,8 @@ internal data class DiagnosticsPrivacy(
     val balances: String = "omitted",
     val amounts: String = "omitted",
     val accounts: String = "omitted",
+    @SerialName("raw_merchants") val rawMerchants: String = "omitted",
+    @SerialName("transaction_rows") val transactionRows: String = "omitted",
     val uploads: String = "none; user saves and shares the file manually",
 )
 
@@ -380,6 +459,44 @@ internal data class ErrorGroup(
     @SerialName("last_seen") val lastSeen: String,
     @SerialName("template_attempt_count") val templateAttemptCount: Int,
     @SerialName("template_attempts") val templateAttempts: List<String>,
+)
+
+@Serializable
+internal data class TransactionDiagnosticsSummary(
+    @SerialName("total_transactions") val totalTransactions: Int,
+    @SerialName("categorized_transactions") val categorizedTransactions: Int,
+    @SerialName("uncategorized_transactions") val uncategorizedTransactions: Int,
+    @SerialName("category_backlog_transactions") val categoryBacklogTransactions: Int,
+    @SerialName("pending_category_backlog") val pendingCategoryBacklog: Int,
+    @SerialName("dismissed_category_backlog") val dismissedCategoryBacklog: Int,
+    @SerialName("confirmed_without_category") val confirmedWithoutCategory: Int,
+    @SerialName("transfer_rows_excluded") val transferRowsExcluded: Int,
+    @SerialName("status_counts") val statusCounts: List<DiagnosticsCount>,
+    @SerialName("source_counts") val sourceCounts: List<DiagnosticsCount>,
+    @SerialName("type_counts") val typeCounts: List<DiagnosticsCount>,
+)
+
+@Serializable
+internal data class UncategorizedMerchantGroup(
+    @SerialName("merchant_hash") val merchantHash: String,
+    @SerialName("merchant_length_bucket") val merchantLengthBucket: String,
+    @SerialName("merchant_script") val merchantScript: String,
+    @SerialName("sample_count") val sampleCount: Int,
+    val pending: Int,
+    val dismissed: Int,
+    @SerialName("confirmed_without_category") val confirmedWithoutCategory: Int,
+    @SerialName("first_seen") val firstSeen: String,
+    @SerialName("last_seen") val lastSeen: String,
+    @SerialName("source_counts") val sourceCounts: List<DiagnosticsCount>,
+    @SerialName("type_counts") val typeCounts: List<DiagnosticsCount>,
+    @SerialName("currency_counts") val currencyCounts: List<DiagnosticsCount>,
+    @SerialName("confidence_buckets") val confidenceBuckets: List<DiagnosticsCount>,
+)
+
+@Serializable
+internal data class DiagnosticsCount(
+    val label: String,
+    val count: Int,
 )
 
 @Serializable

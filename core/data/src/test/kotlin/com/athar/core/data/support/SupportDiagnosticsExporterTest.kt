@@ -1,9 +1,11 @@
 package com.athar.core.data.support
 
 import com.athar.core.data.db.entity.SmsMessageEntity
+import com.athar.core.data.db.entity.TransactionEntity
 import com.athar.core.domain.model.SmsParseStatus
 import com.google.common.truth.Truth.assertThat
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
@@ -72,6 +74,48 @@ class SupportDiagnosticsExporterTest {
     }
 
     @Test
+    fun `payload summarizes category backlog without raw merchant or amount text`() {
+        val rawMerchant = "Jarir Electronics"
+        val payload = SupportDiagnosticsReportBuilder.build(
+            rows = emptyList(),
+            totalRows = 0,
+            statusCounts = emptyMap(),
+            generatedAt = "2026-06-13T00:00:00Z",
+            transactions = listOf(
+                tx(id = "1", merchant = rawMerchant, status = "PENDING", categoryId = null, amountMinor = 123_456),
+                tx(id = "2", merchant = rawMerchant, status = "DISMISSED", categoryId = null, amountMinor = 999_999),
+                tx(id = "3", merchant = "Internal Transfer", status = "PENDING", type = "TRANSFER", categoryId = null),
+                tx(id = "4", merchant = "Starbucks", status = "CONFIRMED", categoryId = "cat-coffee"),
+            ),
+        )
+
+        val encoded = json.encodeToString(payload)
+
+        assertThat(encoded).doesNotContain(rawMerchant)
+        assertThat(encoded).doesNotContain(rawMerchant.lowercase())
+        assertThat(encoded).doesNotContain("123456")
+        assertThat(encoded).doesNotContain("999999")
+        assertThat(payload.privacy.rawMerchants).isEqualTo("omitted")
+        assertThat(payload.privacy.transactionRows).isEqualTo("omitted")
+        assertThat(payload.transactionSummary.totalTransactions).isEqualTo(4)
+        assertThat(payload.transactionSummary.categorizedTransactions).isEqualTo(1)
+        assertThat(payload.transactionSummary.categoryBacklogTransactions).isEqualTo(2)
+        assertThat(payload.transactionSummary.pendingCategoryBacklog).isEqualTo(1)
+        assertThat(payload.transactionSummary.dismissedCategoryBacklog).isEqualTo(1)
+        assertThat(payload.transactionSummary.transferRowsExcluded).isEqualTo(1)
+
+        val group = payload.uncategorizedMerchantGroups.single()
+        assertThat(group.merchantHash).hasLength(12)
+        assertThat(group.merchantLengthBucket).isEqualTo("9-32")
+        assertThat(group.merchantScript).isEqualTo("latin")
+        assertThat(group.sampleCount).isEqualTo(2)
+        assertThat(group.pending).isEqualTo(1)
+        assertThat(group.dismissed).isEqualTo(1)
+        assertThat(group.currencyCounts.map { it.label to it.count }).containsExactly("SAR" to 2)
+        assertThat(group.confidenceBuckets.map { it.label to it.count }).containsExactly("0.70-0.84" to 2)
+    }
+
+    @Test
     fun `failed rows group by redacted parser reason and keep template ids`() {
         val payload = SupportDiagnosticsReportBuilder.build(
             rows = listOf(
@@ -113,5 +157,32 @@ class SupportDiagnosticsExporterTest {
         parsedTransactionId = if (status == SmsParseStatus.PARSED.name) "tx-$id" else null,
         parseStatus = status,
         parseError = error,
+    )
+
+    private fun tx(
+        id: String,
+        merchant: String,
+        status: String,
+        type: String = "EXPENSE",
+        categoryId: String? = null,
+        amountMinor: Long = 1_000,
+    ): TransactionEntity = TransactionEntity(
+        id = id,
+        accountId = "acc-1",
+        type = type,
+        amountMinor = amountMinor,
+        currency = "SAR",
+        date = LocalDate(2026, 6, 13),
+        occurredAt = Instant.parse("2026-06-13T12:00:00Z"),
+        merchant = merchant,
+        merchantNormalized = merchant.lowercase().trim(),
+        categoryId = categoryId,
+        notes = "Private note $merchant $amountMinor",
+        source = "SMS",
+        sourceRefId = "raw-$id",
+        status = status,
+        confidence = 0.8f,
+        createdAt = Instant.parse("2026-06-13T12:00:00Z"),
+        updatedAt = Instant.parse("2026-06-13T12:00:00Z"),
     )
 }
