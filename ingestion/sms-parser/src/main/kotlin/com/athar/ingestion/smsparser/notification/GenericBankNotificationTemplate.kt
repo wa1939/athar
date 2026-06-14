@@ -40,6 +40,14 @@ class GenericBankNotificationTemplate : BankTemplate {
         """\b(?:paid\s+you|sent\s+you|got\s+paid|was\s+paid|were\s+paid|payment\s+from|direct\s+deposit|direct\s+credit|ach\s+credit|credit\s+(?:of|from)|money\s+received|money\s+added|cash\s+in)\b""",
         RegexOption.IGNORE_CASE,
     )
+    private val salaryIncomeWords = Regex(
+        """(?:\b(?:salary|paycheck|wages?)\b|\bpayroll\s+(?:deposit|credited|credit|payment|received)\b|راتب|رواتب|أجر|اجر)""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val salaryLabelWords = Regex(
+        """(?:\bsalary\b|راتب|رواتب)""",
+        RegexOption.IGNORE_CASE,
+    )
     private val transferWords = Regex(
         """\b(?:sent|transfer|transferred|outgoing|remit|تحويل|حوالة|إرسال|ارسال)\b""",
         RegexOption.IGNORE_CASE,
@@ -74,6 +82,10 @@ class GenericBankNotificationTemplate : BankTemplate {
     )
     private val debtReminderWords = Regex(
         """(?:\b(?:credit\s+card|loan|instalment|installment|emi|finance)[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder)\b|\b(?:due|scheduled|upcoming|reminder)[^\n\r]{0,80}\b(?:credit\s+card|loan|instalment|installment|emi|finance)\b|(?:قسط|تمويل|بطاقة\s+ائتمانية)[^\n\r]{0,80}(?:مستحق|استحقاق|موعد|قادم|مجدول))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val salaryFinancingOfferWords = Regex(
+        """(?:\b(?:no\s+salary\s+transfer|required\s+salary\s+transfer|salary\s+transfer\s+(?:required|not\s+required|is\s+not\s+required)|without\s+salary\s+transfer)[^\n\r]{0,80}\b(?:loan|finance|financing|offer|apply|approval|approved)\b|\b(?:loan|finance|financing|offer|apply|approval|approved)[^\n\r]{0,80}\b(?:no\s+salary\s+transfer|required\s+salary\s+transfer|salary\s+transfer\s+(?:required|not\s+required|is\s+not\s+required)|without\s+salary\s+transfer)\b|(?:تمويل|قرض)[^\n\r]{0,80}(?:تحويل\s+راتب|بدون\s+تحويل\s+راتب|لا\s+يتطلب\s+تحويل\s+راتب))""",
         RegexOption.IGNORE_CASE,
     )
     private val electricityBillWords = Regex(
@@ -203,6 +215,7 @@ class GenericBankNotificationTemplate : BankTemplate {
 
         if (securityCodeAuthorizationWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (authorizationHoldWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (salaryFinancingOfferWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (isRewardOnlyNotification(normalized)) return ParseResult.Ignored
         if (isMarketingOnlyPromotion(normalized)) return ParseResult.Ignored
         if (declinedWords.containsMatchIn(normalized)) return ParseResult.Ignored
@@ -254,11 +267,14 @@ class GenericBankNotificationTemplate : BankTemplate {
         }
         val counterparty = when (type) {
             TxType.EXPENSE -> null
-            TxType.INCOME -> cleanParty(
-                senderLabelHint.find(normalized)?.groupValues?.get(1)
-                    ?: fromHint.find(normalized)?.groupValues?.get(1)
-                    ?: byHint.find(normalized)?.groupValues?.get(1)
-                    ?: incomingPersonHint.find(normalized)?.groupValues?.get(1),
+            TxType.INCOME -> normalizeIncomeCounterparty(
+                body = normalized,
+                counterparty = cleanParty(
+                    senderLabelHint.find(normalized)?.groupValues?.get(1)
+                        ?: fromHint.find(normalized)?.groupValues?.get(1)
+                        ?: byHint.find(normalized)?.groupValues?.get(1)
+                        ?: incomingPersonHint.find(normalized)?.groupValues?.get(1),
+                ),
             )
             TxType.TRANSFER -> cleanParty(recipientLabelHint.find(normalized)?.groupValues?.get(1)
                 ?: toHint.find(normalized)?.groupValues?.get(1)
@@ -290,7 +306,8 @@ class GenericBankNotificationTemplate : BankTemplate {
         expenseWords.containsMatchIn(body) || expensePhrases.containsMatchIn(body)
 
     private fun hasIncomeAction(body: String): Boolean =
-        incomeWords.containsMatchIn(body) || incomePhrases.containsMatchIn(body)
+        incomeWords.containsMatchIn(body) || incomePhrases.containsMatchIn(body) ||
+            salaryIncomeWords.containsMatchIn(body)
 
     private fun hasMerchantHint(body: String): Boolean =
         merchantLabelHint.containsMatchIn(body) ||
@@ -340,6 +357,14 @@ class GenericBankNotificationTemplate : BankTemplate {
         }
     }
 
+    private fun normalizeIncomeCounterparty(body: String, counterparty: String?): String? {
+        if (!salaryIncomeWords.containsMatchIn(body)) return counterparty
+        val label = if (ArabicSalaryTerms.any { body.contains(it) }) "راتب" else "Salary"
+        val cleaned = counterparty?.takeIf { it.isNotBlank() } ?: return label
+        if (salaryLabelWords.containsMatchIn(cleaned)) return cleaned
+        return "$label - $cleaned".take(48).trim()
+    }
+
     private fun isMarketingOnlyPromotion(body: String): Boolean =
         marketingOnlyWords.containsMatchIn(body) && !postedTransactionEvidence.containsMatchIn(body)
 
@@ -386,6 +411,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         expensePhrases.find(body)?.range?.first,
         incomeWords.find(body)?.range?.first,
         incomePhrases.find(body)?.range?.first,
+        salaryIncomeWords.find(body)?.range?.first,
         transferWords.find(body)?.range?.first,
         creditCardPaymentWords.find(body)?.range?.first,
         loanInstalmentWords.find(body)?.range?.first,
@@ -518,6 +544,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         private const val CurrencySuffixWindow = 12
         private const val IdentifierPrefixWindow = 32
         private val ArabicBalanceTerms = listOf("رصيد", "الرصيد", "المتاح", "الرصيد المتبقي")
+        private val ArabicSalaryTerms = listOf("راتب", "رواتب", "أجر", "اجر")
         private val withdrawalWords = Regex(
             """(?:\b(?:atm\s+withdrawal|cash\s+withdrawal|withdrawal|withdrawn)\b|سحب|صراف)""",
             RegexOption.IGNORE_CASE,

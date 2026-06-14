@@ -224,6 +224,54 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses salary credited notification with shared salary label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Salary credited SAR 9,000.00"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("9000.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.counterparty).isEqualTo("Salary")
+    }
+
+    @Test
+    fun `preserves payroll source while keeping shared salary label`() {
+        val result = parser.parse(
+            event("notification:com.mercury", "Salary credited USD 9,000.00 from ACME Payroll"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("9000.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.counterparty).isEqualTo("Salary - ACME Payroll")
+    }
+
+    @Test
+    fun `parses Arabic salary deposit notification with shared salary label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم إيداع راتب ٩٠٠٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("9000"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.counterparty).isEqualTo("راتب")
+    }
+
+    @Test
+    fun `ignores salary transfer financing offers with amounts`() {
+        assertThat(
+            parser.parse(
+                event(
+                    "notification:com.alrajhibank.alrajhimobile",
+                    "No salary transfer required. Get SAR 100,000 financing approved instantly.",
+                ),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
     fun `parses refunded notification as income`() {
         val result = parser.parse(
             event("notification:com.capitalone.mobile", "You were refunded GBP 12.50 from Amazon"),
