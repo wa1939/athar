@@ -3544,6 +3544,21 @@
       "pattern": "united pharmacies",
       "categoryId": "cat-medical",
       "priority": 90
+    },
+    {
+      "pattern": "subscription payment",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "insurance premium",
+      "categoryId": "cat-insurance",
+      "priority": 90
+    },
+    {
+      "pattern": "rent payment",
+      "categoryId": "cat-rent",
+      "priority": 90
     }
   ]
 }

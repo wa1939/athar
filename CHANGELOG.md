@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Store-safe notification parsing now normalizes posted subscription-payment, insurance-premium, and rent-payment pushes to shared seed-backed labels, ignores recurring-expense reminder/renewal notices with amounts, and adds exact active seed rules for those labels, bringing `seed_rules.json` to 712 rules.
 - Store-safe notification parsing now normalizes explicit salary/payroll income pushes to shared salary labels while preserving specific payroll sources, and ignores salary-transfer financing offers with amounts.
 - Store-safe notification parsing now normalizes generic electricity, water, and bill-payment pushes to shared utility labels and ignores utility bill reminder notices with amounts.
 - Store-safe notification parsing now normalizes posted credit-card repayment and loan-instalment pushes to shared debt labels and ignores card/loan repayment reminder notices with amounts.

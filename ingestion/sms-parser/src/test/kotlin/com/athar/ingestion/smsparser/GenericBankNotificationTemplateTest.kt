@@ -710,6 +710,80 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses generic subscription payment notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Subscription payment USD 39.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("39.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Subscription payment")
+    }
+
+    @Test
+    fun `parses generic insurance premium notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Insurance premium AED 500.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("500.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Insurance premium")
+    }
+
+    @Test
+    fun `preserves specific insurance merchant on premium notification`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Insurance premium paid to Tawuniya AED 500.00"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("500.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Tawuniya")
+    }
+
+    @Test
+    fun `parses generic rent payment notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Rent payment SAR 2,500.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("2500.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Rent payment")
+    }
+
+    @Test
+    fun `parses Arabic rent payment notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم سداد إيجار بمبلغ ٢٥٠٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("2500"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Rent payment")
+    }
+
+    @Test
+    fun `ignores recurring expense reminder notifications with amounts`() {
+        val reminders = listOf(
+            "Your rent payment of SAR 2,500.00 is due tomorrow",
+            "Your insurance premium of AED 500.00 is due tomorrow",
+            "Your subscription renews tomorrow for USD 9.99",
+            "تذكير: إيجار مستحق ٢٥٠٠ ر.س",
+        )
+
+        reminders.forEach { body ->
+            assertThat(parser.parse(event("notification:com.chase.sig.android", body))).isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
     fun `does not treat trailing status as merchant`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "Card purchase SAR 42.00 approved"),

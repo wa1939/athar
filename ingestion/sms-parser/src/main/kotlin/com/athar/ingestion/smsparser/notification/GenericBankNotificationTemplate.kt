@@ -104,6 +104,22 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\b(?:(?:electricity|electric|power|water)\s+)?bill[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder)\b|\b(?:due|scheduled|upcoming|reminder)[^\n\r]{0,80}\b(?:(?:electricity|electric|power|water)\s+)?bill\b|(?:فاتورة\s+(?:الكهرباء|المياه|الماء)|شركة\s+(?:الكهرباء|المياه|الماء))[^\n\r]{0,80}(?:مستحق|استحقاق|موعد|قادم|مجدول))""",
         RegexOption.IGNORE_CASE,
     )
+    private val subscriptionPaymentWords = Regex(
+        """(?:\b(?:subscription|membership)\s+(?:payment|charge|fee|paid|debited)\b|\brecurring\s+(?:payment|charge)\b|دفع\s+اشتراك|سداد\s+اشتراك|اشتراك\s+(?:مدفوع|مجدد))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val insurancePremiumWords = Regex(
+        """(?:\b(?:insurance|policy)\s+premium\b|\bpremium\s+(?:payment|paid|debited)\b|قسط\s+(?:التأمين|تأمين)|سداد\s+(?:قسط\s+)?(?:التأمين|تأمين))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val rentPaymentWords = Regex(
+        """(?:\brent\s+payment\b|\bejar\s+(?:rent\s+)?payment\b|(?:سداد|دفع|خصم)\s+(?:دفعة\s+)?(?:الإيجار|ايجار|إيجار)|(?:الإيجار|ايجار|إيجار)\s+(?:تم\s+)?(?:سداد|دفع))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val recurringExpenseReminderWords = Regex(
+        """(?:\b(?:subscription|membership|recurring\s+payment|insurance\s+premium|policy\s+premium|rent\s+payment|rent)\b[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder|renews?|renewal|expires?)\b|\b(?:due|scheduled|upcoming|reminder|renews?|renewal|expires?)[^\n\r]{0,80}\b(?:subscription|membership|insurance\s+premium|policy\s+premium|rent\s+payment|rent)\b|(?:إيجار|ايجار|اشتراك|تأمين|قسط\s+التأمين)[^\n\r]{0,80}(?:مستحق|استحقاق|موعد|قادم|مجدول|تجديد))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val declinedWords = Regex(
         """\b(?:declined|rejected|failed|unsuccessful|مرفوض|رُفض|فشل|غير\s+ناجحة)\b""",
         RegexOption.IGNORE_CASE,
@@ -225,6 +241,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (feeScheduleWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (debtReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (utilityBillReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (recurringExpenseReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (spendingSummaryWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (limitWords.containsMatchIn(normalized) && !hasExpenseAction(normalized) && !hasIncomeAction(normalized)) {
             return ParseResult.Ignored
@@ -247,6 +264,7 @@ class GenericBankNotificationTemplate : BankTemplate {
 
         val type = when {
             hasIncomeAction(normalized) -> TxType.INCOME
+            isRecurringExpenseNotification(normalized) -> TxType.EXPENSE
             transferWords.containsMatchIn(normalized) -> TxType.TRANSFER
             hasExpenseAction(normalized) || isBankFeeNotification(normalized) ||
                 isDebtPaymentNotification(normalized) || hasMerchantHint(normalized) -> TxType.EXPENSE
@@ -258,7 +276,7 @@ class GenericBankNotificationTemplate : BankTemplate {
                 ?: "Bank fees".takeIf { isBankFeeNotification(normalized) }
                 ?: "Credit card payment".takeIf { isCreditCardPaymentNotification(normalized) }
                 ?: "Loan instalment".takeIf { isLoanInstalmentNotification(normalized) }
-                ?: normalizeUtilityBillMerchant(
+                ?: normalizeExpenseMerchant(
                     body = normalized,
                     merchant = normalized.cleanMerchantCandidate(amountMatch),
                 )
@@ -300,7 +318,7 @@ class GenericBankNotificationTemplate : BankTemplate {
 
     private fun hasAction(body: String): Boolean =
         hasExpenseAction(body) || hasIncomeAction(body) || transferWords.containsMatchIn(body) ||
-            isBankFeeNotification(body) || isDebtPaymentNotification(body)
+            isBankFeeNotification(body) || isDebtPaymentNotification(body) || isRecurringExpenseNotification(body)
 
     private fun hasExpenseAction(body: String): Boolean =
         expenseWords.containsMatchIn(body) || expensePhrases.containsMatchIn(body)
@@ -331,6 +349,11 @@ class GenericBankNotificationTemplate : BankTemplate {
     private fun isLoanInstalmentNotification(body: String): Boolean =
         loanInstalmentWords.containsMatchIn(body)
 
+    private fun isRecurringExpenseNotification(body: String): Boolean =
+        subscriptionPaymentWords.containsMatchIn(body) ||
+            insurancePremiumWords.containsMatchIn(body) ||
+            rentPaymentWords.containsMatchIn(body)
+
     private fun String.cleanMerchantCandidate(amountMatch: MatchResult): String? =
         cleanParty(merchantLabelHint.find(this)?.groupValues?.get(1)
             ?: toHint.find(this)?.groupValues?.get(1)
@@ -341,12 +364,18 @@ class GenericBankNotificationTemplate : BankTemplate {
             ?: partyBeforeAmount(this, amountMatch)
             ?: partyAfterAmount(this, amountMatch)
 
+    private fun normalizeExpenseMerchant(body: String, merchant: String?): String? =
+        normalizeUtilityBillMerchant(body, merchant)
+            ?: normalizeRecurringExpenseMerchant(body, merchant)
+            ?: merchant
+
     private fun normalizeUtilityBillMerchant(body: String, merchant: String?): String? {
         if (merchant != null) {
             return when {
                 electricityBillWords.containsMatchIn(merchant) -> "Electric company"
                 waterBillWords.containsMatchIn(merchant) -> "Water company"
-                else -> merchant
+                genericBillPaymentWords.containsMatchIn(merchant) -> "Bill payment"
+                else -> null
             }
         }
         return when {
@@ -355,6 +384,19 @@ class GenericBankNotificationTemplate : BankTemplate {
             genericBillPaymentWords.containsMatchIn(body) -> "Bill payment"
             else -> null
         }
+    }
+
+    private fun normalizeRecurringExpenseMerchant(body: String, merchant: String?): String? {
+        val label = recurringExpenseLabel(body) ?: return null
+        if (merchant == null || recurringExpenseLabel(merchant) != null) return label
+        return merchant
+    }
+
+    private fun recurringExpenseLabel(body: String): String? = when {
+        subscriptionPaymentWords.containsMatchIn(body) -> "Subscription payment"
+        insurancePremiumWords.containsMatchIn(body) -> "Insurance premium"
+        rentPaymentWords.containsMatchIn(body) -> "Rent payment"
+        else -> null
     }
 
     private fun normalizeIncomeCounterparty(body: String, counterparty: String?): String? {
@@ -415,6 +457,9 @@ class GenericBankNotificationTemplate : BankTemplate {
         transferWords.find(body)?.range?.first,
         creditCardPaymentWords.find(body)?.range?.first,
         loanInstalmentWords.find(body)?.range?.first,
+        subscriptionPaymentWords.find(body)?.range?.first,
+        insurancePremiumWords.find(body)?.range?.first,
+        rentPaymentWords.find(body)?.range?.first,
     ).minOrNull()
 
     private fun MatchResult.isBalanceAmount(body: String): Boolean {
