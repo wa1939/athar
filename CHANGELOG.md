@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Store-safe notification parsing now normalizes posted parking, road-toll, and transit-fare pushes to shared seed-backed mobility labels, preserves specific operators, ignores mobility due/unpaid reminders with amounts, and adds exact active seed rules for those labels, bringing `seed_rules.json` to 718 rules.
 - Store-safe notification parsing now normalizes posted traffic-fine and government-service payment pushes to shared seed-backed public-service labels, preserves specific agencies, ignores public-service due reminders with amounts, and adds exact active seed rules for those labels, bringing `seed_rules.json` to 715 rules.
 - Store-safe notification parsing now treats mobile, prepaid, and airtime recharge/top-up pushes as telecom expenses instead of generic `top up` income, preserves specific carriers, ignores recharge promo copy with amounts, and adds an exact active `mobile recharge` seed rule, bringing `seed_rules.json` to 713 rules.
 - Store-safe notification parsing now normalizes posted subscription-payment, insurance-premium, and rent-payment pushes to shared seed-backed labels, ignores recurring-expense reminder/renewal notices with amounts, and adds exact active seed rules for those labels, bringing `seed_rules.json` to 712 rules.

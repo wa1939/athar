@@ -3574,6 +3574,21 @@
       "pattern": "government service payment",
       "categoryId": "cat-utilities",
       "priority": 90
+    },
+    {
+      "pattern": "parking payment",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "toll payment",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "transit fare",
+      "categoryId": "cat-public-transport",
+      "priority": 90
     }
   ]
 }

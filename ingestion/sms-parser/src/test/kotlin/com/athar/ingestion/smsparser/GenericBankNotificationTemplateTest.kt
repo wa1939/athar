@@ -929,6 +929,91 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses parking payment notification with shared mobility label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Parking payment SAR 12.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("12.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Parking payment")
+    }
+
+    @Test
+    fun `preserves specific parking operator on parking payment notification`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Parking payment SAR 12.00 at Riyadh Parking"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("12.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Riyadh Parking")
+    }
+
+    @Test
+    fun `parses toll payment notification with shared mobility label`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Road toll payment AED 8.00 posted"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("8.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Toll payment")
+    }
+
+    @Test
+    fun `parses transit fare notification with shared mobility label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Transit fare USD 2.75 charged"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("2.75"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Transit fare")
+    }
+
+    @Test
+    fun `parses Arabic transit fare notification with shared mobility label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم دفع تذكرة المترو بمبلغ ٤ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("4"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Transit fare")
+    }
+
+    @Test
+    fun `ignores mobility due reminder notifications with amounts`() {
+        val reminders = listOf(
+            "Your parking session expires with SAR 12.00 unpaid",
+            "Unpaid toll AED 8.00 is due tomorrow",
+            "تذكير: مواقف مستحقة ١٢ ر.س",
+        )
+
+        reminders.forEach { body ->
+            assertThat(parser.parse(event("notification:com.alrajhibank.alrajhimobile", body))).isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
+    fun `keeps parking fine payment on public service label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Parking fine payment SAR 120.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("120.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Traffic fine payment")
+    }
+
+    @Test
     fun `does not treat trailing status as merchant`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "Card purchase SAR 42.00 approved"),
