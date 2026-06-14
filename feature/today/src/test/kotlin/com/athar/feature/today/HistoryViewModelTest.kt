@@ -58,7 +58,7 @@ class HistoryViewModelTest {
         )
         val viewModel = HistoryViewModel(
             transactions = txRepo,
-            rules = HistoryFakeRuleRepository,
+            rules = HistoryFakeRuleRepository(),
             categories = HistoryFakeCategoryRepository(
                 listOf(
                     category(id = "cat-food", kind = CategoryKind.EXPENSE),
@@ -95,7 +95,7 @@ class HistoryViewModelTest {
                     tx(id = "expense-b", type = TxType.EXPENSE, status = TxStatus.CONFIRMED),
                 ),
             ),
-            rules = HistoryFakeRuleRepository,
+            rules = HistoryFakeRuleRepository(),
             categories = HistoryFakeCategoryRepository(emptyList()),
             clock = FixedHistoryClock,
         )
@@ -142,7 +142,7 @@ class HistoryViewModelTest {
                     ),
                 ),
             ),
-            rules = HistoryFakeRuleRepository,
+            rules = HistoryFakeRuleRepository(),
             categories = HistoryFakeCategoryRepository(emptyList()),
             clock = FixedHistoryClock,
         )
@@ -157,6 +157,92 @@ class HistoryViewModelTest {
         assertThat(viewModel.selectedIds.value).containsExactly("coffee-a", "coffee-b")
 
         collection.cancel()
+    }
+
+    @Test
+    fun `bulk category assignment learns one exact rule for repeated selected merchant`() = runTest(mainDispatcher) {
+        val txRepo = HistoryFakeTransactionRepository(
+            listOf(
+                tx(
+                    id = "coffee-a",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.PENDING,
+                    merchantNormalized = "Coffee Shop",
+                ),
+                tx(
+                    id = "coffee-b",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.PENDING,
+                    merchantNormalized = "coffee shop",
+                ),
+            ),
+        )
+        val ruleRepo = HistoryFakeRuleRepository()
+        val viewModel = HistoryViewModel(
+            transactions = txRepo,
+            rules = ruleRepo,
+            categories = HistoryFakeCategoryRepository(
+                listOf(category(id = "cat-food", kind = CategoryKind.EXPENSE)),
+            ),
+            clock = FixedHistoryClock,
+        )
+
+        viewModel.toggleSelected("coffee-a")
+        viewModel.toggleSelected("coffee-b")
+        viewModel.applyBulkCategory("cat-food")
+        advanceUntilIdle()
+
+        assertThat(ruleRepo.learnedRules).hasSize(1)
+        val rule = ruleRepo.learnedRules.single()
+        assertThat(rule.pattern).isEqualTo("coffee shop")
+        assertThat(rule.patternType).isEqualTo(PatternType.EXACT)
+        assertThat(rule.categoryId).isEqualTo("cat-food")
+        assertThat(viewModel.lastBulkCategory.value).isEqualTo(
+            HistoryViewModel.BulkCategoryEvent(
+                applied = 2,
+                skipped = 0,
+                exactRuleLearned = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `bulk category assignment does not learn exact rule for mixed selected merchants`() = runTest(mainDispatcher) {
+        val txRepo = HistoryFakeTransactionRepository(
+            listOf(
+                tx(
+                    id = "coffee",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.PENDING,
+                    merchantNormalized = "coffee shop",
+                ),
+                tx(
+                    id = "grocery",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.PENDING,
+                    merchantNormalized = "grocery",
+                ),
+            ),
+        )
+        val ruleRepo = HistoryFakeRuleRepository()
+        val viewModel = HistoryViewModel(
+            transactions = txRepo,
+            rules = ruleRepo,
+            categories = HistoryFakeCategoryRepository(
+                listOf(category(id = "cat-food", kind = CategoryKind.EXPENSE)),
+            ),
+            clock = FixedHistoryClock,
+        )
+
+        viewModel.toggleSelected("coffee")
+        viewModel.toggleSelected("grocery")
+        viewModel.applyBulkCategory("cat-food")
+        advanceUntilIdle()
+
+        assertThat(ruleRepo.learnedRules).isEmpty()
+        assertThat(viewModel.lastBulkCategory.value).isEqualTo(
+            HistoryViewModel.BulkCategoryEvent(applied = 2, skipped = 0),
+        )
     }
 }
 
@@ -186,24 +272,50 @@ private class HistoryFakeTransactionRepository(rows: List<Transaction>) : Transa
     override suspend fun applyCategoryToMatching(pattern: String, categoryId: String): Int = 0
 }
 
-private object HistoryFakeRuleRepository : CategoryRuleRepository {
-    override fun observeAll(): Flow<List<CategoryRule>> = flowOf(emptyList())
-    override suspend fun findMatching(merchantNormalized: String): List<CategoryRule> = emptyList()
-    override suspend fun upsert(rule: CategoryRule) = Unit
-    override suspend fun delete(id: String) = Unit
+private class HistoryFakeRuleRepository(
+    private val existingRules: List<CategoryRule> = emptyList(),
+) : CategoryRuleRepository {
+    val learnedRules = mutableListOf<CategoryRule>()
+    val deletedRuleIds = mutableListOf<String>()
+
+    override fun observeAll(): Flow<List<CategoryRule>> = flowOf(existingRules + learnedRules)
+
+    override suspend fun findMatching(merchantNormalized: String): List<CategoryRule> {
+        val name = merchantNormalized.lowercase().trim()
+        return (existingRules + learnedRules)
+            .filter { rule ->
+                when (rule.patternType) {
+                    PatternType.EXACT -> rule.pattern.equals(name, ignoreCase = true)
+                    PatternType.SUBSTRING -> name.contains(rule.pattern.lowercase().trim())
+                    PatternType.REGEX -> runCatching { Regex(rule.pattern).containsMatchIn(name) }
+                        .getOrDefault(false)
+                }
+            }
+            .sortedByDescending { it.priority }
+    }
+
+    override suspend fun upsert(rule: CategoryRule) {
+        learnedRules += rule
+    }
+
+    override suspend fun delete(id: String) {
+        deletedRuleIds += id
+        learnedRules.removeAll { it.id == id }
+    }
+
     override suspend fun learnFromCorrection(
         merchantNormalized: String,
         categoryId: String,
         patternType: PatternType,
     ): CategoryRule = CategoryRule(
-        id = "unused",
+        id = "learned-${learnedRules.size + 1}",
         pattern = merchantNormalized,
         patternType = patternType,
         categoryId = categoryId,
-        priority = 0,
+        priority = 200,
         learnedFromUser = true,
         createdAt = FixedHistoryClock.now(),
-    )
+    ).also { learnedRules += it }
 }
 
 private class HistoryFakeCategoryRepository(

@@ -82,7 +82,9 @@
     <string name="history_bulk_cancel">Cancel</string>
     <string name="history_bulk_apply">Apply</string>
     <string name="history_bulk_applied" formatted="true">Updated %1$d transactions.</string>
+    <string name="history_bulk_applied_with_rule" formatted="true">Updated %1$d transactions. Future same-merchant rows will auto-categorize.</string>
     <string name="history_bulk_applied_with_skips" formatted="true">Updated %1$d transactions. %2$d skipped.</string>
+    <string name="history_bulk_applied_with_skips_and_rule" formatted="true">Updated %1$d transactions. %2$d skipped. Future same-merchant rows will auto-categorize.</string>
     <string name="category_backfill_applied" formatted="true">Updated matching transactions for "%2$s": %1$d.</string>
     <string name="category_backfill_future" formatted="true">Future transactions matching "%1$s" will be categorized automatically.</string>
 

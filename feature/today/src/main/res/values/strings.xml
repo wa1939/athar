@@ -83,7 +83,9 @@
     <string name="history_bulk_cancel">إلغاء</string>
     <string name="history_bulk_apply">تطبيق</string>
     <string name="history_bulk_applied" formatted="true">حُدّثت %1$d حركة.</string>
+    <string name="history_bulk_applied_with_rule" formatted="true">حُدّثت %1$d حركة. ستُصنّف الحركات القادمة لنفس التاجر تلقائيًا.</string>
     <string name="history_bulk_applied_with_skips" formatted="true">حُدّثت %1$d حركة. تُركت %2$d دون تغيير.</string>
+    <string name="history_bulk_applied_with_skips_and_rule" formatted="true">حُدّثت %1$d حركة. تُركت %2$d دون تغيير. ستُصنّف الحركات القادمة لنفس التاجر تلقائيًا.</string>
     <string name="category_backfill_applied" formatted="true">حُدّثت الحركات المطابقة لـ«%2$s»: %1$d.</string>
     <string name="category_backfill_future" formatted="true">سيُصنّف أثر الحركات القادمة المطابقة لـ«%1$s» تلقائيًا.</string>
 

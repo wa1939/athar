@@ -113,6 +113,7 @@ fun HistoryScreen(
                 BulkCategoryToast(
                     applied = it.applied,
                     skipped = it.skipped,
+                    exactRuleLearned = it.exactRuleLearned,
                     onDismiss = viewModel::clearBulkCategory,
                 )
             }
@@ -299,13 +300,23 @@ private fun TxRow(
 }
 
 @Composable
-private fun BulkCategoryToast(applied: Int, skipped: Int, onDismiss: () -> Unit) {
+private fun BulkCategoryToast(
+    applied: Int,
+    skipped: Int,
+    exactRuleLearned: Boolean,
+    onDismiss: () -> Unit,
+) {
     AtharCard(modifier = Modifier.clickable(onClick = onDismiss)) {
         AtharText(
-            text = if (skipped > 0) {
-                stringResource(R.string.history_bulk_applied_with_skips, applied, skipped)
-            } else {
-                stringResource(R.string.history_bulk_applied, applied)
+            text = when {
+                exactRuleLearned && skipped > 0 -> stringResource(
+                    R.string.history_bulk_applied_with_skips_and_rule,
+                    applied,
+                    skipped,
+                )
+                exactRuleLearned -> stringResource(R.string.history_bulk_applied_with_rule, applied)
+                skipped > 0 -> stringResource(R.string.history_bulk_applied_with_skips, applied, skipped)
+                else -> stringResource(R.string.history_bulk_applied, applied)
             },
             style = AtharTheme.typography.body,
             color = AtharTheme.colors.ink,

@@ -207,28 +207,69 @@ class HistoryViewModel @Inject constructor(
             val now = clock.now()
             var applied = 0
             var skipped = 0
+            val appliedRows = mutableListOf<Transaction>()
             _selectedIds.value.forEach { id ->
                 val tx = transactions.get(id)
                 if (tx != null && tx.categoryKind() == category.kind) {
-                    transactions.upsert(
-                        tx.copy(
-                            categoryId = category.id,
-                            status = TxStatus.CONFIRMED,
-                            updatedAt = now,
-                        ),
+                    val updated = tx.copy(
+                        categoryId = category.id,
+                        status = TxStatus.CONFIRMED,
+                        updatedAt = now,
                     )
+                    transactions.upsert(updated)
+                    appliedRows += updated
                     applied += 1
                 } else {
                     skipped += 1
                 }
             }
-            _lastBulkCategory.value = BulkCategoryEvent(applied = applied, skipped = skipped)
+            val exactRuleLearned = learnExactRuleForRepeatedMerchant(appliedRows, category.id)
+            _lastBulkCategory.value = BulkCategoryEvent(
+                applied = applied,
+                skipped = skipped,
+                exactRuleLearned = exactRuleLearned,
+            )
             clearSelection()
         }
     }
 
+    private suspend fun learnExactRuleForRepeatedMerchant(
+        appliedRows: List<Transaction>,
+        categoryId: String,
+    ): Boolean {
+        if (appliedRows.size < 2) return false
+        val merchantKey = appliedRows
+            .mapNotNull { it.merchantSelectionKey() }
+            .distinct()
+            .singleOrNull()
+            ?.takeIf { it.isSpecificMerchantKey() }
+            ?: return false
+
+        val matchingRules = rules.findMatching(merchantKey)
+        val exactMatches = matchingRules.filter {
+            it.patternType == PatternType.EXACT &&
+                it.pattern.trim().equals(merchantKey, ignoreCase = true)
+        }
+        if (exactMatches.any { it.categoryId == categoryId }) return false
+        if (matchingRules.any { it.learnedFromUser && it.patternType != PatternType.EXACT }) return false
+
+        exactMatches
+            .filter { it.learnedFromUser }
+            .forEach { rules.delete(it.id) }
+        rules.learnFromCorrection(
+            merchantNormalized = merchantKey,
+            categoryId = categoryId,
+            patternType = PatternType.EXACT,
+        )
+        return true
+    }
+
     data class BackfillEvent(val pattern: String, val count: Int)
-    data class BulkCategoryEvent(val applied: Int, val skipped: Int)
+    data class BulkCategoryEvent(
+        val applied: Int,
+        val skipped: Int,
+        val exactRuleLearned: Boolean = false,
+    )
 }
 
 private data class HistoryFilterState(
@@ -370,3 +411,31 @@ private fun Transaction.merchantSelectionKey(): String? =
         .trim()
         .lowercase()
         .takeIf { it.isNotBlank() }
+
+private fun String.isSpecificMerchantKey(): Boolean {
+    if (length < 3) return false
+    if (all { it.isDigit() || it.isWhitespace() || it == '-' || it == '+' }) return false
+    if (this in genericMerchantKeys) return false
+    if (genericMerchantKeys.any { this == it || startsWith("$it ") }) return false
+    return true
+}
+
+private val genericMerchantKeys = setOf(
+    "unknown",
+    "merchant",
+    "bank",
+    "cash",
+    "purchase",
+    "online purchase",
+    "transfer",
+    "payment",
+    "manual adjustment",
+    "غير معروف",
+    "تاجر",
+    "بنك",
+    "شراء",
+    "تحويل",
+    "دفع",
+    "تسوية",
+    "تسوية يدوية",
+)
