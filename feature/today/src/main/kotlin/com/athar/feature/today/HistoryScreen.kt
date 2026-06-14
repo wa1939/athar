@@ -200,6 +200,7 @@ fun HistoryScreen(
                 BulkSelectionCard(
                     state = bulkCategory,
                     onSelectVisible = viewModel::selectVisibleRows,
+                    onSelectMatchingMerchant = viewModel::selectMatchingSelectedMerchants,
                     onApplyCategory = { choosingBulkCategory = true },
                     onClear = viewModel::clearSelection,
                 )
@@ -316,6 +317,7 @@ private fun BulkCategoryToast(applied: Int, skipped: Int, onDismiss: () -> Unit)
 private fun BulkSelectionCard(
     state: HistoryBulkCategoryState,
     onSelectVisible: () -> Unit,
+    onSelectMatchingMerchant: () -> Unit,
     onApplyCategory: () -> Unit,
     onClear: () -> Unit,
 ) {
@@ -352,6 +354,11 @@ private fun BulkSelectionCard(
                     text = stringResource(R.string.history_bulk_select_visible),
                     onClick = onSelectVisible,
                     enabled = state.visibleCount > 0 && state.selectedCount < state.visibleCount,
+                )
+                HistoryActionChip(
+                    text = stringResource(R.string.history_bulk_select_same_merchant),
+                    onClick = onSelectMatchingMerchant,
+                    enabled = state.matchingMerchantCount > state.selectedCount,
                 )
                 HistoryActionChip(
                     text = stringResource(R.string.history_bulk_clear),

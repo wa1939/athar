@@ -110,6 +110,54 @@ class HistoryViewModelTest {
 
         collection.cancel()
     }
+
+    @Test
+    fun `select matching selected merchants selects visible rows sharing normalized merchant`() = runTest(mainDispatcher) {
+        val viewModel = HistoryViewModel(
+            transactions = HistoryFakeTransactionRepository(
+                listOf(
+                    tx(
+                        id = "coffee-a",
+                        type = TxType.EXPENSE,
+                        status = TxStatus.PENDING,
+                        merchantNormalized = "Coffee Shop",
+                    ),
+                    tx(
+                        id = "coffee-b",
+                        type = TxType.EXPENSE,
+                        status = TxStatus.CONFIRMED,
+                        merchantNormalized = "coffee shop",
+                    ),
+                    tx(
+                        id = "coffee-income",
+                        type = TxType.INCOME,
+                        status = TxStatus.CONFIRMED,
+                        merchantNormalized = "coffee shop",
+                    ),
+                    tx(
+                        id = "grocery",
+                        type = TxType.EXPENSE,
+                        status = TxStatus.CONFIRMED,
+                        merchantNormalized = "grocery",
+                    ),
+                ),
+            ),
+            rules = HistoryFakeRuleRepository,
+            categories = HistoryFakeCategoryRepository(emptyList()),
+            clock = FixedHistoryClock,
+        )
+        val collection = launch { viewModel.items.collect {} }
+
+        viewModel.setType(HistoryTypeFilter.EXPENSE)
+        advanceUntilIdle()
+        viewModel.toggleSelected("coffee-a")
+        viewModel.selectMatchingSelectedMerchants()
+
+        assertThat(viewModel.selectionMode.value).isTrue()
+        assertThat(viewModel.selectedIds.value).containsExactly("coffee-a", "coffee-b")
+
+        collection.cancel()
+    }
 }
 
 private class HistoryFakeTransactionRepository(rows: List<Transaction>) : TransactionRepository {
@@ -175,15 +223,21 @@ private object FixedHistoryClock : Clock {
     override fun now(): Instant = Instant.parse("2026-06-14T12:00:00Z")
 }
 
-private fun tx(id: String, type: TxType, status: TxStatus): Transaction = Transaction(
+private fun tx(
+    id: String,
+    type: TxType,
+    status: TxStatus,
+    merchant: String = id,
+    merchantNormalized: String = id,
+): Transaction = Transaction(
     id = id,
     accountId = "account",
     type = type,
     amount = Money.of("10"),
     date = LocalDate(2026, 6, 14),
     occurredAt = Instant.parse("2026-06-14T12:00:00Z"),
-    merchant = id,
-    merchantNormalized = id,
+    merchant = merchant,
+    merchantNormalized = merchantNormalized,
     categoryId = null,
     notes = null,
     source = IngestSource.SMS,

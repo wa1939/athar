@@ -161,6 +161,23 @@ class HistoryFilterTest {
         assertThat(state.categories).isEmpty()
     }
 
+    @Test
+    fun `bulk category state counts visible rows matching selected merchants`() {
+        val state = buildHistoryBulkCategoryState(
+            visibleRows = listOf(
+                tx(id = "coffee-a", source = IngestSource.IMPORT, merchantNormalized = "Coffee Shop"),
+                tx(id = "coffee-b", source = IngestSource.IMPORT, merchantNormalized = "coffee shop"),
+                tx(id = "grocery", source = IngestSource.IMPORT, merchantNormalized = "grocery"),
+            ),
+            selectedIds = setOf("coffee-a"),
+            selectionMode = true,
+            activeCategories = listOf(category(id = "cat-food", kind = CategoryKind.EXPENSE)),
+        )
+
+        assertThat(state.selectedIds).containsExactly("coffee-a")
+        assertThat(state.matchingMerchantCount).isEqualTo(2)
+    }
+
     private fun tx(
         id: String,
         source: IngestSource,
@@ -168,6 +185,8 @@ class HistoryFilterTest {
         type: TxType = TxType.EXPENSE,
         sourceRefId: String? = "$source-$id",
         categoryId: String? = null,
+        merchant: String = "Merchant $id",
+        merchantNormalized: String = "merchant $id",
     ) = Transaction(
         id = id,
         accountId = "account",
@@ -175,8 +194,8 @@ class HistoryFilterTest {
         amount = Money.of(BigDecimal("10")),
         date = LocalDate(2026, 6, 13),
         occurredAt = Instant.parse("2026-06-13T00:00:00Z"),
-        merchant = "Merchant $id",
-        merchantNormalized = "merchant $id",
+        merchant = merchant,
+        merchantNormalized = merchantNormalized,
         categoryId = categoryId,
         notes = null,
         source = source,

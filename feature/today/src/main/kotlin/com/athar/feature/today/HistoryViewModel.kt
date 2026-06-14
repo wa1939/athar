@@ -159,6 +159,20 @@ class HistoryViewModel @Inject constructor(
         }
     }
 
+    fun selectMatchingSelectedMerchants() {
+        val visibleRows = items.value
+        val selectedMerchantKeys = visibleRows
+            .filter { it.id in _selectedIds.value }
+            .mapNotNull { it.merchantSelectionKey() }
+            .toSet()
+        if (selectedMerchantKeys.isNotEmpty()) {
+            _selectionMode.value = true
+            _selectedIds.value = visibleRows
+                .filter { it.merchantSelectionKey() in selectedMerchantKeys }
+                .mapTo(mutableSetOf()) { it.id }
+        }
+    }
+
     fun updateTransaction(tx: Transaction, learnRule: Boolean) {
         viewModelScope.launch {
             val now = clock.now()
@@ -285,6 +299,7 @@ data class HistoryBulkCategoryState(
     val selectedIds: Set<String>,
     val selectedCount: Int,
     val visibleCount: Int,
+    val matchingMerchantCount: Int,
     val eligibleCount: Int,
     val skippedCount: Int,
     val hasMixedCategoryKinds: Boolean,
@@ -298,6 +313,7 @@ data class HistoryBulkCategoryState(
             selectedIds = emptySet(),
             selectedCount = 0,
             visibleCount = 0,
+            matchingMerchantCount = 0,
             eligibleCount = 0,
             skippedCount = 0,
             hasMixedCategoryKinds = false,
@@ -315,11 +331,17 @@ internal fun buildHistoryBulkCategoryState(
     val selectedRows = visibleRows.filter { it.id in selectedIds }
     val selectedKinds = selectedRows.mapNotNull { it.categoryKind() }.distinct()
     val categoryKind = selectedKinds.singleOrNull()
+    val selectedMerchantKeys = selectedRows.mapNotNull { it.merchantSelectionKey() }.toSet()
     return HistoryBulkCategoryState(
         selectionMode = selectionMode,
         selectedIds = selectedRows.mapTo(mutableSetOf()) { it.id },
         selectedCount = selectedRows.size,
         visibleCount = visibleRows.size,
+        matchingMerchantCount = if (selectedMerchantKeys.isEmpty()) {
+            0
+        } else {
+            visibleRows.count { it.merchantSelectionKey() in selectedMerchantKeys }
+        },
         eligibleCount = selectedRows.count { it.categoryKind() != null },
         skippedCount = selectedRows.count { it.categoryKind() == null },
         hasMixedCategoryKinds = selectedKinds.size > 1,
@@ -341,3 +363,10 @@ private fun Transaction.categoryKind(): CategoryKind? = when (type) {
     TxType.INCOME -> CategoryKind.INCOME
     TxType.TRANSFER -> null
 }
+
+private fun Transaction.merchantSelectionKey(): String? =
+    merchantNormalized
+        .ifBlank { merchant }
+        .trim()
+        .lowercase()
+        .takeIf { it.isNotBlank() }
