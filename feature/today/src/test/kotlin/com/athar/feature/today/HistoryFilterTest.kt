@@ -243,6 +243,138 @@ class HistoryFilterTest {
     }
 
     @Test
+    fun `repeated uncategorized filter prioritizes largest visible merchant groups`() {
+        val rows = listOf(
+            tx(
+                id = "coffee-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Coffee first",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "tea-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Tea first",
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "coffee-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Coffee second",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "tea-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Tea second",
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "tea-c",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Tea third",
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "grocery-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Grocery first",
+                merchantNormalized = "grocery",
+            ),
+            tx(
+                id = "grocery-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Grocery second",
+                merchantNormalized = "grocery",
+            ),
+        )
+
+        val filtered = filterHistoryTransactions(
+            all = rows,
+            query = "",
+            status = HistoryStatusFilter.ALL,
+            type = HistoryTypeFilter.EXPENSE,
+            source = HistorySourceFilter.SMS,
+            category = HistoryCategoryFilter.REPEATED_UNCATEGORIZED,
+        )
+
+        assertThat(filtered.map { it.id }).containsExactly(
+            "tea-a",
+            "tea-b",
+            "tea-c",
+            "coffee-a",
+            "coffee-b",
+            "grocery-a",
+            "grocery-b",
+        ).inOrder()
+    }
+
+    @Test
+    fun `uncategorized filter keeps original row order instead of repeated priority order`() {
+        val rows = listOf(
+            tx(
+                id = "coffee-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Coffee first",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "tea-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Tea first",
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "coffee-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Coffee second",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "tea-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Tea second",
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "tea-c",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Tea third",
+                merchantNormalized = "tea shop",
+            ),
+        )
+
+        val filtered = filterHistoryTransactions(
+            all = rows,
+            query = "",
+            status = HistoryStatusFilter.ALL,
+            type = HistoryTypeFilter.EXPENSE,
+            source = HistorySourceFilter.SMS,
+            category = HistoryCategoryFilter.UNCATEGORIZED,
+        )
+
+        assertThat(filtered.map { it.id }).containsExactly(
+            "coffee-a",
+            "tea-a",
+            "coffee-b",
+            "tea-b",
+            "tea-c",
+        ).inOrder()
+    }
+
+    @Test
     fun `repeated backlog count map annotates repeated visible rows only`() {
         val rows = listOf(
             tx(

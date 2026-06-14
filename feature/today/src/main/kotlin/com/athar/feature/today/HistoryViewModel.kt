@@ -347,14 +347,31 @@ internal fun filterHistoryTransactions(
         }
     }
 
-    val repeatedKeys = baseRows
-        .mapNotNull { it.uncategorizedMerchantGroupKey() }
-        .groupingBy { it }
-        .eachCount()
-        .filterValues { it > 1 }
-        .keys
+    val groupStats = baseRows
+        .mapIndexedNotNull { index, tx ->
+            tx.uncategorizedMerchantGroupKey()?.let { key -> key to index }
+        }
+        .groupBy(keySelector = { it.first }, valueTransform = { it.second })
+        .mapValues { (_, positions) ->
+            RepeatedBacklogGroupStats(
+                count = positions.size,
+                firstIndex = positions.minOrNull() ?: Int.MAX_VALUE,
+            )
+        }
+        .filterValues { it.count > 1 }
 
-    return baseRows.filter { it.uncategorizedMerchantGroupKey() in repeatedKeys }
+    return baseRows
+        .mapIndexedNotNull { index, tx ->
+            val key = tx.uncategorizedMerchantGroupKey() ?: return@mapIndexedNotNull null
+            val stats = groupStats[key] ?: return@mapIndexedNotNull null
+            RepeatedBacklogRow(tx, stats, index)
+        }
+        .sortedWith(
+            compareByDescending<RepeatedBacklogRow> { it.stats.count }
+                .thenBy { it.stats.firstIndex }
+                .thenBy { it.originalIndex },
+        )
+        .map { it.transaction }
 }
 
 internal fun buildRepeatedBacklogCountById(
@@ -448,6 +465,17 @@ private fun Transaction.categoryKind(): CategoryKind? = when (type) {
 private data class UncategorizedMerchantGroupKey(
     val merchantKey: String,
     val categoryKind: CategoryKind,
+)
+
+private data class RepeatedBacklogGroupStats(
+    val count: Int,
+    val firstIndex: Int,
+)
+
+private data class RepeatedBacklogRow(
+    val transaction: Transaction,
+    val stats: RepeatedBacklogGroupStats,
+    val originalIndex: Int,
 )
 
 private fun Transaction.uncategorizedMerchantGroupKey(): UncategorizedMerchantGroupKey? {
