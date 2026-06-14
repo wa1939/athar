@@ -3359,6 +3359,36 @@
       "pattern": "zakat payment",
       "categoryId": "cat-charity",
       "priority": 90
+    },
+    {
+      "pattern": "fuel purchase",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "grocery purchase",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "restaurant payment",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "coffee payment",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "food delivery payment",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "taxi ride payment",
+      "categoryId": "cat-public-transport",
+      "priority": 90
     }
   ]
 }

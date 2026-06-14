@@ -1137,6 +1137,142 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses fuel payment notification with shared gas label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Fuel payment SAR 80.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("80.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Fuel purchase")
+    }
+
+    @Test
+    fun `preserves fuel station merchant on fuel notification`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Fuel payment SAR 80.00 at Aldrees"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("80.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Aldrees")
+    }
+
+    @Test
+    fun `parses grocery purchase notification with shared grocery label`() {
+        val result = parser.parse(
+            event("notification:com.cibc.android.mobi", "Grocery purchase CAD 45.67 posted"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("45.67"))
+        assertThat(result.amount.currency).isEqualTo("CAD")
+        assertThat(result.merchant).isEqualTo("Grocery purchase")
+    }
+
+    @Test
+    fun `parses supermarket purchase notification with shared grocery label`() {
+        val result = parser.parse(
+            event("notification:de.ingdiba.bankingapp", "Supermarket purchase EUR 22,50 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("22.50"))
+        assertThat(result.amount.currency).isEqualTo("EUR")
+        assertThat(result.merchant).isEqualTo("Grocery purchase")
+    }
+
+    @Test
+    fun `parses restaurant payment notification with shared restaurant label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Restaurant payment USD 32.10 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("32.10"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Restaurant payment")
+    }
+
+    @Test
+    fun `parses coffee payment notification with shared coffee label`() {
+        val result = parser.parse(
+            event("notification:com.revolut.revolut", "Coffee shop payment GBP 4.20 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("4.20"))
+        assertThat(result.amount.currency).isEqualTo("GBP")
+        assertThat(result.merchant).isEqualTo("Coffee payment")
+    }
+
+    @Test
+    fun `parses food delivery payment notification with shared restaurant label`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Food delivery payment AED 64.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("64.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Food delivery payment")
+    }
+
+    @Test
+    fun `parses taxi ride payment notification with shared transport label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Taxi ride payment SAR 18.50 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("18.50"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Taxi ride payment")
+    }
+
+    @Test
+    fun `preserves ride merchant on ride payment notification`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Ride fare USD 19.00 at Uber"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("19.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Uber")
+    }
+
+    @Test
+    fun `parses Arabic fuel notification with shared gas label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم سداد وقود بمبلغ ٨٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("80"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Fuel purchase")
+    }
+
+    @Test
+    fun `ignores everyday commerce promos estimates and reservations with amounts`() {
+        val nonPostedMessages = listOf(
+            "Save SAR 10.00 on your next grocery purchase",
+            "Taxi ride estimate SAR 35.00",
+            "Restaurant reservation reminder SAR 50.00",
+            "Coffee shop discount AED 12.00",
+            "عرض خصم ١٠ ر.س على المطاعم",
+        )
+
+        nonPostedMessages.forEach { body ->
+            assertThat(parser.parse(event("notification:com.alrajhibank.alrajhimobile", body)))
+                .isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
     fun `does not treat trailing status as merchant`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "Card purchase SAR 42.00 approved"),
