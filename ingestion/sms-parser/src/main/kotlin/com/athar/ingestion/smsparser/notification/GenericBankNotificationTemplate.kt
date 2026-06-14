@@ -186,6 +186,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         val amount = Normalize.amount(amountRaw)
             ?: return ParseResult.Failed("notification amount unparseable: $amountRaw", listOf(id))
         val currency = Normalize.currencyCode(amountMatch.groups["lead"]?.value ?: amountMatch.groups["trail"]?.value)
+        val balanceAfter = extractBalanceAfter(normalized, amountMatch, currency)
 
         val type = when {
             hasIncomeAction(normalized) -> TxType.INCOME
@@ -229,7 +230,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             amount = Money.of(amount, currency),
             merchant = merchant,
             counterparty = counterparty,
-            balanceAfter = null,
+            balanceAfter = balanceAfter,
             occurredAt = receivedAt,
             confidence = confidence.coerceAtMost(0.85f),
             templateId = id,
@@ -276,6 +277,20 @@ class GenericBankNotificationTemplate : BankTemplate {
         return candidates.firstOrNull { !it.isBalanceAmount(body) } ?: candidates.firstOrNull()
     }
 
+    private fun extractBalanceAfter(body: String, amountMatch: MatchResult, transactionCurrency: String): Money? {
+        val balanceMatch = amountWithCurrency.findAll(body)
+            .filterNot { it.range == amountMatch.range }
+            .filterNot { it.isRewardAmount(body) }
+            .filter { it.isBalanceAfterAmount(body, amountMatch) }
+            .sortedWith(compareBy<MatchResult> { if (it.range.first > amountMatch.range.last) 0 else 1 }.thenBy { it.range.first })
+            .firstOrNull()
+            ?: return null
+        val amountRaw = balanceMatch.groups["num"]?.value ?: return null
+        val amount = Normalize.amount(amountRaw) ?: return null
+        val currency = balanceMatch.currencyCodeOrNull() ?: transactionCurrency
+        return Money.of(amount, currency)
+    }
+
     private fun firstActionIndex(body: String): Int? = listOfNotNull(
         expenseWords.find(body)?.range?.first,
         expensePhrases.find(body)?.range?.first,
@@ -290,6 +305,15 @@ class GenericBankNotificationTemplate : BankTemplate {
         val prefix = body.substring(prefixStart, range.first)
         val suffix = body.substring(range.last + 1, suffixEnd)
         return hasBalanceAmountContext(prefix) || hasBalanceAmountContext(suffix)
+    }
+
+    private fun MatchResult.isBalanceAfterAmount(body: String, amountMatch: MatchResult): Boolean {
+        if (!isBalanceAmount(body)) return false
+        if (range.first > amountMatch.range.last) return true
+        if (range.last >= amountMatch.range.first) return false
+
+        val between = body.substring(range.last + 1, amountMatch.range.first)
+        return afterTransactionBalanceContext.containsMatchIn(between)
     }
 
     private fun MatchResult.isRewardAmount(body: String): Boolean {
@@ -310,6 +334,12 @@ class GenericBankNotificationTemplate : BankTemplate {
 
     private fun MatchResult.hasCurrency(): Boolean =
         groups["lead"]?.value?.isNotBlank() == true || groups["trail"]?.value?.isNotBlank() == true
+
+    private fun MatchResult.currencyCodeOrNull(): String? {
+        val marker = groups["lead"]?.value?.takeIf { it.isNotBlank() }
+            ?: groups["trail"]?.value?.takeIf { it.isNotBlank() }
+        return marker?.let(Normalize::currencyCode)
+    }
 
     private fun MatchResult.hasCurrencyMarker(body: String): Boolean {
         if (hasCurrency()) return true
@@ -364,6 +394,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             .lineSequence()
             .firstOrNull()
             ?.replace(amountWithCurrency, "")
+            ?.replace(trailingBalancePartyContext, "")
             ?.replace(Regex("""\s+\band\s+earned\b.*$""", RegexOption.IGNORE_CASE), "")
             ?.replace(Regex("""\s+\b(?:confirmed|successful|completed|approved|posted)\b\.?$""", RegexOption.IGNORE_CASE), "")
             ?.replace(Regex("""\b(?:for|using|with|via|card|ending|منتهية|البطاقة)\b.*$""", RegexOption.IGNORE_CASE), "")
@@ -380,9 +411,17 @@ class GenericBankNotificationTemplate : BankTemplate {
         private const val RewardSuffixWindow = 16
         private const val CurrencySuffixWindow = 12
         private val ArabicBalanceTerms = listOf("رصيد", "الرصيد", "المتاح", "الرصيد المتبقي")
+        private val afterTransactionBalanceContext = Regex(
+            """(?:\bafter\s+(?:debit|purchase|payment|transaction|spend|withdrawal|transfer)\b|بعد\s+(?:خصم|شراء|دفع|سحب|تحويل|العملية|عملية))""",
+            RegexOption.IGNORE_CASE,
+        )
         private val partyStartsWithLetter = Regex("""^[A-Za-z\u0600-\u06FF].*""")
         private val trailingNonPartyContext = Regex(
             """(?:\b(?:balance|available|remaining\s+balance|current\s+balance|card|ending|account|acct|approved|confirmed|successful|completed|posted|declined)\b|رصيد|الرصيد|المتاح|بطاقة|البطاقة|حساب|معتمد|مؤكد|ناجح|مكتمل).*""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val trailingBalancePartyContext = Regex(
+            """(?:\b(?:balance|available|remaining\s+balance|current\s+balance)\b|رصيد|الرصيد|المتاح).*""",
             RegexOption.IGNORE_CASE,
         )
 

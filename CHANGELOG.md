@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Store-safe notification parsing now preserves clear resulting balances from generic bank-app transaction pushes, such as trailing `Balance SAR ...` or Arabic `رصيدك ... بعد خصم ...`, while leaving ambiguous balance-before-spend copy unset and keeping balance-only notices ignored.
 - Store-safe notification parsing now preserves regional currency symbols such as `S$`, `R$`, `RM`, `Rp`, `₱`, `₩`, `฿`, and `₫` as their correct ISO currencies instead of falling back to SAR or plain USD.
 - Store-safe notification parsing now preserves compact merchant/biller labels that appear immediately after the transaction amount, such as POS purchase and Arabic bill-payment copy, while stripping trailing balance/card/status suffixes.
 - Bulk categorization imports now train exact merchant rules instead of broad substring rules, and community-rule exports omit exact local rules so private/imported merchant labels stay on device unless the user explicitly creates an "Always categorize" substring rule.

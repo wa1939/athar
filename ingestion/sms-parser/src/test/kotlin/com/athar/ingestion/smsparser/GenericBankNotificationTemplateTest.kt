@@ -51,6 +51,7 @@ class GenericBankNotificationTemplateTest {
         assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
         assertThat(result.amount.currency).isEqualTo("SAR")
         assertThat(result.merchant).isEqualTo("Starbucks")
+        assertThat(result.balanceAfter).isNull()
     }
 
     @Test
@@ -63,6 +64,25 @@ class GenericBankNotificationTemplateTest {
         assertThat(result.amount.amount).isEqualTo(BigDecimal("35.50"))
         assertThat(result.amount.currency).isEqualTo("SAR")
         assertThat(result.merchant).isEqualTo("كارفور")
+        assertThat(result.balanceAfter?.amount).isEqualTo(BigDecimal("1000.00"))
+        assertThat(result.balanceAfter?.currency).isEqualTo("SAR")
+    }
+
+    @Test
+    fun `extracts English balance after spend amount`() {
+        val result = parser.parse(
+            event(
+                "notification:com.wise.android",
+                "You spent SAR 42.00 at Starbucks. Balance SAR 958.00",
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Starbucks")
+        assertThat(result.balanceAfter?.amount).isEqualTo(BigDecimal("958.00"))
+        assertThat(result.balanceAfter?.currency).isEqualTo("SAR")
     }
 
     @Test
@@ -396,6 +416,7 @@ class GenericBankNotificationTemplateTest {
         assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
         assertThat(result.amount.currency).isEqualTo("SAR")
         assertThat(result.merchant).isEqualTo("Carrefour")
+        assertThat(result.balanceAfter).isNull()
     }
 
     @Test
@@ -408,6 +429,8 @@ class GenericBankNotificationTemplateTest {
         assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
         assertThat(result.amount.currency).isEqualTo("SAR")
         assertThat(result.merchant).isEqualTo("Carrefour")
+        assertThat(result.balanceAfter?.amount).isEqualTo(BigDecimal("100"))
+        assertThat(result.balanceAfter?.currency).isEqualTo("SAR")
     }
 
     @Test
