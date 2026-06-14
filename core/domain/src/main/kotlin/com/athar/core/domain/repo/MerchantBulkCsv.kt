@@ -23,7 +23,9 @@ import java.io.OutputStream
  *       - record an exact learned `CategoryRule` per unambiguous
  *         type-compatible (merchant → categoryId) pair so future ingests
  *         auto-categorize the same normalized merchant without broad substring
- *         matching.
+ *         matching,
+ *       - return aggregate skip reasons so the user can repair AI-filled CSV
+ *         mistakes without exposing raw row contents in the UI.
  *
  * The pair builds a permanent personal merchant library without needing inline AI API keys.
  */
@@ -35,12 +37,26 @@ interface MerchantBulkImportTrigger {
     suspend fun importCategorizations(input: InputStream): MerchantBulkImportResult
 }
 
+data class MerchantBulkImportSkipSummary(
+    val malformedRows: Int = 0,
+    val unknownCategories: Int = 0,
+    val incompatibleCategories: Int = 0,
+    val missingTransactions: Int = 0,
+    val conflictingGroups: Int = 0,
+    val blankRowsWithoutGroupChoice: Int = 0,
+)
+
 sealed interface MerchantBulkExportResult {
     data class Done(val rows: Int) : MerchantBulkExportResult
     data class Failed(val reason: String) : MerchantBulkExportResult
 }
 
 sealed interface MerchantBulkImportResult {
-    data class Done(val updated: Int, val rulesAdded: Int, val skipped: Int) : MerchantBulkImportResult
+    data class Done(
+        val updated: Int,
+        val rulesAdded: Int,
+        val skipped: Int,
+        val skipSummary: MerchantBulkImportSkipSummary = MerchantBulkImportSkipSummary(),
+    ) : MerchantBulkImportResult
     data class Failed(val reason: String) : MerchantBulkImportResult
 }

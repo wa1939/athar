@@ -13,6 +13,7 @@ import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.CategoryRuleRepository
 import com.athar.core.domain.repo.MerchantBulkImportResult
+import com.athar.core.domain.repo.MerchantBulkImportSkipSummary
 import com.athar.core.domain.repo.TransactionRepository
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.Flow
@@ -118,7 +119,14 @@ class MerchantBulkCsvTest {
 
         val result = importer.importCategorizations(ByteArrayInputStream(csv.toByteArray()))
 
-        assertThat(result).isEqualTo(MerchantBulkImportResult.Done(updated = 2, rulesAdded = 1, skipped = 1))
+        assertThat(result).isEqualTo(
+            MerchantBulkImportResult.Done(
+                updated = 2,
+                rulesAdded = 1,
+                skipped = 1,
+                skipSummary = MerchantBulkImportSkipSummary(blankRowsWithoutGroupChoice = 1),
+            ),
+        )
         assertThat(repo.get("hemmah-1")?.categoryId).isEqualTo("cat-home-maintenance")
         assertThat(repo.get("hemmah-2")?.categoryId).isEqualTo("cat-home-maintenance")
         assertThat(repo.get("hemmah-1")?.status).isEqualTo(TxStatus.CONFIRMED)
@@ -188,7 +196,14 @@ class MerchantBulkCsvTest {
 
         val result = importer.importCategorizations(ByteArrayInputStream(csv.toByteArray()))
 
-        assertThat(result).isEqualTo(MerchantBulkImportResult.Done(updated = 2, rulesAdded = 0, skipped = 1))
+        assertThat(result).isEqualTo(
+            MerchantBulkImportResult.Done(
+                updated = 2,
+                rulesAdded = 0,
+                skipped = 1,
+                skipSummary = MerchantBulkImportSkipSummary(conflictingGroups = 1),
+            ),
+        )
         assertThat(repo.get("hemmah-1")?.categoryId).isEqualTo("cat-home-maintenance")
         assertThat(repo.get("hemmah-2")?.categoryId).isEqualTo("cat-coffee")
         assertThat(repo.get("hemmah-3")?.categoryId).isNull()
@@ -217,10 +232,55 @@ class MerchantBulkCsvTest {
 
         val result = importer.importCategorizations(ByteArrayInputStream(csv.toByteArray()))
 
-        assertThat(result).isEqualTo(MerchantBulkImportResult.Done(updated = 0, rulesAdded = 0, skipped = 1))
+        assertThat(result).isEqualTo(
+            MerchantBulkImportResult.Done(
+                updated = 0,
+                rulesAdded = 0,
+                skipped = 1,
+                skipSummary = MerchantBulkImportSkipSummary(incompatibleCategories = 1),
+            ),
+        )
         assertThat(repo.get("expense")?.categoryId).isNull()
         assertThat(repo.get("expense")?.status).isEqualTo(TxStatus.PENDING)
         assertThat(rules.learnedRules).isEmpty()
+    }
+
+    @Test
+    fun `importer reports actionable skip reasons`() = runTest {
+        val repo = FakeTransactionRepository(
+            listOf(
+                tx(id = "known", sourceRefId = "inbox-known", merchant = "Coffee Shop"),
+            ),
+        )
+        val importer = MerchantBulkImporter(
+            transactions = repo,
+            rules = FakeCategoryRuleRepository(),
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            clock = FixedClock,
+        )
+        val csv = """
+            id,merchant,merchant_normalized,amount,currency,type,status,date,category_id
+            known,Coffee Shop,coffee shop,19.00,SAR,EXPENSE,PENDING,2026-02-14,cat-missing
+            missing,Other Shop,other shop,99.00,SAR,EXPENSE,PENDING,2026-02-14,cat-coffee
+            broken
+        """.trimIndent()
+
+        val result = importer.importCategorizations(ByteArrayInputStream(csv.toByteArray()))
+
+        assertThat(result).isEqualTo(
+            MerchantBulkImportResult.Done(
+                updated = 0,
+                rulesAdded = 0,
+                skipped = 3,
+                skipSummary = MerchantBulkImportSkipSummary(
+                    malformedRows = 1,
+                    unknownCategories = 1,
+                    missingTransactions = 1,
+                ),
+            ),
+        )
+        assertThat(repo.get("known")?.categoryId).isNull()
+        assertThat(repo.get("known")?.status).isEqualTo(TxStatus.PENDING)
     }
 
     @Test
@@ -252,7 +312,14 @@ class MerchantBulkCsvTest {
 
         val result = importer.importCategorizations(ByteArrayInputStream(csv.toByteArray()))
 
-        assertThat(result).isEqualTo(MerchantBulkImportResult.Done(updated = 1, rulesAdded = 0, skipped = 1))
+        assertThat(result).isEqualTo(
+            MerchantBulkImportResult.Done(
+                updated = 1,
+                rulesAdded = 0,
+                skipped = 1,
+                skipSummary = MerchantBulkImportSkipSummary(incompatibleCategories = 1),
+            ),
+        )
         assertThat(repo.get("merchant-expense")?.categoryId).isEqualTo("cat-home-maintenance")
         assertThat(repo.get("merchant-expense")?.status).isEqualTo(TxStatus.CONFIRMED)
         assertThat(repo.get("merchant-income")?.categoryId).isNull()

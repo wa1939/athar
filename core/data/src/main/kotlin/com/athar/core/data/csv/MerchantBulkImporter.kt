@@ -9,6 +9,7 @@ import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.CategoryRuleRepository
 import com.athar.core.domain.repo.MerchantBulkImportResult
+import com.athar.core.domain.repo.MerchantBulkImportSkipSummary
 import com.athar.core.domain.repo.MerchantBulkImportTrigger
 import com.athar.core.domain.repo.TransactionRepository
 import kotlinx.coroutines.flow.first
@@ -71,6 +72,12 @@ internal class MerchantBulkImporter @Inject constructor(
 
         var updated = 0
         var skipped = 0
+        var malformedRows = 0
+        var unknownCategories = 0
+        var incompatibleCategories = 0
+        var missingTransactions = 0
+        var conflictingGroups = 0
+        var blankRowsWithoutGroupChoice = 0
         // Track unique (pattern → categoryId) so we add one rule per merchant, not per row.
         val rulesToAdd = mutableMapOf<String, String>()
         val allTransactions = transactions.observeAll().first()
@@ -86,7 +93,11 @@ internal class MerchantBulkImporter @Inject constructor(
 
         for (csvRow in dataRows) {
             val row = csvRow.cells
-            if (!hasRequiredColumns(row, idIdx, stableKeyIdx, categoryIdx)) { skipped++; continue }
+            if (!hasRequiredColumns(row, idIdx, stableKeyIdx, categoryIdx)) {
+                skipped++
+                malformedRows++
+                continue
+            }
             val txId = if (idIdx >= 0 && idIdx < row.size) row[idIdx].trim() else ""
             val rawCat = row[categoryIdx].trim()
             if (rawCat.isEmpty()) continue
@@ -108,6 +119,7 @@ internal class MerchantBulkImporter @Inject constructor(
             if (tx == null) {
                 Timber.w("CSV row %d skipped: no matching transaction for id/stable key", csvRow.number)
                 skipped++
+                missingTransactions++
                 continue
             }
 
@@ -116,6 +128,7 @@ internal class MerchantBulkImporter @Inject constructor(
             if (categoryCandidates.isEmpty()) {
                 Timber.w("CSV row %d skipped: unknown category '%s'", csvRow.number, rawCat)
                 skipped++
+                unknownCategories++
                 continue
             }
             val category = categoryCandidates.firstOrNull { it.isCompatibleWith(tx.type) }
@@ -128,6 +141,7 @@ internal class MerchantBulkImporter @Inject constructor(
                 )
                 if (pattern.isNotBlank()) patternsWithIncompatibleTypes += pattern
                 skipped++
+                incompatibleCategories++
                 continue
             }
 
@@ -141,6 +155,9 @@ internal class MerchantBulkImporter @Inject constructor(
         val unambiguousGroups = categoriesByPattern
             .filterValues { it.size == 1 }
             .mapValues { it.value.single() }
+        val conflictingPatterns = categoriesByPattern
+            .filterValues { it.size > 1 }
+            .keys
 
         for (csvRow in dataRows) {
             val row = csvRow.cells
@@ -165,12 +182,18 @@ internal class MerchantBulkImporter @Inject constructor(
             if (tx == null) {
                 Timber.w("CSV row %d skipped: no matching transaction for group propagation", csvRow.number)
                 skipped++
+                missingTransactions++
                 continue
             }
 
             val pattern = merchantPattern(tx, row, merchantIdx, merchantNormIdx)
             val categoryId = unambiguousGroups[pattern]
             if (categoryId == null) {
+                if (pattern in conflictingPatterns) {
+                    conflictingGroups++
+                } else {
+                    blankRowsWithoutGroupChoice++
+                }
                 skipped++
                 continue
             }
@@ -184,6 +207,7 @@ internal class MerchantBulkImporter @Inject constructor(
                 )
                 if (pattern.isNotBlank()) patternsWithIncompatibleTypes += pattern
                 skipped++
+                incompatibleCategories++
                 continue
             }
             if (applyCategory(tx, categoryId, updatedTransactionIds)) updated++
@@ -210,6 +234,14 @@ internal class MerchantBulkImporter @Inject constructor(
             updated = updated,
             rulesAdded = rulesAdded,
             skipped = skipped,
+            skipSummary = MerchantBulkImportSkipSummary(
+                malformedRows = malformedRows,
+                unknownCategories = unknownCategories,
+                incompatibleCategories = incompatibleCategories,
+                missingTransactions = missingTransactions,
+                conflictingGroups = conflictingGroups,
+                blankRowsWithoutGroupChoice = blankRowsWithoutGroupChoice,
+            ),
         )
     }
 

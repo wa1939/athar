@@ -24,6 +24,7 @@ import com.athar.core.domain.repo.CsvImportTrigger
 import com.athar.core.domain.repo.MerchantBulkExportResult
 import com.athar.core.domain.repo.MerchantBulkExportTrigger
 import com.athar.core.domain.repo.MerchantBulkImportResult
+import com.athar.core.domain.repo.MerchantBulkImportSkipSummary
 import com.athar.core.domain.repo.MerchantBulkImportTrigger
 import com.athar.core.domain.repo.SmsBackfillTrigger
 import com.athar.core.domain.repo.SupportDiagnosticsExportResult
@@ -89,7 +90,12 @@ sealed interface BulkCategorizeStatus {
     data object Idle : BulkCategorizeStatus
     data object Working : BulkCategorizeStatus
     data class Exported(val rows: Int) : BulkCategorizeStatus
-    data class Imported(val updated: Int, val rulesAdded: Int, val skipped: Int) : BulkCategorizeStatus
+    data class Imported(
+        val updated: Int,
+        val rulesAdded: Int,
+        val skipped: Int,
+        val skipSummary: MerchantBulkImportSkipSummary,
+    ) : BulkCategorizeStatus
     data class Failed(val reason: String) : BulkCategorizeStatus
 }
 
@@ -526,7 +532,7 @@ class SettingsViewModel @Inject constructor(
             }
             _bulkCategorize.value = when (val r = bulkImporter.importCategorizations(input)) {
                 is MerchantBulkImportResult.Done ->
-                    BulkCategorizeStatus.Imported(r.updated, r.rulesAdded, r.skipped)
+                    BulkCategorizeStatus.Imported(r.updated, r.rulesAdded, r.skipped, r.skipSummary)
                 is MerchantBulkImportResult.Failed -> BulkCategorizeStatus.Failed(r.reason)
             }
         }

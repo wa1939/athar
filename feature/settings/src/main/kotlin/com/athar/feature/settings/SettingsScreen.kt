@@ -50,6 +50,7 @@ import com.athar.core.domain.repo.CsvImportCurrencySummary
 import com.athar.core.domain.repo.CsvImportPreview
 import com.athar.core.domain.repo.CsvImportPreviewRow
 import com.athar.core.domain.repo.CsvImportRowEdit
+import com.athar.core.domain.repo.MerchantBulkImportSkipSummary
 import com.athar.core.designsystem.component.AtharCard
 import com.athar.core.designsystem.component.AtharText
 import com.athar.core.designsystem.component.AtharTextField
@@ -625,6 +626,7 @@ private fun BulkCategorizeCard(
                         style = theme.typography.caption,
                         color = theme.colors.olive,
                     )
+                    BulkCategorizeSkipDetails(summary = s.skipSummary)
                     TextButton(onClick = onClear) {
                         AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
                     }
@@ -674,6 +676,38 @@ private fun BulkCategorizeCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun BulkCategorizeSkipDetails(summary: MerchantBulkImportSkipSummary) {
+    val theme = AtharTheme
+    val parts = buildList {
+        if (summary.unknownCategories > 0) {
+            add(stringResource(R.string.settings_bulk_cat_skip_unknown, summary.unknownCategories))
+        }
+        if (summary.incompatibleCategories > 0) {
+            add(stringResource(R.string.settings_bulk_cat_skip_incompatible, summary.incompatibleCategories))
+        }
+        if (summary.missingTransactions > 0) {
+            add(stringResource(R.string.settings_bulk_cat_skip_missing, summary.missingTransactions))
+        }
+        if (summary.conflictingGroups > 0) {
+            add(stringResource(R.string.settings_bulk_cat_skip_conflict, summary.conflictingGroups))
+        }
+        if (summary.blankRowsWithoutGroupChoice > 0) {
+            add(stringResource(R.string.settings_bulk_cat_skip_blank, summary.blankRowsWithoutGroupChoice))
+        }
+        if (summary.malformedRows > 0) {
+            add(stringResource(R.string.settings_bulk_cat_skip_malformed, summary.malformedRows))
+        }
+    }
+    if (parts.isNotEmpty()) {
+        AtharText(
+            text = stringResource(R.string.settings_bulk_cat_skip_details, parts.joinToString(" · ")),
+            style = theme.typography.caption,
+            color = theme.colors.muted,
+        )
     }
 }
 

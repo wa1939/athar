@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Bulk categorization imports now report why rows were skipped, separating unknown categories, wrong expense/income type, missing transactions, conflicting merchant groups, blank rows, and malformed rows in the Settings result summary.
 - Bulk categorization imports now reject categories whose kind does not match the matched transaction type, avoid propagating incompatible categories to blank repeated-merchant peers, and skip exact-rule training for mixed-type import groups.
 - Store-safe notification parsing now normalizes posted parking, road-toll, and transit-fare pushes to shared seed-backed mobility labels, preserves specific operators, ignores mobility due/unpaid reminders with amounts, and adds exact active seed rules for those labels, bringing `seed_rules.json` to 718 rules.
 - Store-safe notification parsing now normalizes posted traffic-fine and government-service payment pushes to shared seed-backed public-service labels, preserves specific agencies, ignores public-service due reminders with amounts, and adds exact active seed rules for those labels, bringing `seed_rules.json` to 715 rules.

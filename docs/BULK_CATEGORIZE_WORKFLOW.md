@@ -97,6 +97,10 @@ The importer logs the row index and reason to logcat (`Timber.w`). Common skip r
 - **`no matching transaction for id/stable key`** — Athar could not find the row by id, stable key, source reference, or content fingerprint. This should be rare; it usually means the transaction was deleted or the AI changed matching columns other than `category_id`.
 - Blank `category_id` — skipped silently unless another row in the same imported repeated-merchant group has exactly one unambiguous category. Use blanks to mean "AI couldn't tell" or "inherit from the group's filled representative row."
 
+After import, the Settings card summarizes skipped rows by reason: unknown
+category, wrong type, missing transaction, conflicting group, left blank, or bad
+row. The aggregate summary contains counts only; row-level details stay in logcat.
+
 ## Why this design
 
 Inline API-key options were considered (`Settings → "Paste your OpenAI key"` + a button that calls the API in batches — Issue #5b in the roadmap). Rejected for v1 because:
