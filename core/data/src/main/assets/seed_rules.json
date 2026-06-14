@@ -3529,6 +3529,21 @@
       "pattern": "whole foods",
       "categoryId": "cat-groceries",
       "priority": 90
+    },
+    {
+      "pattern": "liter m",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "albayan station",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "united pharmacies",
+      "categoryId": "cat-medical",
+      "priority": 90
     }
   ]
 }
