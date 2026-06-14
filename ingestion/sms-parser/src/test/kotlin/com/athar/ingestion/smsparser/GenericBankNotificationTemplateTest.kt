@@ -1236,6 +1236,63 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses labeled location notification fields`() {
+        val result = parser.parse(
+            event(
+                "notification:com.emiratesnbd.android",
+                """
+                Card purchase
+                Amount: AED 42.00
+                Location: Carrefour
+                """.trimIndent(),
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Carrefour")
+    }
+
+    @Test
+    fun `parses labeled merchant name notification fields`() {
+        val result = parser.parse(
+            event(
+                "notification:com.dbsmbanking",
+                """
+                Card transaction
+                Amount SGD 19.90
+                Merchant Name: Toast Box
+                """.trimIndent(),
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("19.90"))
+        assertThat(result.amount.currency).isEqualTo("SGD")
+        assertThat(result.merchant).isEqualTo("Toast Box")
+    }
+
+    @Test
+    fun `parses labeled card acceptor notification fields`() {
+        val result = parser.parse(
+            event(
+                "notification:com.barclays.android",
+                """
+                Debit card purchase
+                GBP 42.00
+                Card acceptor: IKEA
+                """.trimIndent(),
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("GBP")
+        assertThat(result.merchant).isEqualTo("IKEA")
+    }
+
+    @Test
     fun `parses labeled sender income notification fields`() {
         val result = parser.parse(
             event(

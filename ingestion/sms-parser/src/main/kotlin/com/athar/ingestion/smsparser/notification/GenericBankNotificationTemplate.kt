@@ -225,7 +225,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val merchantLabelHint = Regex(
-        """(?:\bmerchant\b|\bstore\b|\bpayee\b|\bbiller\b|\bservice\s+provider\b|التاجر|المتجر|المفوتر)\s*[:\-·]\s*([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\bmerchant(?:\s+name)?\b|\bstore\b|\bpayee\b|\bbiller\b|\bservice\s+provider\b|\b(?:transaction\s+)?location\b|\boutlet(?:\s+name)?\b|\bcard\s+acceptor(?:\s+name)?\b|التاجر|المتجر|المفوتر)\s*[:\-·]\s*([A-Za-z\u0600-\u06FF][^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val senderLabelHint = Regex(
