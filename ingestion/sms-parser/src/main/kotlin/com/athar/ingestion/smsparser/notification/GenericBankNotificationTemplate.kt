@@ -76,6 +76,22 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\b(?:credit\s+card|loan|instalment|installment|emi|finance)[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder)\b|\b(?:due|scheduled|upcoming|reminder)[^\n\r]{0,80}\b(?:credit\s+card|loan|instalment|installment|emi|finance)\b|(?:قسط|تمويل|بطاقة\s+ائتمانية)[^\n\r]{0,80}(?:مستحق|استحقاق|موعد|قادم|مجدول))""",
         RegexOption.IGNORE_CASE,
     )
+    private val electricityBillWords = Regex(
+        """(?:\b(?:electricity|electric|power)\s+bill\b|\bbill\s+(?:for\s+)?(?:electricity|electric|power)\b|فاتورة\s+الكهرباء|شركة\s+الكهرباء)""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val waterBillWords = Regex(
+        """(?:\bwater\s+bill\b|\bbill\s+(?:for\s+)?water\b|فاتورة\s+المياه|فاتورة\s+الماء|شركة\s+المياه|شركة\s+الماء)""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val genericBillPaymentWords = Regex(
+        """(?:\bbill\s+payment\b|\bpaid\s+(?:a\s+)?bill\b|دفع\s+فاتورة|تم\s+دفع\s+فاتورة|سداد\s+فاتورة)""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val utilityBillReminderWords = Regex(
+        """(?:\b(?:(?:electricity|electric|power|water)\s+)?bill[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder)\b|\b(?:due|scheduled|upcoming|reminder)[^\n\r]{0,80}\b(?:(?:electricity|electric|power|water)\s+)?bill\b|(?:فاتورة\s+(?:الكهرباء|المياه|الماء)|شركة\s+(?:الكهرباء|المياه|الماء))[^\n\r]{0,80}(?:مستحق|استحقاق|موعد|قادم|مجدول))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val declinedWords = Regex(
         """\b(?:declined|rejected|failed|unsuccessful|مرفوض|رُفض|فشل|غير\s+ناجحة)\b""",
         RegexOption.IGNORE_CASE,
@@ -195,6 +211,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (withdrawalLimitWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (feeScheduleWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (debtReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (utilityBillReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (spendingSummaryWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (limitWords.containsMatchIn(normalized) && !hasExpenseAction(normalized) && !hasIncomeAction(normalized)) {
             return ParseResult.Ignored
@@ -228,14 +245,10 @@ class GenericBankNotificationTemplate : BankTemplate {
                 ?: "Bank fees".takeIf { isBankFeeNotification(normalized) }
                 ?: "Credit card payment".takeIf { isCreditCardPaymentNotification(normalized) }
                 ?: "Loan instalment".takeIf { isLoanInstalmentNotification(normalized) }
-                ?: cleanParty(merchantLabelHint.find(normalized)?.groupValues?.get(1)
-                ?: toHint.find(normalized)?.groupValues?.get(1)
-                ?: atHint.find(normalized)?.groupValues?.get(1)
-                ?: byHint.find(normalized)?.groupValues?.get(1)
-                ?: forHint.find(normalized)?.groupValues?.get(1)
-                ?: fromHint.find(normalized)?.groupValues?.get(1))
-                ?: partyBeforeAmount(normalized, amountMatch)
-                ?: partyAfterAmount(normalized, amountMatch)
+                ?: normalizeUtilityBillMerchant(
+                    body = normalized,
+                    merchant = normalized.cleanMerchantCandidate(amountMatch),
+                )
             TxType.INCOME -> null
             TxType.TRANSFER -> null
         }
@@ -300,6 +313,32 @@ class GenericBankNotificationTemplate : BankTemplate {
 
     private fun isLoanInstalmentNotification(body: String): Boolean =
         loanInstalmentWords.containsMatchIn(body)
+
+    private fun String.cleanMerchantCandidate(amountMatch: MatchResult): String? =
+        cleanParty(merchantLabelHint.find(this)?.groupValues?.get(1)
+            ?: toHint.find(this)?.groupValues?.get(1)
+            ?: atHint.find(this)?.groupValues?.get(1)
+            ?: byHint.find(this)?.groupValues?.get(1)
+            ?: forHint.find(this)?.groupValues?.get(1)
+            ?: fromHint.find(this)?.groupValues?.get(1))
+            ?: partyBeforeAmount(this, amountMatch)
+            ?: partyAfterAmount(this, amountMatch)
+
+    private fun normalizeUtilityBillMerchant(body: String, merchant: String?): String? {
+        if (merchant != null) {
+            return when {
+                electricityBillWords.containsMatchIn(merchant) -> "Electric company"
+                waterBillWords.containsMatchIn(merchant) -> "Water company"
+                else -> merchant
+            }
+        }
+        return when {
+            electricityBillWords.containsMatchIn(body) -> "Electric company"
+            waterBillWords.containsMatchIn(body) -> "Water company"
+            genericBillPaymentWords.containsMatchIn(body) -> "Bill payment"
+            else -> null
+        }
+    }
 
     private fun isMarketingOnlyPromotion(body: String): Boolean =
         marketingOnlyWords.containsMatchIn(body) && !postedTransactionEvidence.containsMatchIn(body)

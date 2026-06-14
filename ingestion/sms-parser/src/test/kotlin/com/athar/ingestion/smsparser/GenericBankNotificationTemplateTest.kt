@@ -625,7 +625,40 @@ class GenericBankNotificationTemplateTest {
         assertThat(result.type).isEqualTo(TxType.EXPENSE)
         assertThat(result.amount.amount).isEqualTo(BigDecimal("125"))
         assertThat(result.amount.currency).isEqualTo("SAR")
-        assertThat(result.merchant).isEqualTo("فاتورة الكهرباء")
+        assertThat(result.merchant).isEqualTo("Electric company")
+    }
+
+    @Test
+    fun `parses generic water bill notification with shared utility label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Water bill paid USD 80.00"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("80.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Water company")
+    }
+
+    @Test
+    fun `parses generic bill payment notification with shared utility label`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Bill payment AED 225.00 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("225.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Bill payment")
+    }
+
+    @Test
+    fun `ignores utility bill due reminder notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.chase.sig.android", "Your electricity bill of SAR 300.00 is due tomorrow"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
     }
 
     @Test
@@ -918,7 +951,7 @@ class GenericBankNotificationTemplateTest {
         assertThat(result.type).isEqualTo(TxType.EXPENSE)
         assertThat(result.amount.amount).isEqualTo(BigDecimal("125"))
         assertThat(result.amount.currency).isEqualTo("SAR")
-        assertThat(result.merchant).isEqualTo("شركة الكهرباء")
+        assertThat(result.merchant).isEqualTo("Electric company")
     }
 
     @Test

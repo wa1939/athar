@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Store-safe notification parsing now normalizes generic electricity, water, and bill-payment pushes to shared utility labels and ignores utility bill reminder notices with amounts.
 - Store-safe notification parsing now normalizes posted credit-card repayment and loan-instalment pushes to shared debt labels and ignores card/loan repayment reminder notices with amounts.
 - Store-safe notification parsing now normalizes posted bank-fee pushes to the shared `Bank fees` merchant label and ignores fee-schedule/tariff notices with amounts.
 - Store-safe notification parsing now normalizes ATM/cash-withdrawal pushes to the shared `ATM Withdrawal` merchant label and ignores ATM withdrawal-limit notices with amounts.
