@@ -24,4 +24,14 @@ class MerchantBulkAiPromptTest {
         assertThat(merchantBulkAiPrompt).contains("leave category_id blank")
         assertThat(merchantBulkAiPrompt).contains("Do not guess")
     }
+
+    @Test
+    fun `prompt includes tmoap fallback categories`() {
+        assertThat(merchantBulkAiPrompt).contains("cat-condo-fees")
+        assertThat(merchantBulkAiPrompt).contains("cat-work-expense")
+        assertThat(merchantBulkAiPrompt).contains("cat-tax-refund")
+        assertThat(merchantBulkAiPrompt).contains("cat-reimbursements")
+        assertThat(merchantBulkAiPrompt).contains("cat-bonus")
+        assertThat(merchantBulkAiPrompt).contains("cat-other-income")
+    }
 }

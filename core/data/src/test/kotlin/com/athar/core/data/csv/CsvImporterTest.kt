@@ -682,6 +682,33 @@ class CsvImporterTest {
     }
 
     @Test
+    fun `statement import resolves tmoap category labels by transaction type`() = runTest {
+        val transactions = FakeTransactionRepository()
+        val importer = CsvImporter(
+            transactions = transactions,
+            categories = FakeCategoryRepository(tmoapCategories()),
+            clock = FixedClock,
+        )
+
+        val result = importer.import(ByteArrayInputStream(tmoapCategoryCsv.toByteArray()))
+
+        assertThat(result).isEqualTo(CsvImportResult.Done(imported = 11, skipped = 0))
+        assertThat(transactions.upserts.map { it.categoryId }).containsExactly(
+            "cat-condo-fees",
+            "cat-work-expense",
+            "cat-public-transport",
+            "cat-wife-allowance",
+            "cat-salary",
+            "cat-side-income",
+            "cat-tax-refund",
+            "cat-reimbursements",
+            "cat-bonus",
+            "cat-other-income",
+            "cat-other-expense",
+        ).inOrder()
+    }
+
+    @Test
     fun `statement import source refs are account scoped`() = runTest {
         val transactions = FakeTransactionRepository()
         val importer = CsvImporter(
@@ -797,6 +824,21 @@ class CsvImporterTest {
             2026-06-02,Payroll,,1000.00,USD,
         """.trimIndent()
 
+        val tmoapCategoryCsv = """
+            Date,Description,Amount,Type,Category
+            2026-06-01,Condo board,-500.00,Expense,Condo fees
+            2026-06-02,Work parking,-30.00,Expense,Work
+            2026-06-03,Bus fare,-3.00,Expense,Public transportation
+            2026-06-04,Allowance,-100.00,Expense,Wife
+            2026-06-05,Payroll,1000.00,Income,Job
+            2026-06-06,Freelance,200.00,Income,Side project
+            2026-06-07,Tax agency,150.00,Income,Tax refund
+            2026-06-08,Employer,40.00,Income,Expense reimbursement
+            2026-06-09,Employer,500.00,Income,Bonus
+            2026-06-10,Misc income,25.00,Income,Other
+            2026-06-11,Misc expense,-10.00,Expense,Other
+        """.trimIndent()
+
         val statementOfx = """
             OFXHEADER:100
             DATA:OFXSGML
@@ -892,6 +934,35 @@ class CsvImporterTest {
             name = "Coffee",
             nameAr = "قهوة",
             kind = CategoryKind.EXPENSE,
+            icon = null,
+            monthlyTarget = null,
+            archived = false,
+            sortOrder = 0,
+        )
+
+        fun tmoapCategories(): List<Category> = listOf(
+            category("cat-condo-fees", "Condo fees", CategoryKind.EXPENSE),
+            category("cat-work-expense", "Work", CategoryKind.EXPENSE),
+            category("cat-public-transport", "Public transport", CategoryKind.EXPENSE),
+            category("cat-wife-allowance", "Wife allowance", CategoryKind.EXPENSE),
+            category("cat-other-expense", "Other", CategoryKind.EXPENSE),
+            category("cat-salary", "Salary", CategoryKind.INCOME),
+            category("cat-side-income", "Side income", CategoryKind.INCOME),
+            category("cat-tax-refund", "Tax refund", CategoryKind.INCOME),
+            category("cat-reimbursements", "Expense reimbursement", CategoryKind.INCOME),
+            category("cat-bonus", "Bonus", CategoryKind.INCOME),
+            category("cat-other-income", "Other income", CategoryKind.INCOME),
+        )
+
+        fun category(
+            id: String,
+            name: String,
+            kind: CategoryKind,
+        ): Category = Category(
+            id = id,
+            name = name,
+            nameAr = name,
+            kind = kind,
             icon = null,
             monthlyTarget = null,
             archived = false,

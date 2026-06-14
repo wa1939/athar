@@ -19,14 +19,16 @@ EXPENSE:
   cat-entertainment, cat-travel, cat-gas, cat-public-transport, cat-car-maintenance,
   cat-car-payment, cat-utilities, cat-telecom, cat-subscriptions, cat-home-maintenance,
   cat-medical, cat-insurance, cat-education, cat-childcare, cat-clothing, cat-electronics,
-  cat-gym, cat-gifts, cat-charity, cat-wife-allowance, cat-debt, cat-other-expense
+  cat-gym, cat-gifts, cat-charity, cat-wife-allowance, cat-debt, cat-other-expense,
+  cat-condo-fees, cat-work-expense
 
 INCOME:
-  cat-salary, cat-side-income
+  cat-salary, cat-side-income, cat-tax-refund, cat-reimbursements, cat-bonus,
+  cat-other-income
 
 Rules:
 - Pick only a category id that is compatible with the row's type. EXPENSE rows must use expense category ids, and INCOME rows must use income category ids.
-- If type=INCOME, pick cat-salary if the merchant looks like a known employer, salary, payroll, راتب, or رواتب; otherwise use cat-side-income.
+- If type=INCOME, pick cat-salary for known employer salary/payroll deposits, cat-tax-refund for tax refunds, cat-reimbursements for expense reimbursements, cat-bonus for bonuses, cat-side-income for freelance/rental/dividend/interest income, and cat-other-income only when no specific income category fits.
 - Transfers are normally not exported. If an older CSV contains type=TRANSFER, leave category_id blank.
 - If you cannot tell, leave category_id blank. Do not guess. It is better to skip than mis-categorize.
 - Use raw_body aggressively when it is present. Arabic SMS often spells the merchant differently than the parsed merchant field. Private exports may leave raw_body blank; in that case use merchant, merchant_normalized, amount, type, date, and category_options, and leave uncertain rows blank.

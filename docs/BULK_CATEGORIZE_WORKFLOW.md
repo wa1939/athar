@@ -28,8 +28,8 @@ id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,ca
 - **`amount` · `currency` · `type` · `status` · `date`** — context for the AI to disambiguate similar merchants. Do not change.
 - **`raw_body`** — the original SMS/notification body from the local ingestion audit when available, or transaction notes for manual/imported rows, in the full-context export. Often the strongest categorization signal. The private export keeps this column but leaves it blank.
 - **`category_id`** — *blank in the export.* The AI fills this from the row's `category_options`. The chosen category must match the row's `type`. For older exports without `category_options`, use one of the bundled default IDs from `core/data/src/main/assets/seed_categories.json`:
-   - Expense: `cat-rent`, `cat-mortgage`, `cat-groceries`, `cat-restaurant`, `cat-coffee`, `cat-going-out`, `cat-entertainment`, `cat-travel`, `cat-gas`, `cat-public-transport`, `cat-car-maintenance`, `cat-car-payment`, `cat-utilities`, `cat-telecom`, `cat-subscriptions`, `cat-home-maintenance`, `cat-medical`, `cat-insurance`, `cat-education`, `cat-childcare`, `cat-clothing`, `cat-electronics`, `cat-gym`, `cat-gifts`, `cat-charity`, `cat-wife-allowance`, `cat-debt`, `cat-other-expense`
-   - Income: `cat-salary`, `cat-side-income`
+   - Expense: `cat-rent`, `cat-mortgage`, `cat-groceries`, `cat-restaurant`, `cat-coffee`, `cat-going-out`, `cat-entertainment`, `cat-travel`, `cat-gas`, `cat-public-transport`, `cat-car-maintenance`, `cat-car-payment`, `cat-utilities`, `cat-telecom`, `cat-subscriptions`, `cat-home-maintenance`, `cat-medical`, `cat-insurance`, `cat-education`, `cat-childcare`, `cat-clothing`, `cat-electronics`, `cat-gym`, `cat-gifts`, `cat-charity`, `cat-wife-allowance`, `cat-debt`, `cat-other-expense`, `cat-condo-fees`, `cat-work-expense`
+   - Income: `cat-salary`, `cat-side-income`, `cat-tax-refund`, `cat-reimbursements`, `cat-bonus`, `cat-other-income`
 
   Arabic and English display names also work as a fallback (`مطاعم` or `Restaurant`), but the id is unambiguous and survives translation changes — prefer the id shown in `category_options`.
 
@@ -52,15 +52,19 @@ EXPENSE:
   cat-car-payment · cat-utilities · cat-telecom · cat-subscriptions · cat-home-maintenance
   cat-medical · cat-insurance · cat-education · cat-childcare · cat-clothing · cat-electronics
   cat-gym · cat-gifts · cat-charity · cat-wife-allowance · cat-debt · cat-other-expense
+  cat-condo-fees · cat-work-expense
 
 INCOME:
-  cat-salary · cat-side-income
+  cat-salary · cat-side-income · cat-tax-refund · cat-reimbursements · cat-bonus
+  cat-other-income
 
 Rules:
 - Pick only a category id that is compatible with the row's type. EXPENSE rows
   must use expense category ids, and INCOME rows must use income category ids.
-- If type=INCOME, pick cat-salary if the merchant looks like a known employer / "salary"
-  / "راتب", otherwise cat-side-income.
+- If type=INCOME, pick cat-salary for known employer salary/payroll deposits,
+  cat-tax-refund for tax refunds, cat-reimbursements for expense reimbursements,
+  cat-bonus for bonuses, cat-side-income for freelance/rental/dividend/interest
+  income, and cat-other-income only when no specific income category fits.
 - Transfers are normally not exported. If an older CSV contains type=TRANSFER, leave category_id blank.
 - If you cannot tell, leave category_id blank — do not guess. Better to skip than mis-categorize.
 - Use `raw_body` aggressively when present — Arabic SMS often spells the merchant

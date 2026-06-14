@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Bundled categories now match the concrete TMOAP workbook category setup more closely by adding Condo fees, Work, Tax refund, Expense reimbursement, Bonus, and Other income. Statement CSV/XLSX category lookup is now transaction-type aware and resolves TMOAP labels such as Public transportation, Wife, Job, Side project, and income Other without crossing expense/income category kinds.
 - Built-in category seeding is now upgrade-safe: app startup inserts missing bundled categories for existing installs while preserving user-edited names, archived state, targets, custom categories, and current sort order.
 - Android library unit tests now run on JUnit Platform through the shared convention plugin. The newly active test gate exposed and fixed statement CSV header normalization, XLSX XML padding, support-diagnostics decimal redaction, and side-income seed guard edge cases.
 - Store-safe notification parsing now normalizes posted furniture, home-goods, and appliance purchase pushes to exact seed-backed home/electronics labels while preserving named stores when present and ignoring quotes, carts/wishlists, delivery/order-status, installation/assembly, warranty, reminder, and offer copy with amounts; the active public seed is now 703 rules.

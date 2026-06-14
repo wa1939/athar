@@ -2,6 +2,7 @@ package com.athar.core.data.csv
 
 import com.athar.core.common.money.Money
 import com.athar.core.domain.model.Category
+import com.athar.core.domain.model.CategoryKind
 import com.athar.core.domain.model.IngestSource
 import com.athar.core.domain.model.MANUAL_ACCOUNT_ID
 import com.athar.core.domain.model.Transaction
@@ -204,7 +205,7 @@ internal class CsvImporter @Inject constructor(
         }.toMutableList()
 
         parsed.rows.forEach { row ->
-            val categoryId = row.category?.let(categoryLookup::categoryIdFor)
+            val categoryId = row.category?.let { categoryLookup.categoryIdFor(it, row.type) }
             val transactionWithoutRef = Transaction(
                 id = UUID.randomUUID().toString(),
                 accountId = accountId,
@@ -453,7 +454,7 @@ internal class CsvImporter @Inject constructor(
             return null
         }
 
-        val categoryId = mapped.category?.let(categoryLookup::categoryIdFor)
+        val categoryId = mapped.category?.let { categoryLookup.categoryIdFor(it, mapped.type) }
 
         return CsvMappedTransaction(
             transaction = Transaction(
@@ -524,8 +525,8 @@ internal class CsvImporter @Inject constructor(
         val rows = categories.observeAll(kind = null, includeArchived = false).first()
         return CategoryLookup(
             byId = rows.associateBy { it.id.lowercase().trim() },
-            byName = rows.associateBy { it.name.lowercase().trim() },
-            byAr = rows.associateBy { it.nameAr.trim() },
+            byName = rows.groupBy { it.name.lowercase().trim() },
+            byAr = rows.groupBy { it.nameAr.trim() },
         )
     }
 
@@ -563,8 +564,9 @@ internal class CsvImporter @Inject constructor(
                 ?: return RowEditResult.Invalid("Invalid edited currency")
         } ?: transaction.amount.currency
 
+        val nextType = edit.type ?: transaction.type
         val categoryOverride = edit.category?.let { raw ->
-            categoryLookup.resolve(raw) ?: return RowEditResult.Invalid("Unknown edited category")
+            categoryLookup.resolve(raw, nextType) ?: return RowEditResult.Invalid("Unknown edited category")
         }
         val editedNotes = edit.notes
 
@@ -574,7 +576,7 @@ internal class CsvImporter @Inject constructor(
             merchant = nextMerchant,
             merchantNormalized = nextMerchant.lowercase().trim(),
             amount = Money.of(nextAmount, nextCurrency),
-            type = edit.type ?: transaction.type,
+            type = nextType,
             categoryId = if (categoryOverride != null) categoryOverride.id else transaction.categoryId,
             notes = if (editedNotes != null) editedNotes.trim().takeIf { it.isNotBlank() } else transaction.notes,
         )
@@ -786,20 +788,45 @@ private fun List<CsvImportRowEdit>.byRowNumber(): Map<Int, CsvImportRowEdit> =
 
 private data class CategoryLookup(
     val byId: Map<String, Category>,
-    val byName: Map<String, Category>,
-    val byAr: Map<String, Category>,
+    val byName: Map<String, List<Category>>,
+    val byAr: Map<String, List<Category>>,
 ) {
-    fun categoryIdFor(raw: String): String? = resolve(raw)?.id
+    fun categoryIdFor(raw: String, type: TxType): String? = resolve(raw, type)?.id
 
-    fun resolve(raw: String): CategoryOverride? {
+    fun resolve(raw: String, type: TxType): CategoryOverride? {
         val trimmed = raw.trim()
         if (trimmed.isBlank()) return CategoryOverride(id = null, preview = null)
+        val kind = type.categoryKind() ?: return null
+        val normalized = trimmed.lowercase()
 
-        val category = byId[trimmed.lowercase()]
-            ?: byName[trimmed.lowercase()]
-            ?: byAr[trimmed]
+        val aliasId = tmoapCategoryAliases[CategoryLookupKey(normalized, kind)]
+        val category = aliasId?.let { byId[it] }?.takeIf { it.kind == kind }
+            ?: byId[normalized]?.takeIf { it.kind == kind }
+            ?: byName[normalized]?.firstOrNull { it.kind == kind }
+            ?: byAr[trimmed]?.firstOrNull { it.kind == kind }
             ?: return null
         return CategoryOverride(id = category.id, preview = category.name)
+    }
+
+    private fun TxType.categoryKind(): CategoryKind? = when (this) {
+        TxType.EXPENSE -> CategoryKind.EXPENSE
+        TxType.INCOME -> CategoryKind.INCOME
+        TxType.TRANSFER -> null
+    }
+
+    private data class CategoryLookupKey(
+        val value: String,
+        val kind: CategoryKind,
+    )
+
+    private companion object {
+        val tmoapCategoryAliases = mapOf(
+            CategoryLookupKey("public transportation", CategoryKind.EXPENSE) to "cat-public-transport",
+            CategoryLookupKey("wife", CategoryKind.EXPENSE) to "cat-wife-allowance",
+            CategoryLookupKey("job", CategoryKind.INCOME) to "cat-salary",
+            CategoryLookupKey("side project", CategoryKind.INCOME) to "cat-side-income",
+            CategoryLookupKey("other", CategoryKind.INCOME) to "cat-other-income",
+        )
     }
 }
 

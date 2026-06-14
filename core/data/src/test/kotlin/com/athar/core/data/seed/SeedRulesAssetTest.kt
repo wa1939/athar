@@ -39,6 +39,18 @@ class SeedRulesAssetTest {
     }
 
     @Test
+    fun `bundled categories include tmoap workbook defaults`() {
+        val categoriesById = seedCategoryRows().associateBy { it.id }
+
+        expectedTmoapDefaults.forEach { expected ->
+            val actual = categoriesById[expected.id]
+            assertThat(actual).isNotNull()
+            assertThat(actual!!.name).isEqualTo(expected.name)
+            assertThat(actual.kind).isEqualTo(expected.kind)
+        }
+    }
+
+    @Test
     fun `curated merchant catalog batch is active below hand curated rules`() {
         val rulesByPattern = seedRules().associateBy { it.pattern }
 
@@ -63,9 +75,18 @@ class SeedRulesAssetTest {
     }
 
     private fun seedCategories(): Set<String> {
+        return seedCategoryRows().mapTo(mutableSetOf()) { it.id }
+    }
+
+    private fun seedCategoryRows(): List<SeedCategory> {
         val root = readJson("seed_categories.json")
-        return root.jsonObject.getValue("categories").jsonArray.mapTo(mutableSetOf()) { element ->
-            element.jsonObject.getValue("id").jsonPrimitive.content
+        return root.jsonObject.getValue("categories").jsonArray.map { element ->
+            val obj = element.jsonObject
+            SeedCategory(
+                id = obj.getValue("id").jsonPrimitive.content,
+                name = obj.getValue("name").jsonPrimitive.content,
+                kind = obj.getValue("kind").jsonPrimitive.content,
+            )
         }
     }
 
@@ -84,7 +105,22 @@ class SeedRulesAssetTest {
         val priority: Int,
     )
 
+    private data class SeedCategory(
+        val id: String,
+        val name: String,
+        val kind: String,
+    )
+
     private companion object {
+        val expectedTmoapDefaults = listOf(
+            SeedCategory("cat-condo-fees", "Condo fees", "EXPENSE"),
+            SeedCategory("cat-work-expense", "Work", "EXPENSE"),
+            SeedCategory("cat-tax-refund", "Tax refund", "INCOME"),
+            SeedCategory("cat-reimbursements", "Expense reimbursement", "INCOME"),
+            SeedCategory("cat-bonus", "Bonus", "INCOME"),
+            SeedCategory("cat-other-income", "Other income", "INCOME"),
+        )
+
         val curatedBatch = mapOf(
             "%arabica" to "cat-coffee",
             "agoda" to "cat-travel",
