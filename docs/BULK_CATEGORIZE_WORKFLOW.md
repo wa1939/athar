@@ -6,7 +6,7 @@ Use this when you have dozens or hundreds of uncategorized transactions sitting 
 
 1. **Open Settings → "تصنيف بالذكاء الاصطناعي · مجمّع" / "Bulk categorize with AI"** → tap **Copy AI prompt**, then **Export uncategorized**. Athar writes a CSV of every non-transfer transaction that is PENDING, DISMISSED, or CONFIRMED-without-category, including the valid active category options for each row's type. Default filename: `athar-uncategorized.csv`. Save it somewhere you can reach from a desktop.
 2. **Open ChatGPT / Claude / Z.ai** in a fresh chat. Paste the copied prompt, attach (or paste) the CSV, and ask for the filled-in CSV back.
-3. **Back in Athar → same Settings card → Import categorized.** Pick the filled CSV. Filled rows update their transactions (status → CONFIRMED, category set) only when the chosen category matches the row's expense/income type. If a repeated merchant group has one unambiguous compatible filled category, blank peers in that imported CSV group inherit it. Athar also records an exact learned `CategoryRule` per unambiguous type-compatible `merchant → category` pair so future SMS from the same normalized merchant auto-categorize without broad substring matching.
+3. **Back in Athar → same Settings card → Import categorized.** Pick the filled CSV. If you saved the full AI response with prose and a fenced `csv` block, Athar extracts the valid CSV block automatically. Filled rows update their transactions (status → CONFIRMED, category set) only when the chosen category matches the row's expense/income type. If a repeated merchant group has one unambiguous compatible filled category, blank peers in that imported CSV group inherit it. Athar also records an exact learned `CategoryRule` per unambiguous type-compatible `merchant → category` pair so future SMS from the same normalized merchant auto-categorize without broad substring matching.
 
 A typical 800-row export takes ChatGPT about 60–90 seconds; import takes a fraction of a second.
 
@@ -78,6 +78,10 @@ Output: emit the CSV BACK with the same headers and rows in the same order, only
 filled in. Do not add or remove rows. Do not change `category_options` or any other column. You may leave repeated-group peers blank when the first filled row should apply to the whole group. Use the same RFC-4180
 quoting as the input. Wrap your final output in a single ```csv code block.
 ```
+
+Athar can import either the raw CSV content or a saved AI response that contains
+one valid fenced `csv` block. The CSV block still needs the same headers and row
+order.
 
 ## After the import
 

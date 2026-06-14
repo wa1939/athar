@@ -284,6 +284,35 @@ class MerchantBulkCsvTest {
     }
 
     @Test
+    fun `importer accepts csv code block copied from ai response`() = runTest {
+        val repo = FakeTransactionRepository(
+            listOf(
+                tx(id = "coffee", sourceRefId = "inbox-coffee", merchant = "Coffee Shop"),
+            ),
+        )
+        val importer = MerchantBulkImporter(
+            transactions = repo,
+            rules = FakeCategoryRuleRepository(),
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            clock = FixedClock,
+        )
+        val csv = """
+            Here is the completed CSV.
+
+            ```csv
+            id,merchant,merchant_normalized,amount,currency,type,status,date,category_id
+            coffee,Coffee Shop,coffee shop,19.00,SAR,EXPENSE,PENDING,2026-02-14,cat-coffee
+            ```
+        """.trimIndent()
+
+        val result = importer.importCategorizations(ByteArrayInputStream(csv.toByteArray()))
+
+        assertThat(result).isEqualTo(MerchantBulkImportResult.Done(updated = 1, rulesAdded = 1, skipped = 0))
+        assertThat(repo.get("coffee")?.categoryId).isEqualTo("cat-coffee")
+        assertThat(repo.get("coffee")?.status).isEqualTo(TxStatus.CONFIRMED)
+    }
+
+    @Test
     fun `importer does not propagate or train category across mixed transaction types`() = runTest {
         val repo = FakeTransactionRepository(
             listOf(

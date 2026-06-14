@@ -43,7 +43,7 @@ internal class MerchantBulkImporter @Inject constructor(
     override suspend fun importCategorizations(input: InputStream): MerchantBulkImportResult {
         val text = runCatching { input.bufferedReader().use { it.readText() } }
             .getOrElse { return MerchantBulkImportResult.Failed("Couldn't read CSV: ${it.message}") }
-        val rows = parseRows(text).filter { row -> row.any { it.isNotBlank() } }
+        val rows = parseRows(normalizeImportText(text)).filter { row -> row.any { it.isNotBlank() } }
         if (rows.isEmpty()) return MerchantBulkImportResult.Failed("Empty CSV file.")
 
         val header = rows[0].map { it.lowercase().trim() }
@@ -394,6 +394,52 @@ internal class MerchantBulkImporter @Inject constructor(
         val number: Int,
         val cells: List<String>,
     )
+
+    private fun normalizeImportText(text: String): String {
+        val trimmed = text.removePrefix("\uFEFF").trim()
+        return extractFencedCsv(trimmed) ?: trimmed
+    }
+
+    private fun extractFencedCsv(text: String): String? {
+        var inFence = false
+        var acceptedFence = false
+        val candidate = StringBuilder()
+        text.lineSequence().forEach { line ->
+            val trimmed = line.trim()
+            if (!inFence && trimmed.startsWith("```")) {
+                val info = trimmed.removePrefix("```").trim().lowercase()
+                inFence = true
+                acceptedFence = info.isEmpty() || info.startsWith("csv")
+                candidate.clear()
+            } else if (inFence && trimmed.startsWith("```")) {
+                if (acceptedFence) {
+                    val csv = candidate.toString().trim()
+                    if (looksLikeBulkCsv(csv)) return csv
+                }
+                inFence = false
+                acceptedFence = false
+                candidate.clear()
+            } else if (inFence && acceptedFence) {
+                candidate.appendLine(line)
+            }
+        }
+
+        if (inFence && acceptedFence) {
+            val csv = candidate.toString().trim()
+            if (looksLikeBulkCsv(csv)) return csv
+        }
+        return null
+    }
+
+    private fun looksLikeBulkCsv(text: String): Boolean {
+        val header = parseRows(text)
+            .firstOrNull { row -> row.any { it.isNotBlank() } }
+            ?.map { it.lowercase().trim() }
+            .orEmpty()
+        val hasCategory = header.any { it == "category_id" || it == "categoryid" || it == "category" }
+        val hasIdentity = header.any { it == "id" || it == "stable_key" }
+        return hasCategory && hasIdentity
+    }
 
     private fun parseRows(text: String): List<List<String>> {
         val rows = mutableListOf<List<String>>()
