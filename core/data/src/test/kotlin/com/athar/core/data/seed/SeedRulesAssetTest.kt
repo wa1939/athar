@@ -18,7 +18,7 @@ class SeedRulesAssetTest {
         val categoryIds = seedCategories()
         val rules = seedRules()
 
-        assertThat(rules).hasSize(722)
+        assertThat(rules).hasSize(724)
         assertThat(rules.map { it.categoryId }.filterNot { it in categoryIds }).isEmpty()
 
         val duplicates = rules
@@ -174,6 +174,8 @@ class SeedRulesAssetTest {
         )
 
         val sharedSideIncomeNotificationLabels = mapOf(
+            "cashback income" to "cat-side-income",
+            "دخل كاش باك" to "cat-side-income",
             "freelance income" to "cat-side-income",
             "دخل عمل حر" to "cat-side-income",
             "rental income" to "cat-side-income",

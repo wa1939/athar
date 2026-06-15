@@ -64,6 +64,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\bbonus\s+(?:credited|credit|received|deposited|deposit|paid|payment|posted|income)\b|\b(?:credited|credit|received|deposited|deposit|paid|posted)\b[^\n\r]{0,40}\bbonus\b|(?:إيداع|ايداع|وارد|استلام)[^\n\r]{0,40}(?:مكافأة|مكافاه)|(?:مكافأة|مكافاه)[^\n\r]{0,40}(?:إيداع|ايداع|وارد|استلام))""",
         RegexOption.IGNORE_CASE,
     )
+    private val cashbackIncomeWords = Regex(
+        """(?:\b(?:cash\s*back|cashback|card\s+cashback)\b[^\n\r]{0,40}\b(?:credited|credit|received|deposited|deposit|paid|posted)\b|\b(?:credited|credit|received|deposited|deposit|paid|posted)\b[^\n\r]{0,40}\b(?:cash\s*back|cashback|card\s+cashback)\b|(?:إيداع|ايداع|وارد|استلام)[^\n\r]{0,40}(?:كاش\s*باك|استرداد\s+نقدي)|(?:كاش\s*باك|استرداد\s+نقدي)[^\n\r]{0,40}(?:إيداع|ايداع|وارد|استلام))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val freelanceIncomeWords = Regex(
         """(?:\b(?:freelance|contractor|gig|side\s+(?:income|project|job|hustle))\s+(?:income|payment|paid|payout|deposit|credited|credit|received|posted)\b|\b(?:payment|paid|payout|deposit|credited|credit|received|posted)\b[^\n\r]{0,40}\b(?:freelance|contractor|gig|side\s+(?:income|project|job|hustle))\b|(?:إيداع|ايداع|وارد|استلام)[^\n\r]{0,40}(?:دخل\s+عمل\s+حر|عمل\s+حر)|(?:دخل\s+عمل\s+حر|عمل\s+حر)[^\n\r]{0,40}(?:إيداع|ايداع|وارد|استلام))""",
         RegexOption.IGNORE_CASE,
@@ -674,6 +678,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             taxRefundIncomeWords.containsMatchIn(body) ||
             reimbursementIncomeWords.containsMatchIn(body) ||
             bonusIncomeWords.containsMatchIn(body) ||
+            cashbackIncomeWords.containsMatchIn(body) ||
             freelanceIncomeWords.containsMatchIn(body) ||
             rentalIncomeWords.containsMatchIn(body) ||
             dividendIncomeWords.containsMatchIn(body) ||
@@ -1061,6 +1066,10 @@ class GenericBankNotificationTemplate : BankTemplate {
             value = if (ArabicBonusTerms.any { body.contains(it) }) "دخل مكافأة" else "Bonus income",
             words = bonusLabelWords,
         )
+        cashbackIncomeWords.containsMatchIn(body) -> IncomeLabel(
+            value = if (ArabicCashbackIncomeTerms.any { body.contains(it) }) "دخل كاش باك" else "Cashback income",
+            words = cashbackIncomeLabelWords,
+        )
         freelanceIncomeWords.containsMatchIn(body) -> IncomeLabel(
             value = if (ArabicFreelanceIncomeTerms.any { body.contains(it) }) "دخل عمل حر" else "Freelance income",
             words = freelanceIncomeLabelWords,
@@ -1133,6 +1142,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         taxRefundIncomeWords.find(body)?.range?.first,
         reimbursementIncomeWords.find(body)?.range?.first,
         bonusIncomeWords.find(body)?.range?.first,
+        cashbackIncomeWords.find(body)?.range?.first,
         freelanceIncomeWords.find(body)?.range?.first,
         rentalIncomeWords.find(body)?.range?.first,
         dividendIncomeWords.find(body)?.range?.first,
@@ -1339,6 +1349,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         private val ArabicTaxRefundTerms = listOf("استرداد ضريبي", "استرداد الضريبة", "رد ضريبي", "رد الضريبة")
         private val ArabicReimbursementTerms = listOf("تعويض مصروفات", "استرداد مصروفات")
         private val ArabicBonusTerms = listOf("مكافأة", "مكافاه")
+        private val ArabicCashbackIncomeTerms = listOf("كاش باك", "استرداد نقدي")
         private val ArabicFreelanceIncomeTerms = listOf("دخل عمل حر", "عمل حر")
         private val ArabicRentalIncomeTerms = listOf("دخل إيجار", "دخل ايجار")
         private val ArabicDividendIncomeTerms = listOf("دخل توزيعات", "توزيعات أرباح", "توزيعات ارباح")
@@ -1355,6 +1366,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         )
         private val bonusLabelWords = Regex(
             """(?:\bbonus\s+income\b|دخل\s+مكافأة)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val cashbackIncomeLabelWords = Regex(
+            """(?:\b(?:cash\s*back|cashback)\s+income\b|دخل\s+كاش\s*باك)""",
             RegexOption.IGNORE_CASE,
         )
         private val freelanceIncomeLabelWords = Regex(

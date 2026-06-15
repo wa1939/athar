@@ -3108,7 +3108,28 @@ class GenericBankNotificationTemplateTest {
         assertThat(result.type).isEqualTo(TxType.INCOME)
         assertThat(result.amount.amount).isEqualTo(BigDecimal("10.00"))
         assertThat(result.amount.currency).isEqualTo("SAR")
-        assertThat(result.counterparty).isEqualTo("Rewards")
+        assertThat(result.counterparty).isEqualTo("Cashback income - Rewards")
+    }
+
+    @Test
+    fun `parses Arabic cashback credited as labeled income`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم إيداع كاش باك ١٢ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("12"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.counterparty).isEqualTo("دخل كاش باك")
+    }
+
+    @Test
+    fun `ignores cashback income offer notifications`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.revolut.revolut", "Cashback income offer: earn SAR 50 when you spend"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
     }
 
     @Test

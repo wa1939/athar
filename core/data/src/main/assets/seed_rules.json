@@ -266,6 +266,16 @@
       "priority": 100
     },
     {
+      "pattern": "cashback income",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
+      "pattern": "دخل كاش باك",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
       "pattern": "freelance income",
       "categoryId": "cat-side-income",
       "priority": 100
