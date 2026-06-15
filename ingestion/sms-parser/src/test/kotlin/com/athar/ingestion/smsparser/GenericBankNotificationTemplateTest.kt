@@ -1104,6 +1104,42 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `skips merchant label line and parses following merchant after amount notification`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Card purchase SAR 99.00\nMerchant\nNoon"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("99.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Noon")
+    }
+
+    @Test
+    fun `skips location label line and parses following merchant after amount notification`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "AED 42.00 card transaction settled\nLocation\nCarrefour"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Carrefour")
+    }
+
+    @Test
+    fun `does not use merchant label only body line after amount notification`() {
+        val result = parser.parse(
+            event("notification:com.wise.android", "Card purchase SAR 42.00\nMerchant"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isNull()
+    }
+
+    @Test
     fun `parses pos transaction at merchant amount notification`() {
         val result = parser.parse(
             event("notification:com.emiratesnbd.android", "POS transaction at Carrefour AED 42.00"),

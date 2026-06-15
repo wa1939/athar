@@ -1401,6 +1401,7 @@ class GenericBankNotificationTemplate : BankTemplate {
                     .replace(trailingNonPartyContext, "")
                     .trim(' ', '.', ',', '-', '·', ':')
                 if (candidate.isBlank()) return@mapNotNull null
+                if (notificationBodyLabelOnlyWords.matches(candidate)) return@mapNotNull null
                 if (genericNotificationMerchantLineWords.matches(candidate)) return@mapNotNull null
                 if (bankAppTitleWords.matches(candidate)) return@mapNotNull null
                 cleanParty(candidate)
@@ -1529,6 +1530,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         )
         private val genericNotificationMerchantLineWords = Regex(
             """(?:\b(?:notification|alert|transaction|payment|purchase|debit|credit|card|account|wallet|bank|spent|paid|debited|charged|approved|confirmed|successful|completed|posted|processed|settled|balance)\b|تنبيه|إشعار|اشعار|عملية|دفع|شراء|خصم|بطاقة|حساب|بنك|محفظة|رصيد|مؤكد|ناجح|مكتمل)(?:[\s:.\-·]+(?:\b(?:notification|alert|transaction|payment|purchase|debit|credit|card|account|wallet|bank|spent|paid|debited|charged|approved|confirmed|successful|completed|posted|processed|settled|balance)\b|تنبيه|إشعار|اشعار|عملية|دفع|شراء|خصم|بطاقة|حساب|بنك|محفظة|رصيد|مؤكد|ناجح|مكتمل))*""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val notificationBodyLabelOnlyWords = Regex(
+            """(?:\b(?:merchant(?:\s+name)?|store|payee|biller|service\s+provider|(?:transaction\s+)?location|outlet(?:\s+name)?|card\s+acceptor(?:\s+name)?|recipient|receiver|beneficiary)\b|التاجر|المتجر|المفوتر|المستفيد|المستلم|الموقع)""",
             RegexOption.IGNORE_CASE,
         )
         private val bankAppTitleWords = Regex(
