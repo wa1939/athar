@@ -52,6 +52,7 @@ import com.athar.core.domain.model.ReceiptAttachment
 import com.athar.core.domain.model.ReceiptAttachmentMeta
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.model.specificMerchantKey
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.ReceiptAttachmentRepository
 import kotlinx.collections.immutable.ImmutableList
@@ -98,6 +99,14 @@ data class EditTransactionState(
 
     val categoryChanged: Boolean
         get() = original.categoryId != selectedCategoryId
+
+    val canPromptCategoryLearning: Boolean
+        get() = categoryChanged &&
+            selectedCategoryId != null &&
+            specificMerchantKey(
+                merchantNormalized = merchant.lowercase().trim(),
+                merchant = merchant,
+            ) != null
 }
 
 enum class EditReceiptStatus {
@@ -406,7 +415,7 @@ fun EditTransactionSheet(
                     background = theme.colors.ember,
                     textColor = theme.colors.parchment,
                     onClick = {
-                        if (s.categoryChanged && s.selectedCategoryId != null) {
+                        if (s.canPromptCategoryLearning) {
                             pendingLearn = s
                         } else {
                             commit(s, learnRule = false, onSave)

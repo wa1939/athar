@@ -137,6 +137,40 @@ class TodayViewModelTest {
     }
 
     @Test
+    fun `always categorize skips rule and backfill for generic merchant labels`() = runTest(mainDispatcher) {
+        val transactions = FakeTransactionRepository(backfillCount = 3)
+        val rules = RecordingCategoryRuleRepository()
+        val viewModel = TodayViewModel(
+            transactions = transactions,
+            rules = rules,
+            categories = TodayFakeCategoryRepository(),
+            prefs = FakeUserPreferencesRepository(savingsTarget = 30, emergencyMonths = 6),
+            accounts = FakeAccountRepository(liquidBalance = Money.of("5000")),
+            clock = FixedClock,
+        )
+
+        viewModel.updateTransaction(
+            transaction(
+                id = "generic-payment",
+                type = TxType.EXPENSE,
+                amount = Money.of("42"),
+            ).copy(
+                merchant = "Payment",
+                merchantNormalized = "payment",
+                categoryId = "cat-home-maintenance",
+                status = TxStatus.PENDING,
+            ),
+            learnRule = true,
+        )
+        advanceUntilIdle()
+
+        assertThat(transactions.upserts.single().status).isEqualTo(TxStatus.CONFIRMED)
+        assertThat(rules.learned).isEmpty()
+        assertThat(transactions.appliedPatterns).isEmpty()
+        assertThat(viewModel.lastBackfill.value).isNull()
+    }
+
+    @Test
     fun `state exposes readable category labels including archived categories`() = runTest(mainDispatcher) {
         val archivedCoffee = Fixtures.category(
             id = "cat-coffee",

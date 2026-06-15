@@ -88,6 +88,47 @@ class HistoryViewModelTest {
     }
 
     @Test
+    fun `always categorize skips rule and backfill for generic merchant labels`() = runTest(mainDispatcher) {
+        val txRepo = HistoryFakeTransactionRepository(
+            listOf(
+                tx(
+                    id = "generic-payment",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.PENDING,
+                    merchant = "Payment",
+                    merchantNormalized = "payment",
+                ),
+            ),
+        )
+        val ruleRepo = HistoryFakeRuleRepository()
+        val viewModel = HistoryViewModel(
+            transactions = txRepo,
+            rules = ruleRepo,
+            categories = HistoryFakeCategoryRepository(
+                listOf(category(id = "cat-food", kind = CategoryKind.EXPENSE)),
+            ),
+            clock = FixedHistoryClock,
+        )
+
+        viewModel.updateTransaction(
+            tx(
+                id = "generic-payment",
+                type = TxType.EXPENSE,
+                status = TxStatus.PENDING,
+                categoryId = "cat-food",
+                merchant = "Payment",
+                merchantNormalized = "payment",
+            ),
+            learnRule = true,
+        )
+        advanceUntilIdle()
+
+        assertThat(txRepo.upserts.single().status).isEqualTo(TxStatus.CONFIRMED)
+        assertThat(ruleRepo.learnedRules).isEmpty()
+        assertThat(viewModel.lastBackfill.value).isNull()
+    }
+
+    @Test
     fun `select visible rows selects the currently filtered rows only`() = runTest(mainDispatcher) {
         val viewModel = HistoryViewModel(
             transactions = HistoryFakeTransactionRepository(

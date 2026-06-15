@@ -132,9 +132,13 @@ class TodayViewModel @Inject constructor(
             val confirmed = tx.copy(status = TxStatus.CONFIRMED, updatedAt = now)
             transactions.upsert(confirmed)
             val categoryId = confirmed.categoryId
-            if (learnRule && categoryId != null && confirmed.merchantNormalized.isNotBlank()) {
+            val merchantKey = specificMerchantKey(
+                merchantNormalized = confirmed.merchantNormalized,
+                merchant = confirmed.merchant,
+            )
+            if (learnRule && categoryId != null && merchantKey != null) {
                 rules.learnFromCorrection(
-                    merchantNormalized = confirmed.merchantNormalized,
+                    merchantNormalized = merchantKey,
                     categoryId = categoryId,
                     patternType = PatternType.SUBSTRING,
                 )
@@ -143,7 +147,7 @@ class TodayViewModel @Inject constructor(
                 // as Home maintenance" would only fix the one row the user just edited,
                 // leaving every other Hemmah charge stranded in the dismissed tray.
                 val backfilled = transactions.applyCategoryToMatching(
-                    pattern = confirmed.merchantNormalized,
+                    pattern = merchantKey,
                     categoryId = categoryId,
                 )
                 _lastBackfill.value = BackfillEvent(

@@ -10,6 +10,7 @@ import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.model.isSpecificMerchantKey
+import com.athar.core.domain.model.specificMerchantKey
 import com.athar.core.domain.repo.CategoryRuleRepository
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.TransactionRepository
@@ -216,14 +217,18 @@ class HistoryViewModel @Inject constructor(
             val confirmed = tx.copy(status = TxStatus.CONFIRMED, updatedAt = now)
             transactions.upsert(confirmed)
             val categoryId = confirmed.categoryId
-            if (learnRule && categoryId != null && confirmed.merchantNormalized.isNotBlank()) {
+            val merchantKey = specificMerchantKey(
+                merchantNormalized = confirmed.merchantNormalized,
+                merchant = confirmed.merchant,
+            )
+            if (learnRule && categoryId != null && merchantKey != null) {
                 rules.learnFromCorrection(
-                    merchantNormalized = confirmed.merchantNormalized,
+                    merchantNormalized = merchantKey,
                     categoryId = categoryId,
                     patternType = PatternType.SUBSTRING,
                 )
                 val backfilled = transactions.applyCategoryToMatching(
-                    pattern = confirmed.merchantNormalized,
+                    pattern = merchantKey,
                     categoryId = categoryId,
                 )
                 _lastBackfill.value = BackfillEvent(
