@@ -380,6 +380,78 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses freelance income notification with shared income label`() {
+        val result = parser.parse(
+            event("notification:com.mercury", "Freelance payment received USD 450.00 from Upwork"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("450.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.counterparty).isEqualTo("Freelance income - Upwork")
+    }
+
+    @Test
+    fun `parses rental income notification with shared income label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Rental income credited SAR 2,500.00 from Tenant"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("2500.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.counterparty).isEqualTo("Rental income - Tenant")
+    }
+
+    @Test
+    fun `parses dividend income notification with shared income label`() {
+        val result = parser.parse(
+            event("notification:com.capitalone.mobile", "Dividend credited USD 32.10 from Vanguard"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("32.10"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.counterparty).isEqualTo("Dividend income - Vanguard")
+    }
+
+    @Test
+    fun `parses interest income notification with shared income label`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Interest income credited AED 14.25"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("14.25"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.counterparty).isEqualTo("Interest income")
+    }
+
+    @Test
+    fun `parses Arabic freelance income notification with shared income label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم إيداع دخل عمل حر ٥٠٠ ر.س من مستقل"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("500"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.counterparty).isEqualTo("دخل عمل حر - مستقل")
+    }
+
+    @Test
+    fun `parses Arabic interest income notification with shared income label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم إيداع دخل فوائد ٢٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("20"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.counterparty).isEqualTo("دخل فوائد")
+    }
+
+    @Test
     fun `ignores tax refund estimate notifications with amounts`() {
         assertThat(
             parser.parse(
@@ -402,6 +474,24 @@ class GenericBankNotificationTemplateTest {
         assertThat(
             parser.parse(
                 event("notification:com.capitalone.mobile", "Get SAR 50.00 bonus when you top up"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores side income invoice notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.mercury", "Freelance invoice approved for USD 450.00"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores side income estimate notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.capitalone.mobile", "Dividend estimate USD 32.10 available"),
             ),
         ).isEqualTo(ParseResult.Ignored)
     }

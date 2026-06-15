@@ -266,6 +266,46 @@
       "priority": 100
     },
     {
+      "pattern": "freelance income",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
+      "pattern": "دخل عمل حر",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
+      "pattern": "rental income",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
+      "pattern": "دخل إيجار",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
+      "pattern": "dividend income",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
+      "pattern": "دخل توزيعات",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
+      "pattern": "interest income",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
+      "pattern": "دخل فوائد",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
       "pattern": "elm",
       "categoryId": "cat-salary",
       "priority": 90

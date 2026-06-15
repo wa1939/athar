@@ -64,6 +64,22 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\bbonus\s+(?:credited|credit|received|deposited|deposit|paid|payment|posted|income)\b|\b(?:credited|credit|received|deposited|deposit|paid|posted)\b[^\n\r]{0,40}\bbonus\b|(?:إيداع|ايداع|وارد|استلام)[^\n\r]{0,40}(?:مكافأة|مكافاه)|(?:مكافأة|مكافاه)[^\n\r]{0,40}(?:إيداع|ايداع|وارد|استلام))""",
         RegexOption.IGNORE_CASE,
     )
+    private val freelanceIncomeWords = Regex(
+        """(?:\b(?:freelance|contractor|gig|side\s+(?:income|project|job|hustle))\s+(?:income|payment|paid|payout|deposit|credited|credit|received|posted)\b|\b(?:payment|paid|payout|deposit|credited|credit|received|posted)\b[^\n\r]{0,40}\b(?:freelance|contractor|gig|side\s+(?:income|project|job|hustle))\b|(?:إيداع|ايداع|وارد|استلام)[^\n\r]{0,40}(?:دخل\s+عمل\s+حر|عمل\s+حر)|(?:دخل\s+عمل\s+حر|عمل\s+حر)[^\n\r]{0,40}(?:إيداع|ايداع|وارد|استلام))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val rentalIncomeWords = Regex(
+        """(?:\b(?:rental|rent)\s+income\b[^\n\r]{0,40}\b(?:credited|credit|received|deposited|deposit|paid|posted)\b|\b(?:credited|credit|received|deposited|deposit|paid|posted)\b[^\n\r]{0,40}\b(?:rental|rent)\s+income\b|(?:إيداع|ايداع|وارد|استلام)[^\n\r]{0,40}(?:دخل\s+إيجار|دخل\s+ايجار)|(?:دخل\s+إيجار|دخل\s+ايجار)[^\n\r]{0,40}(?:إيداع|ايداع|وارد|استلام))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val dividendIncomeWords = Regex(
+        """(?:\bdividend(?:\s+income)?\b[^\n\r]{0,40}\b(?:credited|credit|received|deposited|deposit|paid|posted)\b|\b(?:credited|credit|received|deposited|deposit|paid|posted)\b[^\n\r]{0,40}\bdividend(?:\s+income)?\b|(?:إيداع|ايداع|وارد|استلام)[^\n\r]{0,40}(?:دخل\s+توزيعات|توزيعات\s+أرباح|توزيعات\s+ارباح)|(?:دخل\s+توزيعات|توزيعات\s+أرباح|توزيعات\s+ارباح)[^\n\r]{0,40}(?:إيداع|ايداع|وارد|استلام))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val interestIncomeWords = Regex(
+        """(?:\binterest\s+income\b[^\n\r]{0,40}\b(?:credited|credit|received|deposited|deposit|paid|posted)\b|\binterest\s+(?:credited|credit|received|deposited|deposit|paid|posted)\b|\b(?:credited|credit|received|deposited|deposit|paid|posted)\b[^\n\r]{0,40}\binterest\s+income\b|(?:إيداع|ايداع|وارد|استلام)[^\n\r]{0,40}(?:دخل\s+فوائد|فوائد)|(?:دخل\s+فوائد|فوائد)[^\n\r]{0,40}(?:إيداع|ايداع|وارد|استلام))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val taxRefundNonPostedWords = Regex(
         """(?:\b(?:tax\s+refund|tax\s+rebate)\b[^\n\r]{0,80}\b(?:estimate|estimated|expected|status|filed|filing|approved|approval|eligible|calculator|deadline|reminder|due)\b|\b(?:estimate|estimated|expected|status|filed|filing|approved|approval|eligible|calculator|deadline|reminder|due)\b[^\n\r]{0,80}\b(?:tax\s+refund|tax\s+rebate)\b|(?:استرداد\s+(?:ضريبي|الضريبة)|رد\s+(?:ضريبي|الضريبة))[^\n\r]{0,80}(?:تقدير|متوقع|حالة|موافقة|مؤهل|تذكير|موعد))""",
         RegexOption.IGNORE_CASE,
@@ -74,6 +90,10 @@ class GenericBankNotificationTemplate : BankTemplate {
     )
     private val bonusNonPostedWords = Regex(
         """(?:\b(?:bonus|cash\s+bonus)\b[^\n\r]{0,80}\b(?:offer|promo|promotion|points|reward|earn|get|win|free|when|top[-\s]?up|spend|eligible)\b|\b(?:offer|promo|promotion|points|reward|earn|get|win|free|when|top[-\s]?up|spend|eligible)\b[^\n\r]{0,80}\b(?:bonus|cash\s+bonus)\b|(?:مكافأة|مكافاه)[^\n\r]{0,80}(?:عرض|عروض|خصم|نقاط|اربح|مجاني|عند|شحن|تعبئة|مؤهل))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val sideIncomeNonPostedWords = Regex(
+        """(?:\b(?:freelance|contractor|gig|side\s+(?:income|project|job|hustle))\b[^\n\r]{0,80}\b(?:invoice|proposal|quote|estimate|estimated|submitted|pending|approved|approval|contract|milestone|due|reminder)\b|\b(?:invoice|proposal|quote|estimate|estimated|submitted|pending|approved|approval|contract|milestone|due|reminder)\b[^\n\r]{0,80}\b(?:freelance|contractor|gig|side\s+(?:income|project|job|hustle))\b|\b(?:rental|rent)\s+income\b[^\n\r]{0,80}\b(?:estimate|estimated|expected|projection|statement|report|due|reminder|lease|application)\b|\b(?:dividend|interest)\b[^\n\r]{0,80}\b(?:estimate|estimated|expected|projection|yield|rate|rates|statement|report|announcement|declared|ex[-\s]?date|record\s+date|eligible|calculator)\b|\b(?:estimate|estimated|expected|projection|yield|rate|rates|statement|report|announcement|declared|ex[-\s]?date|record\s+date|eligible|calculator)\b[^\n\r]{0,80}\b(?:dividend|interest)\b|(?:دخل\s+عمل\s+حر|عمل\s+حر|دخل\s+إيجار|دخل\s+ايجار|دخل\s+توزيعات|توزيعات\s+أرباح|توزيعات\s+ارباح|دخل\s+فوائد|فوائد)[^\n\r]{0,80}(?:فاتورة|عرض\s+سعر|تقدير|متوقع|تقرير|كشف|قيد|موافقة|تذكير|مستحق|عقد|معدل|نسبة|حاسبة))""",
         RegexOption.IGNORE_CASE,
     )
     private val transferWords = Regex(
@@ -507,6 +527,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (taxRefundNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (reimbursementNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (bonusNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (sideIncomeNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (isRewardOnlyNotification(normalized)) return ParseResult.Ignored
         if (isMarketingOnlyPromotion(normalized)) return ParseResult.Ignored
         if (declinedWords.containsMatchIn(normalized)) return ParseResult.Ignored
@@ -652,7 +673,11 @@ class GenericBankNotificationTemplate : BankTemplate {
             salaryIncomeWords.containsMatchIn(body) ||
             taxRefundIncomeWords.containsMatchIn(body) ||
             reimbursementIncomeWords.containsMatchIn(body) ||
-            bonusIncomeWords.containsMatchIn(body)
+            bonusIncomeWords.containsMatchIn(body) ||
+            freelanceIncomeWords.containsMatchIn(body) ||
+            rentalIncomeWords.containsMatchIn(body) ||
+            dividendIncomeWords.containsMatchIn(body) ||
+            interestIncomeWords.containsMatchIn(body)
 
     private fun hasMerchantHint(body: String): Boolean =
         merchantLabelHint.containsMatchIn(body) ||
@@ -1036,6 +1061,22 @@ class GenericBankNotificationTemplate : BankTemplate {
             value = if (ArabicBonusTerms.any { body.contains(it) }) "دخل مكافأة" else "Bonus income",
             words = bonusLabelWords,
         )
+        freelanceIncomeWords.containsMatchIn(body) -> IncomeLabel(
+            value = if (ArabicFreelanceIncomeTerms.any { body.contains(it) }) "دخل عمل حر" else "Freelance income",
+            words = freelanceIncomeLabelWords,
+        )
+        rentalIncomeWords.containsMatchIn(body) -> IncomeLabel(
+            value = if (ArabicRentalIncomeTerms.any { body.contains(it) }) "دخل إيجار" else "Rental income",
+            words = rentalIncomeLabelWords,
+        )
+        dividendIncomeWords.containsMatchIn(body) -> IncomeLabel(
+            value = if (ArabicDividendIncomeTerms.any { body.contains(it) }) "دخل توزيعات" else "Dividend income",
+            words = dividendIncomeLabelWords,
+        )
+        interestIncomeWords.containsMatchIn(body) -> IncomeLabel(
+            value = if (ArabicInterestIncomeTerms.any { body.contains(it) }) "دخل فوائد" else "Interest income",
+            words = interestIncomeLabelWords,
+        )
         else -> null
     }
 
@@ -1092,6 +1133,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         taxRefundIncomeWords.find(body)?.range?.first,
         reimbursementIncomeWords.find(body)?.range?.first,
         bonusIncomeWords.find(body)?.range?.first,
+        freelanceIncomeWords.find(body)?.range?.first,
+        rentalIncomeWords.find(body)?.range?.first,
+        dividendIncomeWords.find(body)?.range?.first,
+        interestIncomeWords.find(body)?.range?.first,
         telecomRechargeWords.find(body)?.range?.first,
         trafficFinePaymentWords.find(body)?.range?.first,
         governmentServicePaymentWords.find(body)?.range?.first,
@@ -1294,6 +1339,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         private val ArabicTaxRefundTerms = listOf("استرداد ضريبي", "استرداد الضريبة", "رد ضريبي", "رد الضريبة")
         private val ArabicReimbursementTerms = listOf("تعويض مصروفات", "استرداد مصروفات")
         private val ArabicBonusTerms = listOf("مكافأة", "مكافاه")
+        private val ArabicFreelanceIncomeTerms = listOf("دخل عمل حر", "عمل حر")
+        private val ArabicRentalIncomeTerms = listOf("دخل إيجار", "دخل ايجار")
+        private val ArabicDividendIncomeTerms = listOf("دخل توزيعات", "توزيعات أرباح", "توزيعات ارباح")
+        private val ArabicInterestIncomeTerms = listOf("دخل فوائد", "فوائد")
         private val ArabicWorkExpenseTerms = listOf("مصروفات العمل", "مصاريف العمل")
         private val ArabicOfficeSuppliesTerms = listOf("مستلزمات مكتبية", "أدوات مكتبية", "ادوات مكتبية", "قرطاسية")
         private val taxRefundLabelWords = Regex(
@@ -1306,6 +1355,22 @@ class GenericBankNotificationTemplate : BankTemplate {
         )
         private val bonusLabelWords = Regex(
             """(?:\bbonus\s+income\b|دخل\s+مكافأة)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val freelanceIncomeLabelWords = Regex(
+            """(?:\bfreelance\s+income\b|دخل\s+عمل\s+حر)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val rentalIncomeLabelWords = Regex(
+            """(?:\brental\s+income\b|دخل\s+إيجار|دخل\s+ايجار)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val dividendIncomeLabelWords = Regex(
+            """(?:\bdividend\s+income\b|دخل\s+توزيعات)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val interestIncomeLabelWords = Regex(
+            """(?:\binterest\s+income\b|دخل\s+فوائد)""",
             RegexOption.IGNORE_CASE,
         )
         private val withdrawalWords = Regex(
