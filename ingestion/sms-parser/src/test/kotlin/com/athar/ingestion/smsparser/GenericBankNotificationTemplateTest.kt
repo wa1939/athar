@@ -909,6 +909,68 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses generic condo fee notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "HOA fee payment USD 275.00 posted"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("275.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Condo fees")
+    }
+
+    @Test
+    fun `parses building service charge notification with shared condo fee label`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Building service charge AED 900.00 paid"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("900.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Condo fees")
+    }
+
+    @Test
+    fun `parses Arabic condo fee notification with shared label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم سداد رسوم السكن بمبلغ ٤٥٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("450"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Condo fees")
+    }
+
+    @Test
+    fun `preserves specific condo fee merchant when present`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Condo fee paid to Marina Heights HOA USD 275.00"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("275.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Marina Heights HOA")
+    }
+
+    @Test
+    fun `ignores condo fee reminder notifications with amounts`() {
+        val reminders = listOf(
+            "Your HOA fee of USD 275.00 is due tomorrow",
+            "Condo fee reminder AED 900.00",
+            "Building service charge assessment notice USD 1200.00",
+            "رسوم السكن مستحقة غداً ٤٥٠ ر.س",
+        )
+
+        reminders.forEach { body ->
+            assertThat(parser.parse(event("notification:com.chase.sig.android", body))).isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
     fun `ignores recurring expense reminder notifications with amounts`() {
         val reminders = listOf(
             "Your rent payment of SAR 2,500.00 is due tomorrow",

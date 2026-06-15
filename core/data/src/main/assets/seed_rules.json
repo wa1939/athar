@@ -3316,6 +3316,11 @@
       "priority": 90
     },
     {
+      "pattern": "condo fees",
+      "categoryId": "cat-condo-fees",
+      "priority": 90
+    },
+    {
       "pattern": "mobile recharge",
       "categoryId": "cat-telecom",
       "priority": 90

@@ -132,6 +132,14 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\brent\s+payment\b|\bejar\s+(?:rent\s+)?payment\b|(?:سداد|دفع|خصم)\s+(?:دفعة\s+)?(?:الإيجار|ايجار|إيجار)|(?:الإيجار|ايجار|إيجار)\s+(?:تم\s+)?(?:سداد|دفع))""",
         RegexOption.IGNORE_CASE,
     )
+    private val condoFeePaymentWords = Regex(
+        """(?:\b(?:condo|hoa|homeowners?\s+association|strata)\s+(?:fee|fees|dues)[^\n\r]{0,80}\b(?:payment|paid|posted|completed|settled|debited|charged)\b|\b(?:payment|paid|posted|completed|settled|debited|charged)[^\n\r]{0,40}\b(?:condo|hoa|homeowners?\s+association|strata)\s+(?:fee|fees|dues)\b|\bbuilding\s+service\s+charge[^\n\r]{0,80}\b(?:payment|paid|posted|completed|settled|debited|charged)\b|\b(?:payment|paid|posted|completed|settled|debited|charged)[^\n\r]{0,40}\bbuilding\s+service\s+charge\b|(?:تم\s+)?(?:سداد|دفع|خصم)\s+(?:رسوم\s+)?(?:السكن|المجمع|الخدمات|اتحاد\s+الملاك|جمعية\s+الملاك)|رسوم\s+(?:السكن|المجمع|الخدمات|اتحاد\s+الملاك|جمعية\s+الملاك)\s+(?:تم\s+)?(?:سداد|دفع|خصم|مدفوعة))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val condoFeeNonPostedWords = Regex(
+        """(?:\b(?:condo|hoa|homeowners?\s+association|strata)\s+(?:fee|fees|dues)[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder|renewal|invoice|statement|assessment|notice|unpaid|overdue)\b|\b(?:due|scheduled|upcoming|reminder|renewal|invoice|statement|assessment|notice|unpaid|overdue)[^\n\r]{0,80}\b(?:condo|hoa|homeowners?\s+association|strata)\s+(?:fee|fees|dues)\b|\bbuilding\s+service\s+charge[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder|invoice|statement|assessment|notice|unpaid|overdue)\b|\b(?:due|scheduled|upcoming|reminder|invoice|statement|assessment|notice|unpaid|overdue)[^\n\r]{0,80}\bbuilding\s+service\s+charge\b|رسوم\s+(?:السكن|المجمع|الخدمات|اتحاد\s+الملاك|جمعية\s+الملاك)[^\n\r]{0,80}(?:مستحق|استحقاق|موعد|قادم|مجدول|تذكير|فاتورة|إشعار|اشعار|متأخر|غير\s+مدفوع)|(?:مستحق|استحقاق|موعد|قادم|مجدول|تذكير|فاتورة|إشعار|اشعار|متأخر|غير\s+مدفوع)[^\n\r]{0,80}رسوم\s+(?:السكن|المجمع|الخدمات|اتحاد\s+الملاك|جمعية\s+الملاك))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val recurringExpenseReminderWords = Regex(
         """(?:\b(?:subscription|membership|recurring\s+payment|insurance\s+premium|policy\s+premium|rent\s+payment|rent)\b[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder|renews?|renewal|expires?)\b|\b(?:due|scheduled|upcoming|reminder|renews?|renewal|expires?)[^\n\r]{0,80}\b(?:subscription|membership|insurance\s+premium|policy\s+premium|rent\s+payment|rent)\b|(?:إيجار|ايجار|اشتراك|تأمين|قسط\s+التأمين)[^\n\r]{0,80}(?:مستحق|استحقاق|موعد|قادم|مجدول|تجديد))""",
         RegexOption.IGNORE_CASE,
@@ -467,6 +475,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (carPaymentNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (debtReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (utilityBillReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (condoFeeNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (recurringExpenseReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (telecomRechargeReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (publicServiceReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
@@ -505,6 +514,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             hasIncomeAction(normalized) -> TxType.INCOME
             isMortgagePaymentNotification(normalized) -> TxType.EXPENSE
             isCarPaymentNotification(normalized) -> TxType.EXPENSE
+            isCondoFeeNotification(normalized) -> TxType.EXPENSE
             isRecurringExpenseNotification(normalized) -> TxType.EXPENSE
             isPublicServicePaymentNotification(normalized) -> TxType.EXPENSE
             isMobilityPaymentNotification(normalized) -> TxType.EXPENSE
@@ -577,6 +587,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             isBankFeeNotification(body) || isDebtPaymentNotification(body) ||
             isMortgagePaymentNotification(body) ||
             isCarPaymentNotification(body) ||
+            isCondoFeeNotification(body) ||
             isRecurringExpenseNotification(body) || isTelecomRechargeNotification(body) ||
             isPublicServicePaymentNotification(body) || isMobilityPaymentNotification(body) ||
             isEssentialLifeExpenseNotification(body) || isGiftExpenseNotification(body) ||
@@ -607,6 +618,7 @@ class GenericBankNotificationTemplate : BankTemplate {
     private fun isBankFeeNotification(body: String): Boolean =
         feeWords.containsMatchIn(body) &&
             !isPublicServicePaymentNotification(body) &&
+            !isCondoFeeNotification(body) &&
             !isEssentialLifeExpenseNotification(body) &&
             !isHomeGoodsExpenseNotification(body) &&
             !isLifeAdminExpenseNotification(body) &&
@@ -630,6 +642,9 @@ class GenericBankNotificationTemplate : BankTemplate {
 
     private fun isLoanInstalmentNotification(body: String): Boolean =
         loanInstalmentWords.containsMatchIn(body)
+
+    private fun isCondoFeeNotification(body: String): Boolean =
+        condoFeePaymentWords.containsMatchIn(body)
 
     private fun isRecurringExpenseNotification(body: String): Boolean =
         subscriptionPaymentWords.containsMatchIn(body) ||
@@ -715,6 +730,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         normalizePublicServiceMerchant(body, merchant)
             ?: normalizeMobilityPaymentMerchant(body, merchant)
             ?: normalizeUtilityBillMerchant(body, merchant)
+            ?: normalizeCondoFeeMerchant(body, merchant)
             ?: normalizeLifeAdminMerchant(body, merchant)
             ?: normalizeAutomotiveMaintenanceMerchant(body, merchant)
             ?: normalizeRecurringExpenseMerchant(body, merchant)
@@ -767,6 +783,17 @@ class GenericBankNotificationTemplate : BankTemplate {
             genericBillPaymentWords.containsMatchIn(body) -> "Bill payment"
             else -> null
         }
+    }
+
+    private fun normalizeCondoFeeMerchant(body: String, merchant: String?): String? {
+        val label = condoFeeLabel(body) ?: return null
+        if (merchant == null || genericCondoFeeMerchantWords.matches(merchant.trim())) return label
+        return merchant
+    }
+
+    private fun condoFeeLabel(body: String): String? = when {
+        condoFeePaymentWords.containsMatchIn(body) -> "Condo fees"
+        else -> null
     }
 
     private fun normalizeRecurringExpenseMerchant(body: String, merchant: String?): String? {
@@ -978,6 +1005,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         subscriptionPaymentWords.find(body)?.range?.first,
         insurancePremiumWords.find(body)?.range?.first,
         rentPaymentWords.find(body)?.range?.first,
+        condoFeePaymentWords.find(body)?.range?.first,
         pharmacyPaymentWords.find(body)?.range?.first,
         medicalPaymentWords.find(body)?.range?.first,
         educationPaymentWords.find(body)?.range?.first,
@@ -1187,6 +1215,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         )
         private val genericGiftMerchantWords = Regex(
             """(?:gift\s+purchase|gift\s+payment|gift\s+card\s+purchase|e[-\s]?gift\s+card\s+purchase|voucher\s+purchase|flower\s+delivery|flower\s+payment|florist\s+payment|هدية|هديه|هدايا|بطاقة\s+هدية|بطاقات\s+هدايا|بطاقة\s+إهداء|بطاقات\s+إهداء|ورد|زهور|ورود|توصيل\s+ورد|توصيل\s+زهور)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val genericCondoFeeMerchantWords = Regex(
+            """(?:condo\s+fees?|condo\s+fee\s+payment|hoa\s+(?:fee|fees|dues)(?:\s+payment)?|homeowners?\s+association\s+(?:fee|fees|dues)(?:\s+payment)?|strata\s+(?:fee|fees|dues)(?:\s+payment)?|building\s+service\s+charge|residential\s+service\s+charge|رسوم\s+(?:السكن|المجمع|الخدمات|اتحاد\s+الملاك|جمعية\s+الملاك))""",
             RegexOption.IGNORE_CASE,
         )
         private val genericHomeGoodsMerchantWords = Regex(
