@@ -236,6 +236,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\b(?:(?:traffic|parking)\s+(?:fine|violation)|(?:government|public)\s+service|government\s+(?:fee|charge))\b[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder|deadline|expires?)\b|\b(?:due|scheduled|upcoming|reminder|deadline|expires?)\b[^\n\r]{0,80}\b(?:(?:traffic|parking)\s+(?:fine|violation)|(?:government|public)\s+service|government\s+(?:fee|charge))\b|(?:مخالفة|مخالفات|رسوم\s+حكومية|خدمة\s+حكومية|خدمات\s+حكومية|خدمات\s+المقيمين)[^\n\r]{0,80}(?:مستحق|استحقاق|موعد|قادم|مجدول|تذكير)|(?:تذكير|مستحق|استحقاق|موعد|قادم|مجدول)[^\n\r]{0,80}(?:مخالفة|مخالفات|رسوم\s+حكومية|خدمة\s+حكومية|خدمات\s+حكومية|خدمات\s+المقيمين))""",
         RegexOption.IGNORE_CASE,
     )
+    private val publicServiceMobilityNonPostedWords = Regex(
+        """(?:\b(?:(?:traffic|parking)\s+(?:fine|violation)(?:\s+payment)?|(?:government|public)\s+service|government\s+(?:fee|charge)|ministry\s+(?:service\s+)?(?:payment|fee|charge)|parking\s+(?:payment|fee|charge)|(?:road\s+)?toll\s+(?:payment|fee|charge)|transit\s+fare|(?:metro|bus|train|tram)\s+(?:fare|ticket))\b[^\n\r]{0,80}\b(?:quote|estimate|estimated|offer|promo|discount|coupon|deal|save|status|application|appointment|reservation)\b|\b(?:quote|estimate|estimated|offer|promo|discount|coupon|deal|save|status|application|appointment|reservation)\b[^\n\r]{0,80}\b(?:(?:traffic|parking)\s+(?:fine|violation)(?:\s+payment)?|(?:government|public)\s+service|government\s+(?:fee|charge)|ministry\s+(?:service\s+)?(?:payment|fee|charge)|parking\s+(?:payment|fee|charge)|(?:road\s+)?toll\s+(?:payment|fee|charge)|transit\s+fare|(?:metro|bus|train|tram)\s+(?:fare|ticket))\b|(?:عرض\s+سعر|عرض|عروض|تقدير|حالة|طلب|موعد|حجز)[^\n\r]{0,80}(?:مخالفة|مخالفات|رسوم\s+حكومية|خدمة\s+حكومية|خدمات\s+حكومية|خدمات\s+المقيمين|مواقف|المواقف|موقف|العبور|الطريق|المترو|الحافلة|الحافلات|القطار|النقل)|(?:مخالفة|مخالفات|رسوم\s+حكومية|خدمة\s+حكومية|خدمات\s+حكومية|خدمات\s+المقيمين|مواقف|المواقف|موقف|العبور|الطريق|المترو|الحافلة|الحافلات|القطار|النقل)[^\n\r]{0,80}(?:عرض\s+سعر|عرض|عروض|تقدير|حالة|طلب|موعد|حجز))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val parkingPaymentWords = Regex(
         """(?:\bparking\s+(?:payment|paid|fee|charge)\b|\b(?:payment|paid|charged)\s+(?:for\s+)?parking\b|\bpaid\s+parking\b|(?:سداد|دفع|خصم)\s+(?:رسوم\s+)?(?:مواقف|المواقف|موقف)|(?:مواقف|المواقف|موقف)\s+(?:تم\s+)?(?:سداد|دفع|خصم))""",
         RegexOption.IGNORE_CASE,
@@ -575,6 +579,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (subscriptionRentNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (recurringExpenseReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (telecomRechargeReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (publicServiceMobilityNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (publicServiceReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (mobilityPaymentReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (essentialLifeNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored

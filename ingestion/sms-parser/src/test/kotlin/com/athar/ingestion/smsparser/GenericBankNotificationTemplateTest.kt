@@ -1401,6 +1401,21 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `ignores public service and mobility quotes estimates and discounts with amounts`() {
+        val nonPosted = listOf(
+            "Government service fee estimate AED 150.00",
+            "Traffic fine payment discount SAR 300.00",
+            "Parking fee estimate SAR 12.00",
+            "Transit fare estimate USD 2.75",
+            "عرض سداد مخالفة مرورية ٣٠٠ ر.س",
+        )
+
+        nonPosted.forEach { body ->
+            assertThat(parser.parse(event("notification:com.alrajhibank.alrajhimobile", body))).isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
     fun `does not treat fine dining notification as traffic fine payment`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "Fine Dining charged your card SAR 80.00"),
