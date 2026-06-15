@@ -280,7 +280,7 @@ class GenericBankNotificationTemplateTest {
         assertThat(result.type).isEqualTo(TxType.INCOME)
         assertThat(result.amount.amount).isEqualTo(BigDecimal("12.50"))
         assertThat(result.amount.currency).isEqualTo("GBP")
-        assertThat(result.counterparty).isEqualTo("Amazon")
+        assertThat(result.counterparty).isEqualTo("Expense reimbursement - Amazon")
     }
 
     @Test
@@ -292,7 +292,7 @@ class GenericBankNotificationTemplateTest {
         assertThat(result.type).isEqualTo(TxType.INCOME)
         assertThat(result.amount.amount).isEqualTo(BigDecimal("18.75"))
         assertThat(result.amount.currency).isEqualTo("AED")
-        assertThat(result.counterparty).isEqualTo("Uber Trip")
+        assertThat(result.counterparty).isEqualTo("Expense reimbursement - Uber Trip")
     }
 
     @Test
@@ -304,7 +304,106 @@ class GenericBankNotificationTemplateTest {
         assertThat(result.type).isEqualTo(TxType.INCOME)
         assertThat(result.amount.amount).isEqualTo(BigDecimal("15.00"))
         assertThat(result.amount.currency).isEqualTo("USD")
-        assertThat(result.counterparty).isEqualTo("Hotel Desk")
+        assertThat(result.counterparty).isEqualTo("Expense reimbursement - Hotel Desk")
+    }
+
+    @Test
+    fun `parses tax refund notification with shared income label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Tax refund credited USD 600.00 from IRS"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("600.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.counterparty).isEqualTo("Tax refund - IRS")
+    }
+
+    @Test
+    fun `parses Arabic tax refund notification with shared income label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم إيداع استرداد ضريبي ٦٠٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("600"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.counterparty).isEqualTo("استرداد ضريبي")
+    }
+
+    @Test
+    fun `parses expense reimbursement notification with shared income label`() {
+        val result = parser.parse(
+            event("notification:com.mercury", "Expense reimbursement credited SAR 120.00 from Employer"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("120.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.counterparty).isEqualTo("Expense reimbursement - Employer")
+    }
+
+    @Test
+    fun `parses paid reimbursement claim notification with shared income label`() {
+        val result = parser.parse(
+            event("notification:com.mercury", "Reimbursement claim paid SAR 120.00 by Employer"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("120.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.counterparty).isEqualTo("Expense reimbursement - Employer")
+    }
+
+    @Test
+    fun `parses bonus notification with shared income label`() {
+        val result = parser.parse(
+            event("notification:com.mercury", "Annual bonus paid SAR 1,000.00 by ACME"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("1000.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.counterparty).isEqualTo("Bonus income - ACME")
+    }
+
+    @Test
+    fun `parses Arabic bonus notification with shared income label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم إيداع مكافأة ٥٠٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("500"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.counterparty).isEqualTo("دخل مكافأة")
+    }
+
+    @Test
+    fun `ignores tax refund estimate notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.chase.sig.android", "Your tax refund estimate is USD 600.00"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores expense reimbursement claim notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.mercury", "Expense reimbursement claim approved for SAR 120.00"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores bonus promotion notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.capitalone.mobile", "Get SAR 50.00 bonus when you top up"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
     }
 
     @Test

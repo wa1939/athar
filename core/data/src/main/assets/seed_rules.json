@@ -216,6 +216,36 @@
       "priority": 100
     },
     {
+      "pattern": "tax refund",
+      "categoryId": "cat-tax-refund",
+      "priority": 100
+    },
+    {
+      "pattern": "استرداد ضريبي",
+      "categoryId": "cat-tax-refund",
+      "priority": 100
+    },
+    {
+      "pattern": "expense reimbursement",
+      "categoryId": "cat-reimbursements",
+      "priority": 100
+    },
+    {
+      "pattern": "تعويض مصروفات",
+      "categoryId": "cat-reimbursements",
+      "priority": 100
+    },
+    {
+      "pattern": "bonus income",
+      "categoryId": "cat-bonus",
+      "priority": 100
+    },
+    {
+      "pattern": "دخل مكافأة",
+      "categoryId": "cat-bonus",
+      "priority": 100
+    },
+    {
       "pattern": "elm",
       "categoryId": "cat-salary",
       "priority": 90
