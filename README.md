@@ -156,7 +156,7 @@ Other tools force a trade-off:
 - ✅ **Home-screen widgets (beta.21)** — three Glance widgets: Month summary (net + Income/Expense/Net-worth pills), Today snapshot (today's net + pending count), and Pending list (top-3 pending transactions). Long-press home screen → Widgets → Athar
 - ✅ **Reconciliation no longer inflates expenses (beta.22)** — manual adjustment transactions (`تسوية يدوية`) still move net worth but are excluded from monthly spend/income totals, Trends bars, Plan actuals, and widget snapshots
 - ✅ **Update-availability nudge via Obtainium (beta.23)** — Settings → "تابع التحديثات / Stay up to date" hands off update-tracking to Obtainium via a deep link. Athar stays fully offline (no INTERNET permission); Obtainium watches the GitHub releases page and notifies you when a new build ships
-- ✅ **Recurring rules management** with auto-detected suggestions, manual "Run now", and WorkManager auto-run so due subscriptions land in Pending without visiting Settings
+- ✅ **Recurring rules management** with auto-detected suggestions from repeated specific merchants only, manual "Run now", and WorkManager auto-run so due subscriptions land in Pending without visiting Settings
 - ✅ Categories management (rename, archive, reorder, custom adds)
 
 ## Screenshots
@@ -311,7 +311,7 @@ maestro test .maestro/flows/                     # 10 E2E flows
 **Global sprint Tier 1 (beta.6 → beta.8):**
 - ✅ **G-1** — Multi-currency display (18 ISO-4217 codes with Arabic + English labels, currency picker in Settings)
 - ✅ **G-2** — Income visibility (income + expense pills + savings-rate on Today header)
-- ✅ **G-3** — Recurring transactions (rent / salary / Netflix / utilities — manual rules + auto-detected suggestions from history)
+- ✅ **G-3** — Recurring transactions (rent / salary / Netflix / utilities — manual rules + specific-merchant auto-detected suggestions from history)
 - ✅ **G-9** — TMOAP-depth Trends
 
 **Global sprint Tier 1 continued (beta.9):**
