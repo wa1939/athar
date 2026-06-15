@@ -1582,6 +1582,21 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `ignores essential life quotes estimates and status copy with amounts`() {
+        val nonPosted = listOf(
+            "Clinic visit estimate SAR 220.00",
+            "Dental consultation quote AED 350.00",
+            "Tuition fee estimate USD 500.00",
+            "تقدير رسوم مدرسية ١٥٠٠ ر.س",
+        )
+
+        nonPosted.forEach { body ->
+            assertThat(parser.parse(event("notification:com.alrajhibank.alrajhimobile", body)))
+                .isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
     fun `ignores essential life reminders and charity appeals with amounts`() {
         val reminders = listOf(
             "Your school fees of SAR 1,500.00 are due tomorrow",

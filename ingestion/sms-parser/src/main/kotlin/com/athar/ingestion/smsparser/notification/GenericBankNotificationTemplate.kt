@@ -272,6 +272,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\b(?:charity|donation|sadaqah|sadaka)\s+(?:payment|paid|donation|transfer)\b|\b(?:donation|donated|paid)\s+(?:to|for)\s+(?:charity|sadaqah|sadaka)\b|(?:سداد|دفع|خصم)\s+(?:تبرع|صدقة|صدقه)|(?:تبرع|صدقة|صدقه)\s+(?:تم\s+)?(?:سداد|دفع|خصم))""",
         RegexOption.IGNORE_CASE,
     )
+    private val essentialLifeNonPostedWords = Regex(
+        """(?:\b(?:medical|healthcare|hospital|clinic|dental|doctor|laboratory|lab|pharmacy|prescription|school|tuition|university|college|education)\b[^\n\r]{0,80}\b(?:quote|estimate|estimated|offer|promo|discount|coupon|deal|save|package|results?|report|status|appointment)\b|\b(?:quote|estimate|estimated|offer|promo|discount|coupon|deal|save|package|results?|report|status|appointment)\b[^\n\r]{0,80}\b(?:medical|healthcare|hospital|clinic|dental|doctor|laboratory|lab|pharmacy|prescription|school|tuition|university|college|education)\b|(?:تقدير|عرض\s+سعر|عرض|عروض|خصم|قسيمة|كوبون|وفر|باقة|نتيجة|نتائج|تقرير|حالة)[^\n\r]{0,80}(?:رسوم\s+مدرسية|تعليم|جامعة|مدرسة|طبية|طبي|مستشفى|عيادة|صيدلية|دواء|وصفة|تحاليل|مختبر)|(?:رسوم\s+مدرسية|تعليم|جامعة|مدرسة|طبية|طبي|مستشفى|عيادة|صيدلية|دواء|وصفة|تحاليل|مختبر)[^\n\r]{0,80}(?:تقدير|عرض\s+سعر|عرض|عروض|خصم|قسيمة|كوبون|وفر|باقة|نتيجة|نتائج|تقرير|حالة))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val giftCardPurchaseWords = Regex(
         """(?:\b(?:gift\s+card|e[-\s]?gift\s+card|voucher)\s+(?:purchase|payment|paid|charge|charged|debited)\b|\b(?:purchase|payment|paid|charged|debited)\s+(?:for\s+)?(?:gift\s+card|e[-\s]?gift\s+card|voucher)\b|(?:سداد|دفع|خصم|شراء)\s+(?:بطاقة\s+هدية|بطاقات\s+هدايا|بطاقة\s+إهداء|بطاقات\s+إهداء|قسيمة\s+هدية)|(?:بطاقة\s+هدية|بطاقات\s+هدايا|بطاقة\s+إهداء|بطاقات\s+إهداء|قسيمة\s+هدية)\s+(?:تم\s+)?(?:سداد|دفع|خصم|شراء))""",
         RegexOption.IGNORE_CASE,
@@ -573,6 +577,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (telecomRechargeReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (publicServiceReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (mobilityPaymentReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (essentialLifeNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (essentialLifeReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (giftNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (homeGoodsNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
