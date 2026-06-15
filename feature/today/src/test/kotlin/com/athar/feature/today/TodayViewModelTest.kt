@@ -333,6 +333,93 @@ class TodayViewModelTest {
         )
         assertThat(rules.learned).isEmpty()
     }
+
+    @Test
+    fun `bulk apply pending category suggestions confirms only safe rows and reports count`() = runTest(mainDispatcher) {
+        val cafe = Fixtures.category(
+            id = "cat-cafe",
+            name = "Cafe",
+            nameAr = "مقهى",
+            kind = CategoryKind.EXPENSE,
+        )
+        val grocery = Fixtures.category(
+            id = "cat-grocery",
+            name = "Grocery",
+            nameAr = "تموين",
+            kind = CategoryKind.EXPENSE,
+        )
+        val transactions = FakeTransactionRepository(
+            currentConfirmed = listOf(
+                transaction(id = "brew-confirmed", type = TxType.EXPENSE, amount = Money.of("18")).copy(
+                    merchant = "Brew Lab",
+                    merchantNormalized = "brew lab",
+                    categoryId = "cat-cafe",
+                ),
+                transaction(id = "tamimi-confirmed", type = TxType.EXPENSE, amount = Money.of("90")).copy(
+                    merchant = "Tamimi",
+                    merchantNormalized = "tamimi",
+                    categoryId = "cat-grocery",
+                ),
+                transaction(id = "mixed-cafe", type = TxType.EXPENSE, amount = Money.of("18")).copy(
+                    merchant = "Mixed Shop",
+                    merchantNormalized = "mixed shop",
+                    categoryId = "cat-cafe",
+                ),
+                transaction(id = "mixed-grocery", type = TxType.EXPENSE, amount = Money.of("22")).copy(
+                    merchant = "Mixed Shop",
+                    merchantNormalized = "mixed shop",
+                    categoryId = "cat-grocery",
+                ),
+            ),
+            pending = listOf(
+                transaction(id = "pending-brew", type = TxType.EXPENSE, amount = Money.of("22")).copy(
+                    merchant = "Brew Lab",
+                    merchantNormalized = "brew lab",
+                    categoryId = null,
+                    status = TxStatus.PENDING,
+                ),
+                transaction(id = "pending-tamimi", type = TxType.EXPENSE, amount = Money.of("40")).copy(
+                    merchant = "Tamimi",
+                    merchantNormalized = "tamimi",
+                    categoryId = null,
+                    status = TxStatus.PENDING,
+                ),
+                transaction(id = "pending-mixed", type = TxType.EXPENSE, amount = Money.of("30")).copy(
+                    merchant = "Mixed Shop",
+                    merchantNormalized = "mixed shop",
+                    categoryId = null,
+                    status = TxStatus.PENDING,
+                ),
+            ),
+        )
+        val rules = RecordingCategoryRuleRepository()
+        val viewModel = TodayViewModel(
+            transactions = transactions,
+            rules = rules,
+            categories = TodayFakeCategoryRepository(listOf(cafe, grocery)),
+            prefs = FakeUserPreferencesRepository(savingsTarget = 30, emergencyMonths = 6),
+            accounts = FakeAccountRepository(liquidBalance = Money.of("5000")),
+            clock = FixedClock,
+        )
+        val state = viewModel.state.first { !it.isLoading }
+        assertThat(state.pendingCategorySuggestions.keys).containsExactly("pending-brew", "pending-tamimi")
+
+        viewModel.onEvent(TodayEvent.BulkApplyPendingCategorySuggestions)
+        advanceUntilIdle()
+
+        assertThat(transactions.upserts.map { it.id to it.categoryId }).containsExactly(
+            "pending-brew" to "cat-cafe",
+            "pending-tamimi" to "cat-grocery",
+        ).inOrder()
+        assertThat(transactions.upserts.map { it.status }).containsExactly(TxStatus.CONFIRMED, TxStatus.CONFIRMED)
+        assertThat(viewModel.lastPendingSuggestionApply.value)
+            .isEqualTo(TodayViewModel.PendingSuggestionApplyEvent(count = 2))
+        assertThat(rules.learned).isEmpty()
+
+        viewModel.clearPendingSuggestionApply()
+
+        assertThat(viewModel.lastPendingSuggestionApply.value).isNull()
+    }
 }
 
 private class FakeTransactionRepository(

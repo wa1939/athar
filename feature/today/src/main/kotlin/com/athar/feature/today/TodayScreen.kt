@@ -50,6 +50,7 @@ fun TodayScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val backfill by viewModel.lastBackfill.collectAsStateWithLifecycle()
+    val pendingSuggestionApply by viewModel.lastPendingSuggestionApply.collectAsStateWithLifecycle()
     var showAddSheet by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Transaction?>(null) }
 
@@ -60,10 +61,19 @@ fun TodayScreen(
         }
     }
 
+    LaunchedEffect(pendingSuggestionApply) {
+        if (pendingSuggestionApply != null) {
+            kotlinx.coroutines.delay(4_000)
+            viewModel.clearPendingSuggestionApply()
+        }
+    }
+
     TodayContent(
         state = state,
         backfill = backfill,
+        pendingSuggestionApply = pendingSuggestionApply,
         onClearBackfill = viewModel::clearBackfill,
+        onClearPendingSuggestionApply = viewModel::clearPendingSuggestionApply,
         onEvent = { event ->
             when (event) {
                 is TodayEvent.AddManual -> showAddSheet = true
@@ -110,7 +120,9 @@ internal fun TodayContent(
     onEvent: (TodayEvent) -> Unit,
     modifier: Modifier = Modifier,
     backfill: TodayViewModel.BackfillEvent? = null,
+    pendingSuggestionApply: TodayViewModel.PendingSuggestionApplyEvent? = null,
     onClearBackfill: () -> Unit = {},
+    onClearPendingSuggestionApply: () -> Unit = {},
 ) {
     val theme = AtharTheme
     Box(
@@ -129,6 +141,12 @@ internal fun TodayContent(
                     pattern = it.pattern,
                     count = it.count,
                     onDismiss = onClearBackfill,
+                )
+            }
+            pendingSuggestionApply?.let {
+                PendingSuggestionApplyToast(
+                    count = it.count,
+                    onDismiss = onClearPendingSuggestionApply,
                 )
             }
             if (state.pending.isNotEmpty()) {
@@ -383,6 +401,13 @@ private fun PendingTray(
             color = theme.colors.muted,
         )
 
+        if (state.pendingCategorySuggestions.isNotEmpty()) {
+            PendingSuggestionsBulkAction(
+                count = state.pendingCategorySuggestions.size,
+                onClick = { onEvent(TodayEvent.BulkApplyPendingCategorySuggestions) },
+            )
+        }
+
         if (state.pending.size >= 5) {
             BulkActionsBar(onEvent = onEvent)
         }
@@ -408,6 +433,45 @@ private fun PendingTray(
                 color = theme.colors.muted,
             )
         }
+    }
+}
+
+@Composable
+private fun PendingSuggestionApplyToast(
+    count: Int,
+    onDismiss: () -> Unit,
+) {
+    val theme = AtharTheme
+    AtharCard(modifier = Modifier.clickable(onClick = onDismiss)) {
+        AtharText(
+            text = stringResource(R.string.today_pending_suggestions_applied, count),
+            style = theme.typography.body,
+            color = theme.colors.olive,
+        )
+    }
+}
+
+@Composable
+private fun PendingSuggestionsBulkAction(
+    count: Int,
+    onClick: () -> Unit,
+) {
+    val theme = AtharTheme
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = theme.spacing.xs)
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(theme.colors.olive)
+            .clickable(onClick = onClick)
+            .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
+        contentAlignment = Alignment.Center,
+    ) {
+        AtharText(
+            text = stringResource(R.string.today_pending_apply_safe_suggestions, count),
+            style = theme.typography.caption,
+            color = theme.colors.parchment,
+        )
     }
 }
 

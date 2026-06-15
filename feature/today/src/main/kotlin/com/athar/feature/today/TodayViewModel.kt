@@ -105,7 +105,10 @@ class TodayViewModel @Inject constructor(
                 transactions.setStatus(event.id, TxStatus.DISMISSED)
             }
             is TodayEvent.ApplyPendingCategorySuggestion -> viewModelScope.launch {
-                applyPendingCategorySuggestion(event.id)
+                applyPendingCategorySuggestionInternal(event.id)
+            }
+            TodayEvent.BulkApplyPendingCategorySuggestions -> viewModelScope.launch {
+                applyPendingCategorySuggestions()
             }
             is TodayEvent.OpenTransaction, TodayEvent.AddManual, TodayEvent.OpenHistory -> Unit // UI-owned
             TodayEvent.BulkConfirmConfident -> viewModelScope.launch {
@@ -148,12 +151,23 @@ class TodayViewModel @Inject constructor(
         }
     }
 
-    private suspend fun applyPendingCategorySuggestion(id: String) {
-        val suggestion = state.value.pendingCategorySuggestions[id] ?: return
-        val tx = transactions.get(id) ?: return
-        if (tx.status != TxStatus.PENDING || !tx.categoryId.isNullOrBlank()) return
-        val category = categories.get(suggestion.categoryId)?.takeUnless { it.archived } ?: return
-        if (tx.categoryKind() != category.kind) return
+    private suspend fun applyPendingCategorySuggestions() {
+        val ids = state.value.pendingCategorySuggestions.keys.toList()
+        var applied = 0
+        ids.forEach { id ->
+            if (applyPendingCategorySuggestionInternal(id)) applied += 1
+        }
+        if (applied > 0) {
+            _lastPendingSuggestionApply.value = PendingSuggestionApplyEvent(count = applied)
+        }
+    }
+
+    private suspend fun applyPendingCategorySuggestionInternal(id: String): Boolean {
+        val suggestion = state.value.pendingCategorySuggestions[id] ?: return false
+        val tx = transactions.get(id) ?: return false
+        if (tx.status != TxStatus.PENDING || !tx.categoryId.isNullOrBlank()) return false
+        val category = categories.get(suggestion.categoryId)?.takeUnless { it.archived } ?: return false
+        if (tx.categoryKind() != category.kind) return false
         transactions.upsert(
             tx.copy(
                 categoryId = category.id,
@@ -161,6 +175,7 @@ class TodayViewModel @Inject constructor(
                 updatedAt = clock.now(),
             ),
         )
+        return true
     }
 
     private val _lastBackfill = MutableStateFlow<BackfillEvent?>(null)
@@ -173,6 +188,13 @@ class TodayViewModel @Inject constructor(
     fun clearBackfill() { _lastBackfill.value = null }
 
     data class BackfillEvent(val pattern: String, val count: Int)
+
+    private val _lastPendingSuggestionApply = MutableStateFlow<PendingSuggestionApplyEvent?>(null)
+    val lastPendingSuggestionApply: StateFlow<PendingSuggestionApplyEvent?> = _lastPendingSuggestionApply
+
+    fun clearPendingSuggestionApply() { _lastPendingSuggestionApply.value = null }
+
+    data class PendingSuggestionApplyEvent(val count: Int)
 
     fun deleteTransaction(id: String) {
         viewModelScope.launch { transactions.delete(id) }

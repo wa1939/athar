@@ -74,6 +74,7 @@ sealed interface TodayEvent {
     data class ConfirmPending(val id: String) : TodayEvent
     data class DismissPending(val id: String) : TodayEvent
     data class ApplyPendingCategorySuggestion(val id: String) : TodayEvent
+    data object BulkApplyPendingCategorySuggestions : TodayEvent
     data class OpenTransaction(val id: String) : TodayEvent
     data object AddManual : TodayEvent
     data object OpenHistory : TodayEvent
