@@ -74,8 +74,9 @@ class SupportDiagnosticsExporterTest {
     }
 
     @Test
-    fun `payload summarizes category backlog without raw merchant or amount text`() {
+    fun `payload summarizes category backlog coverage without raw merchant or amount text`() {
         val rawMerchant = "Jarir Electronics"
+        val secondRawMerchant = "Local Cafe"
         val payload = SupportDiagnosticsReportBuilder.build(
             rows = emptyList(),
             totalRows = 0,
@@ -86,6 +87,7 @@ class SupportDiagnosticsExporterTest {
                 tx(id = "2", merchant = rawMerchant, status = "DISMISSED", categoryId = null, amountMinor = 999_999),
                 tx(id = "3", merchant = "Internal Transfer", status = "PENDING", type = "TRANSFER", categoryId = null),
                 tx(id = "4", merchant = "Starbucks", status = "CONFIRMED", categoryId = "cat-coffee"),
+                tx(id = "5", merchant = secondRawMerchant, status = "CONFIRMED", categoryId = null),
             ),
         )
 
@@ -93,26 +95,49 @@ class SupportDiagnosticsExporterTest {
 
         assertThat(encoded).doesNotContain(rawMerchant)
         assertThat(encoded).doesNotContain(rawMerchant.lowercase())
+        assertThat(encoded).doesNotContain(secondRawMerchant)
+        assertThat(encoded).doesNotContain(secondRawMerchant.lowercase())
         assertThat(encoded).doesNotContain("123456")
         assertThat(encoded).doesNotContain("999999")
         assertThat(payload.privacy.rawMerchants).isEqualTo("omitted")
         assertThat(payload.privacy.transactionRows).isEqualTo("omitted")
-        assertThat(payload.transactionSummary.totalTransactions).isEqualTo(4)
+        assertThat(payload.transactionSummary.totalTransactions).isEqualTo(5)
         assertThat(payload.transactionSummary.categorizedTransactions).isEqualTo(1)
-        assertThat(payload.transactionSummary.categoryBacklogTransactions).isEqualTo(2)
+        assertThat(payload.transactionSummary.categoryBacklogTransactions).isEqualTo(3)
         assertThat(payload.transactionSummary.pendingCategoryBacklog).isEqualTo(1)
         assertThat(payload.transactionSummary.dismissedCategoryBacklog).isEqualTo(1)
+        assertThat(payload.transactionSummary.confirmedWithoutCategory).isEqualTo(1)
         assertThat(payload.transactionSummary.transferRowsExcluded).isEqualTo(1)
 
-        val group = payload.uncategorizedMerchantGroups.single()
+        assertThat(payload.categoryCoverage.categoryEligibleTransactions).isEqualTo(4)
+        assertThat(payload.categoryCoverage.categorizedCategoryEligibleTransactions).isEqualTo(1)
+        assertThat(payload.categoryCoverage.categoryBacklogTransactions).isEqualTo(3)
+        assertThat(payload.categoryCoverage.categorizedCoveragePermille).isEqualTo(250)
+        assertThat(payload.categoryCoverage.backlogCoveragePermille).isEqualTo(750)
+        assertThat(payload.categoryCoverage.topUncategorizedGroupCount).isEqualTo(2)
+        assertThat(payload.categoryCoverage.topUncategorizedSampleCount).isEqualTo(3)
+        assertThat(payload.categoryCoverage.topUncategorizedGroupCoveragePermille).isEqualTo(1_000)
+        assertThat(payload.categoryCoverage.otherBacklogTransactionCount).isEqualTo(0)
+        assertThat(payload.categoryCoverage.largestUncategorizedGroupSampleCount).isEqualTo(2)
+        assertThat(payload.categoryCoverage.largestUncategorizedGroupCoveragePermille).isEqualTo(666)
+
+        assertThat(payload.uncategorizedMerchantGroups).hasSize(2)
+        val group = payload.uncategorizedMerchantGroups.first()
         assertThat(group.merchantHash).hasLength(12)
         assertThat(group.merchantLengthBucket).isEqualTo("9-32")
         assertThat(group.merchantScript).isEqualTo("latin")
         assertThat(group.sampleCount).isEqualTo(2)
+        assertThat(group.shareOfBacklogPermille).isEqualTo(666)
+        assertThat(group.cumulativeShareOfBacklogPermille).isEqualTo(666)
         assertThat(group.pending).isEqualTo(1)
         assertThat(group.dismissed).isEqualTo(1)
         assertThat(group.currencyCounts.map { it.label to it.count }).containsExactly("SAR" to 2)
         assertThat(group.confidenceBuckets.map { it.label to it.count }).containsExactly("0.70-0.84" to 2)
+
+        val secondGroup = payload.uncategorizedMerchantGroups.last()
+        assertThat(secondGroup.sampleCount).isEqualTo(1)
+        assertThat(secondGroup.shareOfBacklogPermille).isEqualTo(333)
+        assertThat(secondGroup.cumulativeShareOfBacklogPermille).isEqualTo(1_000)
     }
 
     @Test

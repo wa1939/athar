@@ -93,14 +93,17 @@ internal object SupportDiagnosticsReportBuilder {
             ignored = statusCounts[SmsParseStatus.IGNORED.name] ?: 0,
             newRows = statusCounts["NEW"] ?: 0,
         )
+        val transactionSummary = buildTransactionSummary(transactions)
+        val uncategorizedMerchantGroups = buildUncategorizedMerchantGroups(transactions)
         return SupportDiagnosticsPayload(
             generatedAt = generatedAt,
             summary = summary,
             statusCounts = normalizedCounts.map { StatusCount(it.first, it.second) },
             senderGroups = buildSenderGroups(recentRows),
             errorGroups = buildErrorGroups(recentRows),
-            transactionSummary = buildTransactionSummary(transactions),
-            uncategorizedMerchantGroups = buildUncategorizedMerchantGroups(transactions),
+            transactionSummary = transactionSummary,
+            categoryCoverage = buildCategoryCoverage(transactions, uncategorizedMerchantGroups),
+            uncategorizedMerchantGroups = uncategorizedMerchantGroups,
             recentAuditSamples = recentRows.map { it.toAuditSample() },
         )
     }
@@ -165,8 +168,11 @@ internal object SupportDiagnosticsReportBuilder {
         )
     }
 
-    private fun buildUncategorizedMerchantGroups(rows: List<TransactionEntity>): List<UncategorizedMerchantGroup> =
-        rows.filter { it.isCategoryBacklog() && it.merchantNormalized.isNotBlank() }
+    private fun buildUncategorizedMerchantGroups(rows: List<TransactionEntity>): List<UncategorizedMerchantGroup> {
+        val backlogRows = rows.filter { it.isCategoryBacklog() }
+        var cumulativeSamples = 0
+        return backlogRows
+            .filter { it.merchantNormalized.isNotBlank() }
             .groupBy { it.merchantNormalized.trim().lowercase() }
             .map { (merchant, groupedRows) ->
                 UncategorizedMerchantGroup(
@@ -174,6 +180,8 @@ internal object SupportDiagnosticsReportBuilder {
                     merchantLengthBucket = bucket(merchant.length),
                     merchantScript = textScript(merchant),
                     sampleCount = groupedRows.size,
+                    shareOfBacklogPermille = 0,
+                    cumulativeShareOfBacklogPermille = 0,
                     pending = groupedRows.count { it.status == "PENDING" },
                     dismissed = groupedRows.count { it.status == "DISMISSED" },
                     confirmedWithoutCategory = groupedRows.count { it.status == "CONFIRMED" },
@@ -187,6 +195,40 @@ internal object SupportDiagnosticsReportBuilder {
             }
             .sortedWith(compareByDescending<UncategorizedMerchantGroup> { it.sampleCount }.thenBy { it.merchantHash })
             .take(TopGroupLimit)
+            .map { group ->
+                cumulativeSamples += group.sampleCount
+                group.copy(
+                    shareOfBacklogPermille = permille(group.sampleCount, backlogRows.size),
+                    cumulativeShareOfBacklogPermille = permille(cumulativeSamples, backlogRows.size),
+                )
+            }
+    }
+
+    private fun buildCategoryCoverage(
+        rows: List<TransactionEntity>,
+        uncategorizedGroups: List<UncategorizedMerchantGroup>,
+    ): CategoryCoverageSummary {
+        val eligibleRows = rows.filter { it.isCategoryEligible() }
+        val backlogRows = eligibleRows.filter { it.categoryId.isNullOrBlank() }
+        val topGroupSampleCount = uncategorizedGroups.sumOf { it.sampleCount }
+        val largestGroupSampleCount = uncategorizedGroups.firstOrNull()?.sampleCount ?: 0
+        return CategoryCoverageSummary(
+            categoryEligibleTransactions = eligibleRows.size,
+            categorizedCategoryEligibleTransactions = eligibleRows.count { !it.categoryId.isNullOrBlank() },
+            categoryBacklogTransactions = backlogRows.size,
+            categorizedCoveragePermille = permille(
+                numerator = eligibleRows.count { !it.categoryId.isNullOrBlank() },
+                denominator = eligibleRows.size,
+            ),
+            backlogCoveragePermille = permille(backlogRows.size, eligibleRows.size),
+            topUncategorizedGroupCount = uncategorizedGroups.size,
+            topUncategorizedSampleCount = topGroupSampleCount,
+            topUncategorizedGroupCoveragePermille = permille(topGroupSampleCount, backlogRows.size),
+            otherBacklogTransactionCount = (backlogRows.size - topGroupSampleCount).coerceAtLeast(0),
+            largestUncategorizedGroupSampleCount = largestGroupSampleCount,
+            largestUncategorizedGroupCoveragePermille = permille(largestGroupSampleCount, backlogRows.size),
+        )
+    }
 
     private fun SmsMessageEntity.toAuditSample(): AuditSample {
         val reason = reasonWithoutTemplateAttempts()
@@ -214,11 +256,22 @@ internal object SupportDiagnosticsReportBuilder {
             categoryId.isNullOrBlank() &&
             status in setOf("PENDING", "DISMISSED", "CONFIRMED")
 
+    private fun TransactionEntity.isCategoryEligible(): Boolean =
+        type != "TRANSFER" &&
+            status in setOf("PENDING", "DISMISSED", "CONFIRMED")
+
     private inline fun <T> List<T>.countBy(crossinline selector: (T) -> String): List<DiagnosticsCount> =
         groupingBy { selector(it).ifBlank { "blank" } }
             .eachCount()
             .map { DiagnosticsCount(label = it.key, count = it.value) }
             .sortedWith(compareByDescending<DiagnosticsCount> { it.count }.thenBy { it.label })
+
+    private fun permille(numerator: Int, denominator: Int): Int =
+        if (denominator <= 0) {
+            0
+        } else {
+            ((numerator.toLong() * 1_000L) / denominator.toLong()).toInt()
+        }
 
     private fun SmsMessageEntity.senderHash(): String = sha256Prefix(sender.trim().lowercase())
 
@@ -406,6 +459,7 @@ internal data class SupportDiagnosticsPayload(
     @SerialName("sender_groups") val senderGroups: List<SenderGroup>,
     @SerialName("error_groups") val errorGroups: List<ErrorGroup>,
     @SerialName("transaction_summary") val transactionSummary: TransactionDiagnosticsSummary,
+    @SerialName("category_coverage") val categoryCoverage: CategoryCoverageSummary,
     @SerialName("uncategorized_merchant_groups") val uncategorizedMerchantGroups: List<UncategorizedMerchantGroup>,
     @SerialName("recent_audit_samples") val recentAuditSamples: List<AuditSample>,
 )
@@ -479,11 +533,28 @@ internal data class TransactionDiagnosticsSummary(
 )
 
 @Serializable
+internal data class CategoryCoverageSummary(
+    @SerialName("category_eligible_transactions") val categoryEligibleTransactions: Int,
+    @SerialName("categorized_category_eligible_transactions") val categorizedCategoryEligibleTransactions: Int,
+    @SerialName("category_backlog_transactions") val categoryBacklogTransactions: Int,
+    @SerialName("categorized_coverage_permille") val categorizedCoveragePermille: Int,
+    @SerialName("backlog_coverage_permille") val backlogCoveragePermille: Int,
+    @SerialName("top_uncategorized_group_count") val topUncategorizedGroupCount: Int,
+    @SerialName("top_uncategorized_sample_count") val topUncategorizedSampleCount: Int,
+    @SerialName("top_uncategorized_group_coverage_permille") val topUncategorizedGroupCoveragePermille: Int,
+    @SerialName("other_backlog_transaction_count") val otherBacklogTransactionCount: Int,
+    @SerialName("largest_uncategorized_group_sample_count") val largestUncategorizedGroupSampleCount: Int,
+    @SerialName("largest_uncategorized_group_coverage_permille") val largestUncategorizedGroupCoveragePermille: Int,
+)
+
+@Serializable
 internal data class UncategorizedMerchantGroup(
     @SerialName("merchant_hash") val merchantHash: String,
     @SerialName("merchant_length_bucket") val merchantLengthBucket: String,
     @SerialName("merchant_script") val merchantScript: String,
     @SerialName("sample_count") val sampleCount: Int,
+    @SerialName("share_of_backlog_permille") val shareOfBacklogPermille: Int,
+    @SerialName("cumulative_share_of_backlog_permille") val cumulativeShareOfBacklogPermille: Int,
     val pending: Int,
     val dismissed: Int,
     @SerialName("confirmed_without_category") val confirmedWithoutCategory: Int,
