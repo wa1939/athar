@@ -352,6 +352,92 @@ class TodayViewModelTest {
     }
 
     @Test
+    fun `state exposes repeated backlog nudge using history repeated backlog rules`() = runTest(mainDispatcher) {
+        val rows = listOf(
+            transaction(id = "coffee-a", type = TxType.EXPENSE, amount = Money.of("18")).copy(
+                merchant = "Brew Lab",
+                merchantNormalized = "brew lab",
+                categoryId = null,
+                status = TxStatus.PENDING,
+            ),
+            transaction(id = "coffee-b", type = TxType.EXPENSE, amount = Money.of("21")).copy(
+                merchant = "Brew Lab",
+                merchantNormalized = "brew lab",
+                categoryId = null,
+                status = TxStatus.DISMISSED,
+            ),
+            transaction(id = "market-a", type = TxType.EXPENSE, amount = Money.of("40")).copy(
+                merchant = "Corner Market",
+                merchantNormalized = "corner market",
+                categoryId = null,
+                status = TxStatus.PENDING,
+            ),
+            transaction(id = "market-b", type = TxType.EXPENSE, amount = Money.of("41")).copy(
+                merchant = "Corner Market",
+                merchantNormalized = "corner market",
+                categoryId = null,
+                status = TxStatus.PENDING,
+            ),
+            transaction(id = "market-c", type = TxType.EXPENSE, amount = Money.of("42")).copy(
+                merchant = "Corner Market",
+                merchantNormalized = "corner market",
+                categoryId = null,
+                status = TxStatus.PENDING,
+            ),
+            transaction(id = "generic-a", type = TxType.EXPENSE, amount = Money.of("10")).copy(
+                merchant = "Payment",
+                merchantNormalized = "payment",
+                categoryId = null,
+                status = TxStatus.PENDING,
+            ),
+            transaction(id = "generic-b", type = TxType.EXPENSE, amount = Money.of("11")).copy(
+                merchant = "Payment",
+                merchantNormalized = "payment",
+                categoryId = null,
+                status = TxStatus.PENDING,
+            ),
+            transaction(id = "categorized", type = TxType.EXPENSE, amount = Money.of("12")).copy(
+                merchant = "Brew Lab",
+                merchantNormalized = "brew lab",
+                categoryId = "cat-cafe",
+            ),
+        )
+        val viewModel = TodayViewModel(
+            transactions = FakeTransactionRepository(
+                currentConfirmed = rows.filter { it.status == TxStatus.CONFIRMED },
+                pending = rows.filter { it.status == TxStatus.PENDING },
+                dismissed = rows.filter { it.status == TxStatus.DISMISSED },
+            ),
+            rules = RecordingCategoryRuleRepository(),
+            categories = TodayFakeCategoryRepository(),
+            prefs = FakeUserPreferencesRepository(savingsTarget = 30, emergencyMonths = 6),
+            accounts = FakeAccountRepository(liquidBalance = Money.of("5000")),
+            clock = FixedClock,
+        )
+
+        val state = viewModel.state.first { !it.isLoading }
+        val historyRepeatedRows = filterHistoryTransactions(
+            all = rows,
+            query = "",
+            status = HistoryStatusFilter.ALL,
+            type = HistoryTypeFilter.ALL,
+            source = HistorySourceFilter.ALL,
+            category = HistoryCategoryFilter.REPEATED_UNCATEGORIZED,
+        )
+
+        assertThat(historyRepeatedRows.map { it.id })
+            .containsExactly("market-a", "market-b", "market-c", "coffee-a", "coffee-b")
+            .inOrder()
+        assertThat(state.repeatedBacklogNudge).isEqualTo(
+            TodayRepeatedBacklogNudge(
+                groupCount = 2,
+                transactionCount = historyRepeatedRows.size,
+                largestGroupCount = 3,
+            ),
+        )
+    }
+
+    @Test
     fun `apply pending category suggestion confirms one row without learning a rule`() = runTest(mainDispatcher) {
         val cafe = Fixtures.category(
             id = "cat-cafe",

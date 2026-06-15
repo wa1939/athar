@@ -46,6 +46,7 @@ import java.util.Locale
 @Composable
 fun TodayScreen(
     onOpenHistory: () -> Unit = {},
+    onOpenRepeatedBacklog: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: TodayViewModel = hiltViewModel(),
 ) {
@@ -79,6 +80,7 @@ fun TodayScreen(
             when (event) {
                 is TodayEvent.AddManual -> showAddSheet = true
                 is TodayEvent.OpenHistory -> onOpenHistory()
+                is TodayEvent.OpenRepeatedBacklog -> onOpenRepeatedBacklog()
                 is TodayEvent.OpenTransaction -> {
                     editing = state.today.firstOrNull { it.id == event.id }
                         ?: state.recent.firstOrNull { it.id == event.id }
@@ -162,6 +164,12 @@ internal fun TodayContent(
                     onClick = { onEvent(TodayEvent.OpenHistory) },
                 )
             }
+            state.repeatedBacklogNudge?.let { nudge ->
+                RepeatedBacklogNudgeBanner(
+                    nudge = nudge,
+                    onClick = { onEvent(TodayEvent.OpenRepeatedBacklog) },
+                )
+            }
             Header(state = state)
             if (state.pending.isNotEmpty()) {
                 PendingTray(state = state, onEvent = onEvent)
@@ -228,6 +236,41 @@ private fun DismissedAttentionBanner(count: Int, onClick: () -> Unit) {
             text = stringResource(R.string.today_dismissed_banner_cta),
             style = theme.typography.caption,
             color = theme.colors.parchment,
+        )
+    }
+}
+
+@Composable
+private fun RepeatedBacklogNudgeBanner(
+    nudge: TodayRepeatedBacklogNudge,
+    onClick: () -> Unit,
+) {
+    val theme = AtharTheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(theme.colors.surface)
+            .clickable(onClick = onClick)
+            .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+    ) {
+        AtharText(
+            text = stringResource(
+                R.string.today_repeated_backlog_banner,
+                nudge.transactionCount,
+                nudge.groupCount,
+                nudge.largestGroupCount,
+            ),
+            style = theme.typography.body,
+            color = theme.colors.ink,
+            modifier = Modifier.weight(1f),
+        )
+        AtharText(
+            text = stringResource(R.string.today_repeated_backlog_banner_cta),
+            style = theme.typography.caption,
+            color = theme.colors.ember,
         )
     }
 }

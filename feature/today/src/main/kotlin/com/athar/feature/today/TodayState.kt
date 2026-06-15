@@ -25,6 +25,7 @@ data class TodayState(
     val pendingCategorySuggestions: ImmutableMap<String, PendingCategorySuggestion>,
     val pendingCategorySuggestionSummary: ImmutableList<PendingCategorySuggestionSummary>,
     val dismissedToday: ImmutableList<Transaction>,
+    val repeatedBacklogNudge: TodayRepeatedBacklogNudge?,
     val categoryLabels: ImmutableMap<String, CategoryLabel>,
     val goalNudge: TodayGoalNudge?,
     val isLoading: Boolean,
@@ -49,6 +50,7 @@ data class TodayState(
             pendingCategorySuggestions = persistentMapOf(),
             pendingCategorySuggestionSummary = persistentListOf(),
             dismissedToday = persistentListOf(),
+            repeatedBacklogNudge = null,
             categoryLabels = persistentMapOf(),
             goalNudge = null,
             isLoading = true,
@@ -69,6 +71,13 @@ data class PendingCategorySuggestionSummary(
 )
 
 @Immutable
+data class TodayRepeatedBacklogNudge(
+    val groupCount: Int,
+    val transactionCount: Int,
+    val largestGroupCount: Int,
+)
+
+@Immutable
 data class TodayGoalNudge(
     val savingsRatePercent: BigDecimal?,
     val savingsRateTargetPercent: Int,
@@ -86,6 +95,7 @@ sealed interface TodayEvent {
     data class OpenTransaction(val id: String) : TodayEvent
     data object AddManual : TodayEvent
     data object OpenHistory : TodayEvent
+    data object OpenRepeatedBacklog : TodayEvent
     /** Bulk-confirm every PENDING transaction with confidence ≥ 0.85 (heavily auto-classified). */
     data object BulkConfirmConfident : TodayEvent
     /** Bulk-dismiss every PENDING transaction with confidence < 0.70. */

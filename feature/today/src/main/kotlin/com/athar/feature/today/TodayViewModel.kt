@@ -113,7 +113,10 @@ class TodayViewModel @Inject constructor(
             TodayEvent.BulkApplyPendingCategorySuggestions -> viewModelScope.launch {
                 applyPendingCategorySuggestions()
             }
-            is TodayEvent.OpenTransaction, TodayEvent.AddManual, TodayEvent.OpenHistory -> Unit // UI-owned
+            is TodayEvent.OpenTransaction,
+            TodayEvent.AddManual,
+            TodayEvent.OpenHistory,
+            TodayEvent.OpenRepeatedBacklog -> Unit // UI-owned
             TodayEvent.BulkConfirmConfident -> viewModelScope.launch {
                 transactions.confirmAllConfident(minConfidence = 0.85f)
             }
@@ -236,6 +239,7 @@ class TodayViewModel @Inject constructor(
             allTransactions = allTransactions,
             activeCategories = categories.filterNot { it.archived },
         )
+        val repeatedBacklogNudge = buildTodayRepeatedBacklogNudge(allTransactions)
         return TodayState(
             month = month,
             netFlow = incomeSum - expenseSum,
@@ -250,6 +254,7 @@ class TodayViewModel @Inject constructor(
             pendingCategorySuggestions = pendingCategorySuggestions,
             pendingCategorySuggestionSummary = buildPendingCategorySuggestionSummary(pendingCategorySuggestions),
             dismissedToday = dismissedToday.toImmutableList(),
+            repeatedBacklogNudge = repeatedBacklogNudge,
             categoryLabels = categoryLabels,
             goalNudge = goalNudge,
             isLoading = false,
@@ -344,6 +349,30 @@ internal fun buildPendingCategorySuggestionSummary(
             )
         }
         .toPersistentList()
+
+internal fun buildTodayRepeatedBacklogNudge(
+    allTransactions: List<Transaction>,
+): TodayRepeatedBacklogNudge? {
+    val repeatedRows = filterHistoryTransactions(
+        all = allTransactions,
+        query = "",
+        status = HistoryStatusFilter.ALL,
+        type = HistoryTypeFilter.ALL,
+        source = HistorySourceFilter.ALL,
+        category = HistoryCategoryFilter.REPEATED_UNCATEGORIZED,
+    )
+    val summary = buildRepeatedBacklogSummary(
+        visibleRows = repeatedRows,
+        category = HistoryCategoryFilter.REPEATED_UNCATEGORIZED,
+    )
+    return summary.takeIf { it.transactionCount > 0 }?.let {
+        TodayRepeatedBacklogNudge(
+            groupCount = it.groupCount,
+            transactionCount = it.transactionCount,
+            largestGroupCount = it.largestGroupCount,
+        )
+    }
+}
 
 internal fun buildPendingCategorySuggestions(
     pending: List<Transaction>,

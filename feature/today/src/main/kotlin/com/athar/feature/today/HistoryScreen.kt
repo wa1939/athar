@@ -49,6 +49,8 @@ import com.athar.core.domain.model.TxType
 fun HistoryScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    initialCategoryFilter: HistoryCategoryFilter? = null,
+    initialSelectionMode: Boolean = false,
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
     val theme = AtharTheme
@@ -76,6 +78,12 @@ fun HistoryScreen(
         if (bulkCategoryResult != null) {
             kotlinx.coroutines.delay(4_000)
             viewModel.clearBulkCategory()
+        }
+    }
+    LaunchedEffect(initialCategoryFilter, initialSelectionMode) {
+        initialCategoryFilter?.let(viewModel::setCategory)
+        if (initialSelectionMode) {
+            viewModel.enterSelectionMode()
         }
     }
 

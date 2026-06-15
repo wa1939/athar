@@ -551,6 +551,94 @@ class HistoryFilterTest {
     }
 
     @Test
+    fun `repeated backlog summary counts only specific repeated uncategorized groups`() {
+        val rows = listOf(
+            tx(
+                id = "coffee-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Coffee A",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "coffee-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Coffee B",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "market-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Market A",
+                merchantNormalized = "corner market",
+            ),
+            tx(
+                id = "market-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Market B",
+                merchantNormalized = "corner market",
+            ),
+            tx(
+                id = "market-c",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Market C",
+                merchantNormalized = "corner market",
+            ),
+            tx(
+                id = "generic-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Payment",
+                merchantNormalized = "payment",
+            ),
+            tx(
+                id = "generic-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchant = "Payment",
+                merchantNormalized = "payment",
+            ),
+            tx(
+                id = "categorized",
+                source = IngestSource.SMS,
+                categoryId = "cat-cafe",
+                merchant = "Coffee A",
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "transfer",
+                source = IngestSource.SMS,
+                type = TxType.TRANSFER,
+                categoryId = null,
+                merchantNormalized = "transfer",
+            ),
+        )
+
+        assertThat(
+            buildRepeatedBacklogSummary(
+                visibleRows = rows,
+                category = HistoryCategoryFilter.REPEATED_UNCATEGORIZED,
+            ),
+        ).isEqualTo(
+            RepeatedBacklogSummary(
+                groupCount = 2,
+                transactionCount = 5,
+                largestGroupCount = 3,
+            ),
+        )
+        assertThat(
+            buildRepeatedBacklogSummary(
+                visibleRows = rows,
+                category = HistoryCategoryFilter.UNCATEGORIZED,
+            ),
+        ).isEqualTo(RepeatedBacklogSummary.Empty)
+    }
+
+    @Test
     fun `filters categorized rows without hiding searched merchants`() {
         val rows = listOf(
             tx(id = "coffee-categorized", source = IngestSource.IMPORT, categoryId = "cat-coffee"),

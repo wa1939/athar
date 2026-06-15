@@ -168,6 +168,10 @@ class HistoryViewModel @Inject constructor(
         if (!next) _selectedIds.value = emptySet()
     }
 
+    fun enterSelectionMode() {
+        _selectionMode.value = true
+    }
+
     fun clearSelection() {
         _selectionMode.value = false
         _selectedIds.value = emptySet()
@@ -499,6 +503,35 @@ internal fun buildRepeatedBacklogCountById(
             ?.takeIf { it > 1 }
             ?.let { count -> id to count }
     }.toMap()
+}
+
+internal data class RepeatedBacklogSummary(
+    val groupCount: Int,
+    val transactionCount: Int,
+    val largestGroupCount: Int,
+) {
+    companion object {
+        val Empty = RepeatedBacklogSummary(groupCount = 0, transactionCount = 0, largestGroupCount = 0)
+    }
+}
+
+internal fun buildRepeatedBacklogSummary(
+    visibleRows: List<Transaction>,
+    category: HistoryCategoryFilter,
+): RepeatedBacklogSummary {
+    if (category != HistoryCategoryFilter.REPEATED_UNCATEGORIZED) return RepeatedBacklogSummary.Empty
+    val groupCounts = visibleRows
+        .mapNotNull { it.uncategorizedMerchantGroupKey() }
+        .groupingBy { it }
+        .eachCount()
+        .values
+        .filter { it > 1 }
+    if (groupCounts.isEmpty()) return RepeatedBacklogSummary.Empty
+    return RepeatedBacklogSummary(
+        groupCount = groupCounts.size,
+        transactionCount = groupCounts.sum(),
+        largestGroupCount = groupCounts.maxOrNull() ?: 0,
+    )
 }
 
 internal fun topRepeatedBacklogGroupIds(
