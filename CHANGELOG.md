@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Bulk categorization now treats generic merchant labels such as `payment`, `purchase`, `cash`, `merchant`, and `bank` as single-row cleanup work: explicit filled rows still update, but generic keys no longer drive repeated-group inheritance or exact learned rules.
 - Support diagnostics now include a redacted `category_backlog_recommendation` block derived only from aggregate backlog size and hashed repeated-merchant group sizes, pointing support to History repeated-backlog cleanup, bulk CSV categorization, manual cleanup, or no action without exposing raw merchants, amounts, SMS bodies, notes, or transaction rows.
 - Settings now imports the TMOAP workbook's Family Investments sheet through a separate preview-confirm flow, creating the investment pool or replacing matched pool contributors after confirmation so repeat imports do not duplicate rows.
 - Settings now imports the TMOAP workbook's Wishlist sheet through a separate preview-confirm flow, creating new wishes or updating matching existing wishes by item name only after confirmation.

@@ -130,7 +130,8 @@ internal class MerchantBulkExporter @Inject constructor(
                 )
 
     private fun Transaction.merchantGroupKey(): String =
-        merchantNormalized.ifBlank { merchant.lowercase().trim() }.ifBlank { "blank" }
+        specificMerchantBulkKey(merchantNormalized = merchantNormalized, merchant = merchant)
+            ?: "row:$id"
 
     private fun permille(numerator: Int, denominator: Int): Int =
         if (denominator <= 0) {

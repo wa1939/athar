@@ -341,11 +341,13 @@ internal class MerchantBulkImporter @Inject constructor(
         row: List<String>,
         merchantIdx: Int,
         merchantNormIdx: Int,
-    ): String =
-        tx.merchantNormalized.ifBlank {
+    ): String {
+        val key = tx.merchantNormalized.ifBlank {
             rowMerchantNormalized(row, merchantIdx, merchantNormIdx)
                 ?: tx.merchant.lowercase().trim()
         }
+        return key.takeIf { it.isSpecificMerchantBulkKey() }.orEmpty()
+    }
 
     private suspend fun resolveTransaction(
         txId: String,

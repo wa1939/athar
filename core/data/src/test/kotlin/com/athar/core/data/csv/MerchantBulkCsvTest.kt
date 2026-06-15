@@ -395,6 +395,44 @@ class MerchantBulkCsvTest {
     }
 
     @Test
+    fun `importer updates explicit generic merchant rows without propagating or training rules`() = runTest {
+        val repo = FakeTransactionRepository(
+            listOf(
+                tx(id = "payment-1", sourceRefId = "inbox-1", merchant = "Payment", amount = "25.00"),
+                tx(id = "payment-2", sourceRefId = "inbox-2", merchant = "Payment", amount = "35.00"),
+            ),
+        )
+        val rules = FakeCategoryRuleRepository()
+        val importer = MerchantBulkImporter(
+            transactions = repo,
+            rules = rules,
+            categories = FakeCategoryRepository(listOf(coffeeCategory())),
+            clock = FixedClock,
+        )
+        val csv = """
+            id,merchant,merchant_normalized,amount,currency,type,status,date,category_id
+            payment-1,Payment,payment,25.00,SAR,EXPENSE,PENDING,2026-02-14,cat-coffee
+            payment-2,Payment,payment,35.00,SAR,EXPENSE,PENDING,2026-02-14,
+        """.trimIndent()
+
+        val result = importer.importCategorizations(ByteArrayInputStream(csv.toByteArray()))
+
+        assertThat(result).isEqualTo(
+            MerchantBulkImportResult.Done(
+                updated = 1,
+                rulesAdded = 0,
+                skipped = 1,
+                skipSummary = MerchantBulkImportSkipSummary(blankRowsWithoutGroupChoice = 1),
+            ),
+        )
+        assertThat(repo.get("payment-1")?.categoryId).isEqualTo("cat-coffee")
+        assertThat(repo.get("payment-1")?.status).isEqualTo(TxStatus.CONFIRMED)
+        assertThat(repo.get("payment-2")?.categoryId).isNull()
+        assertThat(repo.get("payment-2")?.status).isEqualTo(TxStatus.PENDING)
+        assertThat(rules.learnedRules).isEmpty()
+    }
+
+    @Test
     fun `importer does not update same merchant transactions outside the imported csv`() = runTest {
         val repo = FakeTransactionRepository(
             listOf(
@@ -763,6 +801,41 @@ class MerchantBulkCsvTest {
         assertThat(dataRows.first()[optionsIdx]).doesNotContain("cat-archived")
         assertThat(out.toString(Charsets.UTF_8)).doesNotContain("Internal Transfer")
         assertThat(out.toString(Charsets.UTF_8)).doesNotContain("Starbucks")
+    }
+
+    @Test
+    fun `export does not group generic merchant names as repeated cleanup targets`() = runTest {
+        val rows = listOf(
+            tx(id = "generic-1", sourceRefId = "inbox-1", merchant = "Payment", date = LocalDate(2026, 3, 4)),
+            tx(id = "generic-2", sourceRefId = "inbox-2", merchant = "Payment", date = LocalDate(2026, 3, 3)),
+            tx(id = "specific-1", sourceRefId = "inbox-3", merchant = "Hemmah", date = LocalDate(2026, 3, 2)),
+            tx(id = "specific-2", sourceRefId = "inbox-4", merchant = "Hemmah", date = LocalDate(2026, 3, 1)),
+        )
+        val out = ByteArrayOutputStream()
+
+        val exported = MerchantBulkExporter(
+            transactions = FakeTransactionRepository(rows),
+            categories = FakeCategoryRepository(listOf(homeCategory(), coffeeCategory())),
+            smsAudit = FakeSmsAuditRepository(),
+        ).exportUncategorized(out, MerchantBulkExportMode.FULL_CONTEXT)
+
+        assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 4))
+        val lines = out.toString(Charsets.UTF_8).trim().lines()
+        val header = lines.first().split(",")
+        val merchantIdx = header.indexOf("merchant")
+        val groupCountIdx = header.indexOf("merchant_group_count")
+        val groupRankIdx = header.indexOf("merchant_group_rank")
+        val dataRows = lines.drop(1).map { it.split(",") }
+
+        assertThat(dataRows.map { it[merchantIdx] })
+            .containsExactly("Hemmah", "Hemmah", "Payment", "Payment")
+            .inOrder()
+        assertThat(dataRows.map { it[groupCountIdx] })
+            .containsExactly("2", "2", "1", "1")
+            .inOrder()
+        assertThat(dataRows.map { it[groupRankIdx] })
+            .containsExactly("1", "1", "2", "3")
+            .inOrder()
     }
 
     @Test
