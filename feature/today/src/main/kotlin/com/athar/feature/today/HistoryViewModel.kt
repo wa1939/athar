@@ -556,6 +556,8 @@ data class HistoryBulkCategoryState(
         selectionMode && topRepeatedGroupCount > 0 && topRepeatedSuggestedCategory != null
     val canApplySafeRepeatedSuggestedCategories: Boolean =
         selectionMode && safeRepeatedSuggestedGroupCount > 1
+    val canShowSafeRepeatedSuggestionsSummary: Boolean =
+        canApplySafeRepeatedSuggestedCategories && safeRepeatedSuggestedTransactionCount > 0
 
     companion object {
         val Empty = HistoryBulkCategoryState(

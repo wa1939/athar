@@ -407,6 +407,17 @@ private fun BulkSelectionCard(
                 style = theme.typography.caption,
                 color = theme.colors.muted,
             )
+            if (state.canShowSafeRepeatedSuggestionsSummary) {
+                AtharText(
+                    text = stringResource(
+                        R.string.history_bulk_safe_repeated_suggestions_summary,
+                        state.safeRepeatedSuggestedGroupCount,
+                        state.safeRepeatedSuggestedTransactionCount,
+                    ),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
