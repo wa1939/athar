@@ -61,6 +61,82 @@ class CommunityRulesShareExporterTest {
     }
 
     @Test
+    fun `export omits generic learned substring rules`() = runTest {
+        val out = ByteArrayOutputStream()
+        val exporter = CommunityRulesShareExporter(
+            ruleDao = FakeCategoryRuleDao(
+                listOf(
+                    rule(
+                        id = "always-payment",
+                        pattern = "payment",
+                        patternType = PatternType.SUBSTRING,
+                        learnedFromUser = true,
+                    ),
+                    rule(
+                        id = "always-cash",
+                        pattern = "cash",
+                        patternType = PatternType.SUBSTRING,
+                        learnedFromUser = true,
+                    ),
+                    rule(
+                        id = "always-arabic-payment",
+                        pattern = "دفع",
+                        patternType = PatternType.SUBSTRING,
+                        learnedFromUser = true,
+                    ),
+                    rule(
+                        id = "always-jarir",
+                        pattern = "JARIR Bookstore",
+                        patternType = PatternType.SUBSTRING,
+                        learnedFromUser = true,
+                    ),
+                ),
+            ),
+            clock = FixedClock,
+        )
+
+        val result = exporter.exportLearnedRules(out)
+
+        assertThat(result).isEqualTo(CommunityRulesShareResult.Done(rows = 1))
+        val rules = Json.parseToJsonElement(out.toString(Charsets.UTF_8))
+            .jsonObject
+            .getValue("rules")
+            .jsonArray
+        assertThat(rules).hasSize(1)
+        assertThat(rules.single().jsonObject.getValue("pattern").jsonPrimitive.content)
+            .isEqualTo("jarir bookstore")
+    }
+
+    @Test
+    fun `export is empty when learned substring rules are generic`() = runTest {
+        val out = ByteArrayOutputStream()
+        val exporter = CommunityRulesShareExporter(
+            ruleDao = FakeCategoryRuleDao(
+                listOf(
+                    rule(
+                        id = "always-bank",
+                        pattern = "bank",
+                        patternType = PatternType.SUBSTRING,
+                        learnedFromUser = true,
+                    ),
+                    rule(
+                        id = "always-arabic-cash",
+                        pattern = "كاش",
+                        patternType = PatternType.SUBSTRING,
+                        learnedFromUser = true,
+                    ),
+                ),
+            ),
+            clock = FixedClock,
+        )
+
+        val result = exporter.exportLearnedRules(out)
+
+        assertThat(result).isEqualTo(CommunityRulesShareResult.Empty)
+        assertThat(out.size()).isEqualTo(0)
+    }
+
+    @Test
     fun `export is empty when only exact local rules exist`() = runTest {
         val out = ByteArrayOutputStream()
         val exporter = CommunityRulesShareExporter(

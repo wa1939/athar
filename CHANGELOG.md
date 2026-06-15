@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Community-rule exports now reuse the shared specific-merchant guard, so legacy explicit substring rules for generic labels such as `payment`, `cash`, `bank`, `كاش`, and `دفع` are not exported or proposed as public seed rules.
 - Today and History edit flows now guard explicit "Always categorize" rule learning with the shared specific-merchant check, so generic labels such as `payment`, `cash`, `bank`, `كاش`, and `دفع` save as one-row edits instead of prompting for or creating broad substring rules/backfills.
 - Manual Add Transaction quick-add/autocomplete chips now reuse the shared specific-merchant guard, so generic history labels such as `payment`, `cash`, `bank`, `كاش`, and `دفع` do not appear as routine merchant shortcuts while real repeated merchants still do.
 - Recurring auto-detected suggestions now reuse the shared specific-merchant guard, so repeated generic labels such as `payment`, `cash`, `bank`, `كاش`, and `دفع` cannot become subscription/rule suggestions while real merchants such as gyms, rent, utilities, and salary sources still surface when they repeat.

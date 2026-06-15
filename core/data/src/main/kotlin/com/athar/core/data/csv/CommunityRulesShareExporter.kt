@@ -2,6 +2,7 @@ package com.athar.core.data.csv
 
 import com.athar.core.data.db.dao.CategoryRuleDao
 import com.athar.core.domain.model.PatternType
+import com.athar.core.domain.model.isSpecificMerchantKey
 import com.athar.core.domain.repo.CommunityRulesShareResult
 import com.athar.core.domain.repo.CommunityRulesShareTrigger
 import kotlinx.datetime.Clock
@@ -21,11 +22,13 @@ import javax.inject.Singleton
  * repository as a community-rules proposal (Issue #5a follow-on, ships in
  * beta.20).
  *
- * Privacy contract: the JSON contains ONLY (pattern, categoryId, confidence) tuples.
- * No transaction data, no amounts, no merchant raw SMS bodies, no account IDs, no PII.
- * Each tuple is a substring pattern the user *explicitly created* by tapping
- * "Always categorize X as Y" — these are user-authored rules, not exact local
- * bulk-import or history-derived rules.
+ * Privacy contract: the JSON contains ONLY (pattern, categoryId, confidence)
+ * tuples for specific merchant patterns. No transaction data, no amounts, no
+ * merchant raw SMS bodies, no account IDs, no PII. Each tuple is a substring
+ * pattern the user *explicitly created* by tapping "Always categorize X as Y"
+ * and that still passes the shared specific-merchant guard — these are
+ * user-authored rules, not exact local bulk-import/history-derived rules or
+ * generic parser labels.
  */
 @Singleton
 internal class CommunityRulesShareExporter @Inject constructor(
@@ -40,11 +43,11 @@ internal class CommunityRulesShareExporter @Inject constructor(
 
     override suspend fun exportLearnedRules(out: OutputStream): CommunityRulesShareResult =
         runCatching {
-            val learned = ruleDao.observeAll().let { flow ->
-                // Use the suspend `all()` instead to avoid hanging on the Flow.
-                ruleDao.all()
-            }.filter {
-                it.learnedFromUser && it.patternType == PatternType.SUBSTRING.name
+            val learned = ruleDao.all().filter { entity ->
+                val pattern = entity.pattern.lowercase().trim()
+                entity.learnedFromUser &&
+                    entity.patternType == PatternType.SUBSTRING.name &&
+                    pattern.isSpecificMerchantKey()
             }
             if (learned.isEmpty()) return CommunityRulesShareResult.Empty
 
