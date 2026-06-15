@@ -3133,6 +3133,66 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses cash deposit notification with other income label`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Cash deposit SAR 500.00 posted"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("500.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.counterparty).isEqualTo("Cash deposit")
+    }
+
+    @Test
+    fun `parses posted cash deposit notifications with available balance`() {
+        val result = parser.parse(
+            event(
+                "notification:com.chase.sig.android",
+                "Cash deposit SAR 500.00 posted. Available balance SAR 1,000.00",
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("500.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.counterparty).isEqualTo("Cash deposit")
+        assertThat(result.balanceAfter!!.amount).isEqualTo(BigDecimal("1000.00"))
+        assertThat(result.balanceAfter!!.currency).isEqualTo("SAR")
+    }
+
+    @Test
+    fun `parses check deposit notification with source label`() {
+        val result = parser.parse(
+            event("notification:com.wellsfargo.mobile", "Check deposit credited USD 250.00 from Mobile Deposit"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("250.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.counterparty).isEqualTo("Check deposit - Mobile Deposit")
+    }
+
+    @Test
+    fun `parses Arabic cash deposit notification with other income label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم إيداع نقدي ٥٠٠ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("500"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.counterparty).isEqualTo("إيداع نقدي")
+    }
+
+    @Test
+    fun `ignores cash deposit limit notifications with amounts`() {
+        assertThat(
+            parser.parse(event("notification:com.chase.sig.android", "Your cash deposit limit is SAR 5,000")),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
     fun `ignores transfer limit notifications with amounts`() {
         assertThat(
             parser.parse(event("notification:com.chase.sig.android", "Your daily transfer limit is now AED 5,000")),

@@ -68,6 +68,14 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\b(?:cash\s*back|cashback|card\s+cashback)\b[^\n\r]{0,40}\b(?:credited|credit|received|deposited|deposit|paid|posted)\b|\b(?:credited|credit|received|deposited|deposit|paid|posted)\b[^\n\r]{0,40}\b(?:cash\s*back|cashback|card\s+cashback)\b|(?:إيداع|ايداع|وارد|استلام)[^\n\r]{0,40}(?:كاش\s*باك|استرداد\s+نقدي)|(?:كاش\s*باك|استرداد\s+نقدي)[^\n\r]{0,40}(?:إيداع|ايداع|وارد|استلام))""",
         RegexOption.IGNORE_CASE,
     )
+    private val cashDepositIncomeWords = Regex(
+        """(?:\b(?:cash|atm)\s+deposit\b[^\n\r]{0,40}\b(?:credited|credit|received|deposited|deposit|posted|completed|successful)\b|\b(?:credited|credit|received|deposited|deposit|posted|completed|successful)\b[^\n\r]{0,40}\b(?:cash|atm)\s+deposit\b|(?:إيداع|ايداع|وارد|استلام)[^\n\r]{0,40}نقدي|نقدي[^\n\r]{0,40}(?:إيداع|ايداع|وارد|استلام))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val chequeDepositIncomeWords = Regex(
+        """(?:\b(?:check|cheque)\s+deposit\b[^\n\r]{0,40}\b(?:credited|credit|received|deposited|deposit|posted|completed|successful|cleared)\b|\b(?:credited|credit|received|deposited|deposit|posted|completed|successful|cleared)\b[^\n\r]{0,40}\b(?:check|cheque)\s+deposit\b|(?:إيداع|ايداع|وارد|استلام)[^\n\r]{0,40}(?:شيك|شيكات)|(?:شيك|شيكات)[^\n\r]{0,40}(?:إيداع|ايداع|وارد|استلام))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val freelanceIncomeWords = Regex(
         """(?:\b(?:freelance|contractor|gig|side\s+(?:income|project|job|hustle))\s+(?:income|payment|paid|payout|deposit|credited|credit|received|posted)\b|\b(?:payment|paid|payout|deposit|credited|credit|received|posted)\b[^\n\r]{0,40}\b(?:freelance|contractor|gig|side\s+(?:income|project|job|hustle))\b|(?:إيداع|ايداع|وارد|استلام)[^\n\r]{0,40}(?:دخل\s+عمل\s+حر|عمل\s+حر)|(?:دخل\s+عمل\s+حر|عمل\s+حر)[^\n\r]{0,40}(?:إيداع|ايداع|وارد|استلام))""",
         RegexOption.IGNORE_CASE,
@@ -98,6 +106,10 @@ class GenericBankNotificationTemplate : BankTemplate {
     )
     private val sideIncomeNonPostedWords = Regex(
         """(?:\b(?:freelance|contractor|gig|side\s+(?:income|project|job|hustle))\b[^\n\r]{0,80}\b(?:invoice|proposal|quote|estimate|estimated|submitted|pending|approved|approval|contract|milestone|due|reminder)\b|\b(?:invoice|proposal|quote|estimate|estimated|submitted|pending|approved|approval|contract|milestone|due|reminder)\b[^\n\r]{0,80}\b(?:freelance|contractor|gig|side\s+(?:income|project|job|hustle))\b|\b(?:rental|rent)\s+income\b[^\n\r]{0,80}\b(?:estimate|estimated|expected|projection|statement|report|due|reminder|lease|application)\b|\b(?:dividend|interest)\b[^\n\r]{0,80}\b(?:estimate|estimated|expected|projection|yield|rate|rates|statement|report|announcement|declared|ex[-\s]?date|record\s+date|eligible|calculator)\b|\b(?:estimate|estimated|expected|projection|yield|rate|rates|statement|report|announcement|declared|ex[-\s]?date|record\s+date|eligible|calculator)\b[^\n\r]{0,80}\b(?:dividend|interest)\b|(?:دخل\s+عمل\s+حر|عمل\s+حر|دخل\s+إيجار|دخل\s+ايجار|دخل\s+توزيعات|توزيعات\s+أرباح|توزيعات\s+ارباح|دخل\s+فوائد|فوائد)[^\n\r]{0,80}(?:فاتورة|عرض\s+سعر|تقدير|متوقع|تقرير|كشف|قيد|موافقة|تذكير|مستحق|عقد|معدل|نسبة|حاسبة))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val depositNonPostedWords = Regex(
+        """(?:\b(?:cash|atm|check|cheque)?\s*deposit\b[^\n\r]{0,80}\b(?:limit|limits|fee|fees|hold|available|availability|pending|rejected|failed|unsuccessful|returned|rate|rates|statement|reminder|scheduled|appointment|locator)\b|\b(?:limit|limits|fee|fees|hold|available|availability|pending|rejected|failed|unsuccessful|returned|rate|rates|statement|reminder|scheduled|appointment|locator)\b[^\n\r]{0,80}\b(?:cash|atm|check|cheque)?\s*deposit\b|(?:إيداع|ايداع)[^\n\r]{0,80}(?:حد|سقف|رسوم|معلق|قيد|فشل|مرفوض|مرتجع|موعد|تذكير|كشف|متاح))""",
         RegexOption.IGNORE_CASE,
     )
     private val transferWords = Regex(
@@ -524,6 +536,8 @@ class GenericBankNotificationTemplate : BankTemplate {
     override fun tryParse(body: String, receivedAt: Instant): ParseResult {
         val normalized = Normalize.digits(body)
         val hasAction = hasAction(normalized)
+        val hasPostedDeposit =
+            cashDepositIncomeWords.containsMatchIn(normalized) || chequeDepositIncomeWords.containsMatchIn(normalized)
 
         if (securityCodeAuthorizationWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (authorizationHoldWords.containsMatchIn(normalized)) return ParseResult.Ignored
@@ -532,6 +546,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (reimbursementNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (bonusNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (sideIncomeNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (depositNonPostedWords.containsMatchIn(normalized) && !hasPostedDeposit) return ParseResult.Ignored
         if (isRewardOnlyNotification(normalized)) return ParseResult.Ignored
         if (isMarketingOnlyPromotion(normalized)) return ParseResult.Ignored
         if (declinedWords.containsMatchIn(normalized)) return ParseResult.Ignored
@@ -679,6 +694,8 @@ class GenericBankNotificationTemplate : BankTemplate {
             reimbursementIncomeWords.containsMatchIn(body) ||
             bonusIncomeWords.containsMatchIn(body) ||
             cashbackIncomeWords.containsMatchIn(body) ||
+            cashDepositIncomeWords.containsMatchIn(body) ||
+            chequeDepositIncomeWords.containsMatchIn(body) ||
             freelanceIncomeWords.containsMatchIn(body) ||
             rentalIncomeWords.containsMatchIn(body) ||
             dividendIncomeWords.containsMatchIn(body) ||
@@ -1070,6 +1087,18 @@ class GenericBankNotificationTemplate : BankTemplate {
             value = if (ArabicCashbackIncomeTerms.any { body.contains(it) }) "دخل كاش باك" else "Cashback income",
             words = cashbackIncomeLabelWords,
         )
+        cashDepositIncomeWords.containsMatchIn(body) -> IncomeLabel(
+            value = if (ArabicCashDepositTerms.any { body.contains(it) }) "إيداع نقدي" else "Cash deposit",
+            words = cashDepositLabelWords,
+        )
+        chequeDepositIncomeWords.containsMatchIn(body) -> IncomeLabel(
+            value = when {
+                ArabicChequeDepositTerms.any { body.contains(it) } -> "إيداع شيك"
+                checkDepositWords.containsMatchIn(body) -> "Check deposit"
+                else -> "Cheque deposit"
+            },
+            words = chequeDepositLabelWords,
+        )
         freelanceIncomeWords.containsMatchIn(body) -> IncomeLabel(
             value = if (ArabicFreelanceIncomeTerms.any { body.contains(it) }) "دخل عمل حر" else "Freelance income",
             words = freelanceIncomeLabelWords,
@@ -1143,6 +1172,8 @@ class GenericBankNotificationTemplate : BankTemplate {
         reimbursementIncomeWords.find(body)?.range?.first,
         bonusIncomeWords.find(body)?.range?.first,
         cashbackIncomeWords.find(body)?.range?.first,
+        cashDepositIncomeWords.find(body)?.range?.first,
+        chequeDepositIncomeWords.find(body)?.range?.first,
         freelanceIncomeWords.find(body)?.range?.first,
         rentalIncomeWords.find(body)?.range?.first,
         dividendIncomeWords.find(body)?.range?.first,
@@ -1350,6 +1381,8 @@ class GenericBankNotificationTemplate : BankTemplate {
         private val ArabicReimbursementTerms = listOf("تعويض مصروفات", "استرداد مصروفات")
         private val ArabicBonusTerms = listOf("مكافأة", "مكافاه")
         private val ArabicCashbackIncomeTerms = listOf("كاش باك", "استرداد نقدي")
+        private val ArabicCashDepositTerms = listOf("إيداع نقدي", "ايداع نقدي")
+        private val ArabicChequeDepositTerms = listOf("إيداع شيك", "ايداع شيك")
         private val ArabicFreelanceIncomeTerms = listOf("دخل عمل حر", "عمل حر")
         private val ArabicRentalIncomeTerms = listOf("دخل إيجار", "دخل ايجار")
         private val ArabicDividendIncomeTerms = listOf("دخل توزيعات", "توزيعات أرباح", "توزيعات ارباح")
@@ -1370,6 +1403,18 @@ class GenericBankNotificationTemplate : BankTemplate {
         )
         private val cashbackIncomeLabelWords = Regex(
             """(?:\b(?:cash\s*back|cashback)\s+income\b|دخل\s+كاش\s*باك)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val cashDepositLabelWords = Regex(
+            """(?:\bcash\s+deposit\b|إيداع\s+نقدي|ايداع\s+نقدي)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val chequeDepositLabelWords = Regex(
+            """(?:\b(?:check|cheque)\s+deposit\b|إيداع\s+شيك|ايداع\s+شيك)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val checkDepositWords = Regex(
+            """\bcheck\s+deposit\b""",
             RegexOption.IGNORE_CASE,
         )
         private val freelanceIncomeLabelWords = Regex(

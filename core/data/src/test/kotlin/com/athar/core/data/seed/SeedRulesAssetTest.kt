@@ -18,7 +18,7 @@ class SeedRulesAssetTest {
         val categoryIds = seedCategories()
         val rules = seedRules()
 
-        assertThat(rules).hasSize(724)
+        assertThat(rules).hasSize(729)
         assertThat(rules.map { it.categoryId }.filterNot { it in categoryIds }).isEmpty()
 
         val duplicates = rules
@@ -164,6 +164,11 @@ class SeedRulesAssetTest {
             "تعويض مصروفات" to "cat-reimbursements",
             "bonus income" to "cat-bonus",
             "دخل مكافأة" to "cat-bonus",
+            "cash deposit" to "cat-other-income",
+            "إيداع نقدي" to "cat-other-income",
+            "check deposit" to "cat-other-income",
+            "cheque deposit" to "cat-other-income",
+            "إيداع شيك" to "cat-other-income",
         )
 
         val sharedWorkExpenseNotificationLabels = mapOf(

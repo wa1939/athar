@@ -276,6 +276,31 @@
       "priority": 100
     },
     {
+      "pattern": "cash deposit",
+      "categoryId": "cat-other-income",
+      "priority": 100
+    },
+    {
+      "pattern": "إيداع نقدي",
+      "categoryId": "cat-other-income",
+      "priority": 100
+    },
+    {
+      "pattern": "check deposit",
+      "categoryId": "cat-other-income",
+      "priority": 100
+    },
+    {
+      "pattern": "cheque deposit",
+      "categoryId": "cat-other-income",
+      "priority": 100
+    },
+    {
+      "pattern": "إيداع شيك",
+      "categoryId": "cat-other-income",
+      "priority": 100
+    },
+    {
       "pattern": "freelance income",
       "categoryId": "cat-side-income",
       "priority": 100
