@@ -852,6 +852,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             ?: fromHint.find(this)?.groupValues?.get(1))
             ?: titleMerchantBeforeAmount(this, amountMatch)
             ?: partyBeforeAmount(this, amountMatch)
+            ?: bodyLineMerchantAfterAmount(this, amountMatch)
             ?: partyAfterAmount(this, amountMatch)
 
     private fun normalizeExpenseMerchant(body: String, merchant: String?): String? =
@@ -1386,6 +1387,27 @@ class GenericBankNotificationTemplate : BankTemplate {
         return cleanParty(title)
     }
 
+    private fun bodyLineMerchantAfterAmount(body: String, amountMatch: MatchResult): String? {
+        val afterAmount = body.substring(amountMatch.range.last + 1)
+        if ('\n' !in afterAmount && '\r' !in afterAmount) return null
+        return afterAmount
+            .lineSequence()
+            .map { it.trim(' ', '.', ',', '-', '·', ':') }
+            .filter { it.isNotBlank() }
+            .mapNotNull { line ->
+                if (!partyStartsWithLetter.matches(line)) return@mapNotNull null
+                if (amountWithCurrency.containsMatchIn(line)) return@mapNotNull null
+                val candidate = line
+                    .replace(trailingNonPartyContext, "")
+                    .trim(' ', '.', ',', '-', '·', ':')
+                if (candidate.isBlank()) return@mapNotNull null
+                if (genericNotificationMerchantLineWords.matches(candidate)) return@mapNotNull null
+                if (bankAppTitleWords.matches(candidate)) return@mapNotNull null
+                cleanParty(candidate)
+            }
+            .firstOrNull()
+    }
+
     private fun partyAfterAmount(body: String, amountMatch: MatchResult): String? {
         val afterAmount = body
             .substring(amountMatch.range.last + 1)
@@ -1503,6 +1525,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         )
         private val genericNotificationTitleWords = Regex(
             """(?:\b(?:notification|alert|transaction|payment|purchase|debit|credit|card|account|wallet|bank|spent|paid|debited|charged|approved|confirmed|successful|completed|posted|processed|settled|balance)\b|تنبيه|إشعار|اشعار|عملية|دفع|شراء|خصم|بطاقة|حساب|بنك|محفظة|رصيد|مؤكد|ناجح|مكتمل)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val genericNotificationMerchantLineWords = Regex(
+            """(?:\b(?:notification|alert|transaction|payment|purchase|debit|credit|card|account|wallet|bank|spent|paid|debited|charged|approved|confirmed|successful|completed|posted|processed|settled|balance)\b|تنبيه|إشعار|اشعار|عملية|دفع|شراء|خصم|بطاقة|حساب|بنك|محفظة|رصيد|مؤكد|ناجح|مكتمل)(?:[\s:.\-·]+(?:\b(?:notification|alert|transaction|payment|purchase|debit|credit|card|account|wallet|bank|spent|paid|debited|charged|approved|confirmed|successful|completed|posted|processed|settled|balance)\b|تنبيه|إشعار|اشعار|عملية|دفع|شراء|خصم|بطاقة|حساب|بنك|محفظة|رصيد|مؤكد|ناجح|مكتمل))*""",
             RegexOption.IGNORE_CASE,
         )
         private val bankAppTitleWords = Regex(

@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Store-safe notification parsing now preserves merchants from body lines after posted amount/title lines, such as `Card purchase SAR 99.00` followed by `Noon`, while avoiding bank-app titles as false merchants.
 - Store-safe notification parsing now preserves merchant names from title-first notification payloads such as Noon, Carrefour, and Toast Box while avoiding bank-app titles as false merchants.
 - Store-safe notification parsing now treats posted `processed` and `settled` status-prefixed payment/transaction/purchase notifications as posted transactions and preserves merchants such as Noon, Carrefour, and Toast Box.
 - Store-safe notification parsing now treats posted subscription or membership renewal copy as recurring expense charges, preserving merchants such as Netflix/Spotify when present while keeping future renewal reminders ignored.
