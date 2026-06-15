@@ -50,6 +50,49 @@ class ManualEntryPhraseParserTest {
     }
 
     @Test
+    fun `parses pasted English receipt text using total instead of tax`() {
+        val parsed = ManualEntryPhraseParser.parse(
+            """
+            STARBUCKS COFFEE
+            Riyadh Park
+            Receipt 883322
+            VAT 15% 3.91
+            Total SAR 29.50
+            Date 2026-06-12
+            """.trimIndent(),
+        )
+
+        assertThat(parsed).isEqualTo(
+            ManualEntryPhrase(
+                amountInput = "29.5",
+                merchant = "STARBUCKS COFFEE",
+                merchantNormalized = "starbucks coffee",
+                type = TxType.EXPENSE,
+                date = LocalDate(2026, 6, 12),
+            ),
+        )
+    }
+
+    @Test
+    fun `parses pasted Arabic receipt text with Arabic digits`() {
+        val parsed = ManualEntryPhraseParser.parse(
+            """
+            فاتورة ضريبية مبسطة
+            الدانوب
+            ضريبة القيمة المضافة ٤٫٥٠
+            الإجمالي ٣٤٫٥٠ ر.س
+            تاريخ ١٥/٠٦/٢٠٢٦
+            """.trimIndent(),
+        )
+
+        assertThat(parsed?.amountInput).isEqualTo("34.5")
+        assertThat(parsed?.merchant).isEqualTo("الدانوب")
+        assertThat(parsed?.merchantNormalized).isEqualTo("الدانوب")
+        assertThat(parsed?.type).isEqualTo(TxType.EXPENSE)
+        assertThat(parsed?.date).isEqualTo(LocalDate(2026, 6, 15))
+    }
+
+    @Test
     fun `from source does not make expense phrase income`() {
         val english = ManualEntryPhraseParser.parse("paid 50 from wallet at Starbucks")
         val arabic = ManualEntryPhraseParser.parse("دفعت ٣٥ من المحفظة في كارفور")
@@ -80,6 +123,38 @@ class ManualEntryPhraseParserTest {
         assertThat(applied.amount).isEqualTo("50")
         assertThat(applied.merchant).isEqualTo("Starbucks")
         assertThat(applied.type).isEqualTo(TxType.EXPENSE)
+        assertThat(applied.selectedCategoryId).isEqualTo("cat-coffee")
+        assertThat(applied.quickEntryError).isNull()
+    }
+
+    @Test
+    fun `applier fills receipt total merchant date and matching category`() {
+        val state = AddTransactionState.initial(LocalDate(2026, 6, 13)).copy(
+            merchantSuggestions = persistentListOf(
+                ManualEntrySuggestion(
+                    merchant = "Starbucks Coffee",
+                    merchantNormalized = "starbucks coffee",
+                    amountInput = "22",
+                    type = TxType.EXPENSE,
+                    categoryId = "cat-coffee",
+                    uses = 4,
+                ),
+            ),
+        )
+
+        val applied = ManualEntryPhraseApplier.apply(
+            state,
+            """
+            Starbucks Coffee
+            VAT 1.50
+            Grand total SAR 31.00
+            12/06/2026
+            """.trimIndent(),
+        )
+
+        assertThat(applied.amount).isEqualTo("31")
+        assertThat(applied.merchant).isEqualTo("Starbucks Coffee")
+        assertThat(applied.date).isEqualTo(LocalDate(2026, 6, 12))
         assertThat(applied.selectedCategoryId).isEqualTo("cat-coffee")
         assertThat(applied.quickEntryError).isNull()
     }

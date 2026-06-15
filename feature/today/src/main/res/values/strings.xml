@@ -135,7 +135,7 @@
     <string name="add_tx_error_amount_required">أدخل المبلغ</string>
     <string name="add_tx_error_amount_invalid">المبلغ غير صحيح</string>
     <string name="add_tx_label_quick_entry">إدخال سريع</string>
-    <string name="add_tx_placeholder_quick_entry">دفعت 50 في ستاربكس</string>
+    <string name="add_tx_placeholder_quick_entry">دفعت 50 في ستاربكس، أو الصق نص الفاتورة</string>
     <string name="add_tx_quick_apply">تعبئة</string>
     <string name="add_tx_voice">تحدث</string>
     <string name="add_tx_error_quick_entry">لم نقرأ المبلغ والتاجر</string>

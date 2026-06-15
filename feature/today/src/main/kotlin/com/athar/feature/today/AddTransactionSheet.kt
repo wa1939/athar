@@ -334,7 +334,10 @@ private fun QuickEntryRow(
                 onValueChange = onValueChange,
                 label = stringResource(R.string.add_tx_label_quick_entry),
                 placeholder = stringResource(R.string.add_tx_placeholder_quick_entry),
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(max = 96.dp),
+                singleLine = false,
                 isError = error == QuickEntryError.PARSE_FAILED,
             )
             CompactActionButton(
