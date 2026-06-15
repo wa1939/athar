@@ -893,10 +893,92 @@ class HistoryFilterTest {
         assertThat(state.topRepeatedSuggestedCategory?.id).isEqualTo("cat-cafe")
         assertThat(state.topRepeatedSuggestedCategoryUseCount).isEqualTo(2)
         assertThat(state.canApplyTopRepeatedSuggestedCategory).isTrue()
+        assertThat(state.safeRepeatedSuggestedCategory?.id).isEqualTo("cat-cafe")
+        assertThat(state.safeRepeatedSuggestedCategoryTransactionCount).isEqualTo(3)
+        assertThat(state.canApplySingleSafeRepeatedSuggestedCategory).isFalse()
         assertThat(state.safeRepeatedSuggestedGroupCount).isEqualTo(2)
         assertThat(state.safeRepeatedSuggestedTransactionCount).isEqualTo(5)
         assertThat(state.canApplySafeRepeatedSuggestedCategories).isTrue()
         assertThat(state.canShowSafeRepeatedSuggestionsSummary).isTrue()
+        assertThat(state.canApplySuggestedCategory).isFalse()
+    }
+
+    @Test
+    fun `bulk category state exposes one lower safe repeated suggestion when top conflicts`() {
+        val rows = listOf(
+            tx(
+                id = "tea-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "tea-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "tea-c",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchantNormalized = "tea shop",
+            ),
+            tx(
+                id = "coffee-a",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchantNormalized = "coffee shop",
+            ),
+            tx(
+                id = "coffee-b",
+                source = IngestSource.SMS,
+                categoryId = null,
+                merchantNormalized = "coffee shop",
+            ),
+        )
+        val activeCategories = listOf(
+            category(id = "cat-cafe", kind = CategoryKind.EXPENSE),
+            category(id = "cat-groceries", kind = CategoryKind.EXPENSE),
+        )
+        val state = buildHistoryBulkCategoryState(
+            visibleRows = rows,
+            selectedIds = emptySet(),
+            selectionMode = true,
+            activeCategories = activeCategories,
+            category = HistoryCategoryFilter.REPEATED_UNCATEGORIZED,
+            allRows = rows + listOf(
+                tx(
+                    id = "tea-old-a",
+                    source = IngestSource.SMS,
+                    categoryId = "cat-cafe",
+                    merchantNormalized = "tea shop",
+                ),
+                tx(
+                    id = "tea-old-b",
+                    source = IngestSource.SMS,
+                    categoryId = "cat-groceries",
+                    merchantNormalized = "tea shop",
+                ),
+                tx(
+                    id = "coffee-old",
+                    source = IngestSource.SMS,
+                    categoryId = "cat-cafe",
+                    merchantNormalized = "coffee shop",
+                ),
+            ),
+        )
+
+        assertThat(state.topRepeatedGroupCount).isEqualTo(3)
+        assertThat(state.topRepeatedSuggestedCategory).isNull()
+        assertThat(state.canApplyTopRepeatedSuggestedCategory).isFalse()
+        assertThat(state.safeRepeatedSuggestedCategory?.id).isEqualTo("cat-cafe")
+        assertThat(state.safeRepeatedSuggestedCategoryTransactionCount).isEqualTo(2)
+        assertThat(state.safeRepeatedSuggestedGroupCount).isEqualTo(1)
+        assertThat(state.safeRepeatedSuggestedTransactionCount).isEqualTo(2)
+        assertThat(state.canApplySingleSafeRepeatedSuggestedCategory).isTrue()
+        assertThat(state.canApplySafeRepeatedSuggestedCategories).isFalse()
+        assertThat(state.canShowSafeRepeatedSuggestionsSummary).isFalse()
         assertThat(state.canApplySuggestedCategory).isFalse()
     }
 
@@ -966,12 +1048,18 @@ class HistoryFilterTest {
         assertThat(nonRepeatedState.topRepeatedGroupCount).isEqualTo(0)
         assertThat(nonRepeatedState.topRepeatedSuggestedCategory).isNull()
         assertThat(nonRepeatedState.canApplyTopRepeatedSuggestedCategory).isFalse()
+        assertThat(nonRepeatedState.safeRepeatedSuggestedCategory).isNull()
+        assertThat(nonRepeatedState.safeRepeatedSuggestedCategoryTransactionCount).isEqualTo(0)
+        assertThat(nonRepeatedState.canApplySingleSafeRepeatedSuggestedCategory).isFalse()
         assertThat(nonRepeatedState.safeRepeatedSuggestedGroupCount).isEqualTo(0)
         assertThat(nonRepeatedState.canApplySafeRepeatedSuggestedCategories).isFalse()
         assertThat(nonRepeatedState.canShowSafeRepeatedSuggestionsSummary).isFalse()
         assertThat(conflictingState.topRepeatedGroupCount).isEqualTo(3)
         assertThat(conflictingState.topRepeatedSuggestedCategory).isNull()
         assertThat(conflictingState.canApplyTopRepeatedSuggestedCategory).isFalse()
+        assertThat(conflictingState.safeRepeatedSuggestedCategory).isNull()
+        assertThat(conflictingState.safeRepeatedSuggestedCategoryTransactionCount).isEqualTo(0)
+        assertThat(conflictingState.canApplySingleSafeRepeatedSuggestedCategory).isFalse()
         assertThat(conflictingState.safeRepeatedSuggestedGroupCount).isEqualTo(0)
         assertThat(conflictingState.canApplySafeRepeatedSuggestedCategories).isFalse()
         assertThat(conflictingState.canShowSafeRepeatedSuggestionsSummary).isFalse()

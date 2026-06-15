@@ -374,6 +374,7 @@ private fun BulkSelectionCard(
     val suggestedCategory = state.suggestedCategoryId
         ?.let { id -> state.categories.firstOrNull { it.id == id } }
     val topRepeatedSuggestedCategory = state.topRepeatedSuggestedCategory
+    val safeRepeatedSuggestedCategory = state.safeRepeatedSuggestedCategory
     AtharCard {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
             AtharText(
@@ -441,6 +442,17 @@ private fun BulkSelectionCard(
                                 state.topRepeatedGroupCount,
                             ),
                             onClick = onApplyTopRepeatedSuggestion,
+                            selected = true,
+                        )
+                    }
+                    if (state.canApplySingleSafeRepeatedSuggestedCategory && safeRepeatedSuggestedCategory != null) {
+                        HistoryActionChip(
+                            text = stringResource(
+                                R.string.history_bulk_apply_single_safe_repeated_suggestion,
+                                safeRepeatedSuggestedCategory.localizedName(),
+                                state.safeRepeatedSuggestedCategoryTransactionCount,
+                            ),
+                            onClick = onApplySafeRepeatedSuggestions,
                             selected = true,
                         )
                     }

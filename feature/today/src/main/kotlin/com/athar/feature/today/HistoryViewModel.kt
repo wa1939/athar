@@ -535,6 +535,8 @@ data class HistoryBulkCategoryState(
     val selectedTopRepeatedGroupCount: Int,
     val topRepeatedSuggestedCategory: Category?,
     val topRepeatedSuggestedCategoryUseCount: Int,
+    val safeRepeatedSuggestedCategory: Category?,
+    val safeRepeatedSuggestedCategoryTransactionCount: Int,
     val safeRepeatedSuggestedGroupCount: Int,
     val safeRepeatedSuggestedTransactionCount: Int,
     val selectedMerchantName: String?,
@@ -554,6 +556,12 @@ data class HistoryBulkCategoryState(
             (selectedCount != topRepeatedGroupCount || selectedTopRepeatedGroupCount != topRepeatedGroupCount)
     val canApplyTopRepeatedSuggestedCategory: Boolean =
         selectionMode && topRepeatedGroupCount > 0 && topRepeatedSuggestedCategory != null
+    val canApplySingleSafeRepeatedSuggestedCategory: Boolean =
+        selectionMode &&
+            safeRepeatedSuggestedGroupCount == 1 &&
+            safeRepeatedSuggestedCategory != null &&
+            safeRepeatedSuggestedCategoryTransactionCount > 0 &&
+            !canApplyTopRepeatedSuggestedCategory
     val canApplySafeRepeatedSuggestedCategories: Boolean =
         selectionMode && safeRepeatedSuggestedGroupCount > 1
     val canShowSafeRepeatedSuggestionsSummary: Boolean =
@@ -569,6 +577,8 @@ data class HistoryBulkCategoryState(
             selectedTopRepeatedGroupCount = 0,
             topRepeatedSuggestedCategory = null,
             topRepeatedSuggestedCategoryUseCount = 0,
+            safeRepeatedSuggestedCategory = null,
+            safeRepeatedSuggestedCategoryTransactionCount = 0,
             safeRepeatedSuggestedGroupCount = 0,
             safeRepeatedSuggestedTransactionCount = 0,
             selectedMerchantName = null,
@@ -638,6 +648,12 @@ internal fun buildHistoryBulkCategoryState(
         allRows = allRows,
         activeCategories = activeCategories,
     )
+    val safeRepeatedSuggestedCategoryRow = safeRepeatedSuggestedGroups
+        .firstOrNull()
+        ?.let { group ->
+            activeCategories.firstOrNull { it.id == group.categoryId && !it.archived }
+                ?.let { categoryRow -> categoryRow to group.count }
+        }
     return HistoryBulkCategoryState(
         selectionMode = selectionMode,
         selectedIds = selectedVisibleIds,
@@ -647,6 +663,8 @@ internal fun buildHistoryBulkCategoryState(
         selectedTopRepeatedGroupCount = topRepeatedGroupIds.count { it in selectedVisibleIds },
         topRepeatedSuggestedCategory = topRepeatedSuggestedCategoryRow?.first,
         topRepeatedSuggestedCategoryUseCount = topRepeatedSuggestedCategoryRow?.second ?: 0,
+        safeRepeatedSuggestedCategory = safeRepeatedSuggestedCategoryRow?.first,
+        safeRepeatedSuggestedCategoryTransactionCount = safeRepeatedSuggestedCategoryRow?.second ?: 0,
         safeRepeatedSuggestedGroupCount = safeRepeatedSuggestedGroups.size,
         safeRepeatedSuggestedTransactionCount = safeRepeatedSuggestedGroups.sumOf { it.ids.size },
         selectedMerchantName = selectedMerchantName,

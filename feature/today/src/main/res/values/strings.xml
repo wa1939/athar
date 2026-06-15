@@ -80,6 +80,7 @@
     <string name="history_bulk_ready_with_skips" formatted="true">جاهز لتصنيف %1$d حركة. ستبقى %2$d تحويلات دون تغيير.</string>
     <string name="history_bulk_select_top_repeated_group" formatted="true">أكبر مجموعة (%1$d)</string>
     <string name="history_bulk_apply_top_suggestion" formatted="true">تطبيق %1$s على الأكبر (%2$d)</string>
+    <string name="history_bulk_apply_single_safe_repeated_suggestion" formatted="true">تطبيق %1$s الآمن (%2$d)</string>
     <string name="history_bulk_apply_safe_repeated_suggestions" formatted="true">تطبيق المجموعات الآمنة (%1$d)</string>
     <string name="history_bulk_safe_repeated_suggestions_summary" formatted="true">اقتراحات آمنة: %2$d حركة عبر %1$d مجموعات.</string>
     <string name="history_bulk_select_visible">تحديد الظاهر</string>
