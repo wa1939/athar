@@ -51,9 +51,42 @@ class ManualEntrySuggestionBuilderTest {
         assertThat(suggestions.single().amountInput).isNull()
     }
 
+    @Test
+    fun `excludes generic merchant labels from suggestions`() {
+        val suggestions = ManualEntrySuggestionBuilder.build(
+            transactions = listOf(
+                tx("payment", merchant = "Payment"),
+                tx("cash", merchant = "كاش"),
+                tx("bank", merchant = "Bank"),
+                tx("coffee", merchant = "Brew Lab"),
+            ),
+            displayCurrency = "SAR",
+        )
+
+        assertThat(suggestions.map { it.merchant }).containsExactly("Brew Lab")
+    }
+
+    @Test
+    fun `falls back to display merchant when normalized merchant is blank`() {
+        val suggestions = ManualEntrySuggestionBuilder.build(
+            transactions = listOf(
+                tx(
+                    id = "blank-normalized",
+                    merchant = "Brew Lab",
+                    merchantNormalized = "",
+                ),
+            ),
+            displayCurrency = "SAR",
+        )
+
+        assertThat(suggestions).hasSize(1)
+        assertThat(suggestions.single().merchantNormalized).isEqualTo("brew lab")
+    }
+
     private fun tx(
         id: String,
         merchant: String,
+        merchantNormalized: String = merchant.lowercase().trim(),
         amount: String = "10",
         currency: String = "SAR",
         categoryId: String? = "cat-food",
@@ -71,7 +104,7 @@ class ManualEntrySuggestionBuilderTest {
             date = LocalDate(2026, 5, day),
             occurredAt = instant,
             merchant = merchant,
-            merchantNormalized = merchant.lowercase().trim(),
+            merchantNormalized = merchantNormalized,
             categoryId = categoryId,
             notes = null,
             source = IngestSource.MANUAL,

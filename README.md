@@ -61,7 +61,7 @@ Other tools force a trade-off:
 - ✅ **Ember attention banner** when pending > 0 — "%d transactions awaiting review · Tap to review →" — impossible to miss above the net-flow number. Dust-color secondary banner appears below it when today had any auto-dismissed transactions, so parser false-negatives never go unnoticed.
 - ✅ **Fail-safe ingestion (beta.15):** SMS that parse as transactions are NEVER auto-dismissed; if the categorizer is uncertain, the transaction lands in PENDING for explicit user review. Money never silently disappears. See `docs/adr/ADR-008-ingestion-fail-safe.md` for rationale.
 - ✅ Auto-confirm transactions when category is already known (CategoryRule match); user fixes are recorded as new rules so the same merchant auto-confirms next time
-- ✅ FAB to add a manual transaction in seconds, with recent-merchant quick-add chips, quick phrase/voice fill, pasted receipt/OCR-text prefill, on-device receipt image OCR prefill, and multiple local encrypted receipt attachments that can be viewed/exported later from the edit sheet
+- ✅ FAB to add a manual transaction in seconds, with specific recent-merchant quick-add chips, quick phrase/voice fill, pasted receipt/OCR-text prefill, on-device receipt image OCR prefill, and multiple local encrypted receipt attachments that can be viewed/exported later from the edit sheet
 
 #### Trends (النمط) — TMOAP-depth analysis
 - ✅ Period selector: **month · 3 months · year · period-vs-prior · custom range**

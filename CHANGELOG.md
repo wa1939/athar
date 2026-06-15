@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Manual Add Transaction quick-add/autocomplete chips now reuse the shared specific-merchant guard, so generic history labels such as `payment`, `cash`, `bank`, `كاش`, and `دفع` do not appear as routine merchant shortcuts while real repeated merchants still do.
 - Recurring auto-detected suggestions now reuse the shared specific-merchant guard, so repeated generic labels such as `payment`, `cash`, `bank`, `كاش`, and `دفع` cannot become subscription/rule suggestions while real merchants such as gyms, rent, utilities, and salary sources still surface when they repeat.
 - Support diagnostics now reuse the shared specific-merchant guard for hashed uncategorized merchant groups and category-backlog recommendations, so repeated generic labels such as `payment`, `cash`, `bank`, `كاش`, and `دفع` count toward total backlog but no longer trigger repeated-backlog cleanup guidance.
 - Specific-merchant safety checks now use one shared domain guard across bulk categorization, Today pending suggestions, History repeated-backlog cleanup, and local auto-learning, keeping English and Arabic generic labels such as `payment`, `cash`, `bank`, `كاش`, and `دفع` as row-by-row work that cannot drive same-merchant shortcuts or exact learned rules.

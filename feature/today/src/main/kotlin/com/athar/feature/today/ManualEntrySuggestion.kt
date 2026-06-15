@@ -4,6 +4,7 @@ import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.model.isReconciliation
+import com.athar.core.domain.model.specificMerchantKey
 import java.math.BigDecimal
 
 data class ManualEntrySuggestion(
@@ -29,16 +30,27 @@ internal object ManualEntrySuggestionBuilder {
             .filter { it.status == TxStatus.CONFIRMED }
             .filter { it.type == TxType.EXPENSE || it.type == TxType.INCOME }
             .filterNot { it.isReconciliation() }
-            .filter { it.merchantNormalized.isNotBlank() && it.merchant.isNotBlank() }
-            .groupBy { "${it.type.name}:${it.merchantNormalized}" }
+            .filter { it.merchant.isNotBlank() }
+            .mapNotNull { tx ->
+                val merchantKey = specificMerchantKey(
+                    merchantNormalized = tx.merchantNormalized,
+                    merchant = tx.merchant,
+                ) ?: return@mapNotNull null
+                ManualEntrySuggestionCandidate(merchantKey = merchantKey, transaction = tx)
+            }
+            .groupBy { "${it.transaction.type.name}:${it.merchantKey}" }
             .map { (_, rows) ->
-                val latest = rows.maxWith(compareBy<Transaction> { it.date }.thenBy { it.createdAt })
+                val latest = rows.maxWith(
+                    compareBy<ManualEntrySuggestionCandidate> { it.transaction.date }
+                        .thenBy { it.transaction.createdAt },
+                )
+                val latestTx = latest.transaction
                 ManualEntrySuggestion(
-                    merchant = latest.merchant,
-                    merchantNormalized = latest.merchantNormalized,
-                    amountInput = latest.amount.takeIf { it.currency == displayCurrency }?.amount?.toInputString(),
-                    type = latest.type,
-                    categoryId = latest.categoryId,
+                    merchant = latestTx.merchant,
+                    merchantNormalized = latest.merchantKey,
+                    amountInput = latestTx.amount.takeIf { it.currency == displayCurrency }?.amount?.toInputString(),
+                    type = latestTx.type,
+                    categoryId = latestTx.categoryId,
                     uses = rows.size,
                 )
             }
@@ -54,3 +66,8 @@ internal object ManualEntrySuggestionBuilder {
 
     private const val MAX_SUGGESTIONS = 20
 }
+
+private data class ManualEntrySuggestionCandidate(
+    val merchantKey: String,
+    val transaction: Transaction,
+)
