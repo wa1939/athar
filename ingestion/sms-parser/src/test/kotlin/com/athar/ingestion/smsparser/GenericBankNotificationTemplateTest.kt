@@ -407,6 +407,72 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses work expense notification with shared merchant label`() {
+        val result = parser.parse(
+            event("notification:com.mercury", "Business expense paid USD 42.00 at Office Depot"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Work expense - Office Depot")
+    }
+
+    @Test
+    fun `parses office supplies notification with shared merchant label`() {
+        val result = parser.parse(
+            event("notification:com.capitalone.mobile", "Office supplies purchase SAR 75.00 at Jarir"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("75.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Office supplies purchase - Jarir")
+    }
+
+    @Test
+    fun `parses Arabic work expense notification with shared merchant label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم دفع مصروفات العمل ٧٥ ر.س لدى مكتبة جرير"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("75"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("مصروفات العمل - مكتبة جرير")
+    }
+
+    @Test
+    fun `parses Arabic office supplies notification with shared merchant label`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم شراء مستلزمات مكتبية ٨٠ ر.س لدى مكتبة"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("80"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("مشتريات مكتبية - مكتبة")
+    }
+
+    @Test
+    fun `ignores work expense claim notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.mercury", "Business expense report approved for USD 42.00"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
+    fun `ignores office supplies order status notifications with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.capitalone.mobile", "Office supplies order status: delivery for USD 75.00"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
+    }
+
+    @Test
     fun `parses atm withdrawal notification with shared merchant label`() {
         val result = parser.parse(
             event("notification:com.chase.sig.android", "ATM withdrawal of USD 100.00 from Main Street ATM"),

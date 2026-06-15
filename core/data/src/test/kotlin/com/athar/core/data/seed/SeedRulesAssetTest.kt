@@ -18,7 +18,7 @@ class SeedRulesAssetTest {
         val categoryIds = seedCategories()
         val rules = seedRules()
 
-        assertThat(rules).hasSize(710)
+        assertThat(rules).hasSize(714)
         assertThat(rules.map { it.categoryId }.filterNot { it in categoryIds }).isEmpty()
 
         val duplicates = rules
@@ -67,6 +67,18 @@ class SeedRulesAssetTest {
         val rulesByPattern = seedRules().associateBy { it.pattern }
 
         sharedIncomeNotificationLabels.forEach { (pattern, categoryId) ->
+            val rule = rulesByPattern[pattern]
+            assertThat(rule).isNotNull()
+            assertThat(rule!!.categoryId).isEqualTo(categoryId)
+            assertThat(rule.priority).isEqualTo(100)
+        }
+    }
+
+    @Test
+    fun `shared work expense notification labels are seeded`() {
+        val rulesByPattern = seedRules().associateBy { it.pattern }
+
+        sharedWorkExpenseNotificationLabels.forEach { (pattern, categoryId) ->
             val rule = rulesByPattern[pattern]
             assertThat(rule).isNotNull()
             assertThat(rule!!.categoryId).isEqualTo(categoryId)
@@ -140,6 +152,13 @@ class SeedRulesAssetTest {
             "تعويض مصروفات" to "cat-reimbursements",
             "bonus income" to "cat-bonus",
             "دخل مكافأة" to "cat-bonus",
+        )
+
+        val sharedWorkExpenseNotificationLabels = mapOf(
+            "work expense" to "cat-work-expense",
+            "مصروفات العمل" to "cat-work-expense",
+            "office supplies purchase" to "cat-work-expense",
+            "مشتريات مكتبية" to "cat-work-expense",
         )
 
         val curatedBatch = mapOf(

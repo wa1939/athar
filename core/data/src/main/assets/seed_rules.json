@@ -206,6 +206,26 @@
       "priority": 100
     },
     {
+      "pattern": "work expense",
+      "categoryId": "cat-work-expense",
+      "priority": 100
+    },
+    {
+      "pattern": "مصروفات العمل",
+      "categoryId": "cat-work-expense",
+      "priority": 100
+    },
+    {
+      "pattern": "office supplies purchase",
+      "categoryId": "cat-work-expense",
+      "priority": 100
+    },
+    {
+      "pattern": "مشتريات مكتبية",
+      "categoryId": "cat-work-expense",
+      "priority": 100
+    },
+    {
       "pattern": "salary",
       "categoryId": "cat-salary",
       "priority": 100

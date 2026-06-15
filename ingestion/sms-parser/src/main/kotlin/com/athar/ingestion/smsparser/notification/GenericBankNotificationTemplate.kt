@@ -260,6 +260,18 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\b(?:furniture|sofa|bed|mattress|table|chair|wardrobe|home\s+goods|homeware|household\s+goods|household\s+items|home\s+decor|decor|kitchenware|appliance|appliances|home\s+appliance|kitchen\s+appliance|washing\s+machine|washer|refrigerator|fridge|oven|microwave|dishwasher|air\s+conditioner)\b[^\n\r]{0,80}\b(?:offer|promo|discount|coupon|deal|save|quote|estimate|estimated|cart|wishlist|back\s+in\s+stock|preorder|pre-order|shipping|shipped|delivered|out\s+for\s+delivery|delivery\s+(?:update|status|window|scheduled)|order\s+status|installation\s+(?:appointment|scheduled)|assembly\s+(?:appointment|scheduled)|warranty|reminder)\b|\b(?:offer|promo|discount|coupon|deal|save|quote|estimate|estimated|cart|wishlist|back\s+in\s+stock|preorder|pre-order|shipping|shipped|delivered|out\s+for\s+delivery|delivery\s+(?:update|status|window|scheduled)|order\s+status|installation\s+(?:appointment|scheduled)|assembly\s+(?:appointment|scheduled)|warranty|reminder)\b[^\n\r]{0,80}\b(?:furniture|sofa|bed|mattress|table|chair|wardrobe|home\s+goods|homeware|household\s+goods|household\s+items|home\s+decor|decor|kitchenware|appliance|appliances|home\s+appliance|kitchen\s+appliance|washing\s+machine|washer|refrigerator|fridge|oven|microwave|dishwasher|air\s+conditioner)\b|(?:عرض|عروض|خصم|قسيمة|كوبون|وفر|تقدير|عرض\s+سعر|سلة|عربة|قائمة\s+الأماني|قائمة\s+الاماني|تم\s+شحن|تم\s+توصيل|قيد\s+التوصيل|تحديث\s+الطلب|موعد\s+تركيب|تركيب|ضمان|تذكير)[^\n\r]{0,80}(?:أثاث|اثاث|كنبة|سرير|مرتبة|طاولة|كرسي|خزانة|مستلزمات\s+منزلية|أدوات\s+منزلية|ادوات\s+منزلية|ديكور|أدوات\s+مطبخ|ادوات\s+مطبخ|جهاز\s+منزلي|أجهزة\s+منزلية|اجهزة\s+منزلية|غسالة|ثلاجة|فرن|ميكروويف|غسالة\s+صحون|مكيف))""",
         RegexOption.IGNORE_CASE,
     )
+    private val workExpensePaymentWords = Regex(
+        """(?:\b(?:work|business|company)\s+expense\b[^\n\r]{0,40}\b(?:payment|purchase|paid|charge|charged|posted)\b|\b(?:payment|purchase|paid|charged|posted)\b[^\n\r]{0,40}\b(?:work|business|company)\s+expense\b|(?:تم\s+)?(?:سداد|دفع|خصم|شراء)\s+(?:مصروفات|مصاريف)\s+العمل|(?:مصروفات|مصاريف)\s+العمل[^\n\r]{0,40}(?:تم\s+)?(?:سداد|دفع|خصم|شراء))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val officeSuppliesPurchaseWords = Regex(
+        """(?:\b(?:office\s+supplies|office\s+supply|stationery)\s+(?:purchase|payment|paid|charge|charged)\b|\b(?:purchase|payment|paid|charged)\s+(?:for\s+)?(?:office\s+supplies|office\s+supply|stationery)\b|(?:تم\s+)?(?:سداد|دفع|خصم|شراء)\s+(?:مستلزمات\s+مكتبية|أدوات\s+مكتبية|ادوات\s+مكتبية|قرطاسية)|(?:مستلزمات\s+مكتبية|أدوات\s+مكتبية|ادوات\s+مكتبية|قرطاسية)\s+(?:تم\s+)?(?:سداد|دفع|خصم|شراء))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val workExpenseNonPostedWords = Regex(
+        """(?:\b(?:work|business|company)\s+expense\b[^\n\r]{0,80}\b(?:claim|report|submitted|pending|approved|approval|estimate|estimated|quote|invoice|receipt|policy|reminder|due)\b|\b(?:claim|report|submitted|pending|approved|approval|estimate|estimated|quote|invoice|receipt|policy|reminder|due)\b[^\n\r]{0,80}\b(?:work|business|company)\s+expense\b|\b(?:office\s+supplies|office\s+supply|stationery)\b[^\n\r]{0,80}\b(?:offer|promo|discount|coupon|deal|save|quote|estimate|estimated|cart|shipping|delivery|order\s+status|reminder)\b|\b(?:offer|promo|discount|coupon|deal|save|quote|estimate|estimated|cart|shipping|delivery|order\s+status|reminder)\b[^\n\r]{0,80}\b(?:office\s+supplies|office\s+supply|stationery)\b|(?:مصروفات|مصاريف)\s+العمل[^\n\r]{0,80}(?:مطالبة|تقرير|مقدم|قيد|موافقة|تقدير|عرض\s+سعر|فاتورة|إيصال|ايصال|سياسة|تذكير|مستحق)|(?:عرض|عروض|خصم|قسيمة|كوبون|وفر|تقدير|سلة|شحن|توصيل|تحديث\s+الطلب|تذكير)[^\n\r]{0,80}(?:مستلزمات\s+مكتبية|أدوات\s+مكتبية|ادوات\s+مكتبية|قرطاسية))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val essentialLifeReminderWords = Regex(
         """(?:\b(?:medical|healthcare|hospital|clinic|dental|doctor|laboratory|lab|pharmacy|prescription|school|tuition|university|college|education)\b[^\n\r]{0,80}\b(?:due|scheduled|upcoming|reminder|unpaid|overdue)\b|\b(?:due|scheduled|upcoming|reminder|unpaid|overdue)\b[^\n\r]{0,80}\b(?:medical|healthcare|hospital|clinic|dental|doctor|laboratory|lab|pharmacy|prescription|school|tuition|university|college|education)\b|\bdonate\b[^\n\r]{0,80}\b(?:now|today|support|help|campaign|appeal)\b|\b(?:donation|charity|zakat|sadaqah|sadaka)\b[^\n\r]{0,80}\b(?:appeal|campaign|support|help|pledge|target|calculator|due)\b|(?:تذكير|مستحق|استحقاق|موعد|قادم|مجدول|غير\s+مدفوع)[^\n\r]{0,80}(?:رسوم\s+مدرسية|تعليم|جامعة|مدرسة|طبية|مستشفى|عيادة|صيدلية|زكاة|زكاه)|(?:تبرع|صدقة|صدقه|زكاة|زكاه)[^\n\r]{0,80}(?:حملة|ساهم|ادعم|دعم|حاسبة))""",
         RegexOption.IGNORE_CASE,
@@ -514,6 +526,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (essentialLifeReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (giftNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (homeGoodsNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (workExpenseNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (lifeAdminNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (automotiveMaintenanceNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (everydayCommerceNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
@@ -552,6 +565,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             isEssentialLifeExpenseNotification(normalized) -> TxType.EXPENSE
             isGiftExpenseNotification(normalized) -> TxType.EXPENSE
             isHomeGoodsExpenseNotification(normalized) -> TxType.EXPENSE
+            isWorkExpenseNotification(normalized) -> TxType.EXPENSE
             isLifeAdminExpenseNotification(normalized) -> TxType.EXPENSE
             isAutomotiveMaintenanceNotification(normalized) -> TxType.EXPENSE
             isEverydayCommerceExpenseNotification(normalized) -> TxType.EXPENSE
@@ -623,6 +637,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             isPublicServicePaymentNotification(body) || isMobilityPaymentNotification(body) ||
             isEssentialLifeExpenseNotification(body) || isGiftExpenseNotification(body) ||
             isHomeGoodsExpenseNotification(body) ||
+            isWorkExpenseNotification(body) ||
             isLifeAdminExpenseNotification(body) ||
             isAutomotiveMaintenanceNotification(body) ||
             isEverydayCommerceExpenseNotification(body) ||
@@ -714,6 +729,10 @@ class GenericBankNotificationTemplate : BankTemplate {
             homeGoodsPurchaseWords.containsMatchIn(body) ||
             appliancePurchaseWords.containsMatchIn(body)
 
+    private fun isWorkExpenseNotification(body: String): Boolean =
+        workExpensePaymentWords.containsMatchIn(body) ||
+            officeSuppliesPurchaseWords.containsMatchIn(body)
+
     private fun isLifeAdminExpenseNotification(body: String): Boolean =
         homeServicePaymentWords.containsMatchIn(body) ||
             gymMembershipWords.containsMatchIn(body) ||
@@ -771,6 +790,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             ?: normalizeEssentialLifeMerchant(body, merchant)
             ?: normalizeGiftMerchant(body, merchant)
             ?: normalizeHomeGoodsMerchant(body, merchant)
+            ?: normalizeWorkExpenseMerchant(body, merchant)
             ?: normalizeEverydayCommerceMerchant(body, merchant)
             ?: normalizeTravelMerchant(body, merchant)
             ?: normalizeRetailShoppingMerchant(body, merchant)
@@ -881,6 +901,23 @@ class GenericBankNotificationTemplate : BankTemplate {
         furniturePurchaseWords.containsMatchIn(body) -> "Furniture purchase"
         homeGoodsPurchaseWords.containsMatchIn(body) -> "Home goods purchase"
         appliancePurchaseWords.containsMatchIn(body) -> "Appliance purchase"
+        else -> null
+    }
+
+    private fun normalizeWorkExpenseMerchant(body: String, merchant: String?): String? {
+        val label = workExpenseLabel(body) ?: return null
+        val cleaned = merchant?.takeIf { it.isNotBlank() } ?: return label
+        if (workExpenseLabel(cleaned) != null || genericWorkExpenseMerchantWords.matches(cleaned.trim())) return label
+        return "$label - $cleaned".take(64).trim()
+    }
+
+    private fun workExpenseLabel(body: String): String? = when {
+        officeSuppliesPurchaseWords.containsMatchIn(body) -> {
+            if (ArabicOfficeSuppliesTerms.any { body.contains(it) }) "مشتريات مكتبية" else "Office supplies purchase"
+        }
+        workExpensePaymentWords.containsMatchIn(body) -> {
+            if (ArabicWorkExpenseTerms.any { body.contains(it) }) "مصروفات العمل" else "Work expense"
+        }
         else -> null
     }
 
@@ -1081,6 +1118,8 @@ class GenericBankNotificationTemplate : BankTemplate {
         furniturePurchaseWords.find(body)?.range?.first,
         homeGoodsPurchaseWords.find(body)?.range?.first,
         appliancePurchaseWords.find(body)?.range?.first,
+        workExpensePaymentWords.find(body)?.range?.first,
+        officeSuppliesPurchaseWords.find(body)?.range?.first,
         homeServicePaymentWords.find(body)?.range?.first,
         gymMembershipWords.find(body)?.range?.first,
         childcarePaymentWords.find(body)?.range?.first,
@@ -1255,6 +1294,8 @@ class GenericBankNotificationTemplate : BankTemplate {
         private val ArabicTaxRefundTerms = listOf("استرداد ضريبي", "استرداد الضريبة", "رد ضريبي", "رد الضريبة")
         private val ArabicReimbursementTerms = listOf("تعويض مصروفات", "استرداد مصروفات")
         private val ArabicBonusTerms = listOf("مكافأة", "مكافاه")
+        private val ArabicWorkExpenseTerms = listOf("مصروفات العمل", "مصاريف العمل")
+        private val ArabicOfficeSuppliesTerms = listOf("مستلزمات مكتبية", "أدوات مكتبية", "ادوات مكتبية", "قرطاسية")
         private val taxRefundLabelWords = Regex(
             """(?:\btax\s+refund\b|استرداد\s+ضريبي)""",
             RegexOption.IGNORE_CASE,
@@ -1302,6 +1343,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         )
         private val genericHomeGoodsMerchantWords = Regex(
             """(?:furniture\s+purchase|furniture\s+payment|sofa\s+purchase|mattress\s+purchase|home\s+goods\s+purchase|home\s+goods\s+payment|homeware\s+purchase|household\s+goods\s+purchase|home\s+decor\s+purchase|decor\s+purchase|kitchenware\s+purchase|appliance\s+purchase|appliance\s+payment|home\s+appliance\s+purchase|kitchen\s+appliance\s+purchase|washing\s+machine\s+purchase|refrigerator\s+purchase|fridge\s+purchase|oven\s+purchase|microwave\s+purchase|dishwasher\s+purchase|air\s+conditioner\s+purchase|أثاث|اثاث|كنبة|سرير|مرتبة|طاولة|كرسي|خزانة|مستلزمات\s+منزلية|أدوات\s+منزلية|ادوات\s+منزلية|ديكور|أدوات\s+مطبخ|ادوات\s+مطبخ|جهاز\s+منزلي|أجهزة\s+منزلية|اجهزة\s+منزلية|غسالة|ثلاجة|فرن|ميكروويف|غسالة\s+صحون|مكيف)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val genericWorkExpenseMerchantWords = Regex(
+            """(?:work\s+expense|business\s+expense|company\s+expense|office\s+supplies\s+purchase|office\s+supply\s+purchase|stationery\s+purchase|مصروفات\s+العمل|مصاريف\s+العمل|مشتريات\s+مكتبية|مستلزمات\s+مكتبية|أدوات\s+مكتبية|ادوات\s+مكتبية|قرطاسية)""",
             RegexOption.IGNORE_CASE,
         )
         private val genericEverydayCommerceMerchantWords = Regex(
