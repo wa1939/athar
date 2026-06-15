@@ -5,6 +5,7 @@ import com.athar.core.data.db.dao.TransactionDao
 import com.athar.core.data.db.entity.SmsMessageEntity
 import com.athar.core.data.db.entity.TransactionEntity
 import com.athar.core.domain.model.SmsParseStatus
+import com.athar.core.domain.model.specificMerchantKey
 import com.athar.core.domain.repo.SupportDiagnosticsExportResult
 import com.athar.core.domain.repo.SupportDiagnosticsExportTrigger
 import kotlinx.datetime.Clock
@@ -176,8 +177,16 @@ internal object SupportDiagnosticsReportBuilder {
         val backlogRows = rows.filter { it.isCategoryBacklog() }
         var cumulativeSamples = 0
         return backlogRows
-            .filter { it.merchantNormalized.isNotBlank() }
-            .groupBy { it.merchantNormalized.trim().lowercase() }
+            .mapNotNull { row ->
+                specificMerchantKey(
+                    merchantNormalized = row.merchantNormalized,
+                    merchant = row.merchant,
+                )?.let { merchant -> merchant to row }
+            }
+            .groupBy(
+                keySelector = { it.first },
+                valueTransform = { it.second },
+            )
             .map { (merchant, groupedRows) ->
                 UncategorizedMerchantGroup(
                     merchantHash = sha256Prefix("merchant:$merchant"),

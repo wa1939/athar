@@ -14,7 +14,7 @@ Add a redacted `category_backlog_recommendation` block to
 `athar-support-diagnostics.json`.
 
 The recommendation is derived only from aggregate category-coverage counts and
-hashed repeated-merchant group sizes:
+hashed specific repeated-merchant group sizes:
 
 - `none` when there is no category backlog.
 - `history_repeated_backlog` when at least one repeated uncategorized merchant
@@ -31,6 +31,8 @@ action appears without needing private data.
 
 - Support diagnostics serialize `category_backlog_recommendation`.
 - The recommendation uses only aggregate counts and hashed group sizes.
+- Repeated generic labels such as `payment`, `cash`, `bank`, `كاش`, and `دفع`
+  count toward total backlog but do not trigger `history_repeated_backlog`.
 - Existing privacy assertions still prove raw sender, body, merchant, amount,
   notes, and transaction row text are omitted.
 - Tests cover no backlog, repeated-group backlog, large long-tail backlog, and

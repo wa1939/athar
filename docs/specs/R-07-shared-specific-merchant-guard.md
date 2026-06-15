@@ -8,7 +8,9 @@ enough to safely reuse:
 - bulk-categorization grouping, blank-peer inheritance, and exact rule learning;
 - Today pending category suggestions;
 - History repeated-backlog grouping and same-merchant suggestions;
-- local auto-learning from repeated confirmed history.
+- local auto-learning from repeated confirmed history;
+- support diagnostics repeated-merchant coverage and category-backlog
+  recommendations.
 
 Before this slice, each path carried its own generic-merchant list. That creates
 drift risk: one feature could treat `cash`, `payment`, or Arabic labels such as
@@ -23,10 +25,11 @@ Centralize the guard in `core:domain`:
 - `String.isSpecificMerchantKey()` rejects short keys, digit-only/account-like
   keys, and generic English/Arabic labels.
 
-Bulk categorization, Today suggestions, History repeated-backlog cleanup, and
-local auto-learning all use this shared helper. Explicit user work is still
-allowed: generic rows can be categorized one by one, but they do not create
-same-merchant shortcuts or learned exact rules.
+Bulk categorization, Today suggestions, History repeated-backlog cleanup, local
+auto-learning, and support diagnostics all use this shared helper. Explicit user
+work is still allowed: generic rows can be categorized one by one, but they do
+not create same-merchant shortcuts, learned exact rules, or repeated-backlog
+recommendations.
 
 ## Acceptance
 
@@ -37,6 +40,9 @@ same-merchant shortcuts or learned exact rules.
 - Generic Arabic labels such as `كاش`, `شراء`, and `دفع` do not produce repeated
   backlog groups, Today suggestions, bulk inherited rows, or local auto-learned
   exact rules.
+- Support diagnostics still count generic rows in total backlog, but they do not
+  report them as repeated merchant groups or recommend History repeated cleanup
+  because of them.
 - The shared helper has direct domain tests, and each consumer keeps regression
   coverage for the safe/unsafe cases it owns.
 

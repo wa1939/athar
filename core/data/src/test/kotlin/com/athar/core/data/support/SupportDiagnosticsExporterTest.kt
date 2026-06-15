@@ -183,6 +183,34 @@ class SupportDiagnosticsExporterTest {
     }
 
     @Test
+    fun `generic repeated merchants stay out of support repeated backlog recommendations`() {
+        val payload = SupportDiagnosticsReportBuilder.build(
+            rows = emptyList(),
+            totalRows = 0,
+            statusCounts = emptyMap(),
+            generatedAt = "2026-06-13T00:00:00Z",
+            transactions = listOf(
+                tx(id = "1", merchant = "Payment", status = "PENDING", categoryId = null),
+                tx(id = "2", merchant = "Payment", status = "PENDING", categoryId = null),
+                tx(id = "3", merchant = "Payment", status = "DISMISSED", categoryId = null),
+                tx(id = "4", merchant = "كاش", status = "PENDING", categoryId = null),
+                tx(id = "5", merchant = "كاش", status = "PENDING", categoryId = null),
+                tx(id = "6", merchant = "كاش", status = "DISMISSED", categoryId = null),
+            ),
+        )
+
+        assertThat(payload.categoryCoverage.categoryBacklogTransactions).isEqualTo(6)
+        assertThat(payload.categoryCoverage.topUncategorizedGroupCount).isEqualTo(0)
+        assertThat(payload.categoryCoverage.topUncategorizedSampleCount).isEqualTo(0)
+        assertThat(payload.categoryCoverage.otherBacklogTransactionCount).isEqualTo(6)
+        assertThat(payload.categoryCoverage.largestUncategorizedGroupSampleCount).isEqualTo(0)
+        assertThat(payload.categoryBacklogRecommendation.primaryAction).isEqualTo("manual_cleanup")
+        assertThat(payload.categoryBacklogRecommendation.recommendedActions).containsExactly("manual_cleanup")
+        assertThat(payload.categoryBacklogRecommendation.reasonCodes).containsExactly("small_category_backlog")
+        assertThat(payload.uncategorizedMerchantGroups).isEmpty()
+    }
+
+    @Test
     fun `category backlog recommendation uses bulk export for large long tail backlog`() {
         val transactions = (1..25).map { index ->
             tx(id = index.toString(), merchant = "Long Tail Merchant $index", status = "PENDING", categoryId = null)

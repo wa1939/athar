@@ -34,12 +34,14 @@ does not transmit the file anywhere.
 - category-coverage metrics for eligible, categorized, backlog, top-group, and
   largest-group coverage
 - category-backlog recommendation codes derived from aggregate backlog size and
-  hashed repeated-group sizes (`none`, `history_repeated_backlog`,
+  hashed specific repeated-group sizes (`none`, `history_repeated_backlog`,
   `bulk_categorize_export`, or `manual_cleanup`)
-- top repeated uncategorized merchant groups represented only by pseudonymous
+- top specific repeated uncategorized merchant groups represented only by pseudonymous
   merchant hashes, coarse length/script buckets, status/source/type/currency
   counts, confidence buckets, first/last dates, and per-group/cumulative backlog
   share
+- generic labels such as `payment`, `cash`, `bank`, or `كاش` are still included
+  in total backlog counts, but they do not appear as repeated-group evidence
 
 These fields let maintainers answer questions like:
 
@@ -62,8 +64,10 @@ These fields let maintainers answer questions like:
 3. Review status counts, sender groups, error groups, and transaction summary first.
 4. If parsing is healthy but `category_backlog_transactions` is high, inspect
    `category_backlog_recommendation`, `category_coverage`, and repeated hashed
-   merchant groups before asking the user to run the History repeated-backlog or
-   bulk-categorize workflow.
+   specific merchant groups before asking the user to run the History
+   repeated-backlog or bulk-categorize workflow. Generic-heavy backlog with no
+   specific repeated groups should stay manual or bulk CSV, not History repeated
+   cleanup.
 5. Only ask for a raw SMS sample if the diagnostics file proves the failure cannot be
    understood from shape, counts, redacted reason, template IDs, and aggregate
    category-backlog data.

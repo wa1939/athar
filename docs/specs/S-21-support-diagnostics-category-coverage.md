@@ -18,8 +18,10 @@ Add redacted category-coverage metrics to `athar-support-diagnostics.json`:
   categorized rows, backlog rows, categorized/backlog coverage permille,
   top-group coverage, remaining rows outside top groups, and largest-group
   coverage.
-- Each `uncategorized_merchant_groups` entry includes its share of the category
-  backlog and cumulative share, as permille integers.
+- Each `uncategorized_merchant_groups` entry includes a hashed specific merchant
+  key plus its share of the category backlog and cumulative share, as permille
+  integers. Generic merchant labels remain counted in backlog totals but stay
+  outside the repeated-group list.
 
 The report continues to omit raw merchant names, raw transaction rows, notes,
 amounts, balances, senders, SMS bodies, card numbers, and account numbers.
@@ -29,6 +31,7 @@ amounts, balances, senders, SMS bodies, card numbers, and account numbers.
 - Support diagnostics include `category_coverage`.
 - Top hashed uncategorized merchant groups include per-group and cumulative
   backlog share.
+- Generic merchant labels do not appear as top repeated groups.
 - Transfer rows remain excluded from category-eligible and backlog coverage.
 - Unit tests prove raw merchant names, amount values, and private notes are not
   serialized.
