@@ -89,6 +89,7 @@ internal class RecurringSuggestionRepositoryImpl @Inject constructor(
                 merchantNormalized = merchantNorm,
                 amount = Money.ofMinor(amountMinor, currency),
                 type = typeEnum,
+                suggestedAccountId = unambiguousAccountId(list),
                 suggestedCategoryId = unambiguousCategoryId(list),
                 occurrenceCount = list.size,
                 typicalDayOfMonth = typicalDom,
@@ -100,11 +101,21 @@ internal class RecurringSuggestionRepositoryImpl @Inject constructor(
             .take(MAX_SUGGESTIONS)
     }
 
+    private fun unambiguousAccountId(list: List<TransactionEntity>): String? =
+        unambiguousNonBlankValue(list) { it.accountId }
+
     private fun unambiguousCategoryId(list: List<TransactionEntity>): String? {
-        val categoryIds = list.map { tx ->
-            tx.categoryId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        return unambiguousNonBlankValue(list) { it.categoryId }
+    }
+
+    private fun unambiguousNonBlankValue(
+        list: List<TransactionEntity>,
+        value: (TransactionEntity) -> String?,
+    ): String? {
+        val values = list.map { tx ->
+            value(tx)?.trim()?.takeIf { it.isNotEmpty() } ?: return null
         }
-        return categoryIds.distinct().singleOrNull()
+        return values.distinct().singleOrNull()
     }
 
     private fun computeNextRunFromLast(lastSeen: LocalDate, dayOfMonth: Int): LocalDate {

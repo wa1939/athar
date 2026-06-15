@@ -40,6 +40,7 @@ class RecurringSuggestionRepositoryImplTest {
         assertThat(suggestions).hasSize(1)
         assertThat(suggestions.single().merchantNormalized).isEqualTo("gym club")
         assertThat(suggestions.single().occurrenceCount).isEqualTo(3)
+        assertThat(suggestions.single().suggestedAccountId).isEqualTo("manual")
         assertThat(suggestions.single().suggestedCategoryId).isNull()
     }
 
@@ -82,6 +83,88 @@ class RecurringSuggestionRepositoryImplTest {
 
         assertThat(suggestions).hasSize(1)
         assertThat(suggestions.single().suggestedCategoryId).isEqualTo("cat-gym")
+    }
+
+    @Test
+    fun `suggestions carry account when every occurrence has the same account`() = runTest {
+        val repo = RecurringSuggestionRepositoryImpl(
+            transactionDao = FakeTransactionDao(
+                listOf(
+                    tx(
+                        id = "gym-1",
+                        merchant = "Gym Club",
+                        amountMinor = 9900,
+                        month = 1,
+                        day = 5,
+                        accountId = "acc-checking",
+                    ),
+                    tx(
+                        id = "gym-2",
+                        merchant = "Gym Club",
+                        amountMinor = 9900,
+                        month = 2,
+                        day = 6,
+                        accountId = "acc-checking",
+                    ),
+                    tx(
+                        id = "gym-3",
+                        merchant = "Gym Club",
+                        amountMinor = 9900,
+                        month = 3,
+                        day = 5,
+                        accountId = "acc-checking",
+                    ),
+                ),
+            ),
+            ruleDao = FakeRecurringRuleDao(),
+            clock = FixedClock,
+        )
+
+        val suggestions = repo.observeSuggestions().first()
+
+        assertThat(suggestions).hasSize(1)
+        assertThat(suggestions.single().suggestedAccountId).isEqualTo("acc-checking")
+    }
+
+    @Test
+    fun `suggestions omit account when occurrence accounts conflict`() = runTest {
+        val repo = RecurringSuggestionRepositoryImpl(
+            transactionDao = FakeTransactionDao(
+                listOf(
+                    tx(
+                        id = "gym-1",
+                        merchant = "Gym Club",
+                        amountMinor = 9900,
+                        month = 1,
+                        day = 5,
+                        accountId = "acc-checking",
+                    ),
+                    tx(
+                        id = "gym-2",
+                        merchant = "Gym Club",
+                        amountMinor = 9900,
+                        month = 2,
+                        day = 6,
+                        accountId = "acc-credit",
+                    ),
+                    tx(
+                        id = "gym-3",
+                        merchant = "Gym Club",
+                        amountMinor = 9900,
+                        month = 3,
+                        day = 5,
+                        accountId = "acc-checking",
+                    ),
+                ),
+            ),
+            ruleDao = FakeRecurringRuleDao(),
+            clock = FixedClock,
+        )
+
+        val suggestions = repo.observeSuggestions().first()
+
+        assertThat(suggestions).hasSize(1)
+        assertThat(suggestions.single().suggestedAccountId).isNull()
     }
 
     @Test
@@ -241,11 +324,12 @@ private fun tx(
     amountMinor: Long,
     month: Int,
     day: Int,
+    accountId: String = "manual",
     categoryId: String? = null,
 ): TransactionEntity =
     TransactionEntity(
         id = id,
-        accountId = "manual",
+        accountId = accountId,
         type = TxType.EXPENSE.name,
         amountMinor = amountMinor,
         currency = "SAR",

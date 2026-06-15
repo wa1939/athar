@@ -4,6 +4,7 @@ import com.athar.core.common.money.Money
 import com.athar.core.domain.model.Cadence
 import com.athar.core.domain.model.Category
 import com.athar.core.domain.model.CategoryKind
+import com.athar.core.domain.model.MANUAL_ACCOUNT_ID
 import com.athar.core.domain.model.RecurringRule
 import com.athar.core.domain.model.RecurringSuggestion
 import com.athar.core.domain.model.TxType
@@ -79,6 +80,42 @@ class RecurringRulesViewModelTest {
 
         assertThat(rules.upserts.single().categoryId).isEqualTo("cat-health")
     }
+
+    @Test
+    fun `accept suggestion falls back to safe suggested account`() = runTest(mainDispatcher) {
+        val rules = RecordingRecurringRuleRepository()
+        val suggestion = recurringSuggestion(suggestedAccountId = "acc-checking")
+        val viewModel = recurringRulesViewModel(rules = rules, suggestions = listOf(suggestion))
+
+        viewModel.acceptSuggestion(
+            suggestion = suggestion,
+            notes = null,
+            cadence = Cadence.MONTHLY,
+            dayOfMonth = 5,
+            categoryId = null,
+        )
+        advanceUntilIdle()
+
+        assertThat(rules.upserts.single().accountId).isEqualTo("acc-checking")
+    }
+
+    @Test
+    fun `accept suggestion without account hint keeps manual account fallback`() = runTest(mainDispatcher) {
+        val rules = RecordingRecurringRuleRepository()
+        val suggestion = recurringSuggestion(suggestedAccountId = null)
+        val viewModel = recurringRulesViewModel(rules = rules, suggestions = listOf(suggestion))
+
+        viewModel.acceptSuggestion(
+            suggestion = suggestion,
+            notes = null,
+            cadence = Cadence.MONTHLY,
+            dayOfMonth = 5,
+            categoryId = null,
+        )
+        advanceUntilIdle()
+
+        assertThat(rules.upserts.single().accountId).isEqualTo(MANUAL_ACCOUNT_ID)
+    }
 }
 
 private fun recurringRulesViewModel(
@@ -132,12 +169,16 @@ private object FixedClock : Clock {
     override fun now(): Instant = Instant.parse("2026-06-15T12:00:00Z")
 }
 
-private fun recurringSuggestion(suggestedCategoryId: String?): RecurringSuggestion =
+private fun recurringSuggestion(
+    suggestedAccountId: String? = "acc-checking",
+    suggestedCategoryId: String? = null,
+): RecurringSuggestion =
     RecurringSuggestion(
         merchant = "Gym Club",
         merchantNormalized = "gym club",
         amount = Money.ofMinor(9900, "SAR"),
         type = TxType.EXPENSE,
+        suggestedAccountId = suggestedAccountId,
         suggestedCategoryId = suggestedCategoryId,
         occurrenceCount = 3,
         typicalDayOfMonth = 5,
