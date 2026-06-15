@@ -9,6 +9,7 @@ import com.athar.core.domain.model.PatternType
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.model.isSpecificMerchantKey
 import com.athar.core.domain.repo.CategoryRuleRepository
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.TransactionRepository
@@ -826,31 +827,3 @@ private fun List<Transaction>.suggestedCategoryForSelectedMerchant(
     val category = categoryCounts.entries.singleOrNull() ?: return null
     return SuggestedCategory(categoryId = category.key, useCount = category.value)
 }
-
-private fun String.isSpecificMerchantKey(): Boolean {
-    if (length < 3) return false
-    if (all { it.isDigit() || it.isWhitespace() || it == '-' || it == '+' }) return false
-    if (this in genericMerchantKeys) return false
-    if (genericMerchantKeys.any { this == it || startsWith("$it ") }) return false
-    return true
-}
-
-private val genericMerchantKeys = setOf(
-    "unknown",
-    "merchant",
-    "bank",
-    "cash",
-    "purchase",
-    "online purchase",
-    "transfer",
-    "payment",
-    "manual adjustment",
-    "غير معروف",
-    "تاجر",
-    "بنك",
-    "شراء",
-    "تحويل",
-    "دفع",
-    "تسوية",
-    "تسوية يدوية",
-)

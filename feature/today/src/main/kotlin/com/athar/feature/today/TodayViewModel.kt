@@ -15,6 +15,7 @@ import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.model.isReconciliation
+import com.athar.core.domain.model.specificMerchantKey
 import com.athar.core.domain.repo.AccountRepository
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.CategoryRuleRepository
@@ -355,9 +356,7 @@ internal fun buildPendingCategorySuggestions(
             val kind = tx.categoryKind() ?: return@mapNotNull null
             val categoryId = tx.categoryId?.trim()?.takeIf(String::isNotEmpty) ?: return@mapNotNull null
             if (categoryId !in activeCategoryIdsByKind[kind].orEmpty()) return@mapNotNull null
-            val merchantKey = tx.merchantSuggestionKey()
-                ?.takeIf { it.isSpecificMerchantKey() }
-                ?: return@mapNotNull null
+            val merchantKey = tx.specificMerchantSuggestionKey() ?: return@mapNotNull null
             PendingSuggestionCategoryHit(
                 key = PendingSuggestionMerchantKey(merchantKey = merchantKey, categoryKind = kind),
                 categoryId = categoryId,
@@ -372,9 +371,7 @@ internal fun buildPendingCategorySuggestions(
     return pending.mapNotNull { tx ->
         if (tx.status != TxStatus.PENDING || !tx.categoryId.isNullOrBlank()) return@mapNotNull null
         val kind = tx.categoryKind() ?: return@mapNotNull null
-        val merchantKey = tx.merchantSuggestionKey()
-            ?.takeIf { it.isSpecificMerchantKey() }
-            ?: return@mapNotNull null
+        val merchantKey = tx.specificMerchantSuggestionKey() ?: return@mapNotNull null
         if (activeCategoryIdsByKind[kind].isNullOrEmpty()) return@mapNotNull null
 
         val categoryCounts = confirmedCategoryCounts[
@@ -404,37 +401,5 @@ private fun Transaction.categoryKind(): CategoryKind? = when (type) {
     TxType.TRANSFER -> null
 }
 
-private fun Transaction.merchantSuggestionKey(): String? =
-    merchantNormalized
-        .ifBlank { merchant }
-        .trim()
-        .lowercase()
-        .takeIf { it.isNotBlank() }
-
-private fun String.isSpecificMerchantKey(): Boolean {
-    if (length < 3) return false
-    if (all { it.isDigit() || it.isWhitespace() || it == '-' || it == '+' }) return false
-    if (this in genericMerchantKeys) return false
-    if (genericMerchantKeys.any { this == it || startsWith("$it ") }) return false
-    return true
-}
-
-private val genericMerchantKeys = setOf(
-    "unknown",
-    "merchant",
-    "bank",
-    "cash",
-    "purchase",
-    "online purchase",
-    "transfer",
-    "payment",
-    "manual adjustment",
-    "غير معروف",
-    "تاجر",
-    "بنك",
-    "شراء",
-    "تحويل",
-    "دفع",
-    "تسوية",
-    "تسوية يدوية",
-)
+private fun Transaction.specificMerchantSuggestionKey(): String? =
+    specificMerchantKey(merchantNormalized = merchantNormalized, merchant = merchant)

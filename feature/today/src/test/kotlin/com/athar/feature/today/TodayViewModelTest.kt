@@ -268,6 +268,12 @@ class TodayViewModelTest {
                     categoryId = null,
                     status = TxStatus.PENDING,
                 ),
+                transaction(id = "pending-arabic-generic", type = TxType.EXPENSE, amount = Money.of("11")).copy(
+                    merchant = "كاش",
+                    merchantNormalized = "كاش",
+                    categoryId = null,
+                    status = TxStatus.PENDING,
+                ),
                 transaction(id = "pending-archived", type = TxType.EXPENSE, amount = Money.of("10")).copy(
                     merchant = "Old Shop",
                     merchantNormalized = "old shop",
@@ -291,6 +297,11 @@ class TodayViewModelTest {
                     merchantNormalized = "bank",
                     categoryId = "cat-cafe",
                 ),
+                transaction(id = "arabic-cash-cafe", type = TxType.EXPENSE, amount = Money.of("11")).copy(
+                    merchant = "كاش",
+                    merchantNormalized = "كاش",
+                    categoryId = "cat-cafe",
+                ),
                 transaction(id = "old-archived", type = TxType.EXPENSE, amount = Money.of("10")).copy(
                     merchant = "Old Shop",
                     merchantNormalized = "old shop",
@@ -302,6 +313,7 @@ class TodayViewModelTest {
 
         assertThat(suggestions).doesNotContainKey("pending-conflict")
         assertThat(suggestions).doesNotContainKey("pending-generic")
+        assertThat(suggestions).doesNotContainKey("pending-arabic-generic")
         assertThat(suggestions).doesNotContainKey("pending-archived")
     }
 

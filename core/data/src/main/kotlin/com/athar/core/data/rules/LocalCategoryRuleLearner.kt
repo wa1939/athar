@@ -8,6 +8,7 @@ import com.athar.core.domain.model.PatternType
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.model.isSpecificMerchantKey
 import com.athar.core.domain.model.isReconciliation
 import kotlinx.datetime.Clock
 import timber.log.Timber
@@ -88,37 +89,9 @@ internal data class LearningCandidate(
             if (transaction.status != TxStatus.CONFIRMED) return null
             if (transaction.type == TxType.TRANSFER) return null
             if (transaction.isReconciliation()) return null
-            if (!isSpecificMerchant(merchant)) return null
+            if (!merchant.isSpecificMerchantKey()) return null
             return LearningCandidate(merchantNormalized = merchant, categoryId = categoryId)
         }
-
-        private fun isSpecificMerchant(merchant: String): Boolean {
-            if (merchant.length < 3) return false
-            if (merchant.all { it.isDigit() || it.isWhitespace() || it == '-' || it == '+' }) return false
-            if (merchant in GenericMerchantNames) return false
-            if (GenericMerchantNames.any { merchant == it || merchant.startsWith("$it ") }) return false
-            return true
-        }
-
-        private val GenericMerchantNames = setOf(
-            "unknown",
-            "merchant",
-            "bank",
-            "cash",
-            "purchase",
-            "online purchase",
-            "transfer",
-            "payment",
-            "manual adjustment",
-            "غير معروف",
-            "تاجر",
-            "بنك",
-            "شراء",
-            "تحويل",
-            "دفع",
-            "تسوية",
-            "تسوية يدوية",
-        )
     }
 }
 

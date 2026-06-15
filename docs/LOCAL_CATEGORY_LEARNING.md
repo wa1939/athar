@@ -10,7 +10,8 @@ categorized history, Athar checks that merchant's confirmed history. It creates 
 exact local category rule only when all of these are true:
 
 - the normalized merchant is specific enough, not a generic label such as
-  `unknown`, `online purchase`, `transfer`, or `تسوية`
+  `unknown`, `online purchase`, `payment`, `cash`, `bank`, `كاش`, `دفع`, or
+  `تسوية`
 - the transaction is not a transfer and not a reconciliation adjustment
 - the merchant has at least three confirmed transactions
 - every confirmed transaction for that exact merchant has the same category
@@ -23,6 +24,11 @@ this learner on insert. That avoids extra per-SMS reads during large backfills.
 The learned rule is `PatternType.EXACT`, priority `150`, and `learnedFromUser=false`.
 That places it above bundled seed rules, below explicit "Always categorize X" rules,
 and outside the community-rule export path.
+
+The specific-merchant guard is shared with Today suggestions, History repeated
+backlog cleanup, and the bulk-categorization CSV workflow so generic merchant
+labels cannot drift into safe-suggestion or learned-rule paths in one feature but
+not another.
 
 ## Why Exact Match
 

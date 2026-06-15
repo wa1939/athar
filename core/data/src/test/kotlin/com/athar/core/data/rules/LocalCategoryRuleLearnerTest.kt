@@ -96,6 +96,7 @@ class LocalCategoryRuleLearnerTest {
         assertThat(LearningCandidate.from(tx(type = TxType.TRANSFER))).isNull()
         assertThat(LearningCandidate.from(tx(sourceRefId = RECONCILE_REF_PREFIX + "123"))).isNull()
         assertThat(LearningCandidate.from(tx(merchantNormalized = "online purchase"))).isNull()
+        assertThat(LearningCandidate.from(tx(merchantNormalized = "كاش"))).isNull()
         assertThat(LearningCandidate.from(tx(status = TxStatus.PENDING))).isNull()
     }
 

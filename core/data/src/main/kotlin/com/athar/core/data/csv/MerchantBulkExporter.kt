@@ -5,6 +5,7 @@ import com.athar.core.domain.model.CategoryKind
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.model.specificMerchantKey
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.MerchantBulkExportMode
 import com.athar.core.domain.repo.MerchantBulkExportResult
@@ -130,7 +131,7 @@ internal class MerchantBulkExporter @Inject constructor(
                 )
 
     private fun Transaction.merchantGroupKey(): String =
-        specificMerchantBulkKey(merchantNormalized = merchantNormalized, merchant = merchant)
+        specificMerchantKey(merchantNormalized = merchantNormalized, merchant = merchant)
             ?: "row:$id"
 
     private fun permille(numerator: Int, denominator: Int): Int =

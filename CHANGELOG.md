@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Specific-merchant safety checks now use one shared domain guard across bulk categorization, Today pending suggestions, History repeated-backlog cleanup, and local auto-learning, keeping English and Arabic generic labels such as `payment`, `cash`, `bank`, `كاش`, and `دفع` as row-by-row work that cannot drive same-merchant shortcuts or exact learned rules.
 - Bulk categorization now treats generic merchant labels such as `payment`, `purchase`, `cash`, `merchant`, and `bank` as single-row cleanup work: explicit filled rows still update, but generic keys no longer drive repeated-group inheritance or exact learned rules.
 - Support diagnostics now include a redacted `category_backlog_recommendation` block derived only from aggregate backlog size and hashed repeated-merchant group sizes, pointing support to History repeated-backlog cleanup, bulk CSV categorization, manual cleanup, or no action without exposing raw merchants, amounts, SMS bodies, notes, or transaction rows.
 - Settings now imports the TMOAP workbook's Family Investments sheet through a separate preview-confirm flow, creating the investment pool or replacing matched pool contributors after confirmation so repeat imports do not duplicate rows.

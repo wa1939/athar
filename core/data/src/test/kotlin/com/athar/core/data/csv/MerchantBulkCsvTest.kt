@@ -808,6 +808,8 @@ class MerchantBulkCsvTest {
         val rows = listOf(
             tx(id = "generic-1", sourceRefId = "inbox-1", merchant = "Payment", date = LocalDate(2026, 3, 4)),
             tx(id = "generic-2", sourceRefId = "inbox-2", merchant = "Payment", date = LocalDate(2026, 3, 3)),
+            tx(id = "arabic-generic-1", sourceRefId = "inbox-5", merchant = "كاش", date = LocalDate(2026, 3, 6)),
+            tx(id = "arabic-generic-2", sourceRefId = "inbox-6", merchant = "كاش", date = LocalDate(2026, 3, 5)),
             tx(id = "specific-1", sourceRefId = "inbox-3", merchant = "Hemmah", date = LocalDate(2026, 3, 2)),
             tx(id = "specific-2", sourceRefId = "inbox-4", merchant = "Hemmah", date = LocalDate(2026, 3, 1)),
         )
@@ -819,23 +821,25 @@ class MerchantBulkCsvTest {
             smsAudit = FakeSmsAuditRepository(),
         ).exportUncategorized(out, MerchantBulkExportMode.FULL_CONTEXT)
 
-        assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 4))
+        assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 6))
         val lines = out.toString(Charsets.UTF_8).trim().lines()
         val header = lines.first().split(",")
+        val idIdx = header.indexOf("id")
         val merchantIdx = header.indexOf("merchant")
         val groupCountIdx = header.indexOf("merchant_group_count")
         val groupRankIdx = header.indexOf("merchant_group_rank")
         val dataRows = lines.drop(1).map { it.split(",") }
+        val rowsById = dataRows.associateBy { it[idIdx] }
 
-        assertThat(dataRows.map { it[merchantIdx] })
-            .containsExactly("Hemmah", "Hemmah", "Payment", "Payment")
+        assertThat(dataRows.take(2).map { it[merchantIdx] })
+            .containsExactly("Hemmah", "Hemmah")
             .inOrder()
-        assertThat(dataRows.map { it[groupCountIdx] })
-            .containsExactly("2", "2", "1", "1")
+        assertThat(listOf(rowsById.getValue("specific-1")[groupCountIdx], rowsById.getValue("specific-2")[groupCountIdx]))
+            .containsExactly("2", "2")
             .inOrder()
-        assertThat(dataRows.map { it[groupRankIdx] })
-            .containsExactly("1", "1", "2", "3")
-            .inOrder()
+        val genericIds = listOf("generic-1", "generic-2", "arabic-generic-1", "arabic-generic-2")
+        assertThat(genericIds.map { rowsById.getValue(it)[groupCountIdx] }).containsExactly("1", "1", "1", "1")
+        assertThat(genericIds.map { rowsById.getValue(it)[groupRankIdx] }.toSet()).hasSize(4)
     }
 
     @Test

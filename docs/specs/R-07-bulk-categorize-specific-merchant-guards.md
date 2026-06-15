@@ -40,5 +40,6 @@ specific merchant key.
 - Do not remove generic rows from the CSV; they may still be manually classified.
 - Do not add inline AI/API-key categorization.
 - Do not change seed rules or public category labels.
-- Do not change History repeated-backlog behavior, which already has its own
-  specific-merchant guard.
+- Do not change History repeated-backlog behavior beyond sharing the same
+  specific-merchant guard used by bulk categorization, Today suggestions, and
+  local auto-learning.

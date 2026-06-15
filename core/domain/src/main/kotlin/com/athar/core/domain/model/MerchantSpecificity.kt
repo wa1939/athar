@@ -1,6 +1,6 @@
-package com.athar.core.data.csv
+package com.athar.core.domain.model
 
-internal fun specificMerchantBulkKey(
+fun specificMerchantKey(
     merchantNormalized: String,
     merchant: String,
 ): String? =
@@ -8,17 +8,17 @@ internal fun specificMerchantBulkKey(
         .ifBlank { merchant }
         .trim()
         .lowercase()
-        .takeIf { it.isSpecificMerchantBulkKey() }
+        .takeIf { it.isSpecificMerchantKey() }
 
-internal fun String.isSpecificMerchantBulkKey(): Boolean {
+fun String.isSpecificMerchantKey(): Boolean {
     if (length < 3) return false
     if (all { it.isDigit() || it.isWhitespace() || it == '-' || it == '+' }) return false
-    if (this in GenericMerchantBulkKeys) return false
-    if (GenericMerchantBulkKeys.any { this == it || startsWith("$it ") }) return false
+    if (this in GenericMerchantKeys) return false
+    if (GenericMerchantKeys.any { this == it || startsWith("$it ") }) return false
     return true
 }
 
-private val GenericMerchantBulkKeys = setOf(
+private val GenericMerchantKeys = setOf(
     "unknown",
     "merchant",
     "bank",

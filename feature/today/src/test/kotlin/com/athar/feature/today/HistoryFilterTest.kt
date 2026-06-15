@@ -183,6 +183,22 @@ class HistoryFilterTest {
                 merchant = "Unknown",
                 merchantNormalized = "unknown",
             ),
+            tx(
+                id = "arabic-cash-a",
+                source = IngestSource.SMS,
+                status = TxStatus.PENDING,
+                categoryId = null,
+                merchant = "كاش",
+                merchantNormalized = "كاش",
+            ),
+            tx(
+                id = "arabic-cash-b",
+                source = IngestSource.SMS,
+                status = TxStatus.PENDING,
+                categoryId = null,
+                merchant = "كاش",
+                merchantNormalized = "كاش",
+            ),
         )
 
         val filtered = filterHistoryTransactions(

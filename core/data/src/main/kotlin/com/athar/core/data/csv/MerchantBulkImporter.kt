@@ -7,6 +7,7 @@ import com.athar.core.domain.model.PatternType
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.model.specificMerchantKey
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.CategoryRuleRepository
 import com.athar.core.domain.repo.MerchantBulkImportCategoryImpact
@@ -342,11 +343,11 @@ internal class MerchantBulkImporter @Inject constructor(
         merchantIdx: Int,
         merchantNormIdx: Int,
     ): String {
-        val key = tx.merchantNormalized.ifBlank {
-            rowMerchantNormalized(row, merchantIdx, merchantNormIdx)
-                ?: tx.merchant.lowercase().trim()
-        }
-        return key.takeIf { it.isSpecificMerchantBulkKey() }.orEmpty()
+        val rowMerchant = rowMerchantNormalized(row, merchantIdx, merchantNormIdx) ?: tx.merchant
+        return specificMerchantKey(
+            merchantNormalized = tx.merchantNormalized,
+            merchant = rowMerchant,
+        ).orEmpty()
     }
 
     private suspend fun resolveTransaction(
