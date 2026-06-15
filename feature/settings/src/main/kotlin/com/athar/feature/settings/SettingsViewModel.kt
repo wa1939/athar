@@ -32,6 +32,7 @@ import com.athar.core.domain.repo.InvestmentImportTrigger
 import com.athar.core.domain.repo.MerchantBulkExportResult
 import com.athar.core.domain.repo.MerchantBulkExportMode
 import com.athar.core.domain.repo.MerchantBulkExportTrigger
+import com.athar.core.domain.repo.MerchantBulkImportCategoryImpact
 import com.athar.core.domain.repo.MerchantBulkImportResult
 import com.athar.core.domain.repo.MerchantBulkImportSkipSummary
 import com.athar.core.domain.repo.MerchantBulkImportTrigger
@@ -137,6 +138,7 @@ sealed interface BulkCategorizeStatus {
         val rulesAdded: Int,
         val skipped: Int,
         val skipSummary: MerchantBulkImportSkipSummary,
+        val categoryImpact: List<MerchantBulkImportCategoryImpact> = emptyList(),
     ) : BulkCategorizeStatus
     data class Imported(
         val updated: Int,
@@ -794,7 +796,13 @@ class SettingsViewModel @Inject constructor(
             _bulkCategorize.value = when (val r = bulkImporter.previewCategorizations(bytes.inputStream())) {
                 is MerchantBulkImportResult.Done -> {
                     pendingBulkCategorizeImportBytes = bytes
-                    BulkCategorizeStatus.Preview(r.updated, r.rulesAdded, r.skipped, r.skipSummary)
+                    BulkCategorizeStatus.Preview(
+                        updated = r.updated,
+                        rulesAdded = r.rulesAdded,
+                        skipped = r.skipped,
+                        skipSummary = r.skipSummary,
+                        categoryImpact = r.categoryImpact,
+                    )
                 }
                 is MerchantBulkImportResult.Failed -> {
                     pendingBulkCategorizeImportBytes = null

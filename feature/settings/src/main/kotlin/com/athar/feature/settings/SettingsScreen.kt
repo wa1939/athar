@@ -55,6 +55,7 @@ import com.athar.core.domain.repo.CsvImportPreviewRow
 import com.athar.core.domain.repo.CsvImportRowEdit
 import com.athar.core.domain.repo.InvestmentImportPreview
 import com.athar.core.domain.repo.MerchantBulkExportMode
+import com.athar.core.domain.repo.MerchantBulkImportCategoryImpact
 import com.athar.core.domain.repo.MerchantBulkImportSkipSummary
 import com.athar.core.domain.repo.WishlistImportPreview
 import com.athar.core.domain.repo.merchantBulkAiPrompt
@@ -65,6 +66,7 @@ import com.athar.core.designsystem.display.CurrencyCatalog
 import com.athar.core.designsystem.theme.AtharTheme
 import java.math.BigDecimal
 import java.time.YearMonth
+import java.util.Locale
 
 @Composable
 fun SettingsScreen(
@@ -746,6 +748,7 @@ private fun BulkCategorizeCard(
                         style = theme.typography.caption,
                         color = theme.colors.olive,
                     )
+                    BulkCategorizeCategoryImpactSummary(impact = s.categoryImpact)
                     BulkCategorizeSkipDetails(summary = s.skipSummary)
                 }
                 is BulkCategorizeStatus.Imported -> {
@@ -814,6 +817,33 @@ private fun BulkCategorizeCard(
             }
         }
     }
+}
+
+@Composable
+private fun BulkCategorizeCategoryImpactSummary(impact: List<MerchantBulkImportCategoryImpact>) {
+    if (impact.isEmpty()) return
+
+    val theme = AtharTheme
+    val isArabic = Locale.getDefault().language.equals("ar", ignoreCase = true)
+    val visible = impact.take(5).map { row ->
+        val categoryName = if (isArabic) {
+            row.categoryNameAr.ifBlank { row.categoryName }
+        } else {
+            row.categoryName
+        }
+        stringResource(R.string.settings_bulk_cat_impact_item, categoryName, row.updated)
+    }
+    val remaining = impact.size - visible.size
+    val parts = if (remaining > 0) {
+        visible + stringResource(R.string.settings_bulk_cat_impact_more, remaining)
+    } else {
+        visible
+    }
+    AtharText(
+        text = stringResource(R.string.settings_bulk_cat_impact, parts.joinToString(" · ")),
+        style = theme.typography.caption,
+        color = theme.colors.muted,
+    )
 }
 
 @Composable

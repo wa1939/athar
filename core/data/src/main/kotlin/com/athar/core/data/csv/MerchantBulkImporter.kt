@@ -9,6 +9,7 @@ import com.athar.core.domain.model.TxStatus
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.CategoryRuleRepository
+import com.athar.core.domain.repo.MerchantBulkImportCategoryImpact
 import com.athar.core.domain.repo.MerchantBulkImportResult
 import com.athar.core.domain.repo.MerchantBulkImportSkipSummary
 import com.athar.core.domain.repo.MerchantBulkImportTrigger
@@ -94,6 +95,7 @@ internal class MerchantBulkImporter @Inject constructor(
         val allTransactions = transactions.observeAll().first()
         val byStableKey = uniqueBy(allTransactions, MerchantBulkStableKey::sourceAware)
         val byContentKey = uniqueBy(allTransactions, MerchantBulkStableKey::contentOnly)
+        val categoryImpact = linkedMapOf<String, CategoryImpactAccumulator>()
 
         val dataRows = rows.drop(1).mapIndexed { index, row ->
             CsvDataRow(number = index + 2, cells = row)
@@ -156,7 +158,10 @@ internal class MerchantBulkImporter @Inject constructor(
                 continue
             }
 
-            if (applyCategory(tx, category.id, updatedTransactionIds, applyChanges)) updated++
+            if (applyCategory(tx, category.id, updatedTransactionIds, applyChanges)) {
+                updated++
+                categoryImpact.record(category)
+            }
 
             if (pattern.isNotBlank()) {
                 categoriesByPattern.getOrPut(pattern) { linkedSetOf() }.add(category.id)
@@ -221,7 +226,10 @@ internal class MerchantBulkImporter @Inject constructor(
                 incompatibleCategories++
                 continue
             }
-            if (applyCategory(tx, categoryId, updatedTransactionIds, applyChanges)) updated++
+            if (applyCategory(tx, categoryId, updatedTransactionIds, applyChanges)) {
+                updated++
+                categoryImpact.record(category)
+            }
         }
 
         rulesToAdd.putAll(
@@ -266,6 +274,7 @@ internal class MerchantBulkImporter @Inject constructor(
                 conflictingGroups = conflictingGroups,
                 blankRowsWithoutGroupChoice = blankRowsWithoutGroupChoice,
             ),
+            categoryImpact = if (applyChanges) emptyList() else categoryImpact.toImpactList(),
         )
     }
 
@@ -489,6 +498,43 @@ internal class MerchantBulkImporter @Inject constructor(
         val number: Int,
         val cells: List<String>,
     )
+
+    private data class CategoryImpactAccumulator(
+        val categoryId: String,
+        val categoryName: String,
+        val categoryNameAr: String,
+        var updated: Int,
+    )
+
+    private fun MutableMap<String, CategoryImpactAccumulator>.record(category: Category) {
+        val existing = get(category.id)
+        if (existing != null) {
+            existing.updated += 1
+        } else {
+            put(
+                category.id,
+                CategoryImpactAccumulator(
+                    categoryId = category.id,
+                    categoryName = category.name,
+                    categoryNameAr = category.nameAr,
+                    updated = 1,
+                ),
+            )
+        }
+    }
+
+    private fun Map<String, CategoryImpactAccumulator>.toImpactList(): List<MerchantBulkImportCategoryImpact> =
+        values.sortedWith(
+            compareByDescending<CategoryImpactAccumulator> { it.updated }
+                .thenBy { it.categoryName.lowercase() },
+        ).map {
+            MerchantBulkImportCategoryImpact(
+                categoryId = it.categoryId,
+                categoryName = it.categoryName,
+                categoryNameAr = it.categoryNameAr,
+                updated = it.updated,
+            )
+        }
 
     private fun normalizeImportText(text: String): String {
         val trimmed = text.removePrefix("\uFEFF").trim()

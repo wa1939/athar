@@ -15,6 +15,7 @@ import com.athar.core.domain.model.TxType
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.CategoryRuleRepository
 import com.athar.core.domain.repo.MerchantBulkExportMode
+import com.athar.core.domain.repo.MerchantBulkImportCategoryImpact
 import com.athar.core.domain.repo.MerchantBulkImportResult
 import com.athar.core.domain.repo.MerchantBulkImportSkipSummary
 import com.athar.core.domain.repo.SmsAuditEntry
@@ -230,7 +231,21 @@ class MerchantBulkCsvTest {
 
         val preview = importer.previewCategorizations(ByteArrayInputStream(bytes))
 
-        assertThat(preview).isEqualTo(MerchantBulkImportResult.Done(updated = 2, rulesAdded = 1, skipped = 0))
+        assertThat(preview).isEqualTo(
+            MerchantBulkImportResult.Done(
+                updated = 2,
+                rulesAdded = 1,
+                skipped = 0,
+                categoryImpact = listOf(
+                    MerchantBulkImportCategoryImpact(
+                        categoryId = "cat-home-maintenance",
+                        categoryName = "Home maintenance",
+                        categoryNameAr = "صيانة منزل",
+                        updated = 2,
+                    ),
+                ),
+            ),
+        )
         assertThat(repo.get("hemmah-1")?.categoryId).isNull()
         assertThat(repo.get("hemmah-2")?.categoryId).isNull()
         assertThat(repo.get("hemmah-1")?.status).isEqualTo(TxStatus.PENDING)

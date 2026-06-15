@@ -37,6 +37,7 @@ import com.athar.core.domain.repo.InvestmentImportTrigger
 import com.athar.core.domain.repo.MerchantBulkExportResult
 import com.athar.core.domain.repo.MerchantBulkExportMode
 import com.athar.core.domain.repo.MerchantBulkExportTrigger
+import com.athar.core.domain.repo.MerchantBulkImportCategoryImpact
 import com.athar.core.domain.repo.MerchantBulkImportResult
 import com.athar.core.domain.repo.MerchantBulkImportSkipSummary
 import com.athar.core.domain.repo.MerchantBulkImportTrigger
@@ -364,6 +365,41 @@ class SettingsViewModelTest {
                 skipSummary = MerchantBulkImportSkipSummary(unknownCategories = 1, missingTransactions = 2),
             ),
         )
+    }
+
+    @Test
+    fun `bulk categorization preview exposes category impact`() = runTest(mainDispatcher) {
+        val impact = listOf(
+            MerchantBulkImportCategoryImpact(
+                categoryId = "cat-coffee",
+                categoryName = "Coffee",
+                categoryNameAr = "قهوة",
+                updated = 3,
+            ),
+        )
+        val bulkImporter = RecordingMerchantBulkImportTrigger(
+            previewResult = MerchantBulkImportResult.Done(
+                updated = 3,
+                rulesAdded = 1,
+                skipped = 0,
+                categoryImpact = impact,
+            ),
+        )
+        val viewModel = settingsViewModel(bulkImporter = bulkImporter)
+
+        viewModel.previewCategorizationsBytes("preview csv".toByteArray())
+        advanceUntilIdle()
+
+        assertThat(viewModel.bulkCategorizeStatus.value).isEqualTo(
+            BulkCategorizeStatus.Preview(
+                updated = 3,
+                rulesAdded = 1,
+                skipped = 0,
+                skipSummary = MerchantBulkImportSkipSummary(),
+                categoryImpact = impact,
+            ),
+        )
+        assertThat(bulkImporter.importedBytes).isEmpty()
     }
 
     @Test

@@ -18,7 +18,8 @@ import java.io.OutputStream
  *  2. **External** — user feeds the CSV to ChatGPT/Claude/Z.ai with the AI triage prompt.
  *     `category_options` is read-only row context; only `category_id` should be edited.
  *  3. **Preview** — read the filled CSV and return the exact update/rule/skip
- *     counts without changing transactions or learned rules.
+ *     counts plus a category-impact summary without changing transactions or
+ *     learned rules.
  *  4. **Import** — after confirmation, read the same filled CSV. For each row
  *     with a non-blank category_id:
  *       - validate the category exists and matches the transaction type,
@@ -62,6 +63,13 @@ data class MerchantBulkImportSkipSummary(
     val blankRowsWithoutGroupChoice: Int = 0,
 )
 
+data class MerchantBulkImportCategoryImpact(
+    val categoryId: String,
+    val categoryName: String,
+    val categoryNameAr: String,
+    val updated: Int,
+)
+
 sealed interface MerchantBulkExportResult {
     data class Done(val rows: Int) : MerchantBulkExportResult
     data class Failed(val reason: String) : MerchantBulkExportResult
@@ -73,6 +81,7 @@ sealed interface MerchantBulkImportResult {
         val rulesAdded: Int,
         val skipped: Int,
         val skipSummary: MerchantBulkImportSkipSummary = MerchantBulkImportSkipSummary(),
+        val categoryImpact: List<MerchantBulkImportCategoryImpact> = emptyList(),
     ) : MerchantBulkImportResult
     data class Failed(val reason: String) : MerchantBulkImportResult
 }
