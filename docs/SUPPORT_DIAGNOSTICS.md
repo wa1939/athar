@@ -31,9 +31,12 @@ does not transmit the file anywhere.
 - failed parser-error groups with sensitive numbers redacted
 - parser template IDs tried for failed rows
 - aggregate transaction categorization-backlog counts
+- category-coverage metrics for eligible, categorized, backlog, top-group, and
+  largest-group coverage
 - top repeated uncategorized merchant groups represented only by pseudonymous
   merchant hashes, coarse length/script buckets, status/source/type/currency
-  counts, confidence buckets, and first/last dates
+  counts, confidence buckets, first/last dates, and per-group/cumulative backlog
+  share
 
 These fields let maintainers answer questions like:
 
@@ -43,6 +46,9 @@ These fields let maintainers answer questions like:
 - Are OTP/promotional messages being classified correctly as ignored?
 - Is cleanup friction now parser failure, repeated uncategorized merchants, or
   transfer rows that intentionally have no category?
+- Is the category backlog concentrated enough to recommend repeated-history or
+  bulk-categorization cleanup, or scattered enough to point toward parser/seed
+  review?
 - Are uncategorized rows concentrated in SMS, notification, import, or manual
   sources?
 
@@ -51,9 +57,9 @@ These fields let maintainers answer questions like:
 1. Ask the user to open Settings -> Support diagnostics.
 2. Ask them to tap Export diagnostics and save `athar-support-diagnostics.json`.
 3. Review status counts, sender groups, error groups, and transaction summary first.
-4. If parsing is healthy but `category_backlog_transactions` is high, inspect the
-   repeated hashed merchant groups before asking the user to run the bulk-categorize
-   workflow.
+4. If parsing is healthy but `category_backlog_transactions` is high, inspect
+   `category_coverage` and repeated hashed merchant groups before asking the
+   user to run the bulk-categorize workflow.
 5. Only ask for a raw SMS sample if the diagnostics file proves the failure cannot be
    understood from shape, counts, redacted reason, template IDs, and aggregate
    category-backlog data.

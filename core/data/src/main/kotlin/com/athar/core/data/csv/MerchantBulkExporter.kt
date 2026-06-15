@@ -50,6 +50,7 @@ internal class MerchantBulkExporter @Inject constructor(
             MerchantBulkExportMode.NO_RAW_BODY -> emptyMap()
         }
         val groupCounts = candidates.groupingBy { it.merchantGroupKey() }.eachCount()
+        val groupImpacts = buildGroupImpacts(groupCounts, candidates.size)
         val orderedCandidates = candidates.sortedWith(
             compareByDescending<Transaction> { groupCounts[it.merchantGroupKey()] ?: 0 }
                 .thenBy { it.merchantGroupKey() }
@@ -57,8 +58,10 @@ internal class MerchantBulkExporter @Inject constructor(
                 .thenByDescending { it.createdAt },
         )
         OutputStreamWriter(out, Charsets.UTF_8).use { writer ->
-            writer.write("id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,category_options,amount,currency,type,status,date,raw_body,category_id\n")
+            writer.write("id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,merchant_group_rank,merchant_group_share_permille,merchant_group_cumulative_share_permille,category_options,amount,currency,type,status,date,raw_body,category_id\n")
             orderedCandidates.forEach { tx ->
+                val groupKey = tx.merchantGroupKey()
+                val impact = groupImpacts[groupKey] ?: MerchantGroupImpact()
                 val raw = when (mode) {
                     MerchantBulkExportMode.FULL_CONTEXT -> rawBodiesByTransactionId[tx.id] ?: tx.notes.orEmpty()
                     MerchantBulkExportMode.NO_RAW_BODY -> ""
@@ -70,7 +73,10 @@ internal class MerchantBulkExporter @Inject constructor(
                         tx.sourceRefId.orEmpty(),
                         tx.merchant,
                         tx.merchantNormalized,
-                        (groupCounts[tx.merchantGroupKey()] ?: 1).toString(),
+                        (groupCounts[groupKey] ?: 1).toString(),
+                        impact.rank.toString(),
+                        impact.sharePermille.toString(),
+                        impact.cumulativeSharePermille.toString(),
                         categoryOptions.forType(tx.type),
                         tx.amount.amount.toPlainString(),
                         tx.amount.currency,
@@ -97,6 +103,24 @@ internal class MerchantBulkExporter @Inject constructor(
         },
     )
 
+    private fun buildGroupImpacts(
+        groupCounts: Map<String, Int>,
+        totalRows: Int,
+    ): Map<String, MerchantGroupImpact> {
+        var cumulative = 0
+        return groupCounts.entries
+            .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
+            .mapIndexed { index, entry ->
+                cumulative += entry.value
+                entry.key to MerchantGroupImpact(
+                    rank = index + 1,
+                    sharePermille = permille(entry.value, totalRows),
+                    cumulativeSharePermille = permille(cumulative, totalRows),
+                )
+            }
+            .toMap()
+    }
+
     private fun Transaction.needsCategoryDecision(): Boolean =
         type != TxType.TRANSFER &&
             (
@@ -107,6 +131,13 @@ internal class MerchantBulkExporter @Inject constructor(
 
     private fun Transaction.merchantGroupKey(): String =
         merchantNormalized.ifBlank { merchant.lowercase().trim() }.ifBlank { "blank" }
+
+    private fun permille(numerator: Int, denominator: Int): Int =
+        if (denominator <= 0) {
+            0
+        } else {
+            ((numerator.toLong() * 1_000L) / denominator.toLong()).toInt()
+        }
 
     private fun List<SmsAuditEntry>.rawBodiesByTransactionId(): Map<String, String> {
         val out = linkedMapOf<String, String>()
@@ -140,4 +171,10 @@ internal class MerchantBulkExporter @Inject constructor(
             s
         }
     }
+
+    private data class MerchantGroupImpact(
+        val rank: Int = 0,
+        val sharePermille: Int = 0,
+        val cumulativeSharePermille: Int = 0,
+    )
 }

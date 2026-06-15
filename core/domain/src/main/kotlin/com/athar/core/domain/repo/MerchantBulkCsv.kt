@@ -9,7 +9,8 @@ import java.io.OutputStream
  * Flow:
  *  1. **Export** — write a CSV of every non-transfer PENDING / DISMISSED /
  *     uncategorized-CONFIRMED transaction. Columns: id, stable_key, source_ref_id,
- *     merchant, merchant_group_count, category_options, amount, currency, type,
+ *     merchant, merchant_group_count, merchant_group_rank, merchant_group_share_permille,
+ *     merchant_group_cumulative_share_permille, category_options, amount, currency, type,
  *     status, date, raw_body, category_id (blank for user to fill). Full-context
  *     exports use the linked ingestion-audit message body when available, then
  *     fall back to notes. The private export mode keeps the same columns but

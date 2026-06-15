@@ -15,7 +15,7 @@ A typical 800-row export takes ChatGPT about 60–90 seconds; import takes a fra
 The export looks like:
 
 ```
-id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,category_options,amount,currency,type,status,date,raw_body,category_id
+id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,merchant_group_rank,merchant_group_share_permille,merchant_group_cumulative_share_permille,category_options,amount,currency,type,status,date,raw_body,category_id
 3f7a-…,8d9e-…,inbox-4242,Hemmah,hemmah,8,"cat-home-maintenance=Home maintenance / صيانة منزل | cat-other-expense=Other / متفرقات",99.00,SAR,EXPENSE,DISMISSED,2026-04-22,...raw SMS body...,
 ```
 
@@ -24,6 +24,7 @@ id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,ca
 - **`source_ref_id`** — the raw SMS/notification reference when available. Helps Athar rebuild the same stable key after a rescan. Do not change.
 - **`merchant`** / **`merchant_normalized`** — as parsed by the ingestion pipeline. Lower-case normalized version is what gets used for rule matching.
 - **`merchant_group_count`** — how many exported rows share the same normalized merchant. The export is sorted so repeated merchants appear first and together; assign one consistent category to the group unless the raw body proves otherwise. For human review, filling one representative row is enough when the blank rows in the same group should inherit the same category.
+- **`merchant_group_rank` / `merchant_group_share_permille` / `merchant_group_cumulative_share_permille`** — read-only impact hints. Start with the lowest rank and highest share groups first; they clean the most backlog rows per decision. Do not edit these columns.
 - **`category_options`** — read-only active category choices for this row's `type`, using the user's current category table. Do not edit. Pick one of these IDs for `category_id`; this keeps custom categories visible to ChatGPT/Claude without a separate lookup file, and the importer skips categories whose kind does not match the row type.
 - **`amount` · `currency` · `type` · `status` · `date`** — context for the AI to disambiguate similar merchants. Do not change.
 - **`raw_body`** — the original SMS/notification body from the local ingestion audit when available, or transaction notes for manual/imported rows, in the full-context export. Often the strongest categorization signal. The private export keeps this column but leaves it blank.
@@ -42,9 +43,9 @@ then attach (or paste) the CSV.
 You are categorizing financial transactions for a Saudi Arabic-first budgeting app called Athar.
 
 Input: a CSV with these columns:
-  id, stable_key, source_ref_id, merchant, merchant_normalized, merchant_group_count, category_options, amount, currency, type, status, date, raw_body, category_id
+  id, stable_key, source_ref_id, merchant, merchant_normalized, merchant_group_count, merchant_group_rank, merchant_group_share_permille, merchant_group_cumulative_share_permille, category_options, amount, currency, type, status, date, raw_body, category_id
 
-Your job: fill in the `category_id` column for every row you can classify confidently. Prefer one of the ids shown in that row's `category_options` column. For repeated rows with the same `merchant_normalized`, you may fill only the first representative row when every blank peer should inherit the same category. If a row in the same merchant group needs a different category, fill that row explicitly too; Athar will not train a learned rule for conflicting or incompatible-type groups. If `category_options` is missing or incomplete, use ONLY these category ids:
+Your job: fill in the `category_id` column for every row you can classify confidently. Prefer one of the ids shown in that row's `category_options` column. For repeated rows with the same `merchant_normalized`, prioritize the lowest `merchant_group_rank` and highest `merchant_group_share_permille` groups first. You may fill only the first representative row when every blank peer should inherit the same category. If a row in the same merchant group needs a different category, fill that row explicitly too; Athar will not train a learned rule for conflicting or incompatible-type groups. If `category_options` is missing or incomplete, use ONLY these category ids:
 
 EXPENSE:
   cat-rent · cat-mortgage · cat-groceries · cat-restaurant · cat-coffee · cat-going-out

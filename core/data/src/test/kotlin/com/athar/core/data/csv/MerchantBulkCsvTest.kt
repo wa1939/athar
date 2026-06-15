@@ -52,7 +52,11 @@ class MerchantBulkCsvTest {
 
         assertThat(exported).isEqualTo(com.athar.core.domain.repo.MerchantBulkExportResult.Done(rows = 1))
         val csv = out.toString(Charsets.UTF_8)
-        assertThat(csv).contains("id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,category_options")
+        assertThat(csv).contains(
+            "id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count," +
+                "merchant_group_rank,merchant_group_share_permille,merchant_group_cumulative_share_permille," +
+                "category_options",
+        )
         assertThat(csv).contains("cat-coffee=Coffee / قهوة")
         assertThat(csv).contains("\"شراء\nمبلغ:SAR 19\nمن:BARNS\"")
 
@@ -677,6 +681,9 @@ class MerchantBulkCsvTest {
         val header = lines.first().split(",")
         val merchantIdx = header.indexOf("merchant")
         val groupCountIdx = header.indexOf("merchant_group_count")
+        val groupRankIdx = header.indexOf("merchant_group_rank")
+        val groupShareIdx = header.indexOf("merchant_group_share_permille")
+        val groupCumulativeIdx = header.indexOf("merchant_group_cumulative_share_permille")
         val optionsIdx = header.indexOf("category_options")
         val dataRows = lines.drop(1).map { it.split(",") }
 
@@ -685,6 +692,15 @@ class MerchantBulkCsvTest {
             .inOrder()
         assertThat(dataRows.map { it[groupCountIdx] })
             .containsExactly("2", "2", "1", "1")
+            .inOrder()
+        assertThat(dataRows.map { it[groupRankIdx] })
+            .containsExactly("1", "1", "2", "3")
+            .inOrder()
+        assertThat(dataRows.map { it[groupShareIdx] })
+            .containsExactly("500", "500", "250", "250")
+            .inOrder()
+        assertThat(dataRows.map { it[groupCumulativeIdx] })
+            .containsExactly("500", "500", "750", "1000")
             .inOrder()
         assertThat(dataRows.first()[optionsIdx]).contains("cat-home-maintenance=Home maintenance")
         assertThat(dataRows.first()[optionsIdx]).contains("cat-coffee=Coffee")

@@ -23,7 +23,8 @@ section manually.
 
 - Settings exposes the prompt action next to the existing export/import flow.
 - The copied prompt includes the current CSV columns, including
-  `merchant_group_count`, `category_options`, and `category_id`.
+  `merchant_group_count`, `merchant_group_rank`,
+  `merchant_group_share_permille`, `category_options`, and `category_id`.
 - The prompt tells the AI to avoid guesses, leave transfer or uncertain rows
   blank, and preserve every non-category column.
 - English and Arabic UI strings are present.
