@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- The copied bulk-categorization AI prompt now includes seed-backed label guidance for exact parser labels such as ATM withdrawals, bank fees, debt payments, tax refunds, reimbursements, cashback, deposits, work expenses, life-admin payments, travel, retail, and entertainment rows.
 - Built-in seed refresh now compares bundled rule content (`pattern`, `patternType`, `categoryId`, and `priority`) instead of only rule count, so metadata-only seed updates reach existing installs while preserving user-learned and `auto-local-*` rules.
 - Bundled seed rules now support optional `patternType`, and generic-prefix shared labels such as `cash deposit`, `bank fees`, and `كاش باك بطاقة ائتمانية` are exact matches instead of broad substring rules. Asset tests now reject future generic-prefix substring seeds.
 - Community-rule exports now reuse the shared specific-merchant guard, so legacy explicit substring rules for generic labels such as `payment`, `cash`, `bank`, `كاش`, and `دفع` are not exported or proposed as public seed rules.

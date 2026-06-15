@@ -37,4 +37,23 @@ class MerchantBulkAiPromptTest {
         assertThat(merchantBulkAiPrompt).contains("cat-bonus")
         assertThat(merchantBulkAiPrompt).contains("cat-other-income")
     }
+
+    @Test
+    fun `prompt maps exact parser labels to seed backed categories`() {
+        assertThat(merchantBulkAiPrompt).contains("ATM Withdrawal -> cat-other-expense")
+        assertThat(merchantBulkAiPrompt).contains("Bank fees -> cat-other-expense")
+        assertThat(merchantBulkAiPrompt).contains("Mobile recharge or airtime top-up -> cat-telecom")
+        assertThat(merchantBulkAiPrompt).contains("traffic fine payment or government service payment -> cat-utilities")
+        assertThat(merchantBulkAiPrompt).contains("parking payment, toll payment, or transit fare -> cat-public-transport")
+    }
+
+    @Test
+    fun `prompt maps income and life admin labels to current categories`() {
+        assertThat(merchantBulkAiPrompt).contains("Tax refund -> cat-tax-refund")
+        assertThat(merchantBulkAiPrompt).contains("cash deposit, ATM deposit, check deposit, or cheque deposit -> cat-other-income")
+        assertThat(merchantBulkAiPrompt).contains("Work expense, business expense, or office supplies -> cat-work-expense")
+        assertThat(merchantBulkAiPrompt).contains("Gym membership -> cat-gym")
+        assertThat(merchantBulkAiPrompt).contains("gift card, gift purchase, or flower delivery -> cat-gifts")
+        assertThat(merchantBulkAiPrompt).contains("event ticket -> cat-going-out")
+    }
 }

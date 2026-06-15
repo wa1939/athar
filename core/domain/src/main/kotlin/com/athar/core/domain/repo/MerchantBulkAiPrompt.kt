@@ -32,6 +32,16 @@ Rules:
 - Transfers are normally not exported. If an older CSV contains type=TRANSFER, leave category_id blank.
 - If you cannot tell, leave category_id blank. Do not guess. It is better to skip than mis-categorize.
 - Use raw_body aggressively when it is present. Arabic SMS often spells the merchant differently than the parsed merchant field. Private exports may leave raw_body blank; in that case use merchant, merchant_normalized, amount, type, date, and category_options, and leave uncertain rows blank.
+- Treat Athar's normalized parser labels as meaningful category clues when they appear in merchant, merchant_normalized, or raw_body:
+  - ATM Withdrawal -> cat-other-expense; Bank fees -> cat-other-expense.
+  - Credit card payment, loan instalment, or debt payment -> cat-debt; Car payment -> cat-car-payment; Mortgage payment -> cat-mortgage; Condo fees or HOA/strata fee -> cat-condo-fees.
+  - Mobile recharge or airtime top-up -> cat-telecom; traffic fine payment or government service payment -> cat-utilities; parking payment, toll payment, or transit fare -> cat-public-transport.
+  - Tax refund -> cat-tax-refund; expense reimbursement, refund, reversal, or chargeback -> cat-reimbursements; bonus income -> cat-bonus.
+  - Cashback income -> cat-side-income; freelance income, rental income, dividend income, or interest income -> cat-side-income; cash deposit, ATM deposit, check deposit, or cheque deposit -> cat-other-income.
+  - Work expense, business expense, or office supplies -> cat-work-expense; home service, furniture, or home goods -> cat-home-maintenance; appliance purchase -> cat-electronics.
+  - Gym membership -> cat-gym; childcare or daycare payment -> cat-childcare; insurance premium -> cat-insurance; gift card, gift purchase, or flower delivery -> cat-gifts.
+  - Fuel purchase -> cat-gas; grocery purchase -> cat-groceries; restaurant, food delivery, or coffee labels should use cat-restaurant or cat-coffee based on the specific label.
+  - Flight ticket, hotel payment, travel booking, or car rental -> cat-travel; clothing purchase -> cat-clothing; electronics purchase -> cat-electronics; online shopping purchase -> cat-other-expense; cinema ticket or game purchase -> cat-entertainment; event ticket -> cat-going-out.
 - Hemmah, همة, Maharah, and مهارة usually mean cat-home-maintenance.
 - Yaqoot and ياقوت usually mean cat-telecom unless the raw text clearly describes a water delivery subscription.
 - Saudi Electric, SEC, and الكهرباء mean cat-utilities.
