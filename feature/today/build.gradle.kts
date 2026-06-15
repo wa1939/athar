@@ -8,6 +8,10 @@ android {
     namespace = "com.athar.feature.today"
 }
 
+dependencies {
+    implementation(libs.mlkit.text.recognition)
+}
+
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }

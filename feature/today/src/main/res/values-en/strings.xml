@@ -148,6 +148,10 @@
     <string name="add_tx_receipt_title">Receipts</string>
     <string name="add_tx_receipt_empty">No receipt</string>
     <string name="add_tx_receipt_loading">Importing…</string>
+    <string name="add_tx_receipt_ocr_loading">Reading receipt…</string>
+    <string name="add_tx_receipt_ocr_filled">Receipt filled amount and merchant</string>
+    <string name="add_tx_receipt_ocr_no_text">Receipt attached; amount and merchant were not found</string>
+    <string name="add_tx_receipt_ocr_failed">Receipt attached; text reading failed</string>
     <string name="add_tx_receipt_attached" formatted="true">%1$s · %2$s</string>
     <string name="add_tx_receipt_count" formatted="true">%1$d receipts attached</string>
     <string name="add_tx_receipt_attach">Attach</string>

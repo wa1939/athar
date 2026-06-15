@@ -149,6 +149,10 @@
     <string name="add_tx_receipt_title">الإيصالات</string>
     <string name="add_tx_receipt_empty">لا يوجد إيصال</string>
     <string name="add_tx_receipt_loading">جارٍ الاستيراد…</string>
+    <string name="add_tx_receipt_ocr_loading">جارٍ قراءة الإيصال…</string>
+    <string name="add_tx_receipt_ocr_filled">تمت تعبئة المبلغ والتاجر من الإيصال</string>
+    <string name="add_tx_receipt_ocr_no_text">تم إرفاق الإيصال؛ لم نجد المبلغ والتاجر</string>
+    <string name="add_tx_receipt_ocr_failed">تم إرفاق الإيصال؛ تعذرت قراءة النص</string>
     <string name="add_tx_receipt_attached" formatted="true">%1$s · %2$s</string>
     <string name="add_tx_receipt_count" formatted="true">%1$d إيصالات مرفقة</string>
     <string name="add_tx_receipt_attach">إرفاق</string>

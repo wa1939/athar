@@ -160,6 +160,47 @@ class ManualEntryPhraseParserTest {
     }
 
     @Test
+    fun `ocr prefill fills receipt fields without replacing quick entry text`() {
+        val state = AddTransactionState.initial(LocalDate(2026, 6, 13)).copy(
+            quickEntry = "spent 15 at old place",
+            selectedCategoryId = "cat-existing",
+        )
+
+        val result = ReceiptOcrPrefillApplier.apply(
+            state,
+            """
+            JARIR BOOKSTORE
+            VAT SAR 7.50
+            Total SAR 57.50
+            Date 2026-06-12
+            """.trimIndent(),
+        )
+
+        assertThat(result.status).isEqualTo(ReceiptOcrStatus.FILLED)
+        assertThat(result.state.quickEntry).isEqualTo("spent 15 at old place")
+        assertThat(result.state.amount).isEqualTo("57.5")
+        assertThat(result.state.merchant).isEqualTo("JARIR BOOKSTORE")
+        assertThat(result.state.date).isEqualTo(LocalDate(2026, 6, 12))
+        assertThat(result.state.selectedCategoryId).isEqualTo("cat-existing")
+        assertThat(result.state.quickEntryError).isNull()
+    }
+
+    @Test
+    fun `ocr prefill reports no text without changing existing fields`() {
+        val state = AddTransactionState.initial(LocalDate(2026, 6, 13)).copy(
+            amount = "12",
+            merchant = "Existing",
+            quickEntry = "spent 12 at Existing",
+            selectedCategoryId = "cat-existing",
+        )
+
+        val result = ReceiptOcrPrefillApplier.apply(state, "loyalty points only")
+
+        assertThat(result.status).isEqualTo(ReceiptOcrStatus.NO_TEXT)
+        assertThat(result.state).isEqualTo(state)
+    }
+
+    @Test
     fun `applier reports failed parse without changing existing fields`() {
         val state = AddTransactionState.initial(LocalDate(2026, 6, 13)).copy(
             amount = "12",

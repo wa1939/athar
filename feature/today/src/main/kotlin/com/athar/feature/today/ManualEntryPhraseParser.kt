@@ -193,19 +193,53 @@ internal object ManualEntryPhraseApplier {
     fun apply(state: AddTransactionState, phrase: String): AddTransactionState {
         val parsed = ManualEntryPhraseParser.parse(phrase)
             ?: return state.copy(quickEntryError = QuickEntryError.PARSE_FAILED)
+        return applyParsed(state, parsed, quickEntry = phrase)
+    }
+
+    fun applyParsed(
+        state: AddTransactionState,
+        parsed: ManualEntryPhrase,
+        quickEntry: String = state.quickEntry,
+        preserveCategoryWhenNoSuggestion: Boolean = false,
+    ): AddTransactionState {
         val suggestion = state.merchantSuggestions.firstOrNull {
             it.type == parsed.type && it.merchantNormalized == parsed.merchantNormalized
         }
+        val selectedCategoryId = suggestion?.categoryId
+            ?: state.selectedCategoryId.takeIf {
+                preserveCategoryWhenNoSuggestion && state.type == parsed.type
+            }
 
         return state.copy(
-            quickEntry = phrase,
+            quickEntry = quickEntry,
             quickEntryError = null,
             amount = parsed.amountInput,
             merchant = suggestion?.merchant ?: parsed.merchant,
             type = parsed.type,
             date = parsed.date ?: state.date,
-            selectedCategoryId = suggestion?.categoryId,
+            selectedCategoryId = selectedCategoryId,
             validationError = null,
+        )
+    }
+}
+
+internal object ReceiptOcrPrefillApplier {
+
+    data class Result(
+        val state: AddTransactionState,
+        val status: ReceiptOcrStatus,
+    )
+
+    fun apply(state: AddTransactionState, recognizedText: String): Result {
+        val parsed = ManualEntryPhraseParser.parse(recognizedText)
+            ?: return Result(state, ReceiptOcrStatus.NO_TEXT)
+        return Result(
+            state = ManualEntryPhraseApplier.applyParsed(
+                state = state,
+                parsed = parsed,
+                preserveCategoryWhenNoSuggestion = true,
+            ),
+            status = ReceiptOcrStatus.FILLED,
         )
     }
 }

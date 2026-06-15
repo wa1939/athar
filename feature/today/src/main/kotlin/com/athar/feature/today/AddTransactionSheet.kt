@@ -203,6 +203,8 @@ private fun AddTransactionForm(
             receipts = state.receipts,
             isLoading = state.isReceiptLoading,
             error = state.receiptError,
+            isOcrRunning = state.isReceiptOcrRunning,
+            ocrStatus = state.receiptOcrStatus,
             onAttachClick = onReceiptClick,
             onRemoveClick = { onEvent(AddTransactionEvent.RemoveReceipt(it)) },
         )
@@ -219,6 +221,8 @@ private fun ReceiptAttachmentRow(
     receipts: List<PendingReceiptUi>,
     isLoading: Boolean,
     error: ReceiptAttachmentError?,
+    isOcrRunning: Boolean,
+    ocrStatus: ReceiptOcrStatus?,
     onAttachClick: () -> Unit,
     onRemoveClick: (String) -> Unit,
 ) {
@@ -236,6 +240,7 @@ private fun ReceiptAttachmentRow(
         ) {
             val status = when {
                 isLoading -> stringResource(R.string.add_tx_receipt_loading)
+                isOcrRunning -> stringResource(R.string.add_tx_receipt_ocr_loading)
                 receipts.isNotEmpty() -> stringResource(R.string.add_tx_receipt_count, receipts.size)
                 else -> stringResource(R.string.add_tx_receipt_empty)
             }
@@ -257,7 +262,7 @@ private fun ReceiptAttachmentRow(
             }
             CompactActionButton(
                 text = stringResource(R.string.add_tx_receipt_attach),
-                enabled = !isLoading,
+                enabled = !isLoading && !isOcrRunning,
                 onClick = onAttachClick,
             )
         }
@@ -289,10 +294,25 @@ private fun ReceiptAttachmentRow(
                 }
                 CompactActionButton(
                     text = stringResource(R.string.add_tx_receipt_remove),
-                    enabled = !isLoading,
+                    enabled = !isLoading && !isOcrRunning,
                     onClick = { onRemoveClick(receipt.id) },
                 )
             }
+        }
+        val ocrText = when (ocrStatus) {
+            ReceiptOcrStatus.FILLED -> stringResource(R.string.add_tx_receipt_ocr_filled)
+            ReceiptOcrStatus.NO_TEXT -> stringResource(R.string.add_tx_receipt_ocr_no_text)
+            ReceiptOcrStatus.FAILED -> stringResource(R.string.add_tx_receipt_ocr_failed)
+            null -> null
+        }
+        ocrText?.let {
+            val color = when (ocrStatus) {
+                ReceiptOcrStatus.FILLED -> theme.colors.olive
+                ReceiptOcrStatus.NO_TEXT -> theme.colors.muted
+                ReceiptOcrStatus.FAILED -> theme.colors.crimson
+                null -> theme.colors.muted
+            }
+            AtharText(text = it, style = theme.typography.caption, color = color)
         }
         val errorText = when (error) {
             ReceiptAttachmentError.READ_FAILED -> stringResource(R.string.add_tx_receipt_error_read)

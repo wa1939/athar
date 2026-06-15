@@ -21,6 +21,8 @@ data class AddTransactionState(
     val receipts: ImmutableList<PendingReceiptUi>,
     val isReceiptLoading: Boolean,
     val receiptError: ReceiptAttachmentError?,
+    val isReceiptOcrRunning: Boolean,
+    val receiptOcrStatus: ReceiptOcrStatus?,
     val isSaving: Boolean,
     val validationError: ValidationError?,
 ) {
@@ -57,6 +59,8 @@ data class AddTransactionState(
             receipts = persistentListOf(),
             isReceiptLoading = false,
             receiptError = null,
+            isReceiptOcrRunning = false,
+            receiptOcrStatus = null,
             isSaving = false,
             validationError = null,
         )
@@ -89,6 +93,12 @@ enum class ReceiptAttachmentError {
     TOO_LARGE,
     UNSUPPORTED_TYPE,
     SAVE_FAILED,
+}
+
+enum class ReceiptOcrStatus {
+    FILLED,
+    NO_TEXT,
+    FAILED,
 }
 
 sealed interface AddTransactionEvent {

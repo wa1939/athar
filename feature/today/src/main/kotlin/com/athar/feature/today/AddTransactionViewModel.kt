@@ -46,6 +46,7 @@ class AddTransactionViewModel @Inject constructor(
     private val receipts: ReceiptAttachmentRepository,
     private val categories: CategoryRepository,
     private val prefs: UserPreferencesRepository,
+    private val receiptTextRecognizer: ReceiptImageTextRecognizer,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -93,11 +94,16 @@ class AddTransactionViewModel @Inject constructor(
             }
             is AddTransactionEvent.RemoveReceipt -> {
                 pendingReceipts = pendingReceipts.filterNot { it.id == event.id }
-                _state.update {
-                    it.copy(
-                        receipts = it.receipts.filterNot { receipt -> receipt.id == event.id }.toImmutableList(),
+                _state.update { current ->
+                    val nextReceipts = current.receipts
+                        .filterNot { receipt -> receipt.id == event.id }
+                        .toImmutableList()
+                    current.copy(
+                        receipts = nextReceipts,
                         isReceiptLoading = false,
                         receiptError = null,
+                        isReceiptOcrRunning = current.isReceiptOcrRunning && nextReceipts.isNotEmpty(),
+                        receiptOcrStatus = current.receiptOcrStatus.takeIf { nextReceipts.isNotEmpty() },
                     )
                 }
             }
@@ -123,7 +129,14 @@ class AddTransactionViewModel @Inject constructor(
 
     fun attachReceipt(resolver: ContentResolver, uri: Uri) {
         viewModelScope.launch {
-            _state.update { it.copy(isReceiptLoading = true, receiptError = null) }
+            _state.update {
+                it.copy(
+                    isReceiptLoading = true,
+                    receiptError = null,
+                    isReceiptOcrRunning = false,
+                    receiptOcrStatus = null,
+                )
+            }
             val result = runCatching {
                 withContext(Dispatchers.IO) { readReceipt(resolver, uri) }
             }
@@ -134,16 +147,49 @@ class AddTransactionViewModel @Inject constructor(
                         receipts = (it.receipts + receipt.toUi()).toImmutableList(),
                         isReceiptLoading = false,
                         receiptError = null,
+                        receiptOcrStatus = null,
                     )
                 }
+                prefillFromReceiptImage(receipt.id, uri)
             }.onFailure { throwable ->
                 _state.update {
                     it.copy(
                         isReceiptLoading = false,
+                        isReceiptOcrRunning = false,
+                        receiptOcrStatus = null,
                         receiptError = (throwable as? ReceiptReadFailure)?.error
                             ?: ReceiptAttachmentError.READ_FAILED,
                     )
                 }
+            }
+        }
+    }
+
+    private suspend fun prefillFromReceiptImage(receiptId: String, uri: Uri) {
+        _state.update { it.copy(isReceiptOcrRunning = true, receiptOcrStatus = null) }
+        val result = runCatching {
+            withContext(Dispatchers.IO) { receiptTextRecognizer.recognize(uri) }
+        }
+        result.onSuccess { recognizedText ->
+            _state.update { current ->
+                if (pendingReceipts.none { it.id == receiptId }) {
+                    current.copy(isReceiptOcrRunning = false, receiptOcrStatus = null)
+                } else {
+                    val prefill = ReceiptOcrPrefillApplier.apply(current, recognizedText)
+                    prefill.state.copy(
+                        isReceiptOcrRunning = false,
+                        receiptOcrStatus = prefill.status,
+                        receiptError = null,
+                    )
+                }
+            }
+        }.onFailure {
+            _state.update { current ->
+                current.copy(
+                    isReceiptOcrRunning = false,
+                    receiptOcrStatus = ReceiptOcrStatus.FAILED
+                        .takeIf { pendingReceipts.any { receipt -> receipt.id == receiptId } },
+                )
             }
         }
     }
