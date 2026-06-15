@@ -268,12 +268,50 @@ class HistoryViewModel @Inject constructor(
         }
     }
 
+    fun applySafeRepeatedBacklogSuggestedCategories() {
+        viewModelScope.launch {
+            val groups = repeatedBacklogSuggestedGroups(
+                visibleRows = items.value,
+                category = _category.value,
+                allRows = allTransactions.value,
+                activeCategories = activeCategories.value,
+            )
+            if (groups.isEmpty()) return@launch
+
+            val events = groups.mapNotNull { group ->
+                applyBulkCategoryToIdsInternal(ids = group.ids, categoryId = group.categoryId)
+            }
+            if (events.isEmpty()) return@launch
+            _lastBulkCategory.value = BulkCategoryEvent(
+                applied = events.sumOf { it.applied },
+                skipped = events.sumOf { it.skipped },
+                exactRuleLearned = events.any { it.exactRuleLearned },
+            )
+            _selectionMode.value = true
+            _selectedIds.value = emptySet()
+        }
+    }
+
     private suspend fun applyBulkCategoryToIds(
         ids: Set<String>,
         categoryId: String,
         keepSelectionMode: Boolean = false,
     ) {
-        val category = categories.get(categoryId)?.takeUnless { it.archived } ?: return
+        val event = applyBulkCategoryToIdsInternal(ids = ids, categoryId = categoryId) ?: return
+        _lastBulkCategory.value = event
+        if (keepSelectionMode) {
+            _selectionMode.value = true
+            _selectedIds.value = emptySet()
+        } else {
+            clearSelection()
+        }
+    }
+
+    private suspend fun applyBulkCategoryToIdsInternal(
+        ids: Set<String>,
+        categoryId: String,
+    ): BulkCategoryEvent? {
+        val category = categories.get(categoryId)?.takeUnless { it.archived } ?: return null
         val now = clock.now()
         var applied = 0
         var skipped = 0
@@ -294,17 +332,11 @@ class HistoryViewModel @Inject constructor(
             }
         }
         val exactRuleLearned = learnExactRuleForRepeatedMerchant(appliedRows, category.id)
-        _lastBulkCategory.value = BulkCategoryEvent(
+        return BulkCategoryEvent(
             applied = applied,
             skipped = skipped,
             exactRuleLearned = exactRuleLearned,
         )
-        if (keepSelectionMode) {
-            _selectionMode.value = true
-            _selectedIds.value = emptySet()
-        } else {
-            clearSelection()
-        }
     }
 
     private suspend fun learnExactRuleForRepeatedMerchant(
@@ -503,6 +535,8 @@ data class HistoryBulkCategoryState(
     val selectedTopRepeatedGroupCount: Int,
     val topRepeatedSuggestedCategory: Category?,
     val topRepeatedSuggestedCategoryUseCount: Int,
+    val safeRepeatedSuggestedGroupCount: Int,
+    val safeRepeatedSuggestedTransactionCount: Int,
     val selectedMerchantName: String?,
     val suggestedCategoryId: String?,
     val suggestedCategoryUseCount: Int,
@@ -520,6 +554,8 @@ data class HistoryBulkCategoryState(
             (selectedCount != topRepeatedGroupCount || selectedTopRepeatedGroupCount != topRepeatedGroupCount)
     val canApplyTopRepeatedSuggestedCategory: Boolean =
         selectionMode && topRepeatedGroupCount > 0 && topRepeatedSuggestedCategory != null
+    val canApplySafeRepeatedSuggestedCategories: Boolean =
+        selectionMode && safeRepeatedSuggestedGroupCount > 1
 
     companion object {
         val Empty = HistoryBulkCategoryState(
@@ -531,6 +567,8 @@ data class HistoryBulkCategoryState(
             selectedTopRepeatedGroupCount = 0,
             topRepeatedSuggestedCategory = null,
             topRepeatedSuggestedCategoryUseCount = 0,
+            safeRepeatedSuggestedGroupCount = 0,
+            safeRepeatedSuggestedTransactionCount = 0,
             selectedMerchantName = null,
             suggestedCategoryId = null,
             suggestedCategoryUseCount = 0,
@@ -592,6 +630,12 @@ internal fun buildHistoryBulkCategoryState(
             topRepeatedCategories.firstOrNull { it.id == suggestion.categoryId }
                 ?.let { categoryRow -> categoryRow to suggestion.useCount }
         }
+    val safeRepeatedSuggestedGroups = repeatedBacklogSuggestedGroups(
+        visibleRows = visibleRows,
+        category = category,
+        allRows = allRows,
+        activeCategories = activeCategories,
+    )
     return HistoryBulkCategoryState(
         selectionMode = selectionMode,
         selectedIds = selectedVisibleIds,
@@ -601,6 +645,8 @@ internal fun buildHistoryBulkCategoryState(
         selectedTopRepeatedGroupCount = topRepeatedGroupIds.count { it in selectedVisibleIds },
         topRepeatedSuggestedCategory = topRepeatedSuggestedCategoryRow?.first,
         topRepeatedSuggestedCategoryUseCount = topRepeatedSuggestedCategoryRow?.second ?: 0,
+        safeRepeatedSuggestedGroupCount = safeRepeatedSuggestedGroups.size,
+        safeRepeatedSuggestedTransactionCount = safeRepeatedSuggestedGroups.sumOf { it.ids.size },
         selectedMerchantName = selectedMerchantName,
         suggestedCategoryId = suggestedCategory?.categoryId,
         suggestedCategoryUseCount = suggestedCategory?.useCount ?: 0,
@@ -652,6 +698,55 @@ private data class RepeatedBacklogCandidateGroup(
     val count: Int,
     val firstIndex: Int,
 )
+
+private data class RepeatedBacklogSuggestedGroup(
+    val ids: Set<String>,
+    val categoryId: String,
+    val count: Int,
+    val firstIndex: Int,
+)
+
+private fun repeatedBacklogSuggestedGroups(
+    visibleRows: List<Transaction>,
+    category: HistoryCategoryFilter,
+    allRows: List<Transaction>,
+    activeCategories: List<Category>,
+): List<RepeatedBacklogSuggestedGroup> {
+    if (category != HistoryCategoryFilter.REPEATED_UNCATEGORIZED) return emptyList()
+    val categoriesByKind = activeCategories
+        .filterNot { it.archived }
+        .groupBy { it.kind }
+        .mapValues { (_, rows) -> rows.mapTo(mutableSetOf()) { it.id } }
+    return visibleRows
+        .mapIndexedNotNull { index, tx ->
+            tx.uncategorizedMerchantGroupKey()?.let { key ->
+                RepeatedBacklogCandidate(tx = tx, key = key, originalIndex = index)
+            }
+        }
+        .groupBy { it.key }
+        .mapNotNull { (key, rows) ->
+            if (rows.size <= 1) return@mapNotNull null
+            val activeCategoryIds = categoriesByKind[key.categoryKind].orEmpty()
+            val selectedRows = rows
+                .sortedBy { it.originalIndex }
+                .map { it.tx }
+            val suggestion = allRows.suggestedCategoryForSelectedMerchant(
+                selectedRows = selectedRows,
+                categoryKind = key.categoryKind,
+                activeCategoryIds = activeCategoryIds,
+            ) ?: return@mapNotNull null
+            RepeatedBacklogSuggestedGroup(
+                ids = selectedRows.mapTo(mutableSetOf()) { it.id },
+                categoryId = suggestion.categoryId,
+                count = selectedRows.size,
+                firstIndex = rows.minOf { it.originalIndex },
+            )
+        }
+        .sortedWith(
+            compareByDescending<RepeatedBacklogSuggestedGroup> { it.count }
+                .thenBy { it.firstIndex },
+        )
+}
 
 private fun Transaction.uncategorizedMerchantGroupKey(): UncategorizedMerchantGroupKey? {
     if (!categoryId.isNullOrBlank()) return null

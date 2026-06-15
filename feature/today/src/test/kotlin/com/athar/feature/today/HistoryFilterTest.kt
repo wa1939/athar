@@ -893,6 +893,9 @@ class HistoryFilterTest {
         assertThat(state.topRepeatedSuggestedCategory?.id).isEqualTo("cat-cafe")
         assertThat(state.topRepeatedSuggestedCategoryUseCount).isEqualTo(2)
         assertThat(state.canApplyTopRepeatedSuggestedCategory).isTrue()
+        assertThat(state.safeRepeatedSuggestedGroupCount).isEqualTo(2)
+        assertThat(state.safeRepeatedSuggestedTransactionCount).isEqualTo(5)
+        assertThat(state.canApplySafeRepeatedSuggestedCategories).isTrue()
         assertThat(state.canApplySuggestedCategory).isFalse()
     }
 
@@ -962,9 +965,13 @@ class HistoryFilterTest {
         assertThat(nonRepeatedState.topRepeatedGroupCount).isEqualTo(0)
         assertThat(nonRepeatedState.topRepeatedSuggestedCategory).isNull()
         assertThat(nonRepeatedState.canApplyTopRepeatedSuggestedCategory).isFalse()
+        assertThat(nonRepeatedState.safeRepeatedSuggestedGroupCount).isEqualTo(0)
+        assertThat(nonRepeatedState.canApplySafeRepeatedSuggestedCategories).isFalse()
         assertThat(conflictingState.topRepeatedGroupCount).isEqualTo(3)
         assertThat(conflictingState.topRepeatedSuggestedCategory).isNull()
         assertThat(conflictingState.canApplyTopRepeatedSuggestedCategory).isFalse()
+        assertThat(conflictingState.safeRepeatedSuggestedGroupCount).isEqualTo(0)
+        assertThat(conflictingState.canApplySafeRepeatedSuggestedCategories).isFalse()
     }
 
     private fun tx(

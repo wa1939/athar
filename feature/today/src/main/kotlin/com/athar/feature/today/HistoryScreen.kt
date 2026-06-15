@@ -208,6 +208,7 @@ fun HistoryScreen(
                     onSelectVisible = viewModel::selectVisibleRows,
                     onSelectMatchingMerchant = viewModel::selectMatchingSelectedMerchants,
                     onApplyTopRepeatedSuggestion = viewModel::applyTopRepeatedBacklogSuggestedCategory,
+                    onApplySafeRepeatedSuggestions = viewModel::applySafeRepeatedBacklogSuggestedCategories,
                     onApplySuggestedCategory = viewModel::applyBulkCategory,
                     onApplyCategory = { choosingBulkCategory = true },
                     onClear = viewModel::clearSelection,
@@ -364,6 +365,7 @@ private fun BulkSelectionCard(
     onSelectVisible: () -> Unit,
     onSelectMatchingMerchant: () -> Unit,
     onApplyTopRepeatedSuggestion: () -> Unit,
+    onApplySafeRepeatedSuggestions: () -> Unit,
     onApplySuggestedCategory: (String) -> Unit,
     onApplyCategory: () -> Unit,
     onClear: () -> Unit,
@@ -428,6 +430,16 @@ private fun BulkSelectionCard(
                                 state.topRepeatedGroupCount,
                             ),
                             onClick = onApplyTopRepeatedSuggestion,
+                            selected = true,
+                        )
+                    }
+                    if (state.canApplySafeRepeatedSuggestedCategories) {
+                        HistoryActionChip(
+                            text = stringResource(
+                                R.string.history_bulk_apply_safe_repeated_suggestions,
+                                state.safeRepeatedSuggestedGroupCount,
+                            ),
+                            onClick = onApplySafeRepeatedSuggestions,
                             selected = true,
                         )
                     }

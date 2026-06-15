@@ -79,6 +79,7 @@
     <string name="history_bulk_ready_with_skips" formatted="true">Ready to categorize %1$d transactions. %2$d transfers will stay unchanged.</string>
     <string name="history_bulk_select_top_repeated_group" formatted="true">Top group (%1$d)</string>
     <string name="history_bulk_apply_top_suggestion" formatted="true">Apply top %1$s (%2$d)</string>
+    <string name="history_bulk_apply_safe_repeated_suggestions" formatted="true">Apply safe groups (%1$d)</string>
     <string name="history_bulk_select_visible">Select shown</string>
     <string name="history_bulk_select_same_merchant">Same merchant</string>
     <string name="history_bulk_clear">Clear</string>

@@ -396,6 +396,132 @@ class HistoryViewModelTest {
         itemsCollection.cancel()
         bulkCollection.cancel()
     }
+
+    @Test
+    fun `safe repeated suggestions apply multiple groups and leave conflicts`() = runTest(mainDispatcher) {
+        val txRepo = HistoryFakeTransactionRepository(
+            listOf(
+                tx(
+                    id = "tea-a",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.PENDING,
+                    merchantNormalized = "tea shop",
+                ),
+                tx(
+                    id = "tea-b",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.PENDING,
+                    merchantNormalized = "tea shop",
+                ),
+                tx(
+                    id = "tea-c",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.PENDING,
+                    merchantNormalized = "tea shop",
+                ),
+                tx(
+                    id = "coffee-a",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.PENDING,
+                    merchantNormalized = "coffee shop",
+                ),
+                tx(
+                    id = "coffee-b",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.PENDING,
+                    merchantNormalized = "coffee shop",
+                ),
+                tx(
+                    id = "book-a",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.PENDING,
+                    merchantNormalized = "book shop",
+                ),
+                tx(
+                    id = "book-b",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.PENDING,
+                    merchantNormalized = "book shop",
+                ),
+                tx(
+                    id = "tea-old",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.CONFIRMED,
+                    categoryId = "cat-cafe",
+                    merchantNormalized = "tea shop",
+                ),
+                tx(
+                    id = "coffee-old",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.CONFIRMED,
+                    categoryId = "cat-groceries",
+                    merchantNormalized = "coffee shop",
+                ),
+                tx(
+                    id = "book-old-a",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.CONFIRMED,
+                    categoryId = "cat-cafe",
+                    merchantNormalized = "book shop",
+                ),
+                tx(
+                    id = "book-old-b",
+                    type = TxType.EXPENSE,
+                    status = TxStatus.CONFIRMED,
+                    categoryId = "cat-groceries",
+                    merchantNormalized = "book shop",
+                ),
+            ),
+        )
+        val ruleRepo = HistoryFakeRuleRepository()
+        val viewModel = HistoryViewModel(
+            transactions = txRepo,
+            rules = ruleRepo,
+            categories = HistoryFakeCategoryRepository(
+                listOf(
+                    category(id = "cat-cafe", kind = CategoryKind.EXPENSE),
+                    category(id = "cat-groceries", kind = CategoryKind.EXPENSE),
+                ),
+            ),
+            clock = FixedHistoryClock,
+        )
+        val itemsCollection = launch { viewModel.items.collect {} }
+        val bulkCollection = launch { viewModel.bulkCategoryState.collect {} }
+
+        viewModel.setCategory(HistoryCategoryFilter.REPEATED_UNCATEGORIZED)
+        viewModel.toggleSelectionMode()
+        advanceUntilIdle()
+
+        assertThat(viewModel.bulkCategoryState.value.safeRepeatedSuggestedGroupCount).isEqualTo(2)
+        assertThat(viewModel.bulkCategoryState.value.safeRepeatedSuggestedTransactionCount).isEqualTo(5)
+        assertThat(viewModel.bulkCategoryState.value.canApplySafeRepeatedSuggestedCategories).isTrue()
+
+        viewModel.applySafeRepeatedBacklogSuggestedCategories()
+        advanceUntilIdle()
+
+        val updatedById = txRepo.upserts.associateBy { it.id }
+        assertThat(updatedById.keys).containsExactly("tea-a", "tea-b", "tea-c", "coffee-a", "coffee-b")
+        assertThat(updatedById.getValue("tea-a").categoryId).isEqualTo("cat-cafe")
+        assertThat(updatedById.getValue("tea-b").categoryId).isEqualTo("cat-cafe")
+        assertThat(updatedById.getValue("tea-c").categoryId).isEqualTo("cat-cafe")
+        assertThat(updatedById.getValue("coffee-a").categoryId).isEqualTo("cat-groceries")
+        assertThat(updatedById.getValue("coffee-b").categoryId).isEqualTo("cat-groceries")
+        assertThat(ruleRepo.learnedRules.map { it.pattern }).containsExactly("tea shop", "coffee shop")
+        assertThat(viewModel.lastBulkCategory.value).isEqualTo(
+            HistoryViewModel.BulkCategoryEvent(
+                applied = 5,
+                skipped = 0,
+                exactRuleLearned = true,
+            ),
+        )
+        assertThat(viewModel.selectionMode.value).isTrue()
+        assertThat(viewModel.selectedIds.value).isEmpty()
+        assertThat(viewModel.items.value.map { it.id }).containsExactly("book-a", "book-b").inOrder()
+        assertThat(viewModel.bulkCategoryState.value.canApplySafeRepeatedSuggestedCategories).isFalse()
+
+        itemsCollection.cancel()
+        bulkCollection.cancel()
+    }
 }
 
 private class HistoryFakeTransactionRepository(rows: List<Transaction>) : TransactionRepository {
