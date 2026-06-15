@@ -261,7 +261,7 @@ Respond with **the JSON document only**. No prose, no commentary, no markdown co
 Save the AI's JSON to `/tmp/sms-triage.json`, then run (or ask Claude Code to do):
 
 1. **Validate**: `jq . /tmp/sms-triage.json > /dev/null` — fails the developer fast if the JSON is malformed.
-2. **Categorization rules**: append unique `categorization_rules` entries to `core/data/src/main/assets/seed_rules.json` (lowercase pattern + categoryId + priority 90 for AI-inferred to keep them below manual rules at 100).
+2. **Categorization rules**: append unique `categorization_rules` entries to `core/data/src/main/assets/seed_rules.json` (lowercase pattern + categoryId + priority 90 for AI-inferred to keep them below manual rules at 100). Use the optional `"patternType": "EXACT"` only for normalized parser labels that should match exactly, not merchant substrings; broad labels such as `cash`, `bank`, `payment`, `كاش`, or `دفع` must not ship as substring seed rules.
 3. **Merchant catalog**: append high-confidence (`>= 0.85`) `categorization_rules` to `core/data/src/main/assets/seed_merchant_catalog.json` as well — the merchant catalog is what runs on every newly-parsed transaction.
 4. **Parser templates**: for each unique `parser_templates` entry, add a new `BankTemplate` in `ingestion/sms-parser/src/main/kotlin/com/athar/ingestion/smsparser/{bank}/`. Use the AI's regex as a starting point but write a `SmsCorpusTest` entry (`ingestion/sms-parser/src/test/resources/corpus/{bank}-{format_name}.txt`) first — the test gets driven from `sample_sms`. Red-then-green.
 5. **Corpus**: drop unique `sample_sms` lines into `ingestion/sms-parser/src/test/resources/corpus/` so the new template stays green forever.

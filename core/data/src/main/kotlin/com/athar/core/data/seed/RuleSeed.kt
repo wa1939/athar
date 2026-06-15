@@ -27,7 +27,7 @@ internal class RuleSeed @Inject constructor(
 
     suspend fun seedIfEmpty() {
         val raw = context.assets.open("seed_rules.json").bufferedReader().use { it.readText() }
-        val payload = Json { ignoreUnknownKeys = true }.decodeFromString<SeedPayload>(raw)
+        val payload = SeedJson.decodeFromString<SeedPayload>(raw)
         val expected = payload.rules.size
         val current = dao.countSystemRules()
         if (current == expected) {
@@ -43,7 +43,7 @@ internal class RuleSeed @Inject constructor(
             CategoryRuleEntity(
                 id = UUID.randomUUID().toString(),
                 pattern = dto.pattern,
-                patternType = PatternType.SUBSTRING.name,
+                patternType = (dto.patternType ?: PatternType.SUBSTRING).name,
                 categoryId = dto.categoryId,
                 priority = dto.priority,
                 learnedFromUser = false,
@@ -59,5 +59,10 @@ internal class RuleSeed @Inject constructor(
         val pattern: String,
         val categoryId: String,
         val priority: Int,
+        val patternType: PatternType? = null,
     )
+
+    private companion object {
+        val SeedJson = Json { ignoreUnknownKeys = true }
+    }
 }

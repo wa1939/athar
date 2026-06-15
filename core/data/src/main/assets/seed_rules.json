@@ -278,7 +278,8 @@
     {
       "pattern": "cash deposit",
       "categoryId": "cat-other-income",
-      "priority": 100
+      "priority": 100,
+      "patternType": "EXACT"
     },
     {
       "pattern": "إيداع نقدي",
@@ -2223,7 +2224,8 @@
     {
       "pattern": "كاش باك بطاقة ائتمانية",
       "categoryId": "cat-side-income",
-      "priority": 80
+      "priority": 80,
+      "patternType": "EXACT"
     },
     {
       "pattern": "مدفوعات وزارة الداخلية",
@@ -3173,7 +3175,8 @@
     {
       "pattern": "bank fees",
       "categoryId": "cat-other-expense",
-      "priority": 90
+      "priority": 90,
+      "patternType": "EXACT"
     },
     {
       "pattern": "mcdo",

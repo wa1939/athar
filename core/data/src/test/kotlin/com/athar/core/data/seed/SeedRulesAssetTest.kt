@@ -1,5 +1,7 @@
 package com.athar.core.data.seed
 
+import com.athar.core.domain.model.PatternType
+import com.athar.core.domain.model.isSpecificMerchantKey
 import com.google.common.truth.Truth.assertThat
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.int
@@ -36,6 +38,27 @@ class SeedRulesAssetTest {
             .map { it.pattern }
 
         assertThat(unsupportedSideIncomeRules).isEmpty()
+    }
+
+    @Test
+    fun `substring seed rules use specific merchant patterns`() {
+        val genericSubstringRules = seedRules()
+            .filter { it.patternType == PatternType.SUBSTRING }
+            .filterNot { it.pattern.trim().lowercase().isSpecificMerchantKey() }
+            .map { it.pattern }
+
+        assertThat(genericSubstringRules).isEmpty()
+    }
+
+    @Test
+    fun `generic shared label seeds are exact matches`() {
+        val rulesByPattern = seedRules().associateBy { it.pattern }
+
+        exactSharedLabelPatterns.forEach { pattern ->
+            val rule = rulesByPattern[pattern]
+            assertThat(rule).isNotNull()
+            assertThat(rule!!.patternType).isEqualTo(PatternType.EXACT)
+        }
     }
 
     @Test
@@ -106,6 +129,9 @@ class SeedRulesAssetTest {
                 pattern = obj.getValue("pattern").jsonPrimitive.content,
                 categoryId = obj.getValue("categoryId").jsonPrimitive.content,
                 priority = obj.getValue("priority").jsonPrimitive.int,
+                patternType = obj["patternType"]?.jsonPrimitive?.content
+                    ?.let(PatternType::valueOf)
+                    ?: PatternType.SUBSTRING,
             )
         }
     }
@@ -139,6 +165,7 @@ class SeedRulesAssetTest {
         val pattern: String,
         val categoryId: String,
         val priority: Int,
+        val patternType: PatternType,
     )
 
     private data class SeedCategory(
@@ -155,6 +182,12 @@ class SeedRulesAssetTest {
             SeedCategory("cat-reimbursements", "Expense reimbursement", "INCOME"),
             SeedCategory("cat-bonus", "Bonus", "INCOME"),
             SeedCategory("cat-other-income", "Other income", "INCOME"),
+        )
+
+        val exactSharedLabelPatterns = listOf(
+            "cash deposit",
+            "bank fees",
+            "كاش باك بطاقة ائتمانية",
         )
 
         val sharedIncomeNotificationLabels = mapOf(
