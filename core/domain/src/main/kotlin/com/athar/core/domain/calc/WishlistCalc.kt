@@ -1,8 +1,11 @@
 package com.athar.core.domain.calc
 
 import com.athar.core.common.money.Money
+import com.athar.core.domain.model.Transaction
+import com.athar.core.domain.model.TxType
 import com.athar.core.domain.model.WishlistItem
 import com.athar.core.domain.model.WishlistStatus
+import com.athar.core.domain.model.isReconciliation
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.YearMonth
@@ -60,6 +63,19 @@ object WishlistCalc {
         if (net.amount.signum() <= 0) return Money.zero(net.currency)
         val per = net.amount.divide(LOOKBACK, 2, RoundingMode.HALF_EVEN)
         return Money.of(per, net.currency)
+    }
+
+    fun monthlyCapacityFromTransactions(transactions: Iterable<Transaction>, currency: String): Money {
+        val operating = transactions.filterNot { it.isReconciliation() }
+        val income = Money.sumAmounts(
+            operating.filter { it.type == TxType.INCOME }.map { it.amount },
+            currency,
+        )
+        val expense = Money.sumAmounts(
+            operating.filter { it.type == TxType.EXPENSE }.map { it.amount },
+            currency,
+        )
+        return monthlyCapacity(income, expense)
     }
 
     /**

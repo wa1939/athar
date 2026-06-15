@@ -1,9 +1,16 @@
 package com.athar.core.domain.calc
 
 import com.athar.core.common.money.Money
+import com.athar.core.domain.model.IngestSource
+import com.athar.core.domain.model.RECONCILE_REF_PREFIX
+import com.athar.core.domain.model.Transaction
+import com.athar.core.domain.model.TxStatus
+import com.athar.core.domain.model.TxType
 import com.athar.core.domain.model.WishlistItem
 import com.athar.core.domain.model.WishlistStatus
 import com.google.common.truth.Truth.assertThat
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.YearMonth
@@ -37,6 +44,34 @@ class WishlistCalcTest {
             expense = Money.zero(),
         )
         assertThat(capacity.amount).isEqualTo(BigDecimal("0.42"))
+    }
+
+    @Test
+    fun `capacity from transactions excludes reconciliation adjustments`() {
+        val capacity = WishlistCalc.monthlyCapacityFromTransactions(
+            transactions = listOf(
+                tx(id = "salary", type = TxType.INCOME, amount = Money.of("9000")),
+                tx(id = "spend", type = TxType.EXPENSE, amount = Money.of("6000")),
+                tx(
+                    id = "reconcile-expense",
+                    type = TxType.EXPENSE,
+                    amount = Money.of("50000"),
+                    source = IngestSource.MANUAL,
+                    sourceRefId = "${RECONCILE_REF_PREFIX}gap",
+                ),
+                tx(
+                    id = "reconcile-income",
+                    type = TxType.INCOME,
+                    amount = Money.of("20000"),
+                    source = IngestSource.MANUAL,
+                    sourceRefId = "${RECONCILE_REF_PREFIX}raise",
+                ),
+                tx(id = "transfer", type = TxType.TRANSFER, amount = Money.of("7000")),
+            ),
+            currency = "SAR",
+        )
+
+        assertThat(capacity.amount).isEqualTo(BigDecimal("1000.00"))
     }
 
     @Test
@@ -200,5 +235,30 @@ class WishlistCalcTest {
         desiredMonths = desiredMonths,
         startMonth = startMonth,
         notes = null,
+    )
+
+    private fun tx(
+        id: String,
+        type: TxType,
+        amount: Money,
+        source: IngestSource = IngestSource.SMS,
+        sourceRefId: String? = "sms-$id",
+    ): Transaction = Transaction(
+        id = id,
+        accountId = "account",
+        type = type,
+        amount = amount,
+        date = LocalDate(2026, 1, 1),
+        occurredAt = null,
+        merchant = id,
+        merchantNormalized = id,
+        categoryId = null,
+        notes = null,
+        source = source,
+        sourceRefId = sourceRefId,
+        status = TxStatus.CONFIRMED,
+        confidence = 1f,
+        createdAt = Instant.parse("2026-01-01T00:00:00Z"),
+        updatedAt = Instant.parse("2026-01-01T00:00:00Z"),
     )
 }

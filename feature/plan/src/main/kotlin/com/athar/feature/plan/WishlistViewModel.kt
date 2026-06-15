@@ -2,12 +2,10 @@ package com.athar.feature.plan
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.athar.core.common.money.Money
 import com.athar.core.common.time.Period
 import com.athar.core.domain.calc.WishlistCalc
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
-import com.athar.core.domain.model.TxType
 import com.athar.core.domain.model.WishlistItem
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
@@ -53,9 +51,7 @@ class WishlistViewModel @Inject constructor(
     }
 
     private fun derive(items: List<WishlistItem>, tx: List<Transaction>, currency: String): WishlistState {
-        val income = Money.sumAmounts(tx.filter { it.type == TxType.INCOME }.map { it.amount }, currency)
-        val expense = Money.sumAmounts(tx.filter { it.type == TxType.EXPENSE }.map { it.amount }, currency)
-        val capacity = WishlistCalc.monthlyCapacity(income, expense)
+        val capacity = WishlistCalc.monthlyCapacityFromTransactions(tx, currency)
         val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
         val currentMonth = YearMonth.of(now.year, now.monthNumber)
         val projected = items.map { item -> item to WishlistCalc.project(item, capacity, currentMonth) }
