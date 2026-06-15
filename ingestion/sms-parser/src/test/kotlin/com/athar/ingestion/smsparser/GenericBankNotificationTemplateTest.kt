@@ -1116,6 +1116,42 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses posted subscription renewal and preserves merchant before renewal phrase`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Your Netflix subscription renewed for USD 9.99"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("9.99"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Netflix")
+    }
+
+    @Test
+    fun `parses posted subscription renewal and preserves merchant after for hint`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Subscription renewal for Spotify AED 19.99 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("19.99"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Spotify")
+    }
+
+    @Test
+    fun `parses Arabic posted subscription renewal and preserves merchant`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "تم تجديد اشتراك نتفلكس بمبلغ ٣٩ ر.س"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("39"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("نتفلكس")
+    }
+
+    @Test
     fun `ignores subscription membership and rent offer notifications with amounts`() {
         val nonPosted = listOf(
             "Membership fee offer USD 49.00 today",
@@ -1127,6 +1163,15 @@ class GenericBankNotificationTemplateTest {
         nonPosted.forEach { body ->
             assertThat(parser.parse(event("notification:com.chase.sig.android", body))).isEqualTo(ParseResult.Ignored)
         }
+    }
+
+    @Test
+    fun `ignores merchant-specific subscription renewal reminders with amounts`() {
+        assertThat(
+            parser.parse(
+                event("notification:com.chase.sig.android", "Your Netflix subscription renews tomorrow for USD 9.99"),
+            ),
+        ).isEqualTo(ParseResult.Ignored)
     }
 
     @Test

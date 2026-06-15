@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Store-safe notification parsing now treats posted subscription or membership renewal copy as recurring expense charges, preserving merchants such as Netflix/Spotify when present while keeping future renewal reminders ignored.
 - Existing recurring rules now show their account/category routing and can edit those two fields without deleting the rule; future materialized pending rows use the corrected routing.
 - Recurring-rule creation now lets users choose the active account when adding a manual rule or confirming an auto-detected suggestion; explicit choice wins over a safe inferred suggestion account and the manual-account fallback remains for empty/missing account state.
 - The copied bulk-categorization AI prompt now includes seed-backed label guidance for exact parser labels such as ATM withdrawals, bank fees, debt payments, tax refunds, reimbursements, cashback, deposits, work expenses, life-admin payments, travel, retail, and entertainment rows.

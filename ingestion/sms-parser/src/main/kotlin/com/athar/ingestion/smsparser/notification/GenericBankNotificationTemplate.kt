@@ -185,7 +185,11 @@ class GenericBankNotificationTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val subscriptionPaymentWords = Regex(
-        """(?:\b(?:subscription|membership)\s+(?:payment|charge|fee|paid|debited)\b|\brecurring\s+(?:payment|charge)\b|دفع\s+اشتراك|سداد\s+اشتراك|اشتراك\s+(?:مدفوع|مجدد))""",
+        """(?:\b(?:subscription|membership)\s+(?:payment|charge|fee|paid|debited|renewal|renewed)\b|\b(?:subscription|membership)\s+(?:was\s+)?(?:renewed|charged|debited)\b|\brecurring\s+(?:payment|charge)\b|دفع\s+اشتراك|سداد\s+اشتراك|(?:تم\s+)?تجديد\s+اشتراك|اشتراك\s+(?:مدفوع|مجدد))""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val recurringExpensePostedWords = Regex(
+        """(?:\b(?:paid|debited|charged|completed|posted|confirmed|successful|settled|renewed)\b|تم\s+(?:سداد|دفع|خصم|تجديد)|مدفوع|مجدد)""",
         RegexOption.IGNORE_CASE,
     )
     private val subscriptionRentNonPostedWords = Regex(
@@ -577,7 +581,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (condoFeeNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (insurancePremiumNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (subscriptionRentNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
-        if (recurringExpenseReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (
+            recurringExpenseReminderWords.containsMatchIn(normalized) &&
+            !recurringExpensePostedWords.containsMatchIn(normalized)
+        ) return ParseResult.Ignored
         if (telecomRechargeReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (publicServiceMobilityNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (publicServiceReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
@@ -1332,6 +1339,18 @@ class GenericBankNotificationTemplate : BankTemplate {
             ),
             Regex(
                 """\b(?:your\s+)?(?:(?:debit|credit)\s+)?card(?:\s+ending\s+(?:in\s+)?\d{2,4})?\s+(?:was\s+)?used\s+(?:at|on)\s+(.+?)(?:\s+for)?$""",
+                RegexOption.IGNORE_CASE,
+            ),
+            Regex(
+                """^(?:your\s+)?(.+?)\s+(?:subscription|membership)\s+(?:was\s+)?(?:renewed|charged|debited|paid)(?:\s+for)?$""",
+                RegexOption.IGNORE_CASE,
+            ),
+            Regex(
+                """\b(?:subscription|membership)\s+renewal\s+(?:for|at|with)\s+(.+)$""",
+                RegexOption.IGNORE_CASE,
+            ),
+            Regex(
+                """(?:تم\s+)?تجديد\s+اشتراك\s+(.+?)(?:\s+بمبلغ)?$""",
                 RegexOption.IGNORE_CASE,
             ),
             Regex("""\b(?:new\s+(?:card\s+)?transaction|transaction)\s*[:\-]\s*(.+)$""", RegexOption.IGNORE_CASE),
