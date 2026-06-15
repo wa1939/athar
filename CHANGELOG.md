@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Built-in seed refresh now compares bundled rule content (`pattern`, `patternType`, `categoryId`, and `priority`) instead of only rule count, so metadata-only seed updates reach existing installs while preserving user-learned and `auto-local-*` rules.
 - Bundled seed rules now support optional `patternType`, and generic-prefix shared labels such as `cash deposit`, `bank fees`, and `كاش باك بطاقة ائتمانية` are exact matches instead of broad substring rules. Asset tests now reject future generic-prefix substring seeds.
 - Community-rule exports now reuse the shared specific-merchant guard, so legacy explicit substring rules for generic labels such as `payment`, `cash`, `bank`, `كاش`, and `دفع` are not exported or proposed as public seed rules.
 - Today and History edit flows now guard explicit "Always categorize" rule learning with the shared specific-merchant check, so generic labels such as `payment`, `cash`, `bank`, `كاش`, and `دفع` save as one-row edits instead of prompting for or creating broad substring rules/backfills.
@@ -189,7 +190,7 @@ The "share your rules, not your data" release. The privacy-preserving alternativ
 ### Added
 
 - **"Help others · share your rules" Settings card.** Tap *Export my rules* → Athar writes a JSON file containing only `(pattern, categoryId, confidence)` tuples for every rule the user explicitly created via "Always categorize X as Y" (`learnedFromUser=true`). Tap *Open GitHub issue* → device browser opens to `github.com/wa1939/athar/issues/new` with a pre-filled title + body. User attaches the JSON manually as a comment.
-- **Maintainer review path.** New `.github/ISSUE_TEMPLATE/community-rules.yml` issue template with explicit privacy checkboxes ("I confirm no PII is included"). Accepted rules get merged into `core/data/src/main/assets/seed_rules.json` at priority 60 or 80; next release ships the expanded seed to every user via the `RuleSeed.seedIfEmpty()` refresh mechanism added in beta.17.
+- **Maintainer review path.** New `.github/ISSUE_TEMPLATE/community-rules.yml` issue template with explicit privacy checkboxes ("I confirm no PII is included"). Accepted rules get merged into `core/data/src/main/assets/seed_rules.json` at priority 60 or 80; next release ships the expanded seed to every user via the `RuleSeed.seedIfEmpty()` upgrade refresh mechanism.
 - **`docs/COMMUNITY_RULES_WORKFLOW.md`** — user guide + maintainer review checklist + a comparison table showing why this beats a centralized backend on every dimension that matters (privacy, abuse vector, cost, audit trail, failure mode).
 - Plumbing: new `CommunityRulesShareTrigger` interface in `core/domain`, `CommunityRulesShareExporter` impl in `core/data/csv` (uses `kotlinx.serialization` for the JSON output, deduped by `(pattern, categoryId)`), `CommunityShareStatus` sealed state machine in `SettingsViewModel`.
 

@@ -16,8 +16,8 @@ import javax.inject.Inject
  * Seeds the merchant categorization rules from `assets/seed_rules.json` on first run.
  * Master Brief §4.7 / Backlog S-09.
  *
- * Idempotent: only seeds when no system rules exist. User-learned rules
- * (priority > 100, learnedFromUser=true) are never overwritten.
+ * Idempotent: only seeds when bundled system rules are missing or stale.
+ * User-learned rules and local auto-learned rules are never overwritten.
  */
 internal class RuleSeed @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -28,14 +28,15 @@ internal class RuleSeed @Inject constructor(
     suspend fun seedIfEmpty() {
         val raw = context.assets.open("seed_rules.json").bufferedReader().use { it.readText() }
         val payload = SeedJson.decodeFromString<SeedPayload>(raw)
-        val expected = payload.rules.size
-        val current = dao.countSystemRules()
-        if (current == expected) {
-            Timber.d("System rules up-to-date ($current) — skipping seed.")
+        val expectedRules = payload.rules.map { it.toSeedRuleSignature() }
+        val currentRules = dao.all()
+        val currentSeedRules = currentRules.filter { it.isBundledSeedRule() }
+        if (!seedRulesNeedRefresh(currentRules, expectedRules)) {
+            Timber.d("System rules up-to-date (${currentSeedRules.size}) — skipping seed.")
             return
         }
-        if (current > 0) {
-            Timber.i("Refreshing system rules: $current → $expected")
+        if (currentSeedRules.isNotEmpty()) {
+            Timber.i("Refreshing system rules: ${currentSeedRules.size} → ${expectedRules.size}")
             dao.clearSeedRules()
         }
         val now = clock.now()
@@ -62,7 +63,45 @@ internal class RuleSeed @Inject constructor(
         val patternType: PatternType? = null,
     )
 
+    private fun SeedRule.toSeedRuleSignature(): SeedRuleSignature = SeedRuleSignature(
+        pattern = pattern,
+        patternType = (patternType ?: PatternType.SUBSTRING).name,
+        categoryId = categoryId,
+        priority = priority,
+    )
+
     private companion object {
         val SeedJson = Json { ignoreUnknownKeys = true }
     }
 }
+
+internal data class SeedRuleSignature(
+    val pattern: String,
+    val patternType: String,
+    val categoryId: String,
+    val priority: Int,
+)
+
+internal fun seedRulesNeedRefresh(
+    currentRules: List<CategoryRuleEntity>,
+    expectedRules: List<SeedRuleSignature>,
+): Boolean {
+    val currentSeedRules = currentRules.filter { it.isBundledSeedRule() }
+    if (currentSeedRules.size != expectedRules.size) return true
+
+    val currentSignatures = currentSeedRules.map { it.toSeedRuleSignature() }.toSet()
+    val expectedSignatures = expectedRules.toSet()
+    return currentSignatures != expectedSignatures
+}
+
+internal fun CategoryRuleEntity.isBundledSeedRule(): Boolean =
+    !learnedFromUser && !id.startsWith(AutoLocalRuleIdPrefix)
+
+internal fun CategoryRuleEntity.toSeedRuleSignature(): SeedRuleSignature = SeedRuleSignature(
+    pattern = pattern,
+    patternType = patternType,
+    categoryId = categoryId,
+    priority = priority,
+)
+
+private const val AutoLocalRuleIdPrefix = "auto-local-"

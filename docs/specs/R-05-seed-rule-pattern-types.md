@@ -18,6 +18,8 @@ This slice marks the current generic-prefix label seeds as exact:
 
 `SeedRulesAssetTest` now rejects any future `SUBSTRING` seed whose pattern does not pass the shared `isSpecificMerchantKey()` guard. The AI seed merge script preserves existing `patternType` fields so rerunning it does not silently broaden exact labels.
 
+The follow-up [seed rules content refresh](R-05-seed-rules-content-refresh.md) makes existing installs pick up these metadata-only changes even when the active seed row count stays the same.
+
 ## Acceptance
 
 - Existing seed files without `patternType` still load as substring rules.
