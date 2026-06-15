@@ -912,6 +912,30 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses digit-starting paid-you income counterparty notification`() {
+        val result = parser.parse(
+            event("notification:com.squareup.cash", "3M Payroll paid you USD 250.00"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("250.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.counterparty).isEqualTo("3M Payroll")
+    }
+
+    @Test
+    fun `does not use numeric-only paid-you income counterparty notification`() {
+        val result = parser.parse(
+            event("notification:com.squareup.cash", "123456789 paid you USD 25.00"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("25.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.counterparty).isNull()
+    }
+
+    @Test
     fun `parses got-paid by counterparty notification`() {
         val result = parser.parse(
             event("notification:com.mercury", "You got paid USD 250.00 by ACME Payroll"),
@@ -3084,6 +3108,63 @@ class GenericBankNotificationTemplateTest {
         assertThat(result.amount.amount).isEqualTo(BigDecimal("100.00"))
         assertThat(result.amount.currency).isEqualTo("AED")
         assertThat(result.counterparty).isEqualTo("Ahmed")
+    }
+
+    @Test
+    fun `parses digit-starting labeled sender income notification field`() {
+        val result = parser.parse(
+            event(
+                "notification:com.mercury",
+                """
+                Incoming transfer
+                Amount: USD 250.00
+                Sender: 3M Payroll
+                """.trimIndent(),
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.INCOME)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("250.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.counterparty).isEqualTo("3M Payroll")
+    }
+
+    @Test
+    fun `parses digit-starting labeled recipient transfer notification field`() {
+        val result = parser.parse(
+            event(
+                "notification:com.chase.sig.android",
+                """
+                Transfer sent
+                Amount: USD 100.00
+                Recipient: 401K Savings
+                """.trimIndent(),
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.TRANSFER)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("100.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.counterparty).isEqualTo("401K Savings")
+    }
+
+    @Test
+    fun `does not use numeric-only labeled transfer counterparty field`() {
+        val result = parser.parse(
+            event(
+                "notification:com.chase.sig.android",
+                """
+                Transfer sent
+                Amount: USD 100.00
+                Recipient: 123456789
+                """.trimIndent(),
+            ),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.TRANSFER)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("100.00"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.counterparty).isNull()
     }
 
     @Test

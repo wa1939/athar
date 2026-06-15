@@ -549,7 +549,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val incomingPersonHint = Regex(
-        """(?m)^([A-Za-z\u0600-\u06FF][^\n\r]{1,64}?)\s+(?:paid|sent)\s+you\b""",
+        """(?m)^([^\n\r]{1,64}?)\s+(?:paid|sent)\s+you\b""",
         RegexOption.IGNORE_CASE,
     )
 
