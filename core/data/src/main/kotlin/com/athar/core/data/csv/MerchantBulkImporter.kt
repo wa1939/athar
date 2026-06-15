@@ -41,7 +41,16 @@ internal class MerchantBulkImporter @Inject constructor(
     private val clock: Clock,
 ) : MerchantBulkImportTrigger {
 
-    override suspend fun importCategorizations(input: InputStream): MerchantBulkImportResult {
+    override suspend fun previewCategorizations(input: InputStream): MerchantBulkImportResult =
+        processCategorizations(input, applyChanges = false)
+
+    override suspend fun importCategorizations(input: InputStream): MerchantBulkImportResult =
+        processCategorizations(input, applyChanges = true)
+
+    private suspend fun processCategorizations(
+        input: InputStream,
+        applyChanges: Boolean,
+    ): MerchantBulkImportResult {
         val text = runCatching { input.bufferedReader().use { it.readText() } }
             .getOrElse { return MerchantBulkImportResult.Failed("Couldn't read CSV: ${it.message}") }
         val rows = parseRows(normalizeImportText(text)).filter { row -> row.any { it.isNotBlank() } }
@@ -147,7 +156,7 @@ internal class MerchantBulkImporter @Inject constructor(
                 continue
             }
 
-            if (applyCategory(tx, category.id, updatedTransactionIds)) updated++
+            if (applyCategory(tx, category.id, updatedTransactionIds, applyChanges)) updated++
 
             if (pattern.isNotBlank()) {
                 categoriesByPattern.getOrPut(pattern) { linkedSetOf() }.add(category.id)
@@ -212,7 +221,7 @@ internal class MerchantBulkImporter @Inject constructor(
                 incompatibleCategories++
                 continue
             }
-            if (applyCategory(tx, categoryId, updatedTransactionIds)) updated++
+            if (applyCategory(tx, categoryId, updatedTransactionIds, applyChanges)) updated++
         }
 
         rulesToAdd.putAll(
@@ -227,13 +236,24 @@ internal class MerchantBulkImporter @Inject constructor(
         var rulesAdded = 0
         rulesToAdd.forEach { (pattern, cat) ->
             runCatching {
-                if (upsertExactLocalRule(pattern, cat, existingExactLocalRules[pattern].orEmpty())) {
+                val changed = if (applyChanges) {
+                    upsertExactLocalRule(pattern, cat, existingExactLocalRules[pattern].orEmpty())
+                } else {
+                    wouldUpsertExactLocalRule(pattern, cat, existingExactLocalRules[pattern].orEmpty())
+                }
+                if (changed) {
                     rulesAdded++
                 }
             }.onFailure { Timber.w(it, "Failed to add rule for '$pattern'") }
         }
 
-        Timber.i("Merchant bulk import: updated=%d rules=%d skipped=%d", updated, rulesAdded, skipped)
+        Timber.i(
+            "Merchant bulk %s: updated=%d rules=%d skipped=%d",
+            if (applyChanges) "import" else "preview",
+            updated,
+            rulesAdded,
+            skipped,
+        )
         return MerchantBulkImportResult.Done(
             updated = updated,
             rulesAdded = rulesAdded,
@@ -249,17 +269,22 @@ internal class MerchantBulkImporter @Inject constructor(
         )
     }
 
+    private fun wouldUpsertExactLocalRule(
+        pattern: String,
+        categoryId: String,
+        existingRules: List<CategoryRule>,
+    ): Boolean {
+        val exactRules = exactLocalRulesFor(pattern, existingRules)
+        return exactRules.size != 1 || exactRules.single().categoryId != categoryId
+    }
+
     private suspend fun upsertExactLocalRule(
         pattern: String,
         categoryId: String,
         existingRules: List<CategoryRule>,
     ): Boolean {
         val normalizedPattern = pattern.lowercase().trim()
-        val exactRules = existingRules.filter {
-            it.learnedFromUser &&
-                it.patternType == PatternType.EXACT &&
-                it.pattern.equals(normalizedPattern, ignoreCase = true)
-        }
+        val exactRules = exactLocalRulesFor(pattern, existingRules)
         if (exactRules.size == 1 && exactRules.single().categoryId == categoryId) return false
 
         exactRules.forEach { rules.delete(it.id) }
@@ -271,19 +296,34 @@ internal class MerchantBulkImporter @Inject constructor(
         return true
     }
 
+    private fun exactLocalRulesFor(
+        pattern: String,
+        existingRules: List<CategoryRule>,
+    ): List<CategoryRule> {
+        val normalizedPattern = pattern.lowercase().trim()
+        return existingRules.filter {
+            it.learnedFromUser &&
+                it.patternType == PatternType.EXACT &&
+                it.pattern.equals(normalizedPattern, ignoreCase = true)
+        }
+    }
+
     private suspend fun applyCategory(
         tx: Transaction,
         categoryId: String,
         updatedTransactionIds: MutableSet<String>,
+        applyChanges: Boolean,
     ): Boolean {
         if (!updatedTransactionIds.add(tx.id)) return false
-        transactions.upsert(
-            tx.copy(
-                categoryId = categoryId,
-                status = TxStatus.CONFIRMED,
-                updatedAt = clock.now(),
-            ),
-        )
+        if (applyChanges) {
+            transactions.upsert(
+                tx.copy(
+                    categoryId = categoryId,
+                    status = TxStatus.CONFIRMED,
+                    updatedAt = clock.now(),
+                ),
+            )
+        }
         return true
     }
 

@@ -132,6 +132,12 @@ sealed interface BulkCategorizeStatus {
     data object Idle : BulkCategorizeStatus
     data object Working : BulkCategorizeStatus
     data class Exported(val rows: Int) : BulkCategorizeStatus
+    data class Preview(
+        val updated: Int,
+        val rulesAdded: Int,
+        val skipped: Int,
+        val skipSummary: MerchantBulkImportSkipSummary,
+    ) : BulkCategorizeStatus
     data class Imported(
         val updated: Int,
         val rulesAdded: Int,
@@ -232,6 +238,7 @@ class SettingsViewModel @Inject constructor(
 
     private val _bulkCategorize = MutableStateFlow<BulkCategorizeStatus>(BulkCategorizeStatus.Idle)
     val bulkCategorizeStatus: StateFlow<BulkCategorizeStatus> = _bulkCategorize.asStateFlow()
+    private var pendingBulkCategorizeImportBytes: ByteArray? = null
 
     private val _communityShare = MutableStateFlow<CommunityShareStatus>(CommunityShareStatus.Idle)
     val communityShareStatus: StateFlow<CommunityShareStatus> = _communityShare.asStateFlow()
@@ -750,6 +757,7 @@ class SettingsViewModel @Inject constructor(
         mode: MerchantBulkExportMode = MerchantBulkExportMode.FULL_CONTEXT,
     ) {
         viewModelScope.launch {
+            pendingBulkCategorizeImportBytes = null
             _bulkCategorize.value = BulkCategorizeStatus.Working
             val out = resolver.openOutputStream(uri)
             if (out == null) {
@@ -764,27 +772,71 @@ class SettingsViewModel @Inject constructor(
     }
 
     /**
-     * Bulk-categorize import: each row whose `category_id` is set updates the matching
-     * transaction (→ CONFIRMED) AND records a learned `CategoryRule` so future ingests
-     * of the same merchant auto-categorize.
+     * Bulk-categorize preview: reads the filled CSV, reports the updates/rules/skips
+     * that confirmation would apply, and keeps the bytes only in memory until confirm.
      */
-    fun importCategorizations(resolver: ContentResolver, uri: Uri) {
+    fun previewCategorizations(resolver: ContentResolver, uri: Uri) {
         viewModelScope.launch {
             _bulkCategorize.value = BulkCategorizeStatus.Working
-            val input = resolver.openInputStream(uri)
-            if (input == null) {
+            val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+            if (bytes == null) {
+                pendingBulkCategorizeImportBytes = null
                 _bulkCategorize.value = BulkCategorizeStatus.Failed("Couldn't open CSV file.")
                 return@launch
             }
-            _bulkCategorize.value = when (val r = bulkImporter.importCategorizations(input)) {
-                is MerchantBulkImportResult.Done ->
-                    BulkCategorizeStatus.Imported(r.updated, r.rulesAdded, r.skipped, r.skipSummary)
-                is MerchantBulkImportResult.Failed -> BulkCategorizeStatus.Failed(r.reason)
+            previewCategorizationsBytes(bytes)
+        }
+    }
+
+    internal fun previewCategorizationsBytes(bytes: ByteArray) {
+        viewModelScope.launch {
+            _bulkCategorize.value = BulkCategorizeStatus.Working
+            _bulkCategorize.value = when (val r = bulkImporter.previewCategorizations(bytes.inputStream())) {
+                is MerchantBulkImportResult.Done -> {
+                    pendingBulkCategorizeImportBytes = bytes
+                    BulkCategorizeStatus.Preview(r.updated, r.rulesAdded, r.skipped, r.skipSummary)
+                }
+                is MerchantBulkImportResult.Failed -> {
+                    pendingBulkCategorizeImportBytes = null
+                    BulkCategorizeStatus.Failed(r.reason)
+                }
             }
         }
     }
 
+    /**
+     * Bulk-categorize import: each row whose `category_id` is set updates the matching
+     * transaction (→ CONFIRMED) AND records a learned `CategoryRule` so future ingests
+     * of the same merchant auto-categorize.
+     */
+    fun confirmBulkCategorizeImport() {
+        viewModelScope.launch {
+            val bytes = pendingBulkCategorizeImportBytes
+            if (bytes == null) {
+                _bulkCategorize.value = BulkCategorizeStatus.Failed("No bulk categorization preview is ready to import.")
+                return@launch
+            }
+            _bulkCategorize.value = BulkCategorizeStatus.Working
+            _bulkCategorize.value = when (val r = bulkImporter.importCategorizations(bytes.inputStream())) {
+                is MerchantBulkImportResult.Done ->
+                    BulkCategorizeStatus.Imported(r.updated, r.rulesAdded, r.skipped, r.skipSummary).also {
+                        pendingBulkCategorizeImportBytes = null
+                    }
+                is MerchantBulkImportResult.Failed -> {
+                    pendingBulkCategorizeImportBytes = null
+                    BulkCategorizeStatus.Failed(r.reason)
+                }
+            }
+        }
+    }
+
+    fun cancelBulkCategorizePreview() {
+        pendingBulkCategorizeImportBytes = null
+        _bulkCategorize.value = BulkCategorizeStatus.Idle
+    }
+
     fun clearBulkCategorizeStatus() {
+        pendingBulkCategorizeImportBytes = null
         _bulkCategorize.value = BulkCategorizeStatus.Idle
     }
 

@@ -17,7 +17,10 @@ import java.io.OutputStream
  *     leaves raw_body blank.
  *  2. **External** — user feeds the CSV to ChatGPT/Claude/Z.ai with the AI triage prompt.
  *     `category_options` is read-only row context; only `category_id` should be edited.
- *  3. **Import** — read the filled CSV. For each row with a non-blank category_id:
+ *  3. **Preview** — read the filled CSV and return the exact update/rule/skip
+ *     counts without changing transactions or learned rules.
+ *  4. **Import** — after confirmation, read the same filled CSV. For each row
+ *     with a non-blank category_id:
  *       - validate the category exists and matches the transaction type,
  *       - set categoryId on the matching transaction AND move it to CONFIRMED
  *         (matched by id first, stable_key/source/content fingerprint second),
@@ -41,6 +44,7 @@ interface MerchantBulkExportTrigger {
 }
 
 interface MerchantBulkImportTrigger {
+    suspend fun previewCategorizations(input: InputStream): MerchantBulkImportResult
     suspend fun importCategorizations(input: InputStream): MerchantBulkImportResult
 }
 

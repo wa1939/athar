@@ -207,6 +207,46 @@ class MerchantBulkCsvTest {
     }
 
     @Test
+    fun `preview reports import impact without mutating transactions or rules`() = runTest {
+        val repo = FakeTransactionRepository(
+            listOf(
+                tx(id = "hemmah-1", sourceRefId = "inbox-1", merchant = "Hemmah", amount = "25.00"),
+                tx(id = "hemmah-2", sourceRefId = "inbox-2", merchant = "Hemmah", amount = "35.00"),
+            ),
+        )
+        val rules = FakeCategoryRuleRepository()
+        val importer = MerchantBulkImporter(
+            transactions = repo,
+            rules = rules,
+            categories = FakeCategoryRepository(listOf(homeCategory())),
+            clock = FixedClock,
+        )
+        val csv = """
+            id,merchant,merchant_normalized,amount,currency,type,status,date,category_id
+            hemmah-1,Hemmah,hemmah,25.00,SAR,EXPENSE,PENDING,2026-02-14,cat-home-maintenance
+            hemmah-2,Hemmah,hemmah,35.00,SAR,EXPENSE,PENDING,2026-02-14,
+        """.trimIndent()
+        val bytes = csv.toByteArray()
+
+        val preview = importer.previewCategorizations(ByteArrayInputStream(bytes))
+
+        assertThat(preview).isEqualTo(MerchantBulkImportResult.Done(updated = 2, rulesAdded = 1, skipped = 0))
+        assertThat(repo.get("hemmah-1")?.categoryId).isNull()
+        assertThat(repo.get("hemmah-2")?.categoryId).isNull()
+        assertThat(repo.get("hemmah-1")?.status).isEqualTo(TxStatus.PENDING)
+        assertThat(repo.get("hemmah-2")?.status).isEqualTo(TxStatus.PENDING)
+        assertThat(rules.learnedRules).isEmpty()
+
+        val imported = importer.importCategorizations(ByteArrayInputStream(bytes))
+
+        assertThat(imported).isEqualTo(MerchantBulkImportResult.Done(updated = 2, rulesAdded = 1, skipped = 0))
+        assertThat(repo.get("hemmah-1")?.categoryId).isEqualTo("cat-home-maintenance")
+        assertThat(repo.get("hemmah-2")?.categoryId).isEqualTo("cat-home-maintenance")
+        assertThat(rules.learnedRules.map { it.pattern to it.categoryId })
+            .containsExactly("hemmah" to "cat-home-maintenance")
+    }
+
+    @Test
     fun `importer does not duplicate an existing exact local rule for same category`() = runTest {
         val repo = FakeTransactionRepository(
             listOf(tx(id = "hemmah", sourceRefId = "inbox-hemmah", merchant = "Hemmah")),

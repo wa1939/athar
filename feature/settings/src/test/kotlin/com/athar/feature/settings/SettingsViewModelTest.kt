@@ -38,6 +38,7 @@ import com.athar.core.domain.repo.MerchantBulkExportResult
 import com.athar.core.domain.repo.MerchantBulkExportMode
 import com.athar.core.domain.repo.MerchantBulkExportTrigger
 import com.athar.core.domain.repo.MerchantBulkImportResult
+import com.athar.core.domain.repo.MerchantBulkImportSkipSummary
 import com.athar.core.domain.repo.MerchantBulkImportTrigger
 import com.athar.core.domain.repo.SmsBackfillTrigger
 import com.athar.core.domain.repo.SupportDiagnosticsExportResult
@@ -343,12 +344,52 @@ class SettingsViewModelTest {
         assertThat(investments.importedBytes).isEmpty()
     }
 
+    @Test
+    fun `confirm bulk categorization import applies the previewed bytes`() = runTest(mainDispatcher) {
+        val bulkImporter = RecordingMerchantBulkImportTrigger()
+        val viewModel = settingsViewModel(bulkImporter = bulkImporter)
+
+        viewModel.previewCategorizationsBytes("previewed csv".toByteArray())
+        advanceUntilIdle()
+        viewModel.confirmBulkCategorizeImport()
+        advanceUntilIdle()
+
+        assertThat(bulkImporter.previewedBytes.map { it.decodeToString() }).containsExactly("previewed csv")
+        assertThat(bulkImporter.importedBytes.map { it.decodeToString() }).containsExactly("previewed csv")
+        assertThat(viewModel.bulkCategorizeStatus.value).isEqualTo(
+            BulkCategorizeStatus.Imported(
+                updated = 2,
+                rulesAdded = 1,
+                skipped = 3,
+                skipSummary = MerchantBulkImportSkipSummary(unknownCategories = 1, missingTransactions = 2),
+            ),
+        )
+    }
+
+    @Test
+    fun `failed bulk categorization preview clears pending import bytes`() = runTest(mainDispatcher) {
+        val bulkImporter = RecordingMerchantBulkImportTrigger(
+            previewResult = MerchantBulkImportResult.Failed("Not a bulk CSV."),
+        )
+        val viewModel = settingsViewModel(bulkImporter = bulkImporter)
+
+        viewModel.previewCategorizationsBytes("bad csv".toByteArray())
+        advanceUntilIdle()
+        viewModel.confirmBulkCategorizeImport()
+        advanceUntilIdle()
+
+        assertThat(viewModel.bulkCategorizeStatus.value)
+            .isEqualTo(BulkCategorizeStatus.Failed("No bulk categorization preview is ready to import."))
+        assertThat(bulkImporter.importedBytes).isEmpty()
+    }
+
     private fun settingsViewModel(
         backfill: SmsBackfillTrigger = FakeSmsBackfillTrigger(),
         csvImporter: CsvImportTrigger = FakeCsvImportTrigger,
         budgetTargetsImporter: BudgetTargetImportTrigger = FakeBudgetTargetImportTrigger,
         wishlistImporter: WishlistImportTrigger = FakeWishlistImportTrigger,
         investmentImporter: InvestmentImportTrigger = FakeInvestmentImportTrigger,
+        bulkImporter: MerchantBulkImportTrigger = FakeMerchantBulkImportTrigger,
         transactions: TransactionRepository = FakeTransactionRepository(),
         accounts: AccountRepository = FakeAccountRepository(),
     ) = SettingsViewModel(
@@ -360,7 +401,7 @@ class SettingsViewModelTest {
         investmentImporter = investmentImporter,
         csvExporter = FakeCsvExportTrigger,
         bulkExporter = FakeMerchantBulkExportTrigger,
-        bulkImporter = FakeMerchantBulkImportTrigger,
+        bulkImporter = bulkImporter,
         communityShare = FakeCommunityRulesShareTrigger,
         supportDiagnostics = FakeSupportDiagnosticsExportTrigger,
         taxExport = FakeTaxExportTrigger,
@@ -536,6 +577,31 @@ private class RecordingInvestmentImportTrigger(
     }
 }
 
+private class RecordingMerchantBulkImportTrigger(
+    var previewResult: MerchantBulkImportResult = bulkImportResult(),
+    var importResult: MerchantBulkImportResult = bulkImportResult(),
+) : MerchantBulkImportTrigger {
+    val previewedBytes = mutableListOf<ByteArray>()
+    val importedBytes = mutableListOf<ByteArray>()
+
+    override suspend fun previewCategorizations(input: InputStream): MerchantBulkImportResult {
+        previewedBytes += input.readBytes()
+        return previewResult
+    }
+
+    override suspend fun importCategorizations(input: InputStream): MerchantBulkImportResult {
+        importedBytes += input.readBytes()
+        return importResult
+    }
+}
+
+private fun bulkImportResult(): MerchantBulkImportResult = MerchantBulkImportResult.Done(
+    updated = 2,
+    rulesAdded = 1,
+    skipped = 3,
+    skipSummary = MerchantBulkImportSkipSummary(unknownCategories = 1, missingTransactions = 2),
+)
+
 private class RecordingCsvImportTrigger(
     var previewResult: CsvImportPreviewResult = CsvImportPreviewResult.Done(emptyPreview()),
 ) : CsvImportTrigger {
@@ -662,6 +728,9 @@ private object FakeMerchantBulkExportTrigger : MerchantBulkExportTrigger {
 }
 
 private object FakeMerchantBulkImportTrigger : MerchantBulkImportTrigger {
+    override suspend fun previewCategorizations(input: InputStream): MerchantBulkImportResult =
+        MerchantBulkImportResult.Done(updated = 0, rulesAdded = 0, skipped = 0)
+
     override suspend fun importCategorizations(input: InputStream): MerchantBulkImportResult =
         MerchantBulkImportResult.Done(updated = 0, rulesAdded = 0, skipped = 0)
 }

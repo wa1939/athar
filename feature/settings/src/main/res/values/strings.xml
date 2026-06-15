@@ -191,8 +191,9 @@
 
     <!-- Bulk-categorize via AI (Issue #5a) -->
     <string name="settings_bulk_cat_title">تصنيف بالذكاء الاصطناعي · مجمّع</string>
-    <string name="settings_bulk_cat_body">انسخ موجّه التصنيف، وصدّر الحركات غير المصنّفة، ما عدا التحويلات، كملف CSV مرتّب حسب التجار المتكررين مع توضيح أثر كل مجموعة وخيارات الفئات الصالحة. أعطه لـ ChatGPT/Claude، ثم استورد الملف المعبّأ. استخدم التصدير الخاص لحذف نص الرسائل الخام. اختيار واضح واحد يمكن أن يحدّث الصفوف الفارغة لنفس التاجر ويضيف قاعدة محلية دقيقة للتصنيف القادم تلقائياً؛ والصفوف المتخطّاة تظهر بأسباب مختصرة.</string>
+    <string name="settings_bulk_cat_body">انسخ موجّه التصنيف، وصدّر الحركات غير المصنّفة، ما عدا التحويلات، كملف CSV مرتّب حسب التجار المتكررين مع توضيح أثر كل مجموعة وخيارات الفئات الصالحة. أعطه لـ ChatGPT/Claude، ثم استورد الملف المعبّأ للمعاينة أولاً. استخدم التصدير الخاص لحذف نص الرسائل الخام. اختيار واضح واحد يمكن أن يحدّث الصفوف الفارغة لنفس التاجر ويضيف قاعدة محلية دقيقة للتصنيف القادم تلقائياً؛ ويعرض أثر عدد التحديثات والقواعد والتخطّي قبل التطبيق.</string>
     <string name="settings_bulk_cat_exported" formatted="true">تم تصدير %1$d حركة غير مصنّفة.</string>
+    <string name="settings_bulk_cat_previewed" formatted="true">جاهز لتحديث %1$d حركة · إضافة %2$d قاعدة · تخطّي %3$d.</string>
     <string name="settings_bulk_cat_imported" formatted="true">تم تحديث %1$d حركة · أُضيفت %2$d قاعدة · تم تخطّي %3$d.</string>
     <string name="settings_bulk_cat_skip_details" formatted="true">تفاصيل التخطّي: %1$s.</string>
     <string name="settings_bulk_cat_skip_unknown" formatted="true">فئة غير معروفة %1$d</string>
@@ -207,6 +208,8 @@
     <string name="settings_bulk_cat_action_export">تصدير مع نص الرسائل</string>
     <string name="settings_bulk_cat_action_export_private">تصدير خاص CSV</string>
     <string name="settings_bulk_cat_action_import">استيراد المصنّف</string>
+    <string name="settings_bulk_cat_action_confirm_import">تطبيق الاستيراد</string>
+    <string name="settings_bulk_cat_action_cancel_import">إلغاء المعاينة</string>
 
     <!-- Display currency card -->
     <string name="settings_currency_title">العملة المعروضة</string>

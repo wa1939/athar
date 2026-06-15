@@ -157,7 +157,7 @@ fun SettingsScreen(
         }
     }
     val bulkImportLauncher = rememberLauncherForActivityResult(OpenDocument()) { uri ->
-        if (uri != null) viewModel.importCategorizations(context.contentResolver, uri)
+        if (uri != null) viewModel.previewCategorizations(context.contentResolver, uri)
     }
     val bulkStatus by viewModel.bulkCategorizeStatus.collectAsStateWithLifecycle()
     var bulkPromptCopied by remember { mutableStateOf(false) }
@@ -339,6 +339,8 @@ fun SettingsScreen(
                 onExport = { bulkExportLauncher.launch("athar-uncategorized.csv") },
                 onExportPrivate = { bulkPrivateExportLauncher.launch("athar-uncategorized-private.csv") },
                 onImport = { bulkImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "*/*")) },
+                onConfirmImport = viewModel::confirmBulkCategorizeImport,
+                onCancelPreview = viewModel::cancelBulkCategorizePreview,
                 onClear = viewModel::clearBulkCategorizeStatus,
             )
 
@@ -692,6 +694,8 @@ private fun BulkCategorizeCard(
     onExport: () -> Unit,
     onExportPrivate: () -> Unit,
     onImport: () -> Unit,
+    onConfirmImport: () -> Unit,
+    onCancelPreview: () -> Unit,
     onClear: () -> Unit,
 ) {
     val theme = AtharTheme
@@ -731,6 +735,19 @@ private fun BulkCategorizeCard(
                         AtharText(stringResource(R.string.settings_action_ok), color = theme.colors.muted)
                     }
                 }
+                is BulkCategorizeStatus.Preview -> {
+                    AtharText(
+                        text = stringResource(
+                            R.string.settings_bulk_cat_previewed,
+                            s.updated,
+                            s.rulesAdded,
+                            s.skipped,
+                        ),
+                        style = theme.typography.caption,
+                        color = theme.colors.olive,
+                    )
+                    BulkCategorizeSkipDetails(summary = s.skipSummary)
+                }
                 is BulkCategorizeStatus.Imported -> {
                     AtharText(
                         text = stringResource(
@@ -759,30 +776,41 @@ private fun BulkCategorizeCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(theme.spacing.s),
             ) {
-                PrimaryButton(
-                    text = if (isWorking) {
-                        stringResource(R.string.settings_status_in_progress)
-                    } else {
-                        stringResource(R.string.settings_bulk_cat_action_export)
-                    },
-                    onClick = { if (!isWorking) onExport() },
-                )
-                SecondaryButton(
-                    text = if (isWorking) {
-                        stringResource(R.string.settings_status_in_progress)
-                    } else {
-                        stringResource(R.string.settings_bulk_cat_action_export_private)
-                    },
-                    onClick = { if (!isWorking) onExportPrivate() },
-                )
-                SecondaryButton(
-                    text = if (isWorking) {
-                        stringResource(R.string.settings_status_in_progress)
-                    } else {
-                        stringResource(R.string.settings_bulk_cat_action_import)
-                    },
-                    onClick = { if (!isWorking) onImport() },
-                )
+                if (status is BulkCategorizeStatus.Preview) {
+                    PrimaryButton(
+                        text = stringResource(R.string.settings_bulk_cat_action_confirm_import),
+                        onClick = onConfirmImport,
+                    )
+                    SecondaryButton(
+                        text = stringResource(R.string.settings_bulk_cat_action_cancel_import),
+                        onClick = onCancelPreview,
+                    )
+                } else {
+                    PrimaryButton(
+                        text = if (isWorking) {
+                            stringResource(R.string.settings_status_in_progress)
+                        } else {
+                            stringResource(R.string.settings_bulk_cat_action_export)
+                        },
+                        onClick = { if (!isWorking) onExport() },
+                    )
+                    SecondaryButton(
+                        text = if (isWorking) {
+                            stringResource(R.string.settings_status_in_progress)
+                        } else {
+                            stringResource(R.string.settings_bulk_cat_action_export_private)
+                        },
+                        onClick = { if (!isWorking) onExportPrivate() },
+                    )
+                    SecondaryButton(
+                        text = if (isWorking) {
+                            stringResource(R.string.settings_status_in_progress)
+                        } else {
+                            stringResource(R.string.settings_bulk_cat_action_import)
+                        },
+                        onClick = { if (!isWorking) onImport() },
+                    )
+                }
             }
         }
     }

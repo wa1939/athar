@@ -2,11 +2,12 @@
 
 Use this when you have dozens or hundreds of uncategorized transactions sitting in your pending/dismissed trays and you don't want to tap "Always categorize…" on each one.
 
-## The three-step loop
+## The four-step loop
 
 1. **Open Settings → "تصنيف بالذكاء الاصطناعي · مجمّع" / "Bulk categorize with AI"** → tap **Copy AI prompt**, then choose an export. **Export with SMS text** writes the highest-context CSV, including the linked ingestion-audit message body in `raw_body` when available and falling back to transaction notes for manual/imported rows. **Export private CSV** writes the same import-compatible columns but leaves `raw_body` blank. Both files include every non-transfer transaction that is PENDING, DISMISSED, or CONFIRMED-without-category, plus valid active category options for each row's type. Default filenames: `athar-uncategorized.csv` and `athar-uncategorized-private.csv`. Save the file somewhere you can reach from a desktop.
 2. **Open ChatGPT / Claude / Z.ai** in a fresh chat. Paste the copied prompt, attach (or paste) the CSV, and ask for the filled-in CSV back.
-3. **Back in Athar → same Settings card → Import categorized.** Pick the filled CSV. If you saved the full AI response with prose and a fenced `csv` block, Athar extracts the valid CSV block automatically. Filled rows update their transactions (status → CONFIRMED, category set) only when the chosen category matches the row's expense/income type. If a repeated merchant group has one unambiguous compatible filled category, blank peers in that imported CSV group inherit it. Athar also upserts one exact learned `CategoryRule` per unambiguous type-compatible `merchant → category` pair so future SMS from the same normalized merchant auto-categorize without broad substring matching or duplicate exact rules.
+3. **Back in Athar → same Settings card → Import categorized.** Pick the filled CSV. If you saved the full AI response with prose and a fenced `csv` block, Athar extracts the valid CSV block automatically and shows a preview: how many transactions would update, how many exact local rules would be added/replaced, and how many rows would skip.
+4. **Review the counts → Apply import.** The actual write happens only after this confirmation. Filled rows update their transactions (status → CONFIRMED, category set) only when the chosen category matches the row's expense/income type. If a repeated merchant group has one unambiguous compatible filled category, blank peers in that imported CSV group inherit it. Athar also upserts one exact learned `CategoryRule` per unambiguous type-compatible `merchant → category` pair so future SMS from the same normalized merchant auto-categorize without broad substring matching or duplicate exact rules.
 
 A typical 800-row export takes ChatGPT about 60–90 seconds; import takes a fraction of a second.
 
@@ -16,7 +17,7 @@ The export looks like:
 
 ```
 id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,merchant_group_rank,merchant_group_share_permille,merchant_group_cumulative_share_permille,category_options,amount,currency,type,status,date,raw_body,category_id
-3f7a-…,8d9e-…,inbox-4242,Hemmah,hemmah,8,"cat-home-maintenance=Home maintenance / صيانة منزل | cat-other-expense=Other / متفرقات",99.00,SAR,EXPENSE,DISMISSED,2026-04-22,...raw SMS body...,
+3f7a-…,8d9e-…,inbox-4242,Hemmah,hemmah,8,1,120,320,"cat-home-maintenance=Home maintenance / صيانة منزل | cat-other-expense=Other / متفرقات",99.00,SAR,EXPENSE,DISMISSED,2026-04-22,...raw SMS body...,
 ```
 
 - **`id`** — Athar's internal transaction id. Do not change. The importer tries this first.
@@ -92,6 +93,7 @@ order.
 
 ## After the import
 
+- Import first shows a preview. Until the user taps **Apply import**, transactions and learned rules are unchanged.
 - Every filled row's transaction is now CONFIRMED with a category — visible on Today's lists, in Trends, and counted in budget targets.
 - Blank rows in the same imported repeated-merchant group inherit the category when the group has exactly one filled category and that category matches the blank row's type. If the CSV contains conflicting categories for one merchant, or the repeated group mixes incompatible expense/income rows, only the compatible explicit rows update and the blank peers stay untouched.
 - Every unambiguous type-compatible merchant in the filled rows upserts an exact `learnedFromUser = true` `CategoryRule` at priority 200. Mixed-type or incompatible groups do not train a rule. This means:
