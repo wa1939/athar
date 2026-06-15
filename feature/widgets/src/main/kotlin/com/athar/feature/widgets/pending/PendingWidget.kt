@@ -31,9 +31,11 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.athar.core.domain.model.Transaction
+import com.athar.feature.widgets.R
 import com.athar.feature.widgets.WidgetColors
 import com.athar.feature.widgets.WidgetDataLoader
 import com.athar.feature.widgets.appLaunchComponent
+import com.athar.feature.widgets.widgetLocaleContext
 
 class PendingWidget : GlanceAppWidget() {
 
@@ -64,9 +66,10 @@ class PendingWidget : GlanceAppWidget() {
                     modifier = GlanceModifier.clickable(actionStartActivity(appLaunchComponent(context))),
                 )
             } else {
+                val strings = context.widgetLocaleContext(s.localeTag)
                 Column(modifier = GlanceModifier.fillMaxSize()) {
                     Text(
-                        text = "${s.totalCount} pending · بانتظار",
+                        text = strings.getString(R.string.widget_pending_count, s.totalCount),
                         style = TextStyle(
                             color = if (s.totalCount > 0) ColorProvider(WidgetColors.Ember) else ColorProvider(WidgetColors.Muted),
                             fontSize = 12.sp,
@@ -77,7 +80,7 @@ class PendingWidget : GlanceAppWidget() {
                     Spacer(modifier = GlanceModifier.height(8.dp))
                     if (s.head.isEmpty()) {
                         Text(
-                            text = "All caught up — tap to open",
+                            text = strings.getString(R.string.widget_pending_empty),
                             style = TextStyle(
                                 color = ColorProvider(WidgetColors.Muted),
                                 fontSize = 11.sp,
@@ -86,12 +89,12 @@ class PendingWidget : GlanceAppWidget() {
                         )
                     } else {
                         s.head.forEach { tx ->
-                            PendingRow(context, tx)
+                            PendingRow(context, strings, tx)
                         }
                         if (s.totalCount > s.head.size) {
                             Spacer(modifier = GlanceModifier.height(4.dp))
                             Text(
-                                text = "+${s.totalCount - s.head.size} more",
+                                text = strings.getString(R.string.widget_pending_more, s.totalCount - s.head.size),
                                 style = TextStyle(
                                     color = ColorProvider(WidgetColors.Muted),
                                     fontSize = 11.sp,
@@ -106,7 +109,7 @@ class PendingWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun PendingRow(context: Context, tx: Transaction) {
+    private fun PendingRow(context: Context, strings: Context, tx: Transaction) {
         Column(modifier = GlanceModifier.fillMaxWidth().padding(vertical = 3.dp)) {
             Row(modifier = GlanceModifier.fillMaxWidth()) {
                 Text(
@@ -131,7 +134,7 @@ class PendingWidget : GlanceAppWidget() {
             Spacer(modifier = GlanceModifier.height(3.dp))
             Row(modifier = GlanceModifier.fillMaxWidth()) {
                 ActionText(
-                    text = "Confirm",
+                    text = strings.getString(R.string.widget_pending_confirm),
                     color = WidgetColors.Olive,
                     action = actionRunCallback<ConfirmPendingAction>(
                         actionParametersOf(PendingWidgetActionParams.TransactionId to tx.id),
@@ -139,7 +142,7 @@ class PendingWidget : GlanceAppWidget() {
                 )
                 Spacer(modifier = GlanceModifier.width(6.dp))
                 ActionText(
-                    text = "Dismiss",
+                    text = strings.getString(R.string.widget_pending_dismiss),
                     color = WidgetColors.Ember,
                     action = actionRunCallback<DismissPendingAction>(
                         actionParametersOf(PendingWidgetActionParams.TransactionId to tx.id),
@@ -147,7 +150,7 @@ class PendingWidget : GlanceAppWidget() {
                 )
                 Spacer(modifier = GlanceModifier.width(6.dp))
                 ActionText(
-                    text = "Categorize",
+                    text = strings.getString(R.string.widget_pending_categorize),
                     color = WidgetColors.Ink,
                     action = actionStartActivity(appLaunchComponent(context)),
                 )

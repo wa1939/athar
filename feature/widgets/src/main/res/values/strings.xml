@@ -4,10 +4,22 @@
 
     <string name="widget_monthly_label">أثر · ملخّص الشهر</string>
     <string name="widget_monthly_description">صافي الشهر، الدخل، المصاريف، صافي الثروة في لمحة واحدة.</string>
+    <string name="widget_monthly_title" formatted="true">أثر · %1$s</string>
+    <string name="widget_monthly_income">الدخل</string>
+    <string name="widget_monthly_expense">المصاريف</string>
+    <string name="widget_monthly_net_worth">صافي الثروة</string>
 
     <string name="widget_today_label">أثر · اليوم</string>
     <string name="widget_today_description">صافي حركاتك اليوم وعدد البنود بانتظار التأكيد.</string>
+    <string name="widget_today_title">أثر · اليوم</string>
+    <string name="widget_today_pending_count" formatted="true">%1$d بانتظار التأكيد</string>
 
     <string name="widget_pending_label">أثر · بانتظار التأكيد</string>
     <string name="widget_pending_description">آخر الحركات المُكتشفة من الرسائل وتنتظر مراجعتك. اضغط لفتح التطبيق.</string>
+    <string name="widget_pending_count" formatted="true">%1$d بانتظار التأكيد</string>
+    <string name="widget_pending_empty">كل شيء مُراجع - اضغط للفتح</string>
+    <string name="widget_pending_more" formatted="true">+%1$d أخرى</string>
+    <string name="widget_pending_confirm">تأكيد</string>
+    <string name="widget_pending_dismiss">تجاهل</string>
+    <string name="widget_pending_categorize">تصنيف</string>
 </resources>
