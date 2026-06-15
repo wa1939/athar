@@ -89,6 +89,7 @@ internal class RecurringSuggestionRepositoryImpl @Inject constructor(
                 merchantNormalized = merchantNorm,
                 amount = Money.ofMinor(amountMinor, currency),
                 type = typeEnum,
+                suggestedCategoryId = unambiguousCategoryId(list),
                 occurrenceCount = list.size,
                 typicalDayOfMonth = typicalDom,
                 lastSeen = latest.date,
@@ -97,6 +98,13 @@ internal class RecurringSuggestionRepositoryImpl @Inject constructor(
         }
             .sortedWith(compareByDescending<RecurringSuggestion> { it.occurrenceCount }.thenByDescending { it.lastSeen })
             .take(MAX_SUGGESTIONS)
+    }
+
+    private fun unambiguousCategoryId(list: List<TransactionEntity>): String? {
+        val categoryIds = list.map { tx ->
+            tx.categoryId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        }
+        return categoryIds.distinct().singleOrNull()
     }
 
     private fun computeNextRunFromLast(lastSeen: LocalDate, dayOfMonth: Int): LocalDate {

@@ -40,6 +40,108 @@ class RecurringSuggestionRepositoryImplTest {
         assertThat(suggestions).hasSize(1)
         assertThat(suggestions.single().merchantNormalized).isEqualTo("gym club")
         assertThat(suggestions.single().occurrenceCount).isEqualTo(3)
+        assertThat(suggestions.single().suggestedCategoryId).isNull()
+    }
+
+    @Test
+    fun `suggestions carry category when every occurrence has the same category`() = runTest {
+        val repo = RecurringSuggestionRepositoryImpl(
+            transactionDao = FakeTransactionDao(
+                listOf(
+                    tx(
+                        id = "gym-1",
+                        merchant = "Gym Club",
+                        amountMinor = 9900,
+                        month = 1,
+                        day = 5,
+                        categoryId = "cat-gym",
+                    ),
+                    tx(
+                        id = "gym-2",
+                        merchant = "Gym Club",
+                        amountMinor = 9900,
+                        month = 2,
+                        day = 6,
+                        categoryId = "cat-gym",
+                    ),
+                    tx(
+                        id = "gym-3",
+                        merchant = "Gym Club",
+                        amountMinor = 9900,
+                        month = 3,
+                        day = 5,
+                        categoryId = "cat-gym",
+                    ),
+                ),
+            ),
+            ruleDao = FakeRecurringRuleDao(),
+            clock = FixedClock,
+        )
+
+        val suggestions = repo.observeSuggestions().first()
+
+        assertThat(suggestions).hasSize(1)
+        assertThat(suggestions.single().suggestedCategoryId).isEqualTo("cat-gym")
+    }
+
+    @Test
+    fun `suggestions omit category when occurrence categories conflict or are incomplete`() = runTest {
+        val repo = RecurringSuggestionRepositoryImpl(
+            transactionDao = FakeTransactionDao(
+                listOf(
+                    tx(
+                        id = "gym-1",
+                        merchant = "Gym Club",
+                        amountMinor = 9900,
+                        month = 1,
+                        day = 5,
+                        categoryId = "cat-gym",
+                    ),
+                    tx(
+                        id = "gym-2",
+                        merchant = "Gym Club",
+                        amountMinor = 9900,
+                        month = 2,
+                        day = 6,
+                        categoryId = "cat-health",
+                    ),
+                    tx(
+                        id = "gym-3",
+                        merchant = "Gym Club",
+                        amountMinor = 9900,
+                        month = 3,
+                        day = 5,
+                        categoryId = "cat-gym",
+                    ),
+                    tx(
+                        id = "cloud-1",
+                        merchant = "Cloud App",
+                        amountMinor = 3900,
+                        month = 1,
+                        day = 11,
+                        categoryId = "cat-software",
+                    ),
+                    tx(id = "cloud-2", merchant = "Cloud App", amountMinor = 3900, month = 2, day = 12),
+                    tx(
+                        id = "cloud-3",
+                        merchant = "Cloud App",
+                        amountMinor = 3900,
+                        month = 3,
+                        day = 11,
+                        categoryId = "cat-software",
+                    ),
+                ),
+            ),
+            ruleDao = FakeRecurringRuleDao(),
+            clock = FixedClock,
+        )
+
+        val suggestions = repo.observeSuggestions().first()
+        val byMerchant = suggestions.associateBy { it.merchantNormalized }
+
+        assertThat(suggestions.map { it.merchantNormalized }).containsAtLeast("gym club", "cloud app")
+        assertThat(byMerchant.getValue("gym club").suggestedCategoryId).isNull()
+        assertThat(byMerchant.getValue("cloud app").suggestedCategoryId).isNull()
     }
 
     @Test
@@ -139,6 +241,7 @@ private fun tx(
     amountMinor: Long,
     month: Int,
     day: Int,
+    categoryId: String? = null,
 ): TransactionEntity =
     TransactionEntity(
         id = id,
@@ -150,7 +253,7 @@ private fun tx(
         occurredAt = Instant.parse("2026-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T12:00:00Z"),
         merchant = merchant,
         merchantNormalized = merchant.lowercase().trim(),
-        categoryId = null,
+        categoryId = categoryId,
         notes = null,
         source = IngestSource.MANUAL.name,
         sourceRefId = null,

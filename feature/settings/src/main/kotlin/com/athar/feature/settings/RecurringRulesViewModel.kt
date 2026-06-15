@@ -128,7 +128,7 @@ class RecurringRulesViewModel @Inject constructor(
             amount = suggestion.amount,
             type = suggestion.type,
             accountId = MANUAL_ACCOUNT_ID,
-            categoryId = categoryId,
+            categoryId = categoryId ?: suggestion.suggestedCategoryId,
             cadence = cadence,
             dayOfMonth = if (cadence == Cadence.MONTHLY) dayOfMonth else null,
             dayOfWeek = null,

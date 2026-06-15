@@ -500,13 +500,15 @@ private fun ConfirmSuggestionSheet(
     val sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var cadence by remember { mutableStateOf(Cadence.MONTHLY) }
     var dayOfMonth by remember { mutableStateOf(suggestion.typicalDayOfMonth.toString()) }
-    var selectedCategoryId by remember { mutableStateOf<String?>(null) }
     val expectedKind = if (suggestion.type == TxType.INCOME) {
         com.athar.core.domain.model.CategoryKind.INCOME
     } else {
         com.athar.core.domain.model.CategoryKind.EXPENSE
     }
     val pickable = categories.filter { it.kind == expectedKind && !it.archived }
+    val defaultCategoryId = suggestion.suggestedCategoryId
+        ?.takeIf { id -> pickable.any { it.id == id } }
+    var selectedCategoryId by remember(suggestion, defaultCategoryId) { mutableStateOf(defaultCategoryId) }
     androidx.compose.material3.ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
