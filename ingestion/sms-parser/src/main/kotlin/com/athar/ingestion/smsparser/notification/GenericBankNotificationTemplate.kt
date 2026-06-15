@@ -850,6 +850,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             ?: byHint.find(this)?.groupValues?.get(1)
             ?: forHint.find(this)?.groupValues?.get(1)
             ?: fromHint.find(this)?.groupValues?.get(1))
+            ?: titleMerchantBeforeAmount(this, amountMatch)
             ?: partyBeforeAmount(this, amountMatch)
             ?: partyAfterAmount(this, amountMatch)
 
@@ -1370,6 +1371,21 @@ class GenericBankNotificationTemplate : BankTemplate {
             .firstOrNull()
     }
 
+    private fun titleMerchantBeforeAmount(body: String, amountMatch: MatchResult): String? {
+        val beforeAmount = body.substring(0, amountMatch.range.first)
+        if ('\n' !in beforeAmount && '\r' !in beforeAmount) return null
+        val title = beforeAmount
+            .lineSequence()
+            .map { it.trim(' ', '.', ',', '-', '·', ':') }
+            .firstOrNull { it.isNotBlank() }
+            ?: return null
+        if (!partyStartsWithLetter.matches(title)) return null
+        if (amountWithCurrency.containsMatchIn(title)) return null
+        if (genericNotificationTitleWords.containsMatchIn(title)) return null
+        if (bankAppTitleWords.matches(title)) return null
+        return cleanParty(title)
+    }
+
     private fun partyAfterAmount(body: String, amountMatch: MatchResult): String? {
         val afterAmount = body
             .substring(amountMatch.range.last + 1)
@@ -1483,6 +1499,14 @@ class GenericBankNotificationTemplate : BankTemplate {
         private val partyStartsWithLetter = Regex("""^[A-Za-z\u0600-\u06FF].*""")
         private val trailingNonPartyContext = Regex(
             """(?:\b(?:balance|available|remaining\s+balance|current\s+balance|card|ending|account|acct|approved|confirmed|successful|completed|posted|paid|settled|charged|declined)\b|رصيد|الرصيد|المتاح|بطاقة|البطاقة|حساب|معتمد|مؤكد|ناجح|مكتمل).*""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val genericNotificationTitleWords = Regex(
+            """(?:\b(?:notification|alert|transaction|payment|purchase|debit|credit|card|account|wallet|bank|spent|paid|debited|charged|approved|confirmed|successful|completed|posted|processed|settled|balance)\b|تنبيه|إشعار|اشعار|عملية|دفع|شراء|خصم|بطاقة|حساب|بنك|محفظة|رصيد|مؤكد|ناجح|مكتمل)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val bankAppTitleWords = Regex(
+            """(?:wise|revolut|chase|capital\s+one|monzo|n26|starling|hsbc|barclays|lloyds|natwest|santander|halifax|paypal|venmo|cash\s+app|al\s*rajhi|emirates\s*nbd|dbs|ocbc|uob|maybank|cimb|hdfc|icici|axis|kotak|cibc|bmo|desjardins|tangerine|wealthsimple|koho|sparkasse|anb|snb|alinma|riyad|stc\s*pay|barq|d360)""",
             RegexOption.IGNORE_CASE,
         )
         private val trailingBalancePartyContext = Regex(
