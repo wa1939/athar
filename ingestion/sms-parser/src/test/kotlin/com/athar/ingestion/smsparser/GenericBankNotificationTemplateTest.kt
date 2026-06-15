@@ -2731,6 +2731,30 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `preserves merchant name starting with card`() {
+        val result = parser.parse(
+            event("notification:com.barclays.android.barclaysmobilebanking", "You spent GBP 12.00 at Card Factory"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("12.00"))
+        assertThat(result.amount.currency).isEqualTo("GBP")
+        assertThat(result.merchant).isEqualTo("Card Factory")
+    }
+
+    @Test
+    fun `preserves merchant name starting with via`() {
+        val result = parser.parse(
+            event("notification:com.revolut.revolut", "You spent EUR 8.90 at Via Roma Cafe"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("8.90"))
+        assertThat(result.amount.currency).isEqualTo("EUR")
+        assertThat(result.merchant).isEqualTo("Via Roma Cafe")
+    }
+
+    @Test
     fun `parses paid merchant before amount notification`() {
         val result = parser.parse(
             event("notification:com.revolut.revolut", "You paid Apple Services $9.99"),
@@ -3286,6 +3310,30 @@ class GenericBankNotificationTemplateTest {
     fun `strips wallet suffix from paid-to merchant notification`() {
         val result = parser.parse(
             event("notification:com.usbank.mobilebanking", "You paid $9.99 to Apple Services with Apple Pay"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("9.99"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Apple Services")
+    }
+
+    @Test
+    fun `strips card suffix from paid-to merchant notification`() {
+        val result = parser.parse(
+            event("notification:com.usbank.mobilebanking", "You paid USD 9.99 to Apple Services using card ending 1234"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("9.99"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("Apple Services")
+    }
+
+    @Test
+    fun `strips via payment suffix from paid-to merchant notification`() {
+        val result = parser.parse(
+            event("notification:com.usbank.mobilebanking", "You paid USD 9.99 to Apple Services via Apple Pay"),
         ) as ParseResult.Success
 
         assertThat(result.type).isEqualTo(TxType.EXPENSE)

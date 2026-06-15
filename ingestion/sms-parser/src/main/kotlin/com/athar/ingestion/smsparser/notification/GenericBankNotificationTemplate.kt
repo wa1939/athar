@@ -1445,7 +1445,14 @@ class GenericBankNotificationTemplate : BankTemplate {
                 ),
                 "",
             )
-            .replace(Regex("""\b(?:for|using|with|via|card|ending|منتهية|البطاقة)\b.*$""", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("""\s+\b(?:for|using|with|via)\b.*$""", RegexOption.IGNORE_CASE), "")
+            .replace(
+                Regex(
+                    """(?:^|\s+)\b(?:card\s+(?:ending(?:\s+in)?|ending|number|no\.?)|ending|منتهية|البطاقة)\b.*$""",
+                    RegexOption.IGNORE_CASE,
+                ),
+                "",
+            )
             .trim(' ', '.', ',', '-', '·', ':')
             .take(48)
             .trim()

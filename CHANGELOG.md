@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Store-safe notification parsing now preserves legitimate merchant names that start with cleanup words such as `Card Factory` and `Via Roma Cafe`, while still stripping suffixes such as `with Apple Pay`, `via Apple Pay`, and `using card ending 1234`.
 - Store-safe notification parsing now preserves digit-starting income and transfer counterparties from peer-payment and structured notification hints such as `3M Payroll paid you`, `Sender: 3M Payroll`, and `Recipient: 401K Savings`, while numeric-only counterparty values stay rejected.
 - Store-safe notification parsing now preserves digit-starting merchants from explicit notification hints such as `at 7-Eleven`, `Merchant: 7-Eleven`, and `Payment to 3M`, while numeric-only hint values stay rejected.
 - Store-safe notification parsing now preserves digit-starting merchants such as `7-Eleven` and `6th Street` from title-first, body-line, and trailing amount notification hints while still rejecting numeric-only identifier lines.
