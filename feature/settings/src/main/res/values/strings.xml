@@ -343,6 +343,7 @@
     <string name="settings_recurring_field_name">الاسم (مثلاً: راتب)</string>
     <string name="settings_recurring_field_merchant">الجهة (مثلاً: شركة ، Netflix)</string>
     <string name="settings_recurring_field_amount" formatted="true">المبلغ (%1$s)</string>
+    <string name="settings_recurring_field_account">الحساب</string>
     <string name="settings_recurring_field_day_of_month">يوم الشهر (1-28)</string>
     <string name="settings_recurring_type_expense">مصروف</string>
     <string name="settings_recurring_type_income">دخل</string>

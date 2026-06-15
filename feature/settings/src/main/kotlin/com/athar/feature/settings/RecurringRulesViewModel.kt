@@ -8,6 +8,7 @@ import com.athar.core.domain.model.MANUAL_ACCOUNT_ID
 import com.athar.core.domain.model.RecurringRule
 import com.athar.core.domain.model.RecurringSuggestion
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.repo.AccountRepository
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.RecurringRuleRepository
 import com.athar.core.domain.repo.RecurringSuggestionRepository
@@ -31,6 +32,7 @@ class RecurringRulesViewModel @Inject constructor(
     private val rules: RecurringRuleRepository,
     private val suggestionRepo: RecurringSuggestionRepository,
     private val categoryRepo: CategoryRepository,
+    private val accountRepo: AccountRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -44,6 +46,10 @@ class RecurringRulesViewModel @Inject constructor(
 
     val categories: StateFlow<List<com.athar.core.domain.model.Category>> =
         categoryRepo.observeAll()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val accounts: StateFlow<List<com.athar.core.domain.model.Account>> =
+        accountRepo.observeActive()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _materializeStatus = MutableStateFlow(0)
@@ -60,6 +66,7 @@ class RecurringRulesViewModel @Inject constructor(
         amountText: String,
         currency: String,
         type: TxType,
+        accountId: String?,
         categoryId: String?,
         cadence: Cadence,
         dayOfMonth: Int?,
@@ -73,7 +80,7 @@ class RecurringRulesViewModel @Inject constructor(
             merchant = merchant.trim(),
             amount = amount,
             type = type,
-            accountId = MANUAL_ACCOUNT_ID,
+            accountId = accountId.orManualAccount(),
             categoryId = categoryId,
             cadence = cadence,
             dayOfMonth = dayOfMonth,
@@ -105,11 +112,6 @@ class RecurringRulesViewModel @Inject constructor(
     }
 
     /**
-     * Convert an auto-detected suggestion into an active recurring rule.
-     * Notes string is supplied by the caller (resolved at the Composable layer
-     * so it picks up the active locale).
-     */
-    /**
      * Create a rule from a suggestion using user-confirmed overrides from the confirm sheet.
      * Falls back to auto-detected values when the user accepts the defaults.
      */
@@ -118,6 +120,7 @@ class RecurringRulesViewModel @Inject constructor(
         notes: String?,
         cadence: Cadence,
         dayOfMonth: Int?,
+        accountId: String?,
         categoryId: String?,
     ) {
         val now = clock.now()
@@ -127,7 +130,7 @@ class RecurringRulesViewModel @Inject constructor(
             merchant = suggestion.merchant,
             amount = suggestion.amount,
             type = suggestion.type,
-            accountId = suggestion.suggestedAccountId ?: MANUAL_ACCOUNT_ID,
+            accountId = accountId.orManualAccount(suggestion.suggestedAccountId),
             categoryId = categoryId ?: suggestion.suggestedCategoryId,
             cadence = cadence,
             dayOfMonth = if (cadence == Cadence.MONTHLY) dayOfMonth else null,
@@ -145,4 +148,9 @@ class RecurringRulesViewModel @Inject constructor(
             _lastAccepted.value = suggestion.merchant
         }
     }
+
+    private fun String?.orManualAccount(fallback: String? = null): String =
+        this?.takeIf { it.isNotBlank() }
+            ?: fallback?.takeIf { it.isNotBlank() }
+            ?: MANUAL_ACCOUNT_ID
 }

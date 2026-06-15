@@ -343,6 +343,7 @@
     <string name="settings_recurring_field_name">Name (e.g. Salary)</string>
     <string name="settings_recurring_field_merchant">Source (e.g. Company, Netflix)</string>
     <string name="settings_recurring_field_amount" formatted="true">Amount (%1$s)</string>
+    <string name="settings_recurring_field_account">Account</string>
     <string name="settings_recurring_field_day_of_month">Day of month (1-28)</string>
     <string name="settings_recurring_type_expense">Expense</string>
     <string name="settings_recurring_type_income">Income</string>
