@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.athar.core.domain.model.GoalSettings
 import com.athar.core.domain.repo.UserPreferencesRepository
+import com.athar.core.domain.repo.WidgetRefresher
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -20,6 +21,7 @@ private val Context.userPrefs by preferencesDataStore(name = "user_prefs")
 @Singleton
 internal class UserPreferencesRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val widgetRefresher: WidgetRefresher,
 ) : UserPreferencesRepository {
 
     private val onboardingKey = booleanPreferencesKey("onboarding_complete")
@@ -69,14 +71,33 @@ internal class UserPreferencesRepositoryImpl @Inject constructor(
     override suspend fun setDisplayCurrency(currency: String) {
         val normalized = currency.trim().uppercase()
         require(normalized.length == 3) { "Currency must be ISO-4217 3-letter code, got '$currency'" }
-        context.userPrefs.edit { it[displayCurrencyKey] = normalized }
+        var changed = false
+        context.userPrefs.edit {
+            if ((it[displayCurrencyKey] ?: "SAR") != normalized) {
+                it[displayCurrencyKey] = normalized
+                changed = true
+            }
+        }
+        if (changed) {
+            widgetRefresher.requestRefresh()
+        }
     }
 
     override fun appLocale(): Flow<String> =
         context.userPrefs.data.map { it[appLocaleKey].orEmpty() }
 
     override suspend fun setAppLocale(languageTag: String) {
-        context.userPrefs.edit { it[appLocaleKey] = languageTag.trim() }
+        val normalized = languageTag.trim()
+        var changed = false
+        context.userPrefs.edit {
+            if (it[appLocaleKey].orEmpty() != normalized) {
+                it[appLocaleKey] = normalized
+                changed = true
+            }
+        }
+        if (changed) {
+            widgetRefresher.requestRefresh()
+        }
     }
 
     override fun savingsRateTargetPercent(): Flow<Int> =
