@@ -114,6 +114,9 @@
     <string name="today_pending_category_suggestion" formatted="true">اقتراح من السجل (%2$d): %1$s</string>
     <string name="today_pending_apply_suggestion">تطبيق</string>
     <string name="today_pending_apply_safe_suggestions" formatted="true">تطبيق الاقتراحات الآمنة (%1$d)</string>
+    <string name="today_pending_safe_suggestions_summary" formatted="true">الأثر الآمن: %1$s</string>
+    <string name="today_pending_safe_suggestion_summary_item" formatted="true">%1$s (%2$d)</string>
+    <string name="today_pending_safe_suggestion_summary_more" formatted="true">+%1$d أخرى</string>
     <string name="today_pending_suggestions_applied" formatted="true">تم تطبيق %1$d اقتراح آمن.</string>
     <string name="today_pending_more" formatted="true">+%1$d حركة أخرى. استخدم الإجراءات الجماعية لمعالجتها دفعة واحدة.</string>
 

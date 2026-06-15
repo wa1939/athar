@@ -57,7 +57,7 @@ Other tools force a trade-off:
 - ✅ **Today section** at the top of the list filters to transactions where `date == today` so you instantly see what you spent today (with `Today's net · X SAR` subtitle in olive/ember). Below it: "This month's recent" for context.
 - ✅ Pending tray for SMS-captured transactions awaiting your confirmation
 - ✅ Swipe right to confirm · swipe left to dismiss · **bulk actions** for 5+ pending entries
-- ✅ Pending rows suggest a category from safe same-merchant confirmed history, with per-row and bulk safe-apply actions that never silently create broad rules
+- ✅ Pending rows suggest a category from safe same-merchant confirmed history, with per-row and bulk safe-apply actions, category impact summaries, and no silent broad-rule creation
 - ✅ **Ember attention banner** when pending > 0 — "%d transactions awaiting review · Tap to review →" — impossible to miss above the net-flow number. Dust-color secondary banner appears below it when today had any auto-dismissed transactions, so parser false-negatives never go unnoticed.
 - ✅ **Fail-safe ingestion (beta.15):** SMS that parse as transactions are NEVER auto-dismissed; if the categorizer is uncertain, the transaction lands in PENDING for explicit user review. Money never silently disappears. See `docs/adr/ADR-008-ingestion-fail-safe.md` for rationale.
 - ✅ Auto-confirm transactions when category is already known (CategoryRule match); user fixes are recorded as new rules so the same merchant auto-confirms next time

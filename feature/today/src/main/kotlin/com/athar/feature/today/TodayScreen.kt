@@ -37,6 +37,7 @@ import com.athar.core.designsystem.component.AtharNumber
 import com.athar.core.designsystem.component.AtharSwipeRow
 import com.athar.core.designsystem.component.AtharText
 import com.athar.core.designsystem.theme.AtharTheme
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -404,6 +405,8 @@ private fun PendingTray(
         if (state.pendingCategorySuggestions.isNotEmpty()) {
             PendingSuggestionsBulkAction(
                 count = state.pendingCategorySuggestions.size,
+                summary = state.pendingCategorySuggestionSummary,
+                categoryLabels = state.categoryLabels,
                 onClick = { onEvent(TodayEvent.BulkApplyPendingCategorySuggestions) },
             )
         }
@@ -454,10 +457,12 @@ private fun PendingSuggestionApplyToast(
 @Composable
 private fun PendingSuggestionsBulkAction(
     count: Int,
+    summary: ImmutableList<PendingCategorySuggestionSummary>,
+    categoryLabels: ImmutableMap<String, CategoryLabel>,
     onClick: () -> Unit,
 ) {
     val theme = AtharTheme
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = theme.spacing.xs)
@@ -465,14 +470,52 @@ private fun PendingSuggestionsBulkAction(
             .background(theme.colors.olive)
             .clickable(onClick = onClick)
             .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
-        contentAlignment = Alignment.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(theme.spacing.xs),
     ) {
         AtharText(
             text = stringResource(R.string.today_pending_apply_safe_suggestions, count),
             style = theme.typography.caption,
             color = theme.colors.parchment,
         )
+        PendingSuggestionSummaryText(
+            summary = summary,
+            categoryLabels = categoryLabels,
+        )
     }
+}
+
+@Composable
+private fun PendingSuggestionSummaryText(
+    summary: ImmutableList<PendingCategorySuggestionSummary>,
+    categoryLabels: ImmutableMap<String, CategoryLabel>,
+) {
+    val theme = AtharTheme
+    val visible = summary.take(MAX_PENDING_SUGGESTION_SUMMARY_ITEMS)
+    val summaryItems = visible.map { item ->
+        stringResource(
+            R.string.today_pending_safe_suggestion_summary_item,
+            categoryLabelText(item.categoryId, categoryLabels),
+            item.count,
+        )
+    }.toMutableList()
+    val hiddenCategoryCount = summary.size - visible.size
+    if (hiddenCategoryCount > 0) {
+        summaryItems += stringResource(
+            R.string.today_pending_safe_suggestion_summary_more,
+            hiddenCategoryCount,
+        )
+    }
+    if (summaryItems.isEmpty()) return
+
+    AtharText(
+        text = stringResource(
+            R.string.today_pending_safe_suggestions_summary,
+            summaryItems.joinToString(separator = " · "),
+        ),
+        style = theme.typography.caption,
+        color = theme.colors.parchment,
+    )
 }
 
 @Composable
@@ -602,6 +645,7 @@ private fun androidx.compose.foundation.layout.RowScope.BulkButton(
 }
 
 private const val MAX_PENDING_VISIBLE = 12
+private const val MAX_PENDING_SUGGESTION_SUMMARY_ITEMS = 3
 
 @Composable
 private fun RecentList(

@@ -33,6 +33,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -209,6 +210,27 @@ class TodayViewModelTest {
             "pending-brew",
             PendingCategorySuggestion(categoryId = "cat-cafe", useCount = 2),
         )
+        assertThat(state.pendingCategorySuggestionSummary).containsExactly(
+            PendingCategorySuggestionSummary(categoryId = "cat-cafe", count = 1),
+        )
+    }
+
+    @Test
+    fun `pending category suggestion summary groups and sorts by impact`() {
+        val summary = buildPendingCategorySuggestionSummary(
+            persistentMapOf(
+                "pending-cafe-1" to PendingCategorySuggestion(categoryId = "cat-cafe", useCount = 4),
+                "pending-grocery" to PendingCategorySuggestion(categoryId = "cat-grocery", useCount = 2),
+                "pending-cafe-2" to PendingCategorySuggestion(categoryId = "cat-cafe", useCount = 4),
+                "pending-bills" to PendingCategorySuggestion(categoryId = "cat-bills", useCount = 1),
+            ),
+        )
+
+        assertThat(summary).containsExactly(
+            PendingCategorySuggestionSummary(categoryId = "cat-cafe", count = 2),
+            PendingCategorySuggestionSummary(categoryId = "cat-bills", count = 1),
+            PendingCategorySuggestionSummary(categoryId = "cat-grocery", count = 1),
+        ).inOrder()
     }
 
     @Test

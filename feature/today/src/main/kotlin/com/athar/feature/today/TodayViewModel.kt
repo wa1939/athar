@@ -21,8 +21,10 @@ import com.athar.core.domain.repo.CategoryRuleRepository
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -224,6 +226,11 @@ class TodayViewModel @Inject constructor(
         val todayNet = Money.sumAmounts(todayIncome.map { it.amount }, currency) -
             Money.sumAmounts(todayExpense.map { it.amount }, currency)
         val dismissedToday = dismissed.filter { it.date == today }
+        val pendingCategorySuggestions = buildPendingCategorySuggestions(
+            pending = pending,
+            allTransactions = allTransactions,
+            activeCategories = categories.filterNot { it.archived },
+        )
         return TodayState(
             month = month,
             netFlow = incomeSum - expenseSum,
@@ -235,11 +242,8 @@ class TodayViewModel @Inject constructor(
             today = todayTxns.toImmutableList(),
             recent = monthTxns.take(10).toImmutableList(),
             pending = pending.toImmutableList(),
-            pendingCategorySuggestions = buildPendingCategorySuggestions(
-                pending = pending,
-                allTransactions = allTransactions,
-                activeCategories = categories.filterNot { it.archived },
-            ),
+            pendingCategorySuggestions = pendingCategorySuggestions,
+            pendingCategorySuggestionSummary = buildPendingCategorySuggestionSummary(pendingCategorySuggestions),
             dismissedToday = dismissedToday.toImmutableList(),
             categoryLabels = categoryLabels,
             goalNudge = goalNudge,
@@ -319,6 +323,22 @@ class TodayViewModel @Inject constructor(
         )
     }
 }
+
+internal fun buildPendingCategorySuggestionSummary(
+    suggestions: ImmutableMap<String, PendingCategorySuggestion>,
+): ImmutableList<PendingCategorySuggestionSummary> =
+    suggestions.values
+        .groupingBy { it.categoryId }
+        .eachCount()
+        .entries
+        .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
+        .map { (categoryId, count) ->
+            PendingCategorySuggestionSummary(
+                categoryId = categoryId,
+                count = count,
+            )
+        }
+        .toPersistentList()
 
 internal fun buildPendingCategorySuggestions(
     pending: List<Transaction>,
