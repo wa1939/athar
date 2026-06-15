@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Store-safe notification parsing now preserves digit-starting merchants from explicit notification hints such as `at 7-Eleven`, `Merchant: 7-Eleven`, and `Payment to 3M`, while numeric-only hint values stay rejected.
 - Store-safe notification parsing now preserves digit-starting merchants such as `7-Eleven` and `6th Street` from title-first, body-line, and trailing amount notification hints while still rejecting numeric-only identifier lines.
 - Store-safe notification parsing now skips label-only body lines such as `Merchant` or `Location` after posted amount lines, then uses the following real merchant line when present.
 - Store-safe notification parsing now preserves merchants from body lines after posted amount/title lines, such as `Card purchase SAR 99.00` followed by `Noon`, while avoiding bank-app titles as false merchants.

@@ -517,35 +517,35 @@ class GenericBankNotificationTemplate : BankTemplate {
         RegexOption.IGNORE_CASE,
     )
     private val merchantLabelHint = Regex(
-        """(?:\bmerchant(?:\s+name)?\b|\bstore\b|\bpayee\b|\bbiller\b|\bservice\s+provider\b|\b(?:transaction\s+)?location\b|\boutlet(?:\s+name)?\b|\bcard\s+acceptor(?:\s+name)?\b|التاجر|المتجر|المفوتر)\s*[:\-·]\s*([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\bmerchant(?:\s+name)?\b|\bstore\b|\bpayee\b|\bbiller\b|\bservice\s+provider\b|\b(?:transaction\s+)?location\b|\boutlet(?:\s+name)?\b|\bcard\s+acceptor(?:\s+name)?\b|التاجر|المتجر|المفوتر)\s*[:\-·]\s*([^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val senderLabelHint = Regex(
-        """(?:\bsender\b|\bpayer\b|\bremitter\b|المرسل|الدافع|المحول)\s*[:\-·]\s*([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\bsender\b|\bpayer\b|\bremitter\b|المرسل|الدافع|المحول)\s*[:\-·]\s*([^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val recipientLabelHint = Regex(
-        """(?:\brecipient\b|\breceiver\b|\bbeneficiary\b|\bpayee\b|المستفيد|المستلم|المحول\s+له)\s*[:\-·]\s*([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\brecipient\b|\breceiver\b|\bbeneficiary\b|\bpayee\b|المستفيد|المستلم|المحول\s+له)\s*[:\-·]\s*([^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val atHint = Regex(
-        """(?:\bat\b|\bwith\b|\bon\b|لدى|عند|في)\s*[:\-·]?\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\bat\b|\bwith\b|\bon\b|لدى|عند|في)\s*[:\-·]?\s+([^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val forHint = Regex(
-        """(?:\bfor\b|مقابل|عن)\s*[:\-·]?\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\bfor\b|مقابل|عن)\s*[:\-·]?\s+([^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val toHint = Regex(
-        """(?:\bto\b|إلى|الى|لـ)\s*[:\-·]?\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\bto\b|إلى|الى|لـ)\s*[:\-·]?\s+([^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val fromHint = Regex(
-        """(?:\bfrom\b|من)\s*[:\-·]?\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\bfrom\b|من)\s*[:\-·]?\s+([^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val byHint = Regex(
-        """(?:\bby\b)\s*[:\-·]?\s+([A-Za-z\u0600-\u06FF][^\n\r]+)""",
+        """(?:\bby\b)\s*[:\-·]?\s+([^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val incomingPersonHint = Regex(
@@ -665,16 +665,18 @@ class GenericBankNotificationTemplate : BankTemplate {
             TxType.EXPENSE -> null
             TxType.INCOME -> normalizeIncomeCounterparty(
                 body = normalized,
-                counterparty = cleanParty(
-                    senderLabelHint.find(normalized)?.groupValues?.get(1)
-                        ?: fromHint.find(normalized)?.groupValues?.get(1)
-                        ?: byHint.find(normalized)?.groupValues?.get(1)
-                        ?: incomingPersonHint.find(normalized)?.groupValues?.get(1),
+                counterparty = firstCleanParty(
+                    senderLabelHint.find(normalized)?.groupValues?.get(1),
+                    fromHint.find(normalized)?.groupValues?.get(1),
+                    byHint.find(normalized)?.groupValues?.get(1),
+                    incomingPersonHint.find(normalized)?.groupValues?.get(1),
                 ),
             )
-            TxType.TRANSFER -> cleanParty(recipientLabelHint.find(normalized)?.groupValues?.get(1)
-                ?: toHint.find(normalized)?.groupValues?.get(1)
-                ?: fromHint.find(normalized)?.groupValues?.get(1))
+            TxType.TRANSFER -> firstCleanParty(
+                recipientLabelHint.find(normalized)?.groupValues?.get(1),
+                toHint.find(normalized)?.groupValues?.get(1),
+                fromHint.find(normalized)?.groupValues?.get(1),
+            )
         }
 
         var confidence = 0.45f
@@ -843,13 +845,15 @@ class GenericBankNotificationTemplate : BankTemplate {
             gamePurchaseWords.containsMatchIn(body)
 
     private fun String.cleanMerchantCandidate(amountMatch: MatchResult): String? =
-        cleanParty(merchantLabelHint.find(this)?.groupValues?.get(1)
-            ?: recipientLabelHint.find(this)?.groupValues?.get(1)
-            ?: toHint.find(this)?.groupValues?.get(1)
-            ?: atHint.find(this)?.groupValues?.get(1)
-            ?: byHint.find(this)?.groupValues?.get(1)
-            ?: forHint.find(this)?.groupValues?.get(1)
-            ?: fromHint.find(this)?.groupValues?.get(1))
+        firstCleanParty(
+            merchantLabelHint.find(this)?.groupValues?.get(1),
+            recipientLabelHint.find(this)?.groupValues?.get(1),
+            toHint.find(this)?.groupValues?.get(1),
+            atHint.find(this)?.groupValues?.get(1),
+            byHint.find(this)?.groupValues?.get(1),
+            forHint.find(this)?.groupValues?.get(1),
+            fromHint.find(this)?.groupValues?.get(1),
+        )
             ?: titleMerchantBeforeAmount(this, amountMatch)
             ?: partyBeforeAmount(this, amountMatch)
             ?: bodyLineMerchantAfterAmount(this, amountMatch)
@@ -1445,8 +1449,11 @@ class GenericBankNotificationTemplate : BankTemplate {
             .trim(' ', '.', ',', '-', '·', ':')
             .take(48)
             .trim()
-        return cleaned.takeIf { it.isNotBlank() }
+        return cleaned.takeIf { it.isNotBlank() && partyContainsLetter.containsMatchIn(it) }
     }
+
+    private fun firstCleanParty(vararg candidates: String?): String? =
+        candidates.firstNotNullOfOrNull(::cleanParty)
 
     private fun String.containsStandalonePartyAmount(): Boolean =
         amountWithCurrency.findAll(this).any { it.isStandalonePartyAmount(this) }

@@ -1224,6 +1224,54 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `parses digit-starting at hint merchant after amount notification`() {
+        val result = parser.parse(
+            event("notification:com.wise.android", "You spent USD 8.50 at 7-Eleven"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("8.50"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("7-Eleven")
+    }
+
+    @Test
+    fun `parses digit-starting structured merchant field notification`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Card purchase SAR 18.00 approved\nMerchant: 7-Eleven"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("18.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("7-Eleven")
+    }
+
+    @Test
+    fun `parses digit-starting payment to merchant notification`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Payment to 3M USD 12.99 completed"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("12.99"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("3M")
+    }
+
+    @Test
+    fun `does not use numeric-only structured merchant field notification`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Card purchase AED 42.00\nMerchant: 123456789"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isNull()
+    }
+
+    @Test
     fun `parses pos transaction at merchant amount notification`() {
         val result = parser.parse(
             event("notification:com.emiratesnbd.android", "POS transaction at Carrefour AED 42.00"),
