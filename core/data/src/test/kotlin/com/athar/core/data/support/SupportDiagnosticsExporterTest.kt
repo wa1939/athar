@@ -120,6 +120,9 @@ class SupportDiagnosticsExporterTest {
         assertThat(payload.categoryCoverage.otherBacklogTransactionCount).isEqualTo(0)
         assertThat(payload.categoryCoverage.largestUncategorizedGroupSampleCount).isEqualTo(2)
         assertThat(payload.categoryCoverage.largestUncategorizedGroupCoveragePermille).isEqualTo(666)
+        assertThat(payload.categoryBacklogRecommendation.primaryAction).isEqualTo("manual_cleanup")
+        assertThat(payload.categoryBacklogRecommendation.recommendedActions).containsExactly("manual_cleanup")
+        assertThat(payload.categoryBacklogRecommendation.reasonCodes).containsExactly("small_category_backlog")
 
         assertThat(payload.uncategorizedMerchantGroups).hasSize(2)
         val group = payload.uncategorizedMerchantGroups.first()
@@ -138,6 +141,94 @@ class SupportDiagnosticsExporterTest {
         assertThat(secondGroup.sampleCount).isEqualTo(1)
         assertThat(secondGroup.shareOfBacklogPermille).isEqualTo(333)
         assertThat(secondGroup.cumulativeShareOfBacklogPermille).isEqualTo(1_000)
+    }
+
+    @Test
+    fun `category backlog recommendation reports none when every eligible row is categorized`() {
+        val payload = SupportDiagnosticsReportBuilder.build(
+            rows = emptyList(),
+            totalRows = 0,
+            statusCounts = emptyMap(),
+            generatedAt = "2026-06-13T00:00:00Z",
+            transactions = listOf(
+                tx(id = "1", merchant = "Starbucks", status = "CONFIRMED", categoryId = "cat-coffee"),
+                tx(id = "2", merchant = "Internal Transfer", status = "PENDING", type = "TRANSFER", categoryId = null),
+            ),
+        )
+
+        assertThat(payload.categoryBacklogRecommendation.primaryAction).isEqualTo("none")
+        assertThat(payload.categoryBacklogRecommendation.recommendedActions).containsExactly("none")
+        assertThat(payload.categoryBacklogRecommendation.reasonCodes).containsExactly("no_category_backlog")
+    }
+
+    @Test
+    fun `category backlog recommendation prefers repeated backlog cleanup for repeated merchant groups`() {
+        val payload = SupportDiagnosticsReportBuilder.build(
+            rows = emptyList(),
+            totalRows = 0,
+            statusCounts = emptyMap(),
+            generatedAt = "2026-06-13T00:00:00Z",
+            transactions = listOf(
+                tx(id = "1", merchant = "Repeated Cafe", status = "PENDING", categoryId = null),
+                tx(id = "2", merchant = "Repeated Cafe", status = "PENDING", categoryId = null),
+                tx(id = "3", merchant = "Repeated Cafe", status = "DISMISSED", categoryId = null),
+            ),
+        )
+
+        assertThat(payload.categoryBacklogRecommendation.primaryAction).isEqualTo("history_repeated_backlog")
+        assertThat(payload.categoryBacklogRecommendation.recommendedActions)
+            .containsExactly("history_repeated_backlog")
+        assertThat(payload.categoryBacklogRecommendation.reasonCodes)
+            .containsExactly("largest_repeated_group_at_least_3")
+    }
+
+    @Test
+    fun `category backlog recommendation uses bulk export for large long tail backlog`() {
+        val transactions = (1..25).map { index ->
+            tx(id = index.toString(), merchant = "Long Tail Merchant $index", status = "PENDING", categoryId = null)
+        }
+
+        val payload = SupportDiagnosticsReportBuilder.build(
+            rows = emptyList(),
+            totalRows = 0,
+            statusCounts = emptyMap(),
+            generatedAt = "2026-06-13T00:00:00Z",
+            transactions = transactions,
+        )
+
+        assertThat(payload.categoryBacklogRecommendation.primaryAction).isEqualTo("bulk_categorize_export")
+        assertThat(payload.categoryBacklogRecommendation.recommendedActions)
+            .containsExactly("bulk_categorize_export")
+        assertThat(payload.categoryBacklogRecommendation.reasonCodes)
+            .containsExactly("category_backlog_at_least_25")
+    }
+
+    @Test
+    fun `category backlog recommendation combines repeated and bulk export actions`() {
+        val repeatedRows = (1..3).map { index ->
+            tx(id = "r$index", merchant = "Repeated Cafe", status = "PENDING", categoryId = null)
+        }
+        val longTailRows = (1..30).map { index ->
+            tx(id = "l$index", merchant = "Long Tail Merchant $index", status = "PENDING", categoryId = null)
+        }
+
+        val payload = SupportDiagnosticsReportBuilder.build(
+            rows = emptyList(),
+            totalRows = 0,
+            statusCounts = emptyMap(),
+            generatedAt = "2026-06-13T00:00:00Z",
+            transactions = repeatedRows + longTailRows,
+        )
+
+        assertThat(payload.categoryBacklogRecommendation.primaryAction).isEqualTo("history_repeated_backlog")
+        assertThat(payload.categoryBacklogRecommendation.recommendedActions)
+            .containsExactly("history_repeated_backlog", "bulk_categorize_export")
+            .inOrder()
+        assertThat(payload.categoryBacklogRecommendation.reasonCodes).containsExactly(
+            "largest_repeated_group_at_least_3",
+            "category_backlog_at_least_25",
+            "includes_long_tail_backlog",
+        ).inOrder()
     }
 
     @Test

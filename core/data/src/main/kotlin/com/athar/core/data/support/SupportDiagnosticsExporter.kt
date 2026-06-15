@@ -72,6 +72,8 @@ internal object SupportDiagnosticsReportBuilder {
     const val MaxRecentSamples = 500
     private const val TopGroupLimit = 25
     private const val MaxTemplateIdsPerGroup = 12
+    private const val RepeatedBacklogGroupMinimum = 3
+    private const val BulkExportBacklogMinimum = 25
 
     fun build(
         rows: List<SmsMessageEntity>,
@@ -95,6 +97,7 @@ internal object SupportDiagnosticsReportBuilder {
         )
         val transactionSummary = buildTransactionSummary(transactions)
         val uncategorizedMerchantGroups = buildUncategorizedMerchantGroups(transactions)
+        val categoryCoverage = buildCategoryCoverage(transactions, uncategorizedMerchantGroups)
         return SupportDiagnosticsPayload(
             generatedAt = generatedAt,
             summary = summary,
@@ -102,7 +105,8 @@ internal object SupportDiagnosticsReportBuilder {
             senderGroups = buildSenderGroups(recentRows),
             errorGroups = buildErrorGroups(recentRows),
             transactionSummary = transactionSummary,
-            categoryCoverage = buildCategoryCoverage(transactions, uncategorizedMerchantGroups),
+            categoryCoverage = categoryCoverage,
+            categoryBacklogRecommendation = buildCategoryBacklogRecommendation(categoryCoverage),
             uncategorizedMerchantGroups = uncategorizedMerchantGroups,
             recentAuditSamples = recentRows.map { it.toAuditSample() },
         )
@@ -227,6 +231,45 @@ internal object SupportDiagnosticsReportBuilder {
             otherBacklogTransactionCount = (backlogRows.size - topGroupSampleCount).coerceAtLeast(0),
             largestUncategorizedGroupSampleCount = largestGroupSampleCount,
             largestUncategorizedGroupCoveragePermille = permille(largestGroupSampleCount, backlogRows.size),
+        )
+    }
+
+    private fun buildCategoryBacklogRecommendation(
+        coverage: CategoryCoverageSummary,
+    ): CategoryBacklogRecommendation {
+        if (coverage.categoryBacklogTransactions == 0) {
+            return CategoryBacklogRecommendation(
+                primaryAction = "none",
+                recommendedActions = listOf("none"),
+                reasonCodes = listOf("no_category_backlog"),
+            )
+        }
+
+        val actions = mutableListOf<String>()
+        val reasons = mutableListOf<String>()
+
+        if (coverage.largestUncategorizedGroupSampleCount >= RepeatedBacklogGroupMinimum) {
+            actions += "history_repeated_backlog"
+            reasons += "largest_repeated_group_at_least_$RepeatedBacklogGroupMinimum"
+        }
+
+        if (coverage.categoryBacklogTransactions >= BulkExportBacklogMinimum) {
+            actions += "bulk_categorize_export"
+            reasons += "category_backlog_at_least_$BulkExportBacklogMinimum"
+            if (coverage.otherBacklogTransactionCount > 0) {
+                reasons += "includes_long_tail_backlog"
+            }
+        }
+
+        if (actions.isEmpty()) {
+            actions += "manual_cleanup"
+            reasons += "small_category_backlog"
+        }
+
+        return CategoryBacklogRecommendation(
+            primaryAction = actions.first(),
+            recommendedActions = actions,
+            reasonCodes = reasons.distinct(),
         )
     }
 
@@ -460,6 +503,7 @@ internal data class SupportDiagnosticsPayload(
     @SerialName("error_groups") val errorGroups: List<ErrorGroup>,
     @SerialName("transaction_summary") val transactionSummary: TransactionDiagnosticsSummary,
     @SerialName("category_coverage") val categoryCoverage: CategoryCoverageSummary,
+    @SerialName("category_backlog_recommendation") val categoryBacklogRecommendation: CategoryBacklogRecommendation,
     @SerialName("uncategorized_merchant_groups") val uncategorizedMerchantGroups: List<UncategorizedMerchantGroup>,
     @SerialName("recent_audit_samples") val recentAuditSamples: List<AuditSample>,
 )
@@ -545,6 +589,15 @@ internal data class CategoryCoverageSummary(
     @SerialName("other_backlog_transaction_count") val otherBacklogTransactionCount: Int,
     @SerialName("largest_uncategorized_group_sample_count") val largestUncategorizedGroupSampleCount: Int,
     @SerialName("largest_uncategorized_group_coverage_permille") val largestUncategorizedGroupCoveragePermille: Int,
+)
+
+@Serializable
+internal data class CategoryBacklogRecommendation(
+    @SerialName("primary_action") val primaryAction: String,
+    @SerialName("recommended_actions") val recommendedActions: List<String>,
+    @SerialName("reason_codes") val reasonCodes: List<String>,
+    @SerialName("minimum_repeated_group_size") val minimumRepeatedGroupSize: Int = 3,
+    @SerialName("bulk_export_minimum_backlog") val bulkExportMinimumBacklog: Int = 25,
 )
 
 @Serializable
