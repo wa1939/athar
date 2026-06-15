@@ -104,6 +104,23 @@ class RecurringRulesViewModel @Inject constructor(
         viewModelScope.launch { rules.delete(id) }
     }
 
+    fun updateRouting(
+        id: String,
+        accountId: String?,
+        categoryId: String?,
+    ) {
+        viewModelScope.launch {
+            val current = rules.get(id) ?: return@launch
+            rules.upsert(
+                current.copy(
+                    accountId = accountId.orManualAccount(current.accountId),
+                    categoryId = categoryId,
+                    updatedAt = clock.now(),
+                ),
+            )
+        }
+    }
+
     fun materializeNow() {
         viewModelScope.launch {
             val today = clock.now().toLocalDateTime(TimeZone.currentSystemDefault()).date

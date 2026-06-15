@@ -352,6 +352,14 @@
     <string name="settings_recurring_cadence_yearly">سنوي</string>
     <string name="settings_recurring_save">حفظ القاعدة</string>
     <string name="settings_recurring_create_rule">إنشاء قاعدة</string>
+    <string name="settings_recurring_route_title">مراجعة الحساب والتصنيف</string>
+    <string name="settings_recurring_route_save">حفظ التوجيه</string>
+    <string name="settings_recurring_route_uncategorized">بدون تصنيف</string>
+    <string name="settings_recurring_row_account_category" formatted="true">%1$s · %2$s</string>
+    <string name="settings_recurring_row_edit_routing">الحساب/التصنيف</string>
+    <string name="settings_recurring_row_manual_account">الحساب اليدوي</string>
+    <string name="settings_recurring_row_unknown_account" formatted="true">حساب غير معروف · %1$s</string>
+    <string name="settings_recurring_row_unknown_category" formatted="true">تصنيف غير معروف · %1$s</string>
     <string name="settings_recurring_row_next" formatted="true">التالي: %1$s</string>
     <string name="settings_recurring_row_active">مفعّل</string>
     <string name="settings_recurring_row_inactive">موقَف</string>

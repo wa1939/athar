@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Existing recurring rules now show their account/category routing and can edit those two fields without deleting the rule; future materialized pending rows use the corrected routing.
 - Recurring-rule creation now lets users choose the active account when adding a manual rule or confirming an auto-detected suggestion; explicit choice wins over a safe inferred suggestion account and the manual-account fallback remains for empty/missing account state.
 - The copied bulk-categorization AI prompt now includes seed-backed label guidance for exact parser labels such as ATM withdrawals, bank fees, debt payments, tax refunds, reimbursements, cashback, deposits, work expenses, life-admin payments, travel, retail, and entertainment rows.
 - Built-in seed refresh now compares bundled rule content (`pattern`, `patternType`, `categoryId`, and `priority`) instead of only rule count, so metadata-only seed updates reach existing installs while preserving user-learned and `auto-local-*` rules.

@@ -352,6 +352,14 @@
     <string name="settings_recurring_cadence_yearly">Yearly</string>
     <string name="settings_recurring_save">Save rule</string>
     <string name="settings_recurring_create_rule">Create rule</string>
+    <string name="settings_recurring_route_title">Review account and category</string>
+    <string name="settings_recurring_route_save">Save routing</string>
+    <string name="settings_recurring_route_uncategorized">No category</string>
+    <string name="settings_recurring_row_account_category" formatted="true">%1$s · %2$s</string>
+    <string name="settings_recurring_row_edit_routing">Account/category</string>
+    <string name="settings_recurring_row_manual_account">Manual account</string>
+    <string name="settings_recurring_row_unknown_account" formatted="true">Unknown account · %1$s</string>
+    <string name="settings_recurring_row_unknown_category" formatted="true">Unknown category · %1$s</string>
     <string name="settings_recurring_row_next" formatted="true">Next: %1$s</string>
     <string name="settings_recurring_row_active">Active</string>
     <string name="settings_recurring_row_inactive">Paused</string>

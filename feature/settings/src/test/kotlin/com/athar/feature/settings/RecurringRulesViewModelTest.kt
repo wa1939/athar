@@ -189,6 +189,54 @@ class RecurringRulesViewModelTest {
 
         assertThat(rules.upserts.single().accountId).isEqualTo(MANUAL_ACCOUNT_ID)
     }
+
+    @Test
+    fun `update routing changes account and category on existing rule`() = runTest(mainDispatcher) {
+        val existing = recurringRule(
+            id = "rule-rent",
+            accountId = MANUAL_ACCOUNT_ID,
+            categoryId = "cat-rent",
+        )
+        val rules = RecordingRecurringRuleRepository(initial = listOf(existing))
+        val viewModel = recurringRulesViewModel(rules = rules, suggestions = emptyList())
+
+        viewModel.updateRouting(
+            id = "rule-rent",
+            accountId = "acc-checking",
+            categoryId = "cat-home",
+        )
+        advanceUntilIdle()
+
+        val updated = rules.upserts.single()
+        assertThat(updated.id).isEqualTo(existing.id)
+        assertThat(updated.accountId).isEqualTo("acc-checking")
+        assertThat(updated.categoryId).isEqualTo("cat-home")
+        assertThat(updated.displayName).isEqualTo(existing.displayName)
+        assertThat(updated.amount).isEqualTo(existing.amount)
+        assertThat(updated.updatedAt).isEqualTo(FixedClock.now())
+    }
+
+    @Test
+    fun `update routing with blank account keeps existing account and can clear category`() = runTest(mainDispatcher) {
+        val existing = recurringRule(
+            id = "rule-rent",
+            accountId = "acc-current",
+            categoryId = "cat-rent",
+        )
+        val rules = RecordingRecurringRuleRepository(initial = listOf(existing))
+        val viewModel = recurringRulesViewModel(rules = rules, suggestions = emptyList())
+
+        viewModel.updateRouting(
+            id = "rule-rent",
+            accountId = " ",
+            categoryId = null,
+        )
+        advanceUntilIdle()
+
+        val updated = rules.upserts.single()
+        assertThat(updated.accountId).isEqualTo("acc-current")
+        assertThat(updated.categoryId).isNull()
+    }
 }
 
 private fun recurringRulesViewModel(
@@ -203,12 +251,15 @@ private fun recurringRulesViewModel(
         clock = FixedClock,
     )
 
-private class RecordingRecurringRuleRepository : RecurringRuleRepository {
+private class RecordingRecurringRuleRepository(
+    private val initial: List<RecurringRule> = emptyList(),
+) : RecurringRuleRepository {
     val upserts = mutableListOf<RecurringRule>()
 
-    override fun observeAll(includeInactive: Boolean): Flow<List<RecurringRule>> = flowOf(emptyList())
+    override fun observeAll(includeInactive: Boolean): Flow<List<RecurringRule>> = flowOf(initial)
 
-    override suspend fun get(id: String): RecurringRule? = upserts.firstOrNull { it.id == id }
+    override suspend fun get(id: String): RecurringRule? =
+        upserts.firstOrNull { it.id == id } ?: initial.firstOrNull { it.id == id }
 
     override suspend fun upsert(rule: RecurringRule) {
         upserts += rule
@@ -282,6 +333,31 @@ private fun account(id: String, name: String): Account =
         archived = false,
         createdAt = FixedClock.now(),
         updatedAt = FixedClock.now(),
+    )
+
+private fun recurringRule(
+    id: String,
+    accountId: String,
+    categoryId: String?,
+): RecurringRule =
+    RecurringRule(
+        id = id,
+        displayName = "Rent",
+        merchant = "Landlord",
+        amount = Money.ofMinor(250_000, "SAR"),
+        type = TxType.EXPENSE,
+        accountId = accountId,
+        categoryId = categoryId,
+        cadence = Cadence.MONTHLY,
+        dayOfMonth = 1,
+        dayOfWeek = null,
+        monthOfYear = null,
+        nextRunDate = LocalDate(2026, 7, 1),
+        lastRunDate = null,
+        isActive = true,
+        notes = "Existing note",
+        createdAt = Instant.parse("2026-06-01T12:00:00Z"),
+        updatedAt = Instant.parse("2026-06-01T12:00:00Z"),
     )
 
 private fun recurringSuggestion(
