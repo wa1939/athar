@@ -532,6 +532,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\bat\b|\bwith\b|\bon\b|لدى|عند|في)\s*[:\-·]?\s+([^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
+    private val atSymbolHint = Regex(
+        """(?<![A-Za-z0-9._%+-])@\s*([^\n\r]+)""",
+        setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
+    )
     private val forHint = Regex(
         """(?:\bfor\b|مقابل|عن)\s*[:\-·]?\s+([^\n\r]+)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
@@ -733,6 +737,7 @@ class GenericBankNotificationTemplate : BankTemplate {
     private fun hasMerchantHint(body: String): Boolean =
         merchantLabelHint.containsMatchIn(body) ||
             atHint.containsMatchIn(body) ||
+            atSymbolHint.containsMatchIn(body) ||
             toHint.containsMatchIn(body) ||
             fromHint.containsMatchIn(body) ||
             forHint.containsMatchIn(body)
@@ -850,6 +855,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             recipientLabelHint.find(this)?.groupValues?.get(1),
             toHint.find(this)?.groupValues?.get(1),
             atHint.find(this)?.groupValues?.get(1),
+            atSymbolHint.find(this)?.groupValues?.get(1),
             byHint.find(this)?.groupValues?.get(1),
             forHint.find(this)?.groupValues?.get(1),
             fromHint.find(this)?.groupValues?.get(1),
@@ -1453,7 +1459,7 @@ class GenericBankNotificationTemplate : BankTemplate {
                 ),
                 "",
             )
-            .trim(' ', '.', ',', '-', '·', ':')
+            .trim(' ', '.', ',', '-', '·', ':', '@')
             .take(48)
             .trim()
         return cleaned.takeIf { it.isNotBlank() && partyContainsLetter.containsMatchIn(it) }
