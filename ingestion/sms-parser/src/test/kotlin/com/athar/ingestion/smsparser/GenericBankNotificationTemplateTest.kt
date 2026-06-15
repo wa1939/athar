@@ -1140,6 +1140,90 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `skips date metadata line and parses following merchant after amount notification`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "Card purchase SAR 99.00\nDate 15 Jun 2026 14:03\nNoon"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("99.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("Noon")
+    }
+
+    @Test
+    fun `skips reference metadata line and parses following merchant after amount notification`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Card purchase AED 42.00\nReference 123456789\nCarrefour"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("Carrefour")
+    }
+
+    @Test
+    fun `does not use reference metadata only body line after amount notification`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Card purchase USD 12.99\nReference ABC123"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("12.99"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isNull()
+    }
+
+    @Test
+    fun `parses digit-starting title merchant before amount notification`() {
+        val result = parser.parse(
+            event("notification:com.wise.android", "7-Eleven\nCard purchase USD 8.50 approved"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("8.50"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isEqualTo("7-Eleven")
+    }
+
+    @Test
+    fun `parses digit-starting body line merchant after amount notification`() {
+        val result = parser.parse(
+            event("notification:com.emiratesnbd.android", "Card purchase AED 42.00\n6th Street"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("42.00"))
+        assertThat(result.amount.currency).isEqualTo("AED")
+        assertThat(result.merchant).isEqualTo("6th Street")
+    }
+
+    @Test
+    fun `parses digit-starting trailing merchant after amount notification`() {
+        val result = parser.parse(
+            event("notification:com.alrajhibank.alrajhimobile", "POS purchase SAR 18.00 7-Eleven"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("18.00"))
+        assertThat(result.amount.currency).isEqualTo("SAR")
+        assertThat(result.merchant).isEqualTo("7-Eleven")
+    }
+
+    @Test
+    fun `does not use numeric identifier body line after amount notification`() {
+        val result = parser.parse(
+            event("notification:com.chase.sig.android", "Card purchase USD 12.99\n123456789"),
+        ) as ParseResult.Success
+
+        assertThat(result.type).isEqualTo(TxType.EXPENSE)
+        assertThat(result.amount.amount).isEqualTo(BigDecimal("12.99"))
+        assertThat(result.amount.currency).isEqualTo("USD")
+        assertThat(result.merchant).isNull()
+    }
+
+    @Test
     fun `parses pos transaction at merchant amount notification`() {
         val result = parser.parse(
             event("notification:com.emiratesnbd.android", "POS transaction at Carrefour AED 42.00"),

@@ -1380,8 +1380,8 @@ class GenericBankNotificationTemplate : BankTemplate {
             .map { it.trim(' ', '.', ',', '-', '·', ':') }
             .firstOrNull { it.isNotBlank() }
             ?: return null
-        if (!partyStartsWithLetter.matches(title)) return null
-        if (amountWithCurrency.containsMatchIn(title)) return null
+        if (!partyContainsLetter.containsMatchIn(title)) return null
+        if (title.containsStandalonePartyAmount()) return null
         if (genericNotificationTitleWords.containsMatchIn(title)) return null
         if (bankAppTitleWords.matches(title)) return null
         return cleanParty(title)
@@ -1395,12 +1395,13 @@ class GenericBankNotificationTemplate : BankTemplate {
             .map { it.trim(' ', '.', ',', '-', '·', ':') }
             .filter { it.isNotBlank() }
             .mapNotNull { line ->
-                if (!partyStartsWithLetter.matches(line)) return@mapNotNull null
-                if (amountWithCurrency.containsMatchIn(line)) return@mapNotNull null
+                if (!partyContainsLetter.containsMatchIn(line)) return@mapNotNull null
+                if (line.containsStandalonePartyAmount()) return@mapNotNull null
                 val candidate = line
                     .replace(trailingNonPartyContext, "")
                     .trim(' ', '.', ',', '-', '·', ':')
                 if (candidate.isBlank()) return@mapNotNull null
+                if (notificationBodyMetadataLineWords.matches(candidate)) return@mapNotNull null
                 if (notificationBodyLabelOnlyWords.matches(candidate)) return@mapNotNull null
                 if (genericNotificationMerchantLineWords.matches(candidate)) return@mapNotNull null
                 if (bankAppTitleWords.matches(candidate)) return@mapNotNull null
@@ -1416,7 +1417,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             .firstOrNull()
             .orEmpty()
             .trim(' ', '.', ',', '-', '·', ':')
-        if (!partyStartsWithLetter.matches(afterAmount)) return null
+        if (!partyContainsLetter.containsMatchIn(afterAmount)) return null
 
         val candidate = afterAmount
             .replace(trailingNonPartyContext, "")
@@ -1426,25 +1427,46 @@ class GenericBankNotificationTemplate : BankTemplate {
 
     private fun cleanParty(raw: String?): String? {
         if (raw.isNullOrBlank()) return null
-        val cleaned = raw
-            .lineSequence()
-            .firstOrNull()
-            ?.replace(amountWithCurrency, "")
-            ?.replace(trailingBalancePartyContext, "")
-            ?.replace(Regex("""\s+\band\s+earned\b.*$""", RegexOption.IGNORE_CASE), "")
-            ?.replace(
+        val line = raw.lineSequence().firstOrNull() ?: return null
+        val cleaned = line
+            .replace(amountWithCurrency) { match ->
+                if (match.isStandalonePartyAmount(line)) "" else match.value
+            }
+            .replace(trailingBalancePartyContext, "")
+            .replace(Regex("""\s+\band\s+earned\b.*$""", RegexOption.IGNORE_CASE), "")
+            .replace(
                 Regex(
                     """\s+\b(?:(?:was|were|is|has\s+been|have\s+been)\s+)?(?:confirmed|successful|completed|approved|posted)\b\.?$""",
                     RegexOption.IGNORE_CASE,
                 ),
                 "",
             )
-            ?.replace(Regex("""\b(?:for|using|with|via|card|ending|منتهية|البطاقة)\b.*$""", RegexOption.IGNORE_CASE), "")
-            ?.trim(' ', '.', ',', '-', '·', ':')
-            ?.take(48)
-            ?.trim()
-        return cleaned?.takeIf { it.isNotBlank() }
+            .replace(Regex("""\b(?:for|using|with|via|card|ending|منتهية|البطاقة)\b.*$""", RegexOption.IGNORE_CASE), "")
+            .trim(' ', '.', ',', '-', '·', ':')
+            .take(48)
+            .trim()
+        return cleaned.takeIf { it.isNotBlank() }
     }
+
+    private fun String.containsStandalonePartyAmount(): Boolean =
+        amountWithCurrency.findAll(this).any { it.isStandalonePartyAmount(this) }
+
+    private fun MatchResult.isStandalonePartyAmount(value: String): Boolean {
+        val hasCurrency = groups["lead"]?.value?.isNotBlank() == true ||
+            groups["trail"]?.value?.isNotBlank() == true
+        val number = groups["num"]?.value.orEmpty()
+        val looksLikeAmount = hasCurrency ||
+            number.any { it == '.' || it == ',' || it == '٫' || it == '٬' } ||
+            number.count(Char::isDigit) >= 3
+        if (!looksLikeAmount) return false
+
+        val before = value.getOrNull(range.first - 1)
+        val after = value.getOrNull(range.last + 1)
+        return !before.isPartyAmountAdjacent() && !after.isPartyAmountAdjacent()
+    }
+
+    private fun Char?.isPartyAmountAdjacent(): Boolean =
+        this?.let { it.isLetterOrDigit() || it == '-' } == true
 
     private companion object {
         private const val AmountPrefixWindow = 32
@@ -1519,7 +1541,7 @@ class GenericBankNotificationTemplate : BankTemplate {
             """(?:\bafter\s+(?:debit|purchase|payment|transaction|spend|withdrawal|transfer)\b|بعد\s+(?:خصم|شراء|دفع|سحب|تحويل|العملية|عملية))""",
             RegexOption.IGNORE_CASE,
         )
-        private val partyStartsWithLetter = Regex("""^[A-Za-z\u0600-\u06FF].*""")
+        private val partyContainsLetter = Regex("""[A-Za-z\u0600-\u06FF]""")
         private val trailingNonPartyContext = Regex(
             """(?:\b(?:balance|available|remaining\s+balance|current\s+balance|card|ending|account|acct|approved|confirmed|successful|completed|posted|paid|settled|charged|declined)\b|رصيد|الرصيد|المتاح|بطاقة|البطاقة|حساب|معتمد|مؤكد|ناجح|مكتمل).*""",
             RegexOption.IGNORE_CASE,
@@ -1534,6 +1556,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         )
         private val notificationBodyLabelOnlyWords = Regex(
             """(?:\b(?:merchant(?:\s+name)?|store|payee|biller|service\s+provider|(?:transaction\s+)?location|outlet(?:\s+name)?|card\s+acceptor(?:\s+name)?|recipient|receiver|beneficiary)\b|التاجر|المتجر|المفوتر|المستفيد|المستلم|الموقع)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val notificationBodyMetadataLineWords = Regex(
+            """(?:\b(?:date|time|reference|ref|rrn|stan|transaction\s+(?:date|time|id|no|number|ref(?:erence)?)|approval\s*(?:code|id|no|number)|receipt\s*(?:id|no|number)|terminal\s*(?:id|no|number)|pos\s*(?:id|no|number))\b.*\d.*|(?:التاريخ|الوقت|مرجع|رقم\s+(?:المرجع|العملية|التفويض|الإيصال|الايصال)|رمز\s+التفويض).*\d.*)""",
             RegexOption.IGNORE_CASE,
         )
         private val bankAppTitleWords = Regex(
