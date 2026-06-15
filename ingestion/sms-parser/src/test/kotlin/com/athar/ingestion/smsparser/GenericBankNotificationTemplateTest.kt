@@ -1116,6 +1116,20 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `ignores subscription membership and rent offer notifications with amounts`() {
+        val nonPosted = listOf(
+            "Membership fee offer USD 49.00 today",
+            "Recurring payment promo SAR 29.00",
+            "Rent payment discount SAR 2,500.00",
+            "عرض سداد إيجار ٢٥٠٠ ر.س",
+        )
+
+        nonPosted.forEach { body ->
+            assertThat(parser.parse(event("notification:com.chase.sig.android", body))).isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
     fun `parses generic insurance premium notification with shared label`() {
         val result = parser.parse(
             event("notification:com.emiratesnbd.android", "Insurance premium AED 500.00 completed"),
