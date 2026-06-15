@@ -84,9 +84,56 @@ class PrivateSmsExportAuditTest {
         assertThat(report.categoryCoverage.uncategorizedExpenseBacklogPermille).isEqualTo(1000)
         assertThat(report.categoryCoverage.topUncategorizedGroupCoveragePermille).isEqualTo(1000)
         assertThat(report.categoryCoverage.otherUncategorizedExpenseCount).isEqualTo(0)
+        assertThat(report.categoryBacklogRecommendation.primaryAction).isEqualTo("manual_cleanup")
+        assertThat(report.categoryBacklogRecommendation.recommendedActions).containsExactly("manual_cleanup")
+        assertThat(report.categoryBacklogRecommendation.reasonCodes).containsExactly("small_category_backlog")
         assertThat(json).contains("uncategorizedMerchantGroups")
         assertThat(json).contains("categoryCoverage")
+        assertThat(json).contains("categoryBacklogRecommendation")
         assertThat(json).doesNotContain("Local Test Merchant")
+        assertThat(report.rawBodiesWritten).isEqualTo(0)
+    }
+
+    @Test
+    fun `redacted report recommends repeated backlog cleanup from hashed merchant groups`() {
+        val export = Files.createTempFile("athar-private-audit-repeated", ".txt")
+        Files.writeString(
+            export,
+            """
+                Received from AlRajhiBank on 2026-05-27 17:55
+
+                PoS purchase
+                Card:1234
+                At: Repeated Private Merchant
+                Amount:25 SAR
+                --------------------------------------------------------------------------------
+                Received from AlRajhiBank on 2026-05-28 17:55
+
+                PoS purchase
+                Card:1234
+                At: Repeated Private Merchant
+                Amount:25 SAR
+                --------------------------------------------------------------------------------
+                Received from AlRajhiBank on 2026-05-29 17:55
+
+                PoS purchase
+                Card:1234
+                At: Repeated Private Merchant
+                Amount:25 SAR
+            """.trimIndent(),
+        )
+
+        val report = audit(export)
+        val json = report.toJson()
+
+        assertThat(report.uncategorizedMerchantGroups.single().sampleCount).isEqualTo(3)
+        assertThat(report.categoryBacklogRecommendation.primaryAction).isEqualTo("history_repeated_backlog")
+        assertThat(report.categoryBacklogRecommendation.recommendedActions)
+            .containsExactly("history_repeated_backlog")
+        assertThat(report.categoryBacklogRecommendation.reasonCodes)
+            .containsExactly("largest_repeated_group_at_least_3")
+        assertThat(json).contains("categoryBacklogRecommendation")
+        assertThat(json).doesNotContain("Repeated Private Merchant")
         assertThat(report.rawBodiesWritten).isEqualTo(0)
     }
 
@@ -568,6 +615,69 @@ class PrivateSmsExportAuditTest {
         }
     }
 
+    private data class CategoryBacklogRecommendation(
+        val primaryAction: String,
+        val recommendedActions: List<String>,
+        val reasonCodes: List<String>,
+    ) {
+        fun toJson(indent: String): String =
+            """
+                |$indent{
+                |$indent  "primaryAction": "${jsonEscape(primaryAction)}",
+                |$indent  "recommendedActions": ${recommendedActions.toJsonArray()},
+                |$indent  "reasonCodes": ${reasonCodes.toJsonArray()}
+                |$indent}
+            """.trimMargin()
+
+        companion object {
+            fun from(
+                uncategorizedExpenses: Int,
+                coverage: CategoryCoverageSummary,
+            ): CategoryBacklogRecommendation {
+                if (uncategorizedExpenses == 0) {
+                    return CategoryBacklogRecommendation(
+                        primaryAction = "none",
+                        recommendedActions = listOf("none"),
+                        reasonCodes = listOf("no_category_backlog"),
+                    )
+                }
+
+                val actions = mutableListOf<String>()
+                val reasons = mutableListOf<String>()
+
+                if (coverage.largestUncategorizedGroupSampleCount >= RepeatedBacklogGroupMinimum) {
+                    actions += "history_repeated_backlog"
+                    reasons += "largest_repeated_group_at_least_$RepeatedBacklogGroupMinimum"
+                }
+
+                if (uncategorizedExpenses >= BulkCategorizeBacklogMinimum) {
+                    actions += "bulk_categorize_export"
+                    reasons += "category_backlog_at_least_$BulkCategorizeBacklogMinimum"
+                    if (coverage.otherUncategorizedExpenseCount > 0) {
+                        reasons += "includes_long_tail_backlog"
+                    }
+                }
+
+                if (actions.isEmpty()) {
+                    actions += "manual_cleanup"
+                    reasons += "small_category_backlog"
+                }
+
+                return CategoryBacklogRecommendation(
+                    primaryAction = actions.first(),
+                    recommendedActions = actions,
+                    reasonCodes = reasons.distinct(),
+                )
+            }
+
+            private fun List<String>.toJsonArray(): String =
+                joinToString(prefix = "[", postfix = "]") { """"${jsonEscape(it)}"""" }
+
+            private fun jsonEscape(value: String): String =
+                value.replace("\\", "\\\\").replace("\"", "\\\"")
+        }
+    }
+
     private data class TemplateCount(
         val templateId: String,
         val count: Int,
@@ -599,6 +709,10 @@ class PrivateSmsExportAuditTest {
             uncategorizedExpenses = uncategorizedExpenses,
             groups = uncategorizedMerchantGroups,
         )
+        val categoryBacklogRecommendation: CategoryBacklogRecommendation = CategoryBacklogRecommendation.from(
+            uncategorizedExpenses = uncategorizedExpenses,
+            coverage = categoryCoverage,
+        )
 
         fun toJson(): String {
             val candidates = inactiveCatalogMatches.joinToString(",\n") { it.toJson("    ") }
@@ -608,6 +722,7 @@ class PrivateSmsExportAuditTest {
             val uncategorizedGroups = uncategorizedMerchantGroups.joinToString(",\n") { it.toJson("    ") }
             val uncategorizedGroupBlock = if (uncategorizedGroups.isBlank()) "" else "\n$uncategorizedGroups\n  "
             val coverage = categoryCoverage.toJson("    ")
+            val recommendation = categoryBacklogRecommendation.toJson("    ")
             return """
                 |{
                 |  "records": $records,
@@ -621,6 +736,7 @@ class PrivateSmsExportAuditTest {
                 |  "missingMerchantExpenses": $missingMerchantExpenses,
                 |  "rawBodiesWritten": $rawBodiesWritten,
                 |  "categoryCoverage": $coverage,
+                |  "categoryBacklogRecommendation": $recommendation,
                 |  "inactiveCatalogMatches": [$candidateBlock],
                 |  "missingMerchantGroups": [$groupBlock],
                 |  "uncategorizedMerchantGroups": [$uncategorizedGroupBlock]
@@ -638,6 +754,8 @@ class PrivateSmsExportAuditTest {
                 ((numerator.toLong() * 1000L) / denominator.toLong()).toInt()
             }
 
+        private const val RepeatedBacklogGroupMinimum = 3
+        private const val BulkCategorizeBacklogMinimum = 25
         private val WhitespaceRegex = Regex("""\s+""")
         private val ArabicRegex = Regex("""[\u0600-\u06FF]""")
         private val LatinRegex = Regex("""[A-Za-z]""")
