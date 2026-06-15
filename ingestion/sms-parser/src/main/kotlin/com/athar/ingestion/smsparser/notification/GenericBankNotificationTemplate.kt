@@ -192,6 +192,10 @@ class GenericBankNotificationTemplate : BankTemplate {
         """(?:\b(?:insurance|policy)\s+premium\b|\bpremium\s+(?:payment|paid|debited)\b|قسط\s+(?:التأمين|تأمين)|سداد\s+(?:قسط\s+)?(?:التأمين|تأمين))""",
         RegexOption.IGNORE_CASE,
     )
+    private val insurancePremiumNonPostedWords = Regex(
+        """(?:\b(?:insurance|policy)\s+premium\b[^\n\r]{0,80}\b(?:quote|estimate|estimated|offer|promo|discount|coupon|eligible|eligibility|coverage|review)\b|\b(?:quote|estimate|estimated|offer|promo|discount|coupon|eligible|eligibility|coverage|review)\b[^\n\r]{0,80}\b(?:insurance|policy)\s+premium\b|\binsurance\b[^\n\r]{0,80}\b(?:quote|estimate|estimated|offer|promo|discount|coupon|eligible|eligibility|coverage\s+(?:review|update))\b|\b(?:quote|estimate|estimated|offer|promo|discount|coupon|eligible|eligibility)\b[^\n\r]{0,80}\binsurance\b|(?:(?:قسط\s+)?(?:التأمين|تأمين)|وثيقة\s+تأمين)[^\n\r]{0,80}(?:عرض\s+سعر|عرض|عروض|تقدير|خصم|قسيمة|مؤهل|تغطية|مراجعة)|(?:عرض\s+سعر|عرض|عروض|تقدير|خصم|قسيمة|مؤهل|تغطية|مراجعة)[^\n\r]{0,80}(?:(?:قسط\s+)?(?:التأمين|تأمين)|وثيقة\s+تأمين))""",
+        RegexOption.IGNORE_CASE,
+    )
     private val rentPaymentWords = Regex(
         """(?:\brent\s+payment\b|\bejar\s+(?:rent\s+)?payment\b|(?:سداد|دفع|خصم)\s+(?:دفعة\s+)?(?:الإيجار|ايجار|إيجار)|(?:الإيجار|ايجار|إيجار)\s+(?:تم\s+)?(?:سداد|دفع))""",
         RegexOption.IGNORE_CASE,
@@ -559,6 +563,7 @@ class GenericBankNotificationTemplate : BankTemplate {
         if (debtReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (utilityBillReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (condoFeeNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
+        if (insurancePremiumNonPostedWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (recurringExpenseReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (telecomRechargeReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored
         if (publicServiceReminderWords.containsMatchIn(normalized)) return ParseResult.Ignored

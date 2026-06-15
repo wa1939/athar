@@ -1140,6 +1140,20 @@ class GenericBankNotificationTemplateTest {
     }
 
     @Test
+    fun `ignores insurance premium quote offer and estimate notifications with amounts`() {
+        val nonPosted = listOf(
+            "Policy premium quote AED 500.00 is ready",
+            "Insurance offer SAR 650.00 for your vehicle policy",
+            "Your insurance estimate is USD 900.00",
+            "عرض تأمين بمبلغ ٩٠٠ ر.س",
+        )
+
+        nonPosted.forEach { body ->
+            assertThat(parser.parse(event("notification:com.emiratesnbd.android", body))).isEqualTo(ParseResult.Ignored)
+        }
+    }
+
+    @Test
     fun `parses generic rent payment notification with shared label`() {
         val result = parser.parse(
             event("notification:com.alrajhibank.alrajhimobile", "Rent payment SAR 2,500.00 completed"),
