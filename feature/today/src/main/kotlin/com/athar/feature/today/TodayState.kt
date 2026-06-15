@@ -22,6 +22,7 @@ data class TodayState(
     val today: ImmutableList<Transaction>,
     val recent: ImmutableList<Transaction>,
     val pending: ImmutableList<Transaction>,
+    val pendingCategorySuggestions: ImmutableMap<String, PendingCategorySuggestion>,
     val dismissedToday: ImmutableList<Transaction>,
     val categoryLabels: ImmutableMap<String, CategoryLabel>,
     val goalNudge: TodayGoalNudge?,
@@ -44,6 +45,7 @@ data class TodayState(
             today = persistentListOf(),
             recent = persistentListOf(),
             pending = persistentListOf(),
+            pendingCategorySuggestions = persistentMapOf(),
             dismissedToday = persistentListOf(),
             categoryLabels = persistentMapOf(),
             goalNudge = null,
@@ -51,6 +53,12 @@ data class TodayState(
         )
     }
 }
+
+@Immutable
+data class PendingCategorySuggestion(
+    val categoryId: String,
+    val useCount: Int,
+)
 
 @Immutable
 data class TodayGoalNudge(
@@ -65,6 +73,7 @@ data class TodayGoalNudge(
 sealed interface TodayEvent {
     data class ConfirmPending(val id: String) : TodayEvent
     data class DismissPending(val id: String) : TodayEvent
+    data class ApplyPendingCategorySuggestion(val id: String) : TodayEvent
     data class OpenTransaction(val id: String) : TodayEvent
     data object AddManual : TodayEvent
     data object OpenHistory : TodayEvent

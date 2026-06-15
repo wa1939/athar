@@ -110,6 +110,8 @@
     <!-- Pending tray -->
     <string name="today_pending_title" formatted="true">Pending · %1$d</string>
     <string name="today_pending_subtle">Swipe to confirm or dismiss. Or use the bulk actions below.</string>
+    <string name="today_pending_category_suggestion" formatted="true">Suggested from history (%2$d): %1$s</string>
+    <string name="today_pending_apply_suggestion">Apply</string>
     <string name="today_pending_more" formatted="true">+%1$d more. Use bulk actions to clear them at once.</string>
 
     <!-- Bulk actions -->

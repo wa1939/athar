@@ -37,8 +37,10 @@ import com.athar.core.designsystem.component.AtharNumber
 import com.athar.core.designsystem.component.AtharSwipeRow
 import com.athar.core.designsystem.component.AtharText
 import com.athar.core.designsystem.theme.AtharTheme
+import kotlinx.collections.immutable.ImmutableMap
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.util.Locale
 
 @Composable
 fun TodayScreen(
@@ -390,11 +392,12 @@ private fun PendingTray(
                 onConfirm = { onEvent(TodayEvent.ConfirmPending(tx.id)) },
                 onDismiss = { onEvent(TodayEvent.DismissPending(tx.id)) },
             ) {
-                AtharListRow(
-                    title = tx.merchant,
-                    subtitle = transactionCategoryLabel(tx, state.categoryLabels),
-                    trailing = tx.amount,
-                    onClick = { onEvent(TodayEvent.OpenTransaction(tx.id)) },
+                PendingTransactionRow(
+                    tx = tx,
+                    suggestion = state.pendingCategorySuggestions[tx.id],
+                    categoryLabels = state.categoryLabels,
+                    onOpen = { onEvent(TodayEvent.OpenTransaction(tx.id)) },
+                    onApplySuggestion = { onEvent(TodayEvent.ApplyPendingCategorySuggestion(tx.id)) },
                 )
             }
         }
@@ -405,6 +408,82 @@ private fun PendingTray(
                 color = theme.colors.muted,
             )
         }
+    }
+}
+
+@Composable
+private fun PendingTransactionRow(
+    tx: Transaction,
+    suggestion: PendingCategorySuggestion?,
+    categoryLabels: ImmutableMap<String, CategoryLabel>,
+    onOpen: () -> Unit,
+    onApplySuggestion: () -> Unit,
+) {
+    val theme = AtharTheme
+    Column {
+        AtharListRow(
+            title = tx.merchant,
+            subtitle = transactionCategoryLabel(tx, categoryLabels),
+            trailing = tx.amount,
+            onClick = onOpen,
+        )
+        if (suggestion != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = theme.spacing.m,
+                        end = theme.spacing.m,
+                        bottom = theme.spacing.s,
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+            ) {
+                AtharText(
+                    text = stringResource(
+                        R.string.today_pending_category_suggestion,
+                        categoryLabelText(suggestion.categoryId, categoryLabels),
+                        suggestion.useCount,
+                    ),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                    modifier = Modifier.weight(1f),
+                )
+                SuggestionButton(onClick = onApplySuggestion)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SuggestionButton(onClick: () -> Unit) {
+    val theme = AtharTheme
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(theme.colors.olive)
+            .clickable(onClick = onClick)
+            .padding(horizontal = theme.spacing.m, vertical = theme.spacing.xs),
+        contentAlignment = Alignment.Center,
+    ) {
+        AtharText(
+            text = stringResource(R.string.today_pending_apply_suggestion),
+            style = theme.typography.caption,
+            color = theme.colors.parchment,
+        )
+    }
+}
+
+private fun categoryLabelText(
+    categoryId: String,
+    labels: ImmutableMap<String, CategoryLabel>,
+): String {
+    val label = labels[categoryId] ?: return categoryId
+    val isArabic = Locale.getDefault().language == "ar"
+    return if (isArabic) {
+        label.nameAr.ifBlank { label.name }
+    } else {
+        label.name.ifBlank { label.nameAr }
     }
 }
 

@@ -111,6 +111,8 @@
     <!-- Pending tray -->
     <string name="today_pending_title" formatted="true">بانتظار التأكيد · %1$d</string>
     <string name="today_pending_subtle">اسحب للتأكيد أو التجاهل. أو استخدم الإجراءات الجماعية أدناه.</string>
+    <string name="today_pending_category_suggestion" formatted="true">اقتراح من السجل (%2$d): %1$s</string>
+    <string name="today_pending_apply_suggestion">تطبيق</string>
     <string name="today_pending_more" formatted="true">+%1$d حركة أخرى. استخدم الإجراءات الجماعية لمعالجتها دفعة واحدة.</string>
 
     <!-- Bulk actions -->

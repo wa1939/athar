@@ -7,6 +7,8 @@ import com.athar.core.common.time.Period
 import com.athar.core.domain.calc.GoalCalc
 import com.athar.core.domain.model.AccountBalance
 import com.athar.core.domain.model.AccountType
+import com.athar.core.domain.model.Category
+import com.athar.core.domain.model.CategoryKind
 import com.athar.core.domain.model.NetWorth
 import com.athar.core.domain.model.PatternType
 import com.athar.core.domain.model.Transaction
@@ -21,6 +23,7 @@ import com.athar.core.domain.repo.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -60,9 +63,10 @@ class TodayViewModel @Inject constructor(
                             transactions.observeByPeriod(period, status = TxStatus.CONFIRMED),
                             transactions.observePending(),
                             transactions.observeByPeriod(period, status = TxStatus.DISMISSED),
+                            transactions.observeAll(),
                             accounts.observeNetWorth(currency),
-                        ) { confirmed, pending, dismissed, netWorth ->
-                            TodayInputs(confirmed, pending, dismissed, netWorth)
+                        ) { confirmed, pending, dismissed, allTransactions, netWorth ->
+                            TodayInputs(confirmed, pending, dismissed, allTransactions, netWorth)
                         },
                         categories.observeAll(kind = null, includeArchived = true),
                         transactions.observeByPeriod(goalsPeriod, status = TxStatus.CONFIRMED),
@@ -74,8 +78,10 @@ class TodayViewModel @Inject constructor(
                             confirmed = inputs.confirmed,
                             pending = inputs.pending,
                             dismissed = inputs.dismissed,
+                            allTransactions = inputs.allTransactions,
                             currency = currency,
                             netWorth = inputs.netWorth,
+                            categories = allCategories,
                             categoryLabels = allCategories.toCategoryLabels(),
                             goalNudge = deriveGoalNudge(
                                 transactions = goalTransactions,
@@ -97,6 +103,9 @@ class TodayViewModel @Inject constructor(
             }
             is TodayEvent.DismissPending -> viewModelScope.launch {
                 transactions.setStatus(event.id, TxStatus.DISMISSED)
+            }
+            is TodayEvent.ApplyPendingCategorySuggestion -> viewModelScope.launch {
+                applyPendingCategorySuggestion(event.id)
             }
             is TodayEvent.OpenTransaction, TodayEvent.AddManual, TodayEvent.OpenHistory -> Unit // UI-owned
             TodayEvent.BulkConfirmConfident -> viewModelScope.launch {
@@ -139,6 +148,21 @@ class TodayViewModel @Inject constructor(
         }
     }
 
+    private suspend fun applyPendingCategorySuggestion(id: String) {
+        val suggestion = state.value.pendingCategorySuggestions[id] ?: return
+        val tx = transactions.get(id) ?: return
+        if (tx.status != TxStatus.PENDING || !tx.categoryId.isNullOrBlank()) return
+        val category = categories.get(suggestion.categoryId)?.takeUnless { it.archived } ?: return
+        if (tx.categoryKind() != category.kind) return
+        transactions.upsert(
+            tx.copy(
+                categoryId = category.id,
+                status = TxStatus.CONFIRMED,
+                updatedAt = clock.now(),
+            ),
+        )
+    }
+
     private val _lastBackfill = MutableStateFlow<BackfillEvent?>(null)
     /**
      * Emits the last "Always categorize X as Y" backfill result so the UI can show
@@ -159,8 +183,10 @@ class TodayViewModel @Inject constructor(
         confirmed: List<Transaction>,
         pending: List<Transaction>,
         dismissed: List<Transaction>,
+        allTransactions: List<Transaction>,
         currency: String,
         netWorth: NetWorth,
+        categories: List<Category>,
         categoryLabels: ImmutableMap<String, CategoryLabel>,
         goalNudge: TodayGoalNudge?,
     ): TodayState {
@@ -187,6 +213,11 @@ class TodayViewModel @Inject constructor(
             today = todayTxns.toImmutableList(),
             recent = monthTxns.take(10).toImmutableList(),
             pending = pending.toImmutableList(),
+            pendingCategorySuggestions = buildPendingCategorySuggestions(
+                pending = pending,
+                allTransactions = allTransactions,
+                activeCategories = categories.filterNot { it.archived },
+            ),
             dismissedToday = dismissedToday.toImmutableList(),
             categoryLabels = categoryLabels,
             goalNudge = goalNudge,
@@ -253,6 +284,7 @@ class TodayViewModel @Inject constructor(
         val confirmed: List<Transaction>,
         val pending: List<Transaction>,
         val dismissed: List<Transaction>,
+        val allTransactions: List<Transaction>,
         val netWorth: NetWorth,
     )
 
@@ -265,3 +297,102 @@ class TodayViewModel @Inject constructor(
         )
     }
 }
+
+internal fun buildPendingCategorySuggestions(
+    pending: List<Transaction>,
+    allTransactions: List<Transaction>,
+    activeCategories: List<Category>,
+): ImmutableMap<String, PendingCategorySuggestion> {
+    val activeCategoryIdsByKind = activeCategories
+        .filterNot { it.archived }
+        .groupBy { it.kind }
+        .mapValues { (_, rows) -> rows.mapTo(mutableSetOf()) { it.id } }
+    val confirmedCategoryCounts = allTransactions.asSequence()
+        .filter { it.status == TxStatus.CONFIRMED }
+        .mapNotNull { tx ->
+            val kind = tx.categoryKind() ?: return@mapNotNull null
+            val categoryId = tx.categoryId?.trim()?.takeIf(String::isNotEmpty) ?: return@mapNotNull null
+            if (categoryId !in activeCategoryIdsByKind[kind].orEmpty()) return@mapNotNull null
+            val merchantKey = tx.merchantSuggestionKey()
+                ?.takeIf { it.isSpecificMerchantKey() }
+                ?: return@mapNotNull null
+            PendingSuggestionCategoryHit(
+                key = PendingSuggestionMerchantKey(merchantKey = merchantKey, categoryKind = kind),
+                categoryId = categoryId,
+            )
+        }
+        .groupingBy { it }
+        .eachCount()
+        .entries
+        .groupBy(keySelector = { it.key.key }, valueTransform = { it.key.categoryId to it.value })
+        .mapValues { (_, rows) -> rows.toMap() }
+
+    return pending.mapNotNull { tx ->
+        if (tx.status != TxStatus.PENDING || !tx.categoryId.isNullOrBlank()) return@mapNotNull null
+        val kind = tx.categoryKind() ?: return@mapNotNull null
+        val merchantKey = tx.merchantSuggestionKey()
+            ?.takeIf { it.isSpecificMerchantKey() }
+            ?: return@mapNotNull null
+        if (activeCategoryIdsByKind[kind].isNullOrEmpty()) return@mapNotNull null
+
+        val categoryCounts = confirmedCategoryCounts[
+            PendingSuggestionMerchantKey(merchantKey = merchantKey, categoryKind = kind),
+        ].orEmpty()
+        val category = categoryCounts.entries.singleOrNull() ?: return@mapNotNull null
+        tx.id to PendingCategorySuggestion(
+            categoryId = category.key,
+            useCount = category.value,
+        )
+    }.toMap().toPersistentMap()
+}
+
+private data class PendingSuggestionMerchantKey(
+    val merchantKey: String,
+    val categoryKind: CategoryKind,
+)
+
+private data class PendingSuggestionCategoryHit(
+    val key: PendingSuggestionMerchantKey,
+    val categoryId: String,
+)
+
+private fun Transaction.categoryKind(): CategoryKind? = when (type) {
+    TxType.EXPENSE -> CategoryKind.EXPENSE
+    TxType.INCOME -> CategoryKind.INCOME
+    TxType.TRANSFER -> null
+}
+
+private fun Transaction.merchantSuggestionKey(): String? =
+    merchantNormalized
+        .ifBlank { merchant }
+        .trim()
+        .lowercase()
+        .takeIf { it.isNotBlank() }
+
+private fun String.isSpecificMerchantKey(): Boolean {
+    if (length < 3) return false
+    if (all { it.isDigit() || it.isWhitespace() || it == '-' || it == '+' }) return false
+    if (this in genericMerchantKeys) return false
+    if (genericMerchantKeys.any { this == it || startsWith("$it ") }) return false
+    return true
+}
+
+private val genericMerchantKeys = setOf(
+    "unknown",
+    "merchant",
+    "bank",
+    "cash",
+    "purchase",
+    "online purchase",
+    "transfer",
+    "payment",
+    "manual adjustment",
+    "غير معروف",
+    "تاجر",
+    "بنك",
+    "شراء",
+    "تحويل",
+    "دفع",
+    "تسوية",
+    "تسوية يدوية",
+)

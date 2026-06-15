@@ -164,6 +164,175 @@ class TodayViewModelTest {
 
         assertThat(state.categoryLabels["cat-coffee"]).isEqualTo(CategoryLabel(name = "Coffee", nameAr = "قهوة"))
     }
+
+    @Test
+    fun `state suggests unambiguous confirmed category for pending same merchant`() = runTest(mainDispatcher) {
+        val cafe = Fixtures.category(
+            id = "cat-cafe",
+            name = "Cafe",
+            nameAr = "مقهى",
+            kind = CategoryKind.EXPENSE,
+        )
+        val viewModel = TodayViewModel(
+            transactions = FakeTransactionRepository(
+                currentConfirmed = listOf(
+                    transaction(id = "brew-1", type = TxType.EXPENSE, amount = Money.of("18")).copy(
+                        merchant = "Brew Lab",
+                        merchantNormalized = "brew lab",
+                        categoryId = "cat-cafe",
+                    ),
+                    transaction(id = "brew-2", type = TxType.EXPENSE, amount = Money.of("20")).copy(
+                        merchant = "Brew Lab",
+                        merchantNormalized = "brew lab",
+                        categoryId = "cat-cafe",
+                    ),
+                ),
+                pending = listOf(
+                    transaction(id = "pending-brew", type = TxType.EXPENSE, amount = Money.of("22")).copy(
+                        merchant = "Brew Lab",
+                        merchantNormalized = "brew lab",
+                        categoryId = null,
+                        status = TxStatus.PENDING,
+                    ),
+                ),
+            ),
+            rules = RecordingCategoryRuleRepository(),
+            categories = TodayFakeCategoryRepository(listOf(cafe)),
+            prefs = FakeUserPreferencesRepository(savingsTarget = 30, emergencyMonths = 6),
+            accounts = FakeAccountRepository(liquidBalance = Money.of("5000")),
+            clock = FixedClock,
+        )
+
+        val state = viewModel.state.first { !it.isLoading }
+
+        assertThat(state.pendingCategorySuggestions).containsEntry(
+            "pending-brew",
+            PendingCategorySuggestion(categoryId = "cat-cafe", useCount = 2),
+        )
+    }
+
+    @Test
+    fun `pending category suggestions hide conflicting generic and inactive history`() {
+        val cafe = Fixtures.category(
+            id = "cat-cafe",
+            name = "Cafe",
+            nameAr = "مقهى",
+            kind = CategoryKind.EXPENSE,
+        )
+        val grocery = Fixtures.category(
+            id = "cat-grocery",
+            name = "Grocery",
+            nameAr = "تموين",
+            kind = CategoryKind.EXPENSE,
+        )
+        val archived = Fixtures.category(
+            id = "cat-archived",
+            name = "Old",
+            nameAr = "قديم",
+            kind = CategoryKind.EXPENSE,
+        ).copy(archived = true)
+
+        val suggestions = buildPendingCategorySuggestions(
+            pending = listOf(
+                transaction(id = "pending-conflict", type = TxType.EXPENSE, amount = Money.of("22")).copy(
+                    merchant = "Brew Lab",
+                    merchantNormalized = "brew lab",
+                    categoryId = null,
+                    status = TxStatus.PENDING,
+                ),
+                transaction(id = "pending-generic", type = TxType.EXPENSE, amount = Money.of("12")).copy(
+                    merchant = "Bank",
+                    merchantNormalized = "bank",
+                    categoryId = null,
+                    status = TxStatus.PENDING,
+                ),
+                transaction(id = "pending-archived", type = TxType.EXPENSE, amount = Money.of("10")).copy(
+                    merchant = "Old Shop",
+                    merchantNormalized = "old shop",
+                    categoryId = null,
+                    status = TxStatus.PENDING,
+                ),
+            ),
+            allTransactions = listOf(
+                transaction(id = "brew-cafe", type = TxType.EXPENSE, amount = Money.of("18")).copy(
+                    merchant = "Brew Lab",
+                    merchantNormalized = "brew lab",
+                    categoryId = "cat-cafe",
+                ),
+                transaction(id = "brew-grocery", type = TxType.EXPENSE, amount = Money.of("20")).copy(
+                    merchant = "Brew Lab",
+                    merchantNormalized = "brew lab",
+                    categoryId = "cat-grocery",
+                ),
+                transaction(id = "bank-cafe", type = TxType.EXPENSE, amount = Money.of("12")).copy(
+                    merchant = "Bank",
+                    merchantNormalized = "bank",
+                    categoryId = "cat-cafe",
+                ),
+                transaction(id = "old-archived", type = TxType.EXPENSE, amount = Money.of("10")).copy(
+                    merchant = "Old Shop",
+                    merchantNormalized = "old shop",
+                    categoryId = "cat-archived",
+                ),
+            ),
+            activeCategories = listOf(cafe, grocery, archived).filterNot { it.archived },
+        )
+
+        assertThat(suggestions).doesNotContainKey("pending-conflict")
+        assertThat(suggestions).doesNotContainKey("pending-generic")
+        assertThat(suggestions).doesNotContainKey("pending-archived")
+    }
+
+    @Test
+    fun `apply pending category suggestion confirms one row without learning a rule`() = runTest(mainDispatcher) {
+        val cafe = Fixtures.category(
+            id = "cat-cafe",
+            name = "Cafe",
+            nameAr = "مقهى",
+            kind = CategoryKind.EXPENSE,
+        )
+        val transactions = FakeTransactionRepository(
+            currentConfirmed = listOf(
+                transaction(id = "brew-confirmed", type = TxType.EXPENSE, amount = Money.of("18")).copy(
+                    merchant = "Brew Lab",
+                    merchantNormalized = "brew lab",
+                    categoryId = "cat-cafe",
+                ),
+            ),
+            pending = listOf(
+                transaction(id = "pending-brew", type = TxType.EXPENSE, amount = Money.of("22")).copy(
+                    merchant = "Brew Lab",
+                    merchantNormalized = "brew lab",
+                    categoryId = null,
+                    status = TxStatus.PENDING,
+                ),
+            ),
+        )
+        val rules = RecordingCategoryRuleRepository()
+        val viewModel = TodayViewModel(
+            transactions = transactions,
+            rules = rules,
+            categories = TodayFakeCategoryRepository(listOf(cafe)),
+            prefs = FakeUserPreferencesRepository(savingsTarget = 30, emergencyMonths = 6),
+            accounts = FakeAccountRepository(liquidBalance = Money.of("5000")),
+            clock = FixedClock,
+        )
+        viewModel.state.first { !it.isLoading }
+
+        viewModel.onEvent(TodayEvent.ApplyPendingCategorySuggestion("pending-brew"))
+        advanceUntilIdle()
+
+        assertThat(transactions.upserts.single()).isEqualTo(
+            transaction(id = "pending-brew", type = TxType.EXPENSE, amount = Money.of("22")).copy(
+                merchant = "Brew Lab",
+                merchantNormalized = "brew lab",
+                categoryId = "cat-cafe",
+                status = TxStatus.CONFIRMED,
+                updatedAt = FixedClock.now(),
+            ),
+        )
+        assertThat(rules.learned).isEmpty()
+    }
 }
 
 private class FakeTransactionRepository(
@@ -190,7 +359,9 @@ private class FakeTransactionRepository(
 
     override fun observePending(): Flow<List<Transaction>> = flowOf(pending)
     override fun observeAll(): Flow<List<Transaction>> = flowOf(currentConfirmed + goalConfirmed + pending + dismissed)
-    override suspend fun get(id: String): Transaction? = null
+    override suspend fun get(id: String): Transaction? =
+        upserts.lastOrNull { it.id == id }
+            ?: (currentConfirmed + goalConfirmed + pending + dismissed).firstOrNull { it.id == id }
     override suspend fun upsert(transaction: Transaction) {
         upserts += transaction
     }
