@@ -20,7 +20,7 @@ class AppDataInitializer @Inject internal constructor(
     private val tmoapSeed: TmoapSeed,
 ) {
     suspend fun initialize(seedTmoap: Boolean = false) {
-        categorySeed.seedIfEmpty()
+        categorySeed.seedMissingBundledCategories()
         accountSeed.seedManualIfMissing()
         ruleSeed.seedIfEmpty()
         tmoapSeed.seedIfRequested(seedTmoap)

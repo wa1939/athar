@@ -71,6 +71,7 @@ object WidgetDataLoader {
             income = incomeSum,
             expense = expenseSum,
             netWorth = netWorth.total,
+            localeTag = e.prefs().appLocale().first(),
         )
     }
 
@@ -92,6 +93,7 @@ object WidgetDataLoader {
         return TodaySnapshot(
             todayNet = todayNet,
             pendingCount = pending.size,
+            localeTag = e.prefs().appLocale().first(),
         )
     }
 
@@ -101,6 +103,7 @@ object WidgetDataLoader {
         return PendingSnapshot(
             totalCount = pending.size,
             head = pending.take(max),
+            localeTag = e.prefs().appLocale().first(),
         )
     }
 
@@ -112,15 +115,18 @@ object WidgetDataLoader {
         val income: Money,
         val expense: Money,
         val netWorth: Money,
+        val localeTag: String,
     )
 
     data class TodaySnapshot(
         val todayNet: Money,
         val pendingCount: Int,
+        val localeTag: String,
     )
 
     data class PendingSnapshot(
         val totalCount: Int,
         val head: List<Transaction>,
+        val localeTag: String,
     )
 }

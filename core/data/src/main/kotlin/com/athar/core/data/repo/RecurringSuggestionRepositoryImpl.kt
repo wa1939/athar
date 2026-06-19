@@ -6,6 +6,7 @@ import com.athar.core.data.db.dao.TransactionDao
 import com.athar.core.data.db.entity.TransactionEntity
 import com.athar.core.domain.model.RecurringSuggestion
 import com.athar.core.domain.model.TxType
+import com.athar.core.domain.model.specificMerchantKey
 import com.athar.core.domain.repo.RecurringSuggestionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -54,9 +55,18 @@ internal class RecurringSuggestionRepositoryImpl @Inject constructor(
         existingKeys: Set<String>,
     ): List<RecurringSuggestion> {
         if (txs.size < MIN_OCCURRENCES) return emptyList()
-        // Group by (merchantNormalized, amountMinor, currency) — strict same-amount match.
+        // Group by (specific merchant, amountMinor, currency) — strict same-amount match.
         val groups: Map<Triple<String, Long, String>, List<TransactionEntity>> =
-            txs.groupBy { Triple(it.merchantNormalized, it.amountMinor, it.currency) }
+            txs.mapNotNull { tx ->
+                val merchantKey = specificMerchantKey(
+                    merchantNormalized = tx.merchantNormalized,
+                    merchant = tx.merchant,
+                ) ?: return@mapNotNull null
+                merchantKey to tx
+            }.groupBy(
+                keySelector = { (merchantKey, tx) -> Triple(merchantKey, tx.amountMinor, tx.currency) },
+                valueTransform = { (_, tx) -> tx },
+            )
 
         return groups.mapNotNull { (key, list) ->
             if (list.size < MIN_OCCURRENCES) return@mapNotNull null
@@ -79,6 +89,8 @@ internal class RecurringSuggestionRepositoryImpl @Inject constructor(
                 merchantNormalized = merchantNorm,
                 amount = Money.ofMinor(amountMinor, currency),
                 type = typeEnum,
+                suggestedAccountId = unambiguousAccountId(list),
+                suggestedCategoryId = unambiguousCategoryId(list),
                 occurrenceCount = list.size,
                 typicalDayOfMonth = typicalDom,
                 lastSeen = latest.date,
@@ -87,6 +99,23 @@ internal class RecurringSuggestionRepositoryImpl @Inject constructor(
         }
             .sortedWith(compareByDescending<RecurringSuggestion> { it.occurrenceCount }.thenByDescending { it.lastSeen })
             .take(MAX_SUGGESTIONS)
+    }
+
+    private fun unambiguousAccountId(list: List<TransactionEntity>): String? =
+        unambiguousNonBlankValue(list) { it.accountId }
+
+    private fun unambiguousCategoryId(list: List<TransactionEntity>): String? {
+        return unambiguousNonBlankValue(list) { it.categoryId }
+    }
+
+    private fun unambiguousNonBlankValue(
+        list: List<TransactionEntity>,
+        value: (TransactionEntity) -> String?,
+    ): String? {
+        val values = list.map { tx ->
+            value(tx)?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        }
+        return values.distinct().singleOrNull()
     }
 
     private fun computeNextRunFromLast(lastSeen: LocalDate, dayOfMonth: Int): LocalDate {

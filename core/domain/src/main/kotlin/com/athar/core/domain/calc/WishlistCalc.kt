@@ -1,8 +1,14 @@
 package com.athar.core.domain.calc
 
 import com.athar.core.common.money.Money
+import com.athar.core.domain.model.Transaction
+import com.athar.core.domain.model.TxType
+import com.athar.core.domain.model.WishlistItem
+import com.athar.core.domain.model.WishlistStatus
+import com.athar.core.domain.model.isReconciliation
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.YearMonth
 import kotlin.math.ceil
 
 /**
@@ -13,6 +19,37 @@ object WishlistCalc {
 
     private const val LOOKBACK_MONTHS = 3
     private val LOOKBACK = BigDecimal(LOOKBACK_MONTHS)
+    private const val MAX_REASONABLE_MONTHS = 36
+
+    data class Projection(
+        val remaining: Money,
+        val status: WishlistStatus,
+        val monthsNeeded: Int?,
+        val projectedMonth: YearMonth?,
+        val targetMonth: YearMonth?,
+        val monthlyRequired: Money?,
+        val targetFeasible: Boolean?,
+    )
+
+    data class Summary(
+        val totalRemaining: Money,
+        val readyNowCount: Int,
+        val waitingCount: Int,
+        val infeasibleCount: Int,
+        val nextReachableMonth: YearMonth?,
+        val targetMonthlyRequired: Money,
+    ) {
+        companion object {
+            fun empty(currency: String = Money.SAR): Summary = Summary(
+                totalRemaining = Money.zero(currency),
+                readyNowCount = 0,
+                waitingCount = 0,
+                infeasibleCount = 0,
+                nextReachableMonth = null,
+                targetMonthlyRequired = Money.zero(currency),
+            )
+        }
+    }
 
     /**
      * Monthly capacity = `(income - expense) / 3`, floored at zero. The denominator is
@@ -28,6 +65,19 @@ object WishlistCalc {
         return Money.of(per, net.currency)
     }
 
+    fun monthlyCapacityFromTransactions(transactions: Iterable<Transaction>, currency: String): Money {
+        val operating = transactions.filterNot { it.isReconciliation() }
+        val income = Money.sumAmounts(
+            operating.filter { it.type == TxType.INCOME }.map { it.amount },
+            currency,
+        )
+        val expense = Money.sumAmounts(
+            operating.filter { it.type == TxType.EXPENSE }.map { it.amount },
+            currency,
+        )
+        return monthlyCapacity(income, expense)
+    }
+
     /**
      * Months needed to save [remaining] at [capacity] per month.
      * Returns 0 if already saved, null if capacity is zero or negative.
@@ -37,4 +87,102 @@ object WishlistCalc {
         capacity.amount.signum() <= 0 -> null
         else -> ceil(remaining.amount.toDouble() / capacity.amount.toDouble()).toInt()
     }
+
+    /**
+     * Projects a single wish from the user's current monthly capacity. If a desired
+     * horizon is set, the wish is only "feasible" when capacity can reach it by the
+     * target month. Without a desired horizon, anything beyond [MAX_REASONABLE_MONTHS]
+     * remains infeasible to avoid presenting unrealistic long-tail promises.
+     */
+    fun project(item: WishlistItem, capacity: Money, currentMonth: YearMonth): Projection {
+        val remaining = item.cost - item.currentSaved
+        if (remaining.amount.signum() <= 0) {
+            return Projection(
+                remaining = Money.zero(item.cost.currency),
+                status = WishlistStatus.Now,
+                monthsNeeded = 0,
+                projectedMonth = currentMonth,
+                targetMonth = targetMonth(item),
+                monthlyRequired = monthlyRequired(remaining, item.desiredMonths),
+                targetFeasible = true,
+            )
+        }
+
+        val targetMonth = targetMonth(item)
+        val monthlyRequired = monthlyRequired(remaining, item.desiredMonths)
+        if (capacity.amount.signum() <= 0) {
+            return Projection(
+                remaining = remaining,
+                status = WishlistStatus.Infeasible,
+                monthsNeeded = null,
+                projectedMonth = null,
+                targetMonth = targetMonth,
+                monthlyRequired = monthlyRequired,
+                targetFeasible = false,
+            )
+        }
+
+        val savingStart = maxOf(item.startMonth, currentMonth)
+        val savingMonths = monthsNeeded(remaining, capacity) ?: return Projection(
+            remaining = remaining,
+            status = WishlistStatus.Infeasible,
+            monthsNeeded = null,
+            projectedMonth = null,
+            targetMonth = targetMonth,
+            monthlyRequired = monthlyRequired,
+            targetFeasible = false,
+        )
+        val projectedMonth = savingStart.plusMonths(savingMonths.toLong())
+        val totalMonths = monthsBetween(currentMonth, projectedMonth)
+        val targetFeasible = targetMonth?.let { !projectedMonth.isAfter(it) }
+        val status = when {
+            targetFeasible == false -> WishlistStatus.Infeasible
+            targetMonth == null && totalMonths > MAX_REASONABLE_MONTHS -> WishlistStatus.Infeasible
+            else -> WishlistStatus.WaitUntil(projectedMonth)
+        }
+
+        return Projection(
+            remaining = remaining,
+            status = status,
+            monthsNeeded = if (status is WishlistStatus.Infeasible) null else totalMonths,
+            projectedMonth = projectedMonth,
+            targetMonth = targetMonth,
+            monthlyRequired = monthlyRequired,
+            targetFeasible = targetFeasible,
+        )
+    }
+
+    fun summarize(projections: Iterable<Projection>, currency: String = Money.SAR): Summary {
+        val list = projections.toList()
+        if (list.isEmpty()) return Summary.empty(currency)
+
+        val totalRemaining = Money.sumAmounts(list.map { it.remaining }, currency)
+        val targetMonthlyRequired = Money.sumAmounts(list.mapNotNull { it.monthlyRequired }, currency)
+        return Summary(
+            totalRemaining = totalRemaining,
+            readyNowCount = list.count { it.status == WishlistStatus.Now },
+            waitingCount = list.count { it.status is WishlistStatus.WaitUntil },
+            infeasibleCount = list.count { it.status == WishlistStatus.Infeasible },
+            nextReachableMonth = list.mapNotNull { projection ->
+                projection.projectedMonth.takeIf { projection.status is WishlistStatus.WaitUntil }
+            }.minOrNull(),
+            targetMonthlyRequired = targetMonthlyRequired,
+        )
+    }
+
+    private fun targetMonth(item: WishlistItem): YearMonth? =
+        item.desiredMonths?.takeIf { it > 0 }?.let { item.startMonth.plusMonths(it.toLong()) }
+
+    private fun monthlyRequired(remaining: Money, desiredMonths: Int?): Money? {
+        val months = desiredMonths?.takeIf { it > 0 } ?: return null
+        val amount = if (remaining.amount.signum() <= 0) {
+            BigDecimal.ZERO
+        } else {
+            remaining.amount.divide(BigDecimal(months), 2, RoundingMode.HALF_EVEN)
+        }
+        return Money.of(amount, remaining.currency)
+    }
+
+    private fun monthsBetween(start: YearMonth, end: YearMonth): Int =
+        ((end.year - start.year) * 12 + (end.monthValue - start.monthValue)).coerceAtLeast(0)
 }

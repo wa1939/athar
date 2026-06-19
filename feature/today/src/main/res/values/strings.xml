@@ -23,6 +23,13 @@
     <!-- Captions -->
     <string name="today_caption_savings_rate" formatted="true">معدّل الادخار · %1$s٪</string>
     <string name="today_caption_net_worth_mixed">الثروة بعملات متعددة · بدون تحويل</string>
+    <string name="today_goals_nudge_title">فحص الأهداف</string>
+    <string name="today_goals_savings_on_track" formatted="true">هدف الادخار مكتمل · %1$s٪ / %2$d٪</string>
+    <string name="today_goals_savings_below" formatted="true">هدف الادخار · %1$s٪ / %2$d٪</string>
+    <string name="today_goals_savings_waiting">هدف الادخار · أضف دخلاً لقياسه</string>
+    <string name="today_goals_emergency_on_track" formatted="true">صندوق الطوارئ مكتمل · %1$s / %2$d شهر</string>
+    <string name="today_goals_emergency_below" formatted="true">صندوق الطوارئ · %1$s / %2$d شهر</string>
+    <string name="today_goals_emergency_waiting">صندوق الطوارئ · أضف مصاريف لتقديره</string>
 
     <!-- Sections -->
     <string name="today_section_today">حركات اليوم</string>
@@ -47,8 +54,51 @@
     <string name="history_type_expense">مصاريف</string>
     <string name="history_type_income">دخل</string>
     <string name="history_type_transfer">تحويلات</string>
+    <string name="history_source_all">كل المصادر</string>
+    <string name="history_source_sms">رسائل</string>
+    <string name="history_source_notification">إشعارات</string>
+    <string name="history_source_manual">يدوي</string>
+    <string name="history_source_import">استيراد</string>
+    <string name="history_source_recurring">متكرر</string>
+    <string name="history_source_share">مشاركة</string>
+    <string name="history_category_all">كل التصنيفات</string>
+    <string name="history_category_uncategorized">غير مصنفة</string>
+    <string name="history_category_repeated_uncategorized">متكرر بلا تصنيف</string>
+    <string name="history_category_categorized">مصنفة</string>
+    <string name="history_row_subtitle" formatted="true">%1$s · %2$s · %3$s · %4$s · %5$s</string>
+    <string name="history_row_subtitle_with_repeated_count" formatted="true">%1$s · نفس التاجر: %2$d</string>
     <string name="history_count" formatted="true">%1$d حركة</string>
     <string name="history_empty">لا حركات تطابق هذا البحث.</string>
+    <string name="history_bulk_select">تحديد</string>
+    <string name="history_bulk_done">تم</string>
+    <string name="history_bulk_selected" formatted="true">المحدد: %1$d</string>
+    <string name="history_bulk_selected_merchant" formatted="true">التاجر المحدد: %1$s · %2$d</string>
+    <string name="history_bulk_select_rows">انقر الحركات لتحديدها.</string>
+    <string name="history_bulk_mixed_types">حدد مصاريف فقط أو دخلًا فقط.</string>
+    <string name="history_bulk_no_eligible">التحويلات لا تحتاج تصنيفًا.</string>
+    <string name="history_bulk_ready" formatted="true">جاهز لتصنيف %1$d حركة.</string>
+    <string name="history_bulk_ready_with_skips" formatted="true">جاهز لتصنيف %1$d حركة. ستبقى %2$d تحويلات دون تغيير.</string>
+    <string name="history_bulk_select_top_repeated_group" formatted="true">أكبر مجموعة (%1$d)</string>
+    <string name="history_bulk_apply_top_suggestion" formatted="true">تطبيق %1$s على الأكبر (%2$d)</string>
+    <string name="history_bulk_apply_single_safe_repeated_suggestion" formatted="true">تطبيق %1$s الآمن (%2$d)</string>
+    <string name="history_bulk_apply_safe_repeated_suggestions" formatted="true">تطبيق المجموعات الآمنة (%1$d)</string>
+    <string name="history_bulk_safe_repeated_suggestions_summary" formatted="true">اقتراحات آمنة: %2$d حركة عبر %1$d مجموعات.</string>
+    <string name="history_bulk_select_visible">تحديد الظاهر</string>
+    <string name="history_bulk_select_same_merchant">نفس التاجر</string>
+    <string name="history_bulk_clear">مسح</string>
+    <string name="history_bulk_apply_suggestion" formatted="true">تطبيق %1$s</string>
+    <string name="history_bulk_category">التصنيف</string>
+    <string name="history_bulk_category_title">اختر التصنيف</string>
+    <string name="history_bulk_category_context" formatted="true">سيُطبق على %2$d حركة من %1$s</string>
+    <string name="history_bulk_category_suggestion" formatted="true">اقتراح من سجل نفس التاجر (%2$d): %1$s</string>
+    <string name="history_bulk_cancel">إلغاء</string>
+    <string name="history_bulk_apply">تطبيق</string>
+    <string name="history_bulk_applied" formatted="true">حُدّثت %1$d حركة.</string>
+    <string name="history_bulk_applied_with_rule" formatted="true">حُدّثت %1$d حركة. ستُصنّف الحركات القادمة لنفس التاجر تلقائيًا.</string>
+    <string name="history_bulk_applied_with_skips" formatted="true">حُدّثت %1$d حركة. تُركت %2$d دون تغيير.</string>
+    <string name="history_bulk_applied_with_skips_and_rule" formatted="true">حُدّثت %1$d حركة. تُركت %2$d دون تغيير. ستُصنّف الحركات القادمة لنفس التاجر تلقائيًا.</string>
+    <string name="category_backfill_applied" formatted="true">حُدّثت الحركات المطابقة لـ«%2$s»: %1$d.</string>
+    <string name="category_backfill_future" formatted="true">سيُصنّف أثر الحركات القادمة المطابقة لـ«%1$s» تلقائيًا.</string>
 
     <!-- Pending attention banner -->
     <string name="today_pending_banner" formatted="true">%1$d حركة بانتظار المراجعة</string>
@@ -58,9 +108,20 @@
     <string name="today_dismissed_banner" formatted="true">%1$d رسالة تم تجاهلها اليوم — راجعها</string>
     <string name="today_dismissed_banner_cta">انقر للمراجعة ←</string>
 
+    <!-- Repeated uncategorized backlog nudge -->
+    <string name="today_repeated_backlog_banner" formatted="true">%1$d حركة بلا تصنيف في %2$d مجموعات متكررة · أكبرها %3$d</string>
+    <string name="today_repeated_backlog_banner_cta">مراجعة المجموعات ←</string>
+
     <!-- Pending tray -->
     <string name="today_pending_title" formatted="true">بانتظار التأكيد · %1$d</string>
     <string name="today_pending_subtle">اسحب للتأكيد أو التجاهل. أو استخدم الإجراءات الجماعية أدناه.</string>
+    <string name="today_pending_category_suggestion" formatted="true">اقتراح من السجل (%2$d): %1$s</string>
+    <string name="today_pending_apply_suggestion">تطبيق</string>
+    <string name="today_pending_apply_safe_suggestions" formatted="true">تطبيق الاقتراحات الآمنة (%1$d)</string>
+    <string name="today_pending_safe_suggestions_summary" formatted="true">الأثر الآمن: %1$s</string>
+    <string name="today_pending_safe_suggestion_summary_item" formatted="true">%1$s (%2$d)</string>
+    <string name="today_pending_safe_suggestion_summary_more" formatted="true">+%1$d أخرى</string>
+    <string name="today_pending_suggestions_applied" formatted="true">تم تطبيق %1$d اقتراح آمن.</string>
     <string name="today_pending_more" formatted="true">+%1$d حركة أخرى. استخدم الإجراءات الجماعية لمعالجتها دفعة واحدة.</string>
 
     <!-- Bulk actions -->
@@ -77,12 +138,34 @@
     <string name="add_tx_segment_income">دخل</string>
     <string name="add_tx_error_amount_required">أدخل المبلغ</string>
     <string name="add_tx_error_amount_invalid">المبلغ غير صحيح</string>
+    <string name="add_tx_label_quick_entry">إدخال سريع</string>
+    <string name="add_tx_placeholder_quick_entry">دفعت 50 في ستاربكس، أو الصق نص الفاتورة</string>
+    <string name="add_tx_quick_apply">تعبئة</string>
+    <string name="add_tx_voice">تحدث</string>
+    <string name="add_tx_error_quick_entry">لم نقرأ المبلغ والتاجر</string>
+    <string name="add_tx_error_voice_unavailable">الإدخال الصوتي غير متاح على هذا الجهاز</string>
     <string name="add_tx_label_merchant">التاجر</string>
     <string name="add_tx_placeholder_merchant">مثال: ستاربكس</string>
     <string name="add_tx_error_merchant_required">أدخل اسم التاجر</string>
     <string name="add_tx_label_category">التصنيف</string>
     <string name="add_tx_error_category_required">اختر تصنيفًا</string>
     <string name="add_tx_label_notes">ملاحظات</string>
+    <string name="add_tx_receipt_title">الإيصالات</string>
+    <string name="add_tx_receipt_empty">لا يوجد إيصال</string>
+    <string name="add_tx_receipt_loading">جارٍ الاستيراد…</string>
+    <string name="add_tx_receipt_ocr_loading">جارٍ قراءة الإيصال…</string>
+    <string name="add_tx_receipt_ocr_filled">تمت تعبئة المبلغ والتاجر من الإيصال</string>
+    <string name="add_tx_receipt_ocr_no_text">تم إرفاق الإيصال؛ لم نجد المبلغ والتاجر</string>
+    <string name="add_tx_receipt_ocr_failed">تم إرفاق الإيصال؛ تعذرت قراءة النص</string>
+    <string name="add_tx_receipt_attached" formatted="true">%1$s · %2$s</string>
+    <string name="add_tx_receipt_count" formatted="true">%1$d إيصالات مرفقة</string>
+    <string name="add_tx_receipt_attach">إرفاق</string>
+    <string name="add_tx_receipt_change">تغيير</string>
+    <string name="add_tx_receipt_remove">إزالة</string>
+    <string name="add_tx_receipt_error_read">تعذرت قراءة هذا الإيصال</string>
+    <string name="add_tx_receipt_error_too_large">يجب ألا يتجاوز الإيصال 5 م.ب</string>
+    <string name="add_tx_receipt_error_unsupported">اختر صورة إيصال</string>
+    <string name="add_tx_receipt_error_save">فشل حفظ الحركة أثناء إرفاق الإيصال</string>
     <string name="add_tx_save">حفظ</string>
     <string name="add_tx_saving">جارٍ الحفظ…</string>
 
@@ -96,5 +179,16 @@
     <string name="edit_tx_learn_message" formatted="true">هل تريد أن يصنّف أثر دائمًا «%1$s» كـ«%2$s»؟</string>
     <string name="edit_tx_learn_always">دائمًا</string>
     <string name="edit_tx_learn_once">هذه المرة فقط</string>
+    <string name="edit_tx_receipt_missing">لا يوجد إيصال محفوظ لهذه الحركة</string>
+    <string name="edit_tx_receipt_view">عرض</string>
+    <string name="edit_tx_receipt_export">تصدير</string>
+    <string name="edit_tx_receipt_exported">تم حفظ نسخة من الإيصال</string>
+    <string name="edit_tx_receipt_deleted">تمت إزالة الإيصال</string>
+    <string name="edit_tx_receipt_export_failed">تعذر تصدير الإيصال</string>
+    <string name="edit_tx_receipt_delete_failed">تعذرت إزالة الإيصال</string>
+    <string name="edit_tx_receipt_view_failed">تعذر فتح الإيصال</string>
+    <string name="edit_tx_receipt_preview_title">معاينة الإيصال</string>
+    <string name="edit_tx_receipt_preview_error">تعذرت معاينة الصورة، ويمكنك تصديرها كملف.</string>
+    <string name="edit_tx_receipt_close">إغلاق</string>
 
 </resources>

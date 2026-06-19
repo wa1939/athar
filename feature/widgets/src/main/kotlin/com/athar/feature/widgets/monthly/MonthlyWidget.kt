@@ -28,9 +28,11 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import com.athar.feature.widgets.R
 import com.athar.feature.widgets.WidgetColors
 import com.athar.feature.widgets.WidgetDataLoader
 import com.athar.feature.widgets.appLaunchComponent
+import com.athar.feature.widgets.widgetLocaleContext
 
 class MonthlyWidget : GlanceAppWidget() {
 
@@ -58,9 +60,10 @@ class MonthlyWidget : GlanceAppWidget() {
             if (s == null) {
                 Text(text = "Athar", style = TextStyle(color = ColorProvider(WidgetColors.Muted)))
             } else {
+                val strings = context.widgetLocaleContext(s.localeTag)
                 Column(modifier = GlanceModifier.fillMaxSize()) {
                     Text(
-                        text = "أثر · ${s.yearMonth}",
+                        text = strings.getString(R.string.widget_monthly_title, s.yearMonth),
                         style = TextStyle(
                             color = ColorProvider(WidgetColors.Muted),
                             fontSize = 11.sp,
@@ -77,11 +80,11 @@ class MonthlyWidget : GlanceAppWidget() {
                     )
                     Spacer(modifier = GlanceModifier.height(8.dp))
                     Row(modifier = GlanceModifier.fillMaxWidth()) {
-                        Pill("Income", s.income, WidgetColors.Olive)
+                        Pill(strings.getString(R.string.widget_monthly_income), s.income, WidgetColors.Olive)
                         Spacer(modifier = GlanceModifier.width(8.dp))
-                        Pill("Expense", s.expense, WidgetColors.Ember)
+                        Pill(strings.getString(R.string.widget_monthly_expense), s.expense, WidgetColors.Ember)
                         Spacer(modifier = GlanceModifier.width(8.dp))
-                        Pill("Net worth", s.netWorth, WidgetColors.Ink)
+                        Pill(strings.getString(R.string.widget_monthly_net_worth), s.netWorth, WidgetColors.Ink)
                     }
                 }
             }

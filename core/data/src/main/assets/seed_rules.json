@@ -206,6 +206,26 @@
       "priority": 100
     },
     {
+      "pattern": "work expense",
+      "categoryId": "cat-work-expense",
+      "priority": 100
+    },
+    {
+      "pattern": "مصروفات العمل",
+      "categoryId": "cat-work-expense",
+      "priority": 100
+    },
+    {
+      "pattern": "office supplies purchase",
+      "categoryId": "cat-work-expense",
+      "priority": 100
+    },
+    {
+      "pattern": "مشتريات مكتبية",
+      "categoryId": "cat-work-expense",
+      "priority": 100
+    },
+    {
       "pattern": "salary",
       "categoryId": "cat-salary",
       "priority": 100
@@ -213,6 +233,112 @@
     {
       "pattern": "راتب",
       "categoryId": "cat-salary",
+      "priority": 100
+    },
+    {
+      "pattern": "tax refund",
+      "categoryId": "cat-tax-refund",
+      "priority": 100
+    },
+    {
+      "pattern": "استرداد ضريبي",
+      "categoryId": "cat-tax-refund",
+      "priority": 100
+    },
+    {
+      "pattern": "expense reimbursement",
+      "categoryId": "cat-reimbursements",
+      "priority": 100
+    },
+    {
+      "pattern": "تعويض مصروفات",
+      "categoryId": "cat-reimbursements",
+      "priority": 100
+    },
+    {
+      "pattern": "bonus income",
+      "categoryId": "cat-bonus",
+      "priority": 100
+    },
+    {
+      "pattern": "دخل مكافأة",
+      "categoryId": "cat-bonus",
+      "priority": 100
+    },
+    {
+      "pattern": "cashback income",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
+      "pattern": "دخل كاش باك",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
+      "pattern": "cash deposit",
+      "categoryId": "cat-other-income",
+      "priority": 100,
+      "patternType": "EXACT"
+    },
+    {
+      "pattern": "إيداع نقدي",
+      "categoryId": "cat-other-income",
+      "priority": 100
+    },
+    {
+      "pattern": "check deposit",
+      "categoryId": "cat-other-income",
+      "priority": 100
+    },
+    {
+      "pattern": "cheque deposit",
+      "categoryId": "cat-other-income",
+      "priority": 100
+    },
+    {
+      "pattern": "إيداع شيك",
+      "categoryId": "cat-other-income",
+      "priority": 100
+    },
+    {
+      "pattern": "freelance income",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
+      "pattern": "دخل عمل حر",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
+      "pattern": "rental income",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
+      "pattern": "دخل إيجار",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
+      "pattern": "dividend income",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
+      "pattern": "دخل توزيعات",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
+      "pattern": "interest income",
+      "categoryId": "cat-side-income",
+      "priority": 100
+    },
+    {
+      "pattern": "دخل فوائد",
+      "categoryId": "cat-side-income",
       "priority": 100
     },
     {
@@ -766,11 +892,6 @@
       "priority": 80
     },
     {
-      "pattern": "camel ren",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
       "pattern": "camel ste",
       "categoryId": "cat-coffee",
       "priority": 80
@@ -928,11 +1049,6 @@
     {
       "pattern": "dr max statuto",
       "categoryId": "cat-medical",
-      "priority": 80
-    },
-    {
-      "pattern": "dr solima",
-      "categoryId": "cat-side-income",
       "priority": 80
     },
     {
@@ -1166,11 +1282,6 @@
       "priority": 80
     },
     {
-      "pattern": "intl ride",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
       "pattern": "ionos inc",
       "categoryId": "cat-subscriptions",
       "priority": 80
@@ -1178,11 +1289,6 @@
     {
       "pattern": "joe the j",
       "categoryId": "cat-coffee",
-      "priority": 80
-    },
-    {
-      "pattern": "kaiian rehlah",
-      "categoryId": "cat-side-income",
       "priority": 80
     },
     {
@@ -1401,18 +1507,8 @@
       "priority": 80
     },
     {
-      "pattern": "moroccan t",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
       "pattern": "mtajer al",
       "categoryId": "cat-groceries",
-      "priority": 80
-    },
-    {
-      "pattern": "muath hijazi",
-      "categoryId": "cat-side-income",
       "priority": 80
     },
     {
@@ -2056,26 +2152,6 @@
       "priority": 80
     },
     {
-      "pattern": "ابراهيم حامدالغامدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "احسان احمد عبدالله الغامدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "احمد الغامدى",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "احمد محمد احمد نسيب",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
       "pattern": "اعادة اصدار لوحة المركبة",
       "categoryId": "cat-utilities",
       "priority": 80
@@ -2111,46 +2187,6 @@
       "priority": 80
     },
     {
-      "pattern": "تركي الشرابي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "حاتم الغادمدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "حامد بن علي بن محمد الغامدى",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "حسن منصور عمر",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "حليمه علي محمد الغامدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "حمدالنيل عبدالله",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "حنان الاحمدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "خالد الحربي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
       "pattern": "رسوم طباعة كشف الحساب",
       "categoryId": "cat-other-expense",
       "priority": 80
@@ -2163,16 +2199,6 @@
     {
       "pattern": "سداد فاتورة",
       "categoryId": "cat-utilities",
-      "priority": 80
-    },
-    {
-      "pattern": "سعيد الغامدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "سلطان حسن محمد شوباص",
-      "categoryId": "cat-side-income",
       "priority": 80
     },
     {
@@ -2196,54 +2222,10 @@
       "priority": 80
     },
     {
-      "pattern": "عبدالعزيز عبدالله حيدر المغربي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "عبدالله الشهري",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "عبدالمجيد عبدالخالق",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "فاطمه الغامدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "فيصل العويضي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
       "pattern": "كاش باك بطاقة ائتمانية",
       "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "كامل السلمي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "محمد الغامدى",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "محمد الغامدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "محمد محمد",
-      "categoryId": "cat-side-income",
-      "priority": 80
+      "priority": 80,
+      "patternType": "EXACT"
     },
     {
       "pattern": "مدفوعات وزارة الداخلية",
@@ -2257,8 +2239,8 @@
     },
     {
       "pattern": "منصة ايجار",
-      "categoryId": "cat-side-income",
-      "priority": 80
+      "categoryId": "cat-rent",
+      "priority": 90
     },
     {
       "pattern": "مهارة",
@@ -2266,23 +2248,8 @@
       "priority": 80
     },
     {
-      "pattern": "ناصر عثمان عبدالله ال عويره الكربي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "نايف محمد فيصل سعد",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
       "pattern": "نقل الملكية",
       "categoryId": "cat-utilities",
-      "priority": 80
-    },
-    {
-      "pattern": "هاني الغامدى",
-      "categoryId": "cat-side-income",
       "priority": 80
     },
     {
@@ -2296,22 +2263,7 @@
       "priority": 80
     },
     {
-      "pattern": "هناء الغامدي",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
       "pattern": "وزارة المالية",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "وضاح الغامدى",
-      "categoryId": "cat-side-income",
-      "priority": 80
-    },
-    {
-      "pattern": "وليد الغامدى",
       "categoryId": "cat-side-income",
       "priority": 80
     },
@@ -2323,26 +2275,6 @@
     {
       "pattern": "8 portion",
       "categoryId": "cat-restaurant",
-      "priority": 60
-    },
-    {
-      "pattern": "abdulelah alhazmi",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
-      "pattern": "abdullah faris",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
-      "pattern": "abdulrahman alghamdi",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
-      "pattern": "ahmed aljeaidan",
-      "categoryId": "cat-side-income",
       "priority": 60
     },
     {
@@ -2403,11 +2335,6 @@
     {
       "pattern": "asdaa",
       "categoryId": "cat-restaurant",
-      "priority": 60
-    },
-    {
-      "pattern": "aws alghamdi",
-      "categoryId": "cat-side-income",
       "priority": 60
     },
     {
@@ -2481,11 +2408,6 @@
       "priority": 60
     },
     {
-      "pattern": "fahad aldrsony",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
       "pattern": "farm vittorio emanuele",
       "categoryId": "cat-medical",
       "priority": 60
@@ -2536,16 +2458,6 @@
       "priority": 60
     },
     {
-      "pattern": "hamed alghamdi",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
-      "pattern": "hana alghamdi",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
       "pattern": "herfy1248",
       "categoryId": "cat-restaurant",
       "priority": 60
@@ -2563,16 +2475,6 @@
     {
       "pattern": "kayan aljawhrt",
       "categoryId": "cat-home-maintenance",
-      "priority": 60
-    },
-    {
-      "pattern": "khalid alsalem",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
-      "pattern": "khlooud tobigi",
-      "categoryId": "cat-side-income",
       "priority": 60
     },
     {
@@ -2636,11 +2538,6 @@
       "priority": 60
     },
     {
-      "pattern": "raghad alghamdi",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
       "pattern": "riyadh pa",
       "categoryId": "cat-entertainment",
       "priority": 60
@@ -2668,11 +2565,6 @@
     {
       "pattern": "seoul adb",
       "categoryId": "cat-restaurant",
-      "priority": 60
-    },
-    {
-      "pattern": "shadi shah",
-      "categoryId": "cat-side-income",
       "priority": 60
     },
     {
@@ -2726,21 +2618,6 @@
       "priority": 60
     },
     {
-      "pattern": "waleed alghamdi",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
-      "pattern": "waleed hamed",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
-      "pattern": "waleed hamed ali alghamdi",
-      "categoryId": "cat-side-income",
-      "priority": 60
-    },
-    {
       "pattern": "whop",
       "categoryId": "cat-subscriptions",
       "priority": 60
@@ -2751,9 +2628,1025 @@
       "priority": 60
     },
     {
-      "pattern": "حامد بن علي الغامدى",
-      "categoryId": "cat-side-income",
-      "priority": 60
+      "pattern": "%arabica",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "agoda",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "al baik",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "aldi",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "alrazi",
+      "categoryId": "cat-medical",
+      "priority": 90
+    },
+    {
+      "pattern": "anthropic",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "apple.com",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "applebee",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "appstore",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "bindawood",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "burger & lobster",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "burger king",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "cafe nero",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "centrepoint",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "coursera",
+      "categoryId": "cat-education",
+      "priority": 90
+    },
+    {
+      "pattern": "emirates",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "etihad",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "expedia",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "fitness time",
+      "categoryId": "cat-gym",
+      "priority": 90
+    },
+    {
+      "pattern": "flat iron",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "google play",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "h & m",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "h&m",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "hello bike",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "home centre",
+      "categoryId": "cat-home-maintenance",
+      "priority": 90
+    },
+    {
+      "pattern": "homecentre",
+      "categoryId": "cat-home-maintenance",
+      "priority": 90
+    },
+    {
+      "pattern": "icloud",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "joe & the juice",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "jollychic",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "kudu",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "lebara",
+      "categoryId": "cat-telecom",
+      "priority": 90
+    },
+    {
+      "pattern": "lidl",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "longchamp",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "lufthansa",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "max fashion",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "nando",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "national water",
+      "categoryId": "cat-utilities",
+      "priority": 90
+    },
+    {
+      "pattern": "nesto",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "netflix",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "openai",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "operation falafel",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "papa john",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "penny market",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "petromin",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "pizza hut",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "qatar airways",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "sainsbury",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "sarawat",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "saudi aramco",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "shahid",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "shake shack",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "shein",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "spotify",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "starzplay",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "tesco",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "texas roadhouse",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "tfl",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "tgi fri",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "the cheesecake",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "tim hortons",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "turkish airlines",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "udemy",
+      "categoryId": "cat-education",
+      "priority": 90
+    },
+    {
+      "pattern": "united pharmacy",
+      "categoryId": "cat-medical",
+      "priority": 90
+    },
+    {
+      "pattern": "virgin mobile",
+      "categoryId": "cat-telecom",
+      "priority": 90
+    },
+    {
+      "pattern": "waitrose",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "water company",
+      "categoryId": "cat-utilities",
+      "priority": 90
+    },
+    {
+      "pattern": "herfy",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "luckin",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "manner coffee",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "aldrees",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "didi taxi",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "hellobike",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "alnahdi",
+      "categoryId": "cat-medical",
+      "priority": 90
+    },
+    {
+      "pattern": "saudi electric",
+      "categoryId": "cat-utilities",
+      "priority": 90
+    },
+    {
+      "pattern": "electric company",
+      "categoryId": "cat-utilities",
+      "priority": 90
+    },
+    {
+      "pattern": "zara",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "uniqlo",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "airbnb",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "booking.com",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "credit card payment",
+      "categoryId": "cat-debt",
+      "priority": 90
+    },
+    {
+      "pattern": "mortgage payment",
+      "categoryId": "cat-mortgage",
+      "priority": 90
+    },
+    {
+      "pattern": "car payment",
+      "categoryId": "cat-car-payment",
+      "priority": 90
+    },
+    {
+      "pattern": "loan instalment",
+      "categoryId": "cat-debt",
+      "priority": 90
+    },
+    {
+      "pattern": "youtube premium",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "xtra",
+      "categoryId": "cat-electronics",
+      "priority": 90
+    },
+    {
+      "pattern": "fit time",
+      "categoryId": "cat-gym",
+      "priority": 90
+    },
+    {
+      "pattern": "github",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "duty free",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "camel step",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "manuel",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "riyadh parking",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "cursor",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "boots",
+      "categoryId": "cat-medical",
+      "priority": 90
+    },
+    {
+      "pattern": "section b",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "splash",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "tabby",
+      "categoryId": "cat-debt",
+      "priority": 90
+    },
+    {
+      "pattern": "farm supe",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "petrofas",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "fuelax",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "gathern",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "giordano",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "ryanair",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "wizz air",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "saco",
+      "categoryId": "cat-electronics",
+      "priority": 90
+    },
+    {
+      "pattern": "airalo",
+      "categoryId": "cat-telecom",
+      "priority": 90
+    },
+    {
+      "pattern": "woqoof",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "المخالفات المرورية",
+      "categoryId": "cat-utilities",
+      "priority": 90
+    },
+    {
+      "pattern": "خدمات المقيمين",
+      "categoryId": "cat-utilities",
+      "priority": 90
+    },
+    {
+      "pattern": "atm withdrawal",
+      "categoryId": "cat-other-expense",
+      "priority": 90
+    },
+    {
+      "pattern": "bank fees",
+      "categoryId": "cat-other-expense",
+      "priority": 90,
+      "patternType": "EXACT"
+    },
+    {
+      "pattern": "mcdo",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "andalusi",
+      "categoryId": "cat-medical",
+      "priority": 90
+    },
+    {
+      "pattern": "seoudi market",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "hofer",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "tap*tamee",
+      "categoryId": "cat-insurance",
+      "priority": 90
+    },
+    {
+      "pattern": "tamwinat",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "temu",
+      "categoryId": "cat-other-expense",
+      "priority": 90
+    },
+    {
+      "pattern": "ejar",
+      "categoryId": "cat-rent",
+      "priority": 90
+    },
+    {
+      "pattern": "marjane",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "migros",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "nova coop",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "seoudi",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "knpc",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "cottonil",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "kunest cafe",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "okaz phar",
+      "categoryId": "cat-medical",
+      "priority": 90
+    },
+    {
+      "pattern": "orange al",
+      "categoryId": "cat-telecom",
+      "priority": 90
+    },
+    {
+      "pattern": "marks & spencer",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "aliexpress",
+      "categoryId": "cat-other-expense",
+      "priority": 90
+    },
+    {
+      "pattern": "spar",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "panificio",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "regoli",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "chili's",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "chilis",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "buffet",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "claude",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "airside",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "harvard",
+      "categoryId": "cat-education",
+      "priority": 90
+    },
+    {
+      "pattern": "منصة إيجار",
+      "categoryId": "cat-rent",
+      "priority": 90
+    },
+    {
+      "pattern": "موبايلي",
+      "categoryId": "cat-telecom",
+      "priority": 90
+    },
+    {
+      "pattern": "جونشور",
+      "categoryId": "cat-insurance",
+      "priority": 90
+    },
+    {
+      "pattern": "تأميني",
+      "categoryId": "cat-insurance",
+      "priority": 90
+    },
+    {
+      "pattern": "chatgpt",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "notion",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "canva",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "figma",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "dropbox",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "hulu",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "disney+",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "disneyplus",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "paramount+",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "prime video",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "audible",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "deliveroo",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "instacart",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "costco",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "whole foods",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "liter m",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "albayan station",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "united pharmacies",
+      "categoryId": "cat-medical",
+      "priority": 90
+    },
+    {
+      "pattern": "subscription payment",
+      "categoryId": "cat-subscriptions",
+      "priority": 90
+    },
+    {
+      "pattern": "insurance premium",
+      "categoryId": "cat-insurance",
+      "priority": 90
+    },
+    {
+      "pattern": "rent payment",
+      "categoryId": "cat-rent",
+      "priority": 90
+    },
+    {
+      "pattern": "condo fees",
+      "categoryId": "cat-condo-fees",
+      "priority": 90
+    },
+    {
+      "pattern": "mobile recharge",
+      "categoryId": "cat-telecom",
+      "priority": 90
+    },
+    {
+      "pattern": "traffic fine payment",
+      "categoryId": "cat-utilities",
+      "priority": 90
+    },
+    {
+      "pattern": "government service payment",
+      "categoryId": "cat-utilities",
+      "priority": 90
+    },
+    {
+      "pattern": "parking payment",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "toll payment",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "transit fare",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "medical payment",
+      "categoryId": "cat-medical",
+      "priority": 90
+    },
+    {
+      "pattern": "pharmacy payment",
+      "categoryId": "cat-medical",
+      "priority": 90
+    },
+    {
+      "pattern": "education payment",
+      "categoryId": "cat-education",
+      "priority": 90
+    },
+    {
+      "pattern": "charity donation",
+      "categoryId": "cat-charity",
+      "priority": 90
+    },
+    {
+      "pattern": "zakat payment",
+      "categoryId": "cat-charity",
+      "priority": 90
+    },
+    {
+      "pattern": "gift purchase",
+      "categoryId": "cat-gifts",
+      "priority": 90
+    },
+    {
+      "pattern": "gift card purchase",
+      "categoryId": "cat-gifts",
+      "priority": 90
+    },
+    {
+      "pattern": "flower delivery",
+      "categoryId": "cat-gifts",
+      "priority": 90
+    },
+    {
+      "pattern": "furniture purchase",
+      "categoryId": "cat-home-maintenance",
+      "priority": 90
+    },
+    {
+      "pattern": "home goods purchase",
+      "categoryId": "cat-home-maintenance",
+      "priority": 90
+    },
+    {
+      "pattern": "appliance purchase",
+      "categoryId": "cat-electronics",
+      "priority": 90
+    },
+    {
+      "pattern": "home service payment",
+      "categoryId": "cat-home-maintenance",
+      "priority": 90
+    },
+    {
+      "pattern": "gym membership",
+      "categoryId": "cat-gym",
+      "priority": 90
+    },
+    {
+      "pattern": "childcare payment",
+      "categoryId": "cat-childcare",
+      "priority": 90
+    },
+    {
+      "pattern": "car service payment",
+      "categoryId": "cat-car-maintenance",
+      "priority": 90
+    },
+    {
+      "pattern": "oil change payment",
+      "categoryId": "cat-car-maintenance",
+      "priority": 90
+    },
+    {
+      "pattern": "car wash payment",
+      "categoryId": "cat-car-maintenance",
+      "priority": 90
+    },
+    {
+      "pattern": "tire service payment",
+      "categoryId": "cat-car-maintenance",
+      "priority": 90
+    },
+    {
+      "pattern": "fuel purchase",
+      "categoryId": "cat-gas",
+      "priority": 90
+    },
+    {
+      "pattern": "grocery purchase",
+      "categoryId": "cat-groceries",
+      "priority": 90
+    },
+    {
+      "pattern": "restaurant payment",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "coffee payment",
+      "categoryId": "cat-coffee",
+      "priority": 90
+    },
+    {
+      "pattern": "food delivery payment",
+      "categoryId": "cat-restaurant",
+      "priority": 90
+    },
+    {
+      "pattern": "taxi ride payment",
+      "categoryId": "cat-public-transport",
+      "priority": 90
+    },
+    {
+      "pattern": "flight ticket",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "hotel payment",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "travel booking",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "car rental payment",
+      "categoryId": "cat-travel",
+      "priority": 90
+    },
+    {
+      "pattern": "clothing purchase",
+      "categoryId": "cat-clothing",
+      "priority": 90
+    },
+    {
+      "pattern": "electronics purchase",
+      "categoryId": "cat-electronics",
+      "priority": 90
+    },
+    {
+      "pattern": "online shopping purchase",
+      "categoryId": "cat-other-expense",
+      "priority": 90
+    },
+    {
+      "pattern": "cinema ticket",
+      "categoryId": "cat-entertainment",
+      "priority": 90
+    },
+    {
+      "pattern": "event ticket",
+      "categoryId": "cat-going-out",
+      "priority": 90
+    },
+    {
+      "pattern": "game purchase",
+      "categoryId": "cat-entertainment",
+      "priority": 90
     }
   ]
 }

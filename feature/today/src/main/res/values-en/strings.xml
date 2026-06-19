@@ -22,6 +22,13 @@
     <!-- Captions -->
     <string name="today_caption_savings_rate" formatted="true">Savings rate · %1$s%%</string>
     <string name="today_caption_net_worth_mixed">Net worth spans multiple currencies · not converted</string>
+    <string name="today_goals_nudge_title">Goals check</string>
+    <string name="today_goals_savings_on_track" formatted="true">Savings target met · %1$s%% / %2$d%%</string>
+    <string name="today_goals_savings_below" formatted="true">Savings target · %1$s%% / %2$d%%</string>
+    <string name="today_goals_savings_waiting">Savings target · add income to measure</string>
+    <string name="today_goals_emergency_on_track" formatted="true">Emergency fund covered · %1$s / %2$d mo</string>
+    <string name="today_goals_emergency_below" formatted="true">Emergency fund · %1$s / %2$d mo</string>
+    <string name="today_goals_emergency_waiting">Emergency fund · add expenses to estimate</string>
 
     <!-- Sections -->
     <string name="today_section_today">Today\'s transactions</string>
@@ -46,8 +53,51 @@
     <string name="history_type_expense">Expenses</string>
     <string name="history_type_income">Income</string>
     <string name="history_type_transfer">Transfers</string>
+    <string name="history_source_all">All sources</string>
+    <string name="history_source_sms">SMS</string>
+    <string name="history_source_notification">Notifications</string>
+    <string name="history_source_manual">Manual</string>
+    <string name="history_source_import">Import</string>
+    <string name="history_source_recurring">Recurring</string>
+    <string name="history_source_share">Share</string>
+    <string name="history_category_all">All categories</string>
+    <string name="history_category_uncategorized">Uncategorized</string>
+    <string name="history_category_repeated_uncategorized">Repeated backlog</string>
+    <string name="history_category_categorized">Categorized</string>
+    <string name="history_row_subtitle" formatted="true">%1$s · %2$s · %3$s · %4$s · %5$s</string>
+    <string name="history_row_subtitle_with_repeated_count" formatted="true">%1$s · same merchant: %2$d</string>
     <string name="history_count" formatted="true">%1$d transactions</string>
     <string name="history_empty">No transactions match this filter.</string>
+    <string name="history_bulk_select">Select</string>
+    <string name="history_bulk_done">Done</string>
+    <string name="history_bulk_selected" formatted="true">%1$d selected</string>
+    <string name="history_bulk_selected_merchant" formatted="true">Selected merchant: %1$s · %2$d</string>
+    <string name="history_bulk_select_rows">Tap rows to select them.</string>
+    <string name="history_bulk_mixed_types">Select expenses or income, not both.</string>
+    <string name="history_bulk_no_eligible">Transfers do not need categories.</string>
+    <string name="history_bulk_ready" formatted="true">Ready to categorize %1$d transactions.</string>
+    <string name="history_bulk_ready_with_skips" formatted="true">Ready to categorize %1$d transactions. %2$d transfers will stay unchanged.</string>
+    <string name="history_bulk_select_top_repeated_group" formatted="true">Top group (%1$d)</string>
+    <string name="history_bulk_apply_top_suggestion" formatted="true">Apply top %1$s (%2$d)</string>
+    <string name="history_bulk_apply_single_safe_repeated_suggestion" formatted="true">Apply safe %1$s (%2$d)</string>
+    <string name="history_bulk_apply_safe_repeated_suggestions" formatted="true">Apply safe groups (%1$d)</string>
+    <string name="history_bulk_safe_repeated_suggestions_summary" formatted="true">Safe suggestions: %2$d transactions across %1$d groups.</string>
+    <string name="history_bulk_select_visible">Select shown</string>
+    <string name="history_bulk_select_same_merchant">Same merchant</string>
+    <string name="history_bulk_clear">Clear</string>
+    <string name="history_bulk_apply_suggestion" formatted="true">Apply %1$s</string>
+    <string name="history_bulk_category">Category</string>
+    <string name="history_bulk_category_title">Choose category</string>
+    <string name="history_bulk_category_context" formatted="true">Applying to %2$d transactions from %1$s</string>
+    <string name="history_bulk_category_suggestion" formatted="true">Suggested from same-merchant history (%2$d): %1$s</string>
+    <string name="history_bulk_cancel">Cancel</string>
+    <string name="history_bulk_apply">Apply</string>
+    <string name="history_bulk_applied" formatted="true">Updated %1$d transactions.</string>
+    <string name="history_bulk_applied_with_rule" formatted="true">Updated %1$d transactions. Future same-merchant rows will auto-categorize.</string>
+    <string name="history_bulk_applied_with_skips" formatted="true">Updated %1$d transactions. %2$d skipped.</string>
+    <string name="history_bulk_applied_with_skips_and_rule" formatted="true">Updated %1$d transactions. %2$d skipped. Future same-merchant rows will auto-categorize.</string>
+    <string name="category_backfill_applied" formatted="true">Updated matching transactions for "%2$s": %1$d.</string>
+    <string name="category_backfill_future" formatted="true">Future transactions matching "%1$s" will be categorized automatically.</string>
 
     <!-- Pending attention banner -->
     <string name="today_pending_banner" formatted="true">%1$d transactions awaiting review</string>
@@ -57,9 +107,20 @@
     <string name="today_dismissed_banner" formatted="true">%1$d messages dismissed today — review them</string>
     <string name="today_dismissed_banner_cta">Tap to review →</string>
 
+    <!-- Repeated uncategorized backlog nudge -->
+    <string name="today_repeated_backlog_banner" formatted="true">%1$d uncategorized rows in %2$d repeated groups · top group %3$d</string>
+    <string name="today_repeated_backlog_banner_cta">Review groups →</string>
+
     <!-- Pending tray -->
     <string name="today_pending_title" formatted="true">Pending · %1$d</string>
     <string name="today_pending_subtle">Swipe to confirm or dismiss. Or use the bulk actions below.</string>
+    <string name="today_pending_category_suggestion" formatted="true">Suggested from history (%2$d): %1$s</string>
+    <string name="today_pending_apply_suggestion">Apply</string>
+    <string name="today_pending_apply_safe_suggestions" formatted="true">Apply safe suggestions (%1$d)</string>
+    <string name="today_pending_safe_suggestions_summary" formatted="true">Safe impact: %1$s</string>
+    <string name="today_pending_safe_suggestion_summary_item" formatted="true">%1$s (%2$d)</string>
+    <string name="today_pending_safe_suggestion_summary_more" formatted="true">+%1$d more</string>
+    <string name="today_pending_suggestions_applied" formatted="true">Applied %1$d safe suggestions.</string>
     <string name="today_pending_more" formatted="true">+%1$d more. Use bulk actions to clear them at once.</string>
 
     <!-- Bulk actions -->
@@ -76,12 +137,34 @@
     <string name="add_tx_segment_income">Income</string>
     <string name="add_tx_error_amount_required">Enter an amount</string>
     <string name="add_tx_error_amount_invalid">Amount is invalid</string>
+    <string name="add_tx_label_quick_entry">Quick entry</string>
+    <string name="add_tx_placeholder_quick_entry">spent 50 at Starbucks, or paste receipt text</string>
+    <string name="add_tx_quick_apply">Fill</string>
+    <string name="add_tx_voice">Speak</string>
+    <string name="add_tx_error_quick_entry">Could not read amount and merchant</string>
+    <string name="add_tx_error_voice_unavailable">Voice input is not available on this device</string>
     <string name="add_tx_label_merchant">Merchant</string>
     <string name="add_tx_placeholder_merchant">e.g. Starbucks</string>
     <string name="add_tx_error_merchant_required">Enter a merchant name</string>
     <string name="add_tx_label_category">Category</string>
     <string name="add_tx_error_category_required">Pick a category</string>
     <string name="add_tx_label_notes">Notes</string>
+    <string name="add_tx_receipt_title">Receipts</string>
+    <string name="add_tx_receipt_empty">No receipt</string>
+    <string name="add_tx_receipt_loading">Importing…</string>
+    <string name="add_tx_receipt_ocr_loading">Reading receipt…</string>
+    <string name="add_tx_receipt_ocr_filled">Receipt filled amount and merchant</string>
+    <string name="add_tx_receipt_ocr_no_text">Receipt attached; amount and merchant were not found</string>
+    <string name="add_tx_receipt_ocr_failed">Receipt attached; text reading failed</string>
+    <string name="add_tx_receipt_attached" formatted="true">%1$s · %2$s</string>
+    <string name="add_tx_receipt_count" formatted="true">%1$d receipts attached</string>
+    <string name="add_tx_receipt_attach">Attach</string>
+    <string name="add_tx_receipt_change">Change</string>
+    <string name="add_tx_receipt_remove">Remove</string>
+    <string name="add_tx_receipt_error_read">Could not read this receipt</string>
+    <string name="add_tx_receipt_error_too_large">Receipt must be 5 MB or smaller</string>
+    <string name="add_tx_receipt_error_unsupported">Choose an image receipt</string>
+    <string name="add_tx_receipt_error_save">Saving failed while attaching receipt</string>
     <string name="add_tx_save">Save</string>
     <string name="add_tx_saving">Saving…</string>
 
@@ -95,5 +178,16 @@
     <string name="edit_tx_learn_message" formatted="true">Always categorize "%1$s" as "%2$s"?</string>
     <string name="edit_tx_learn_always">Always</string>
     <string name="edit_tx_learn_once">Just this once</string>
+    <string name="edit_tx_receipt_missing">No saved receipt for this transaction</string>
+    <string name="edit_tx_receipt_view">View</string>
+    <string name="edit_tx_receipt_export">Export</string>
+    <string name="edit_tx_receipt_exported">Receipt copy saved</string>
+    <string name="edit_tx_receipt_deleted">Receipt removed</string>
+    <string name="edit_tx_receipt_export_failed">Could not export receipt</string>
+    <string name="edit_tx_receipt_delete_failed">Could not remove receipt</string>
+    <string name="edit_tx_receipt_view_failed">Could not open receipt</string>
+    <string name="edit_tx_receipt_preview_title">Receipt preview</string>
+    <string name="edit_tx_receipt_preview_error">Could not preview the image. You can still export it as a file.</string>
+    <string name="edit_tx_receipt_close">Close</string>
 
 </resources>

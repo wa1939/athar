@@ -2,13 +2,11 @@ package com.athar.feature.plan
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.athar.core.common.money.Money
 import com.athar.core.common.time.Period
+import com.athar.core.domain.calc.WishlistCalc
 import com.athar.core.domain.model.Transaction
 import com.athar.core.domain.model.TxStatus
-import com.athar.core.domain.model.TxType
 import com.athar.core.domain.model.WishlistItem
-import com.athar.core.domain.model.WishlistStatus
 import com.athar.core.domain.repo.TransactionRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
 import com.athar.core.domain.repo.WishlistRepository
@@ -22,11 +20,8 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.YearMonth
 import javax.inject.Inject
-import kotlin.math.ceil
 
 @HiltViewModel
 class WishlistViewModel @Inject constructor(
@@ -56,53 +51,50 @@ class WishlistViewModel @Inject constructor(
     }
 
     private fun derive(items: List<WishlistItem>, tx: List<Transaction>, currency: String): WishlistState {
-        val income = Money.sumAmounts(tx.filter { it.type == TxType.INCOME }.map { it.amount }, currency)
-        val expense = Money.sumAmounts(tx.filter { it.type == TxType.EXPENSE }.map { it.amount }, currency)
-        val net = income - expense
-        // Monthly capacity = (3-month net flow) / 3, floored at zero.
-        val capacity: Money = if (net.amount.signum() <= 0) Money.zero(currency) else
-            Money.of(net.amount.divide(BigDecimal(3), 2, RoundingMode.HALF_EVEN), currency)
-
-        val rows = items.map { item -> classify(item, capacity) }.toImmutableList()
+        val capacity = WishlistCalc.monthlyCapacityFromTransactions(tx, currency)
+        val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        val currentMonth = YearMonth.of(now.year, now.monthNumber)
+        val projected = items.map { item -> item to WishlistCalc.project(item, capacity, currentMonth) }
+        val rows = projected
+            .map { (item, projection) -> classify(item, projection) }
+            .sortedWith(wishlistPriority())
+            .toImmutableList()
 
         return WishlistState(
             items = rows,
             monthlyCapacity = capacity,
+            summary = WishlistCalc.summarize(projected.map { it.second }, currency),
             isLoading = false,
         )
     }
 
-    private fun classify(item: WishlistItem, capacity: Money): WishlistRow {
-        val remaining = item.cost - item.currentSaved
-        return when {
-            remaining.amount.signum() <= 0 ->
-                WishlistRow(item = item, status = WishlistStatus.Now, monthsNeeded = 0)
-            capacity.amount.signum() <= 0 ->
-                WishlistRow(item = item, status = WishlistStatus.Infeasible, monthsNeeded = null)
-            else -> {
-                val ratio = remaining.amount.toDouble() / capacity.amount.toDouble()
-                val months = ceil(ratio).toInt()
-                if (months > MAX_REASONABLE_MONTHS) {
-                    WishlistRow(item = item, status = WishlistStatus.Infeasible, monthsNeeded = null)
-                } else {
-                    val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
-                    val ym = YearMonth.of(now.year, now.monthNumber).plusMonths(months.toLong())
-                    WishlistRow(
-                        item = item,
-                        status = WishlistStatus.WaitUntil(ym),
-                        monthsNeeded = months,
-                    )
-                }
+    private fun classify(item: WishlistItem, projection: WishlistCalc.Projection): WishlistRow {
+        return WishlistRow(
+            item = item,
+            status = projection.status,
+            monthsNeeded = projection.monthsNeeded,
+            remaining = projection.remaining,
+            projectedMonth = projection.projectedMonth,
+            targetMonth = projection.targetMonth,
+            monthlyRequired = projection.monthlyRequired,
+            targetFeasible = projection.targetFeasible,
+        )
+    }
+
+    private fun wishlistPriority(): Comparator<WishlistRow> =
+        compareBy<WishlistRow> { row ->
+            when {
+                row.monthsNeeded == 0 -> 0
+                row.monthsNeeded != null -> 1
+                else -> 2
             }
         }
-    }
+            .thenBy { it.monthsNeeded ?: Int.MAX_VALUE }
+            .thenBy { it.targetMonth ?: YearMonth.of(9999, 12) }
+            .thenBy { it.item.name.lowercase() }
 
     private fun last3MonthsPeriod(): Period {
         val today = clock.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
         return Period.Last(months = 3, endingAt = today)
-    }
-
-    companion object {
-        private const val MAX_REASONABLE_MONTHS = 36
     }
 }

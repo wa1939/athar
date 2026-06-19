@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.getValue
@@ -36,23 +37,50 @@ import com.athar.core.designsystem.component.AtharNumber
 import com.athar.core.designsystem.component.AtharSwipeRow
 import com.athar.core.designsystem.component.AtharText
 import com.athar.core.designsystem.theme.AtharTheme
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableMap
+import java.math.BigDecimal
+import java.math.RoundingMode
+import java.util.Locale
 
 @Composable
 fun TodayScreen(
     onOpenHistory: () -> Unit = {},
+    onOpenRepeatedBacklog: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: TodayViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val backfill by viewModel.lastBackfill.collectAsStateWithLifecycle()
+    val pendingSuggestionApply by viewModel.lastPendingSuggestionApply.collectAsStateWithLifecycle()
     var showAddSheet by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Transaction?>(null) }
 
+    LaunchedEffect(backfill) {
+        if (backfill != null) {
+            kotlinx.coroutines.delay(4_000)
+            viewModel.clearBackfill()
+        }
+    }
+
+    LaunchedEffect(pendingSuggestionApply) {
+        if (pendingSuggestionApply != null) {
+            kotlinx.coroutines.delay(4_000)
+            viewModel.clearPendingSuggestionApply()
+        }
+    }
+
     TodayContent(
         state = state,
+        backfill = backfill,
+        pendingSuggestionApply = pendingSuggestionApply,
+        onClearBackfill = viewModel::clearBackfill,
+        onClearPendingSuggestionApply = viewModel::clearPendingSuggestionApply,
         onEvent = { event ->
             when (event) {
                 is TodayEvent.AddManual -> showAddSheet = true
                 is TodayEvent.OpenHistory -> onOpenHistory()
+                is TodayEvent.OpenRepeatedBacklog -> onOpenRepeatedBacklog()
                 is TodayEvent.OpenTransaction -> {
                     editing = state.today.firstOrNull { it.id == event.id }
                         ?: state.recent.firstOrNull { it.id == event.id }
@@ -94,6 +122,10 @@ internal fun TodayContent(
     state: TodayState,
     onEvent: (TodayEvent) -> Unit,
     modifier: Modifier = Modifier,
+    backfill: TodayViewModel.BackfillEvent? = null,
+    pendingSuggestionApply: TodayViewModel.PendingSuggestionApplyEvent? = null,
+    onClearBackfill: () -> Unit = {},
+    onClearPendingSuggestionApply: () -> Unit = {},
 ) {
     val theme = AtharTheme
     Box(
@@ -107,6 +139,19 @@ internal fun TodayContent(
                 .padding(theme.spacing.m),
             verticalArrangement = Arrangement.spacedBy(theme.spacing.l),
         ) {
+            backfill?.let {
+                CategoryBackfillToast(
+                    pattern = it.pattern,
+                    count = it.count,
+                    onDismiss = onClearBackfill,
+                )
+            }
+            pendingSuggestionApply?.let {
+                PendingSuggestionApplyToast(
+                    count = it.count,
+                    onDismiss = onClearPendingSuggestionApply,
+                )
+            }
             if (state.pending.isNotEmpty()) {
                 PendingAttentionBanner(
                     count = state.pending.size,
@@ -117,6 +162,12 @@ internal fun TodayContent(
                 DismissedAttentionBanner(
                     count = state.dismissedToday.size,
                     onClick = { onEvent(TodayEvent.OpenHistory) },
+                )
+            }
+            state.repeatedBacklogNudge?.let { nudge ->
+                RepeatedBacklogNudgeBanner(
+                    nudge = nudge,
+                    onClick = { onEvent(TodayEvent.OpenRepeatedBacklog) },
                 )
             }
             Header(state = state)
@@ -190,6 +241,41 @@ private fun DismissedAttentionBanner(count: Int, onClick: () -> Unit) {
 }
 
 @Composable
+private fun RepeatedBacklogNudgeBanner(
+    nudge: TodayRepeatedBacklogNudge,
+    onClick: () -> Unit,
+) {
+    val theme = AtharTheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(theme.colors.surface)
+            .clickable(onClick = onClick)
+            .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+    ) {
+        AtharText(
+            text = stringResource(
+                R.string.today_repeated_backlog_banner,
+                nudge.transactionCount,
+                nudge.groupCount,
+                nudge.largestGroupCount,
+            ),
+            style = theme.typography.body,
+            color = theme.colors.ink,
+            modifier = Modifier.weight(1f),
+        )
+        AtharText(
+            text = stringResource(R.string.today_repeated_backlog_banner_cta),
+            style = theme.typography.caption,
+            color = theme.colors.ember,
+        )
+    }
+}
+
+@Composable
 private fun Header(state: TodayState) {
     val theme = AtharTheme
     Column(
@@ -257,8 +343,70 @@ private fun Header(state: TodayState) {
                 color = theme.colors.muted,
             )
         }
+        state.goalNudge?.let { GoalsNudge(it) }
     }
 }
+
+@Composable
+private fun GoalsNudge(nudge: TodayGoalNudge) {
+    val theme = AtharTheme
+    AtharCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+            AtharText(
+                text = stringResource(R.string.today_goals_nudge_title),
+                style = theme.typography.overline,
+                color = theme.colors.muted,
+            )
+            GoalNudgeLine(
+                text = savingsNudgeText(nudge),
+                color = when {
+                    nudge.savingsRatePercent == null -> theme.colors.muted
+                    nudge.savingsRateProgress >= 1f -> theme.colors.olive
+                    else -> theme.colors.ember
+                },
+            )
+            GoalNudgeLine(
+                text = emergencyNudgeText(nudge),
+                color = when {
+                    nudge.emergencyMonthsCovered == null -> theme.colors.muted
+                    nudge.emergencyFundProgress >= 1f -> theme.colors.olive
+                    else -> theme.colors.ember
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun GoalNudgeLine(text: String, color: Color) {
+    val theme = AtharTheme
+    AtharText(text = text, style = theme.typography.caption, color = color)
+}
+
+@Composable
+private fun savingsNudgeText(nudge: TodayGoalNudge): String {
+    val actual = nudge.savingsRatePercent ?: return stringResource(R.string.today_goals_savings_waiting)
+    val actualLabel = actual.format(scale = 0)
+    return if (nudge.savingsRateProgress >= 1f) {
+        stringResource(R.string.today_goals_savings_on_track, actualLabel, nudge.savingsRateTargetPercent)
+    } else {
+        stringResource(R.string.today_goals_savings_below, actualLabel, nudge.savingsRateTargetPercent)
+    }
+}
+
+@Composable
+private fun emergencyNudgeText(nudge: TodayGoalNudge): String {
+    val actual = nudge.emergencyMonthsCovered ?: return stringResource(R.string.today_goals_emergency_waiting)
+    val actualLabel = actual.format(scale = 1)
+    return if (nudge.emergencyFundProgress >= 1f) {
+        stringResource(R.string.today_goals_emergency_on_track, actualLabel, nudge.emergencyFundTargetMonths)
+    } else {
+        stringResource(R.string.today_goals_emergency_below, actualLabel, nudge.emergencyFundTargetMonths)
+    }
+}
+
+private fun BigDecimal.format(scale: Int): String =
+    setScale(scale, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
 
 @Composable
 private fun FlowPill(
@@ -297,6 +445,15 @@ private fun PendingTray(
             color = theme.colors.muted,
         )
 
+        if (state.pendingCategorySuggestions.isNotEmpty()) {
+            PendingSuggestionsBulkAction(
+                count = state.pendingCategorySuggestions.size,
+                summary = state.pendingCategorySuggestionSummary,
+                categoryLabels = state.categoryLabels,
+                onClick = { onEvent(TodayEvent.BulkApplyPendingCategorySuggestions) },
+            )
+        }
+
         if (state.pending.size >= 5) {
             BulkActionsBar(onEvent = onEvent)
         }
@@ -306,11 +463,12 @@ private fun PendingTray(
                 onConfirm = { onEvent(TodayEvent.ConfirmPending(tx.id)) },
                 onDismiss = { onEvent(TodayEvent.DismissPending(tx.id)) },
             ) {
-                AtharListRow(
-                    title = tx.merchant,
-                    subtitle = tx.categoryId ?: stringResource(R.string.today_uncategorized),
-                    trailing = tx.amount,
-                    onClick = { onEvent(TodayEvent.OpenTransaction(tx.id)) },
+                PendingTransactionRow(
+                    tx = tx,
+                    suggestion = state.pendingCategorySuggestions[tx.id],
+                    categoryLabels = state.categoryLabels,
+                    onOpen = { onEvent(TodayEvent.OpenTransaction(tx.id)) },
+                    onApplySuggestion = { onEvent(TodayEvent.ApplyPendingCategorySuggestion(tx.id)) },
                 )
             }
         }
@@ -321,6 +479,161 @@ private fun PendingTray(
                 color = theme.colors.muted,
             )
         }
+    }
+}
+
+@Composable
+private fun PendingSuggestionApplyToast(
+    count: Int,
+    onDismiss: () -> Unit,
+) {
+    val theme = AtharTheme
+    AtharCard(modifier = Modifier.clickable(onClick = onDismiss)) {
+        AtharText(
+            text = stringResource(R.string.today_pending_suggestions_applied, count),
+            style = theme.typography.body,
+            color = theme.colors.olive,
+        )
+    }
+}
+
+@Composable
+private fun PendingSuggestionsBulkAction(
+    count: Int,
+    summary: ImmutableList<PendingCategorySuggestionSummary>,
+    categoryLabels: ImmutableMap<String, CategoryLabel>,
+    onClick: () -> Unit,
+) {
+    val theme = AtharTheme
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = theme.spacing.xs)
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(theme.colors.olive)
+            .clickable(onClick = onClick)
+            .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(theme.spacing.xs),
+    ) {
+        AtharText(
+            text = stringResource(R.string.today_pending_apply_safe_suggestions, count),
+            style = theme.typography.caption,
+            color = theme.colors.parchment,
+        )
+        PendingSuggestionSummaryText(
+            summary = summary,
+            categoryLabels = categoryLabels,
+        )
+    }
+}
+
+@Composable
+private fun PendingSuggestionSummaryText(
+    summary: ImmutableList<PendingCategorySuggestionSummary>,
+    categoryLabels: ImmutableMap<String, CategoryLabel>,
+) {
+    val theme = AtharTheme
+    val visible = summary.take(MAX_PENDING_SUGGESTION_SUMMARY_ITEMS)
+    val summaryItems = visible.map { item ->
+        stringResource(
+            R.string.today_pending_safe_suggestion_summary_item,
+            categoryLabelText(item.categoryId, categoryLabels),
+            item.count,
+        )
+    }.toMutableList()
+    val hiddenCategoryCount = summary.size - visible.size
+    if (hiddenCategoryCount > 0) {
+        summaryItems += stringResource(
+            R.string.today_pending_safe_suggestion_summary_more,
+            hiddenCategoryCount,
+        )
+    }
+    if (summaryItems.isEmpty()) return
+
+    AtharText(
+        text = stringResource(
+            R.string.today_pending_safe_suggestions_summary,
+            summaryItems.joinToString(separator = " · "),
+        ),
+        style = theme.typography.caption,
+        color = theme.colors.parchment,
+    )
+}
+
+@Composable
+private fun PendingTransactionRow(
+    tx: Transaction,
+    suggestion: PendingCategorySuggestion?,
+    categoryLabels: ImmutableMap<String, CategoryLabel>,
+    onOpen: () -> Unit,
+    onApplySuggestion: () -> Unit,
+) {
+    val theme = AtharTheme
+    Column {
+        AtharListRow(
+            title = tx.merchant,
+            subtitle = transactionCategoryLabel(tx, categoryLabels),
+            trailing = tx.amount,
+            onClick = onOpen,
+        )
+        if (suggestion != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = theme.spacing.m,
+                        end = theme.spacing.m,
+                        bottom = theme.spacing.s,
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+            ) {
+                AtharText(
+                    text = stringResource(
+                        R.string.today_pending_category_suggestion,
+                        categoryLabelText(suggestion.categoryId, categoryLabels),
+                        suggestion.useCount,
+                    ),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                    modifier = Modifier.weight(1f),
+                )
+                SuggestionButton(onClick = onApplySuggestion)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SuggestionButton(onClick: () -> Unit) {
+    val theme = AtharTheme
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(theme.colors.olive)
+            .clickable(onClick = onClick)
+            .padding(horizontal = theme.spacing.m, vertical = theme.spacing.xs),
+        contentAlignment = Alignment.Center,
+    ) {
+        AtharText(
+            text = stringResource(R.string.today_pending_apply_suggestion),
+            style = theme.typography.caption,
+            color = theme.colors.parchment,
+        )
+    }
+}
+
+private fun categoryLabelText(
+    categoryId: String,
+    labels: ImmutableMap<String, CategoryLabel>,
+): String {
+    val label = labels[categoryId] ?: return categoryId
+    val isArabic = Locale.getDefault().language == "ar"
+    return if (isArabic) {
+        label.nameAr.ifBlank { label.name }
+    } else {
+        label.name.ifBlank { label.nameAr }
     }
 }
 
@@ -375,6 +688,7 @@ private fun androidx.compose.foundation.layout.RowScope.BulkButton(
 }
 
 private const val MAX_PENDING_VISIBLE = 12
+private const val MAX_PENDING_SUGGESTION_SUMMARY_ITEMS = 3
 
 @Composable
 private fun RecentList(
@@ -426,7 +740,7 @@ private fun RecentList(
                 AtharListRow(
                     modifier = Modifier.animateItem(),
                     title = tx.merchant,
-                    subtitle = tx.categoryId ?: stringResource(R.string.today_uncategorized),
+                    subtitle = transactionCategoryLabel(tx, state.categoryLabels),
                     trailing = tx.amount,
                     onClick = { onEvent(TodayEvent.OpenTransaction(tx.id)) },
                 )
@@ -445,7 +759,7 @@ private fun RecentList(
                 AtharListRow(
                     modifier = Modifier.animateItem(),
                     title = tx.merchant,
-                    subtitle = tx.categoryId ?: stringResource(R.string.today_uncategorized),
+                    subtitle = transactionCategoryLabel(tx, state.categoryLabels),
                     trailing = tx.amount,
                     onClick = { onEvent(TodayEvent.OpenTransaction(tx.id)) },
                 )

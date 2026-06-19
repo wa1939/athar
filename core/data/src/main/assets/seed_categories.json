@@ -28,8 +28,14 @@
     { "id": "cat-wife-allowance", "name": "Wife allowance", "nameAr": "مصروف الزوجة", "kind": "EXPENSE", "sortOrder": 25 },
     { "id": "cat-debt", "name": "Debt", "nameAr": "ديون", "kind": "EXPENSE", "sortOrder": 26 },
     { "id": "cat-other-expense", "name": "Other", "nameAr": "متفرقات", "kind": "EXPENSE", "sortOrder": 27 },
+    { "id": "cat-condo-fees", "name": "Condo fees", "nameAr": "رسوم السكن", "kind": "EXPENSE", "sortOrder": 28 },
+    { "id": "cat-work-expense", "name": "Work", "nameAr": "مصروفات العمل", "kind": "EXPENSE", "sortOrder": 29 },
 
     { "id": "cat-salary", "name": "Salary", "nameAr": "راتب", "kind": "INCOME", "sortOrder": 100 },
-    { "id": "cat-side-income", "name": "Side income", "nameAr": "دخل جانبي", "kind": "INCOME", "sortOrder": 101 }
+    { "id": "cat-side-income", "name": "Side income", "nameAr": "دخل جانبي", "kind": "INCOME", "sortOrder": 101 },
+    { "id": "cat-tax-refund", "name": "Tax refund", "nameAr": "استرداد ضريبي", "kind": "INCOME", "sortOrder": 102 },
+    { "id": "cat-reimbursements", "name": "Expense reimbursement", "nameAr": "تعويض مصروفات", "kind": "INCOME", "sortOrder": 103 },
+    { "id": "cat-bonus", "name": "Bonus", "nameAr": "مكافأة", "kind": "INCOME", "sortOrder": 104 },
+    { "id": "cat-other-income", "name": "Other income", "nameAr": "دخل آخر", "kind": "INCOME", "sortOrder": 105 }
   ]
 }

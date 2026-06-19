@@ -2,6 +2,7 @@ package com.athar.feature.plan
 
 import androidx.compose.runtime.Immutable
 import com.athar.core.common.money.Money
+import com.athar.core.domain.calc.WishlistCalc
 import com.athar.core.domain.model.WishlistItem
 import com.athar.core.domain.model.WishlistStatus
 import kotlinx.collections.immutable.ImmutableList
@@ -11,12 +12,14 @@ import kotlinx.collections.immutable.persistentListOf
 data class WishlistState(
     val items: ImmutableList<WishlistRow>,
     val monthlyCapacity: Money,
+    val summary: WishlistCalc.Summary,
     val isLoading: Boolean,
 ) {
     companion object {
         fun initial(): WishlistState = WishlistState(
             items = persistentListOf(),
             monthlyCapacity = Money.zero(),
+            summary = WishlistCalc.Summary.empty(),
             isLoading = true,
         )
     }
@@ -26,6 +29,11 @@ data class WishlistRow(
     val item: WishlistItem,
     val status: WishlistStatus,
     val monthsNeeded: Int?,
+    val remaining: Money,
+    val projectedMonth: java.time.YearMonth?,
+    val targetMonth: java.time.YearMonth?,
+    val monthlyRequired: Money?,
+    val targetFeasible: Boolean?,
 )
 
 sealed interface WishlistEvent {

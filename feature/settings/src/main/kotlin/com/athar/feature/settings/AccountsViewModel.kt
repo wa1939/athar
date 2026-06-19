@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.athar.core.common.money.Money
 import com.athar.core.domain.model.Account
 import com.athar.core.domain.model.AccountBalance
+import com.athar.core.domain.model.AccountRouting
 import com.athar.core.domain.model.AccountType
 import com.athar.core.domain.model.NetWorth
 import com.athar.core.domain.repo.AccountRepository
@@ -95,6 +96,7 @@ class AccountsViewModel @Inject constructor(
         type: AccountType,
         currency: String,
         openingBalanceText: String,
+        smsSendersText: String,
         notes: String,
     ) {
         val trimmedName = name.trim()
@@ -111,7 +113,7 @@ class AccountsViewModel @Inject constructor(
                 type = type,
                 currency = currency,
                 openingBalance = opening,
-                smsSenders = emptyList(),
+                smsSenders = AccountRouting.normalizeAliases(smsSendersText),
                 notes = notes.trim().ifBlank { null },
                 sortOrder = nextSort,
                 archived = false,

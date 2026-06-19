@@ -24,9 +24,11 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import com.athar.feature.widgets.R
 import com.athar.feature.widgets.WidgetColors
 import com.athar.feature.widgets.WidgetDataLoader
 import com.athar.feature.widgets.appLaunchComponent
+import com.athar.feature.widgets.widgetLocaleContext
 
 class TodayWidget : GlanceAppWidget() {
 
@@ -54,9 +56,10 @@ class TodayWidget : GlanceAppWidget() {
             if (s == null) {
                 Text(text = "Athar", style = TextStyle(color = ColorProvider(WidgetColors.Muted)))
             } else {
+                val strings = context.widgetLocaleContext(s.localeTag)
                 Column(modifier = GlanceModifier.fillMaxSize()) {
                     Text(
-                        text = "اليوم · Today",
+                        text = strings.getString(R.string.widget_today_title),
                         style = TextStyle(
                             color = ColorProvider(WidgetColors.Muted),
                             fontSize = 11.sp,
@@ -74,7 +77,7 @@ class TodayWidget : GlanceAppWidget() {
                     if (s.pendingCount > 0) {
                         Spacer(modifier = GlanceModifier.height(6.dp))
                         Text(
-                            text = "${s.pendingCount} pending",
+                            text = strings.getString(R.string.widget_today_pending_count, s.pendingCount),
                             style = TextStyle(
                                 color = ColorProvider(WidgetColors.Ember),
                                 fontSize = 12.sp,

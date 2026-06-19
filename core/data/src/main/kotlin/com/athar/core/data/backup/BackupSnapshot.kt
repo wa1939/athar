@@ -7,10 +7,12 @@ import com.athar.core.data.db.entity.InvestmentContributionEntity
 import com.athar.core.data.db.entity.InvestmentPoolEntity
 import com.athar.core.data.db.entity.SmsMessageEntity
 import com.athar.core.data.db.entity.TransactionEntity
+import com.athar.core.data.db.entity.TransactionReceiptEntity
 import com.athar.core.data.db.entity.WishlistEntity
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
+import java.util.Base64
 
 /**
  * Wire format for an Athar backup. Mirrors entities but is decoupled from Room
@@ -32,11 +34,13 @@ internal data class BackupSnapshot(
     val investmentPools: List<BackupInvestmentPool>,
     val investmentContributions: List<BackupInvestmentContribution>,
     val smsAudit: List<BackupSmsMessage>,
+    val receiptAttachments: List<BackupReceiptAttachment> = emptyList(),
 ) {
     companion object {
         // v2 (G-4): BackupAccount gained openingBalanceMinor/Currency, notes, sortOrder,
         // archivedAt, updatedAt. All optional with safe defaults so v1 payloads still restore.
-        const val CURRENT_VERSION = 2
+        // v3 (G-8): encrypted receipt attachments are included in backups.
+        const val CURRENT_VERSION = 3
     }
 }
 
@@ -100,6 +104,17 @@ internal data class BackupSmsMessage(
     val parsedTransactionId: String?, val parseStatus: String, val parseError: String?,
 )
 
+@Serializable
+internal data class BackupReceiptAttachment(
+    val id: String,
+    val transactionId: String,
+    val mimeType: String,
+    val originalName: String?,
+    val sizeBytes: Long,
+    val payloadBase64: String,
+    val createdAt: Instant,
+)
+
 internal fun AccountEntity.toBackup(): BackupAccount = BackupAccount(
     id = id, name = name, type = type, currency = currency,
     smsSenders = smsSenders, active = active, createdAt = createdAt,
@@ -114,6 +129,15 @@ internal fun WishlistEntity.toBackup(): BackupWishlistItem = BackupWishlistItem(
 internal fun InvestmentPoolEntity.toBackup(): BackupInvestmentPool = BackupInvestmentPool(id, name, period, totalReturnMinor, currency)
 internal fun InvestmentContributionEntity.toBackup(): BackupInvestmentContribution = BackupInvestmentContribution(id, poolId, ownerName, amountMinor, currency)
 internal fun SmsMessageEntity.toBackup(): BackupSmsMessage = BackupSmsMessage(id, sender, body, receivedAt, parsedTransactionId, parseStatus, parseError)
+internal fun TransactionReceiptEntity.toBackup(): BackupReceiptAttachment = BackupReceiptAttachment(
+    id = id,
+    transactionId = transactionId,
+    mimeType = mimeType,
+    originalName = originalName,
+    sizeBytes = sizeBytes,
+    payloadBase64 = Base64.getEncoder().encodeToString(payload),
+    createdAt = createdAt,
+)
 
 internal fun BackupAccount.toEntity(): AccountEntity = AccountEntity(
     id = id, name = name, type = type, currency = currency,
@@ -132,3 +156,12 @@ internal fun BackupWishlistItem.toEntity(): WishlistEntity = WishlistEntity(id, 
 internal fun BackupInvestmentPool.toEntity(): InvestmentPoolEntity = InvestmentPoolEntity(id, name, period, totalReturnMinor, currency)
 internal fun BackupInvestmentContribution.toEntity(): InvestmentContributionEntity = InvestmentContributionEntity(id, poolId, ownerName, amountMinor, currency)
 internal fun BackupSmsMessage.toEntity(): SmsMessageEntity = SmsMessageEntity(id, sender, body, receivedAt, parsedTransactionId, parseStatus, parseError)
+internal fun BackupReceiptAttachment.toEntity(): TransactionReceiptEntity = TransactionReceiptEntity(
+    id = id,
+    transactionId = transactionId,
+    mimeType = mimeType,
+    originalName = originalName,
+    sizeBytes = sizeBytes,
+    payload = Base64.getDecoder().decode(payloadBase64),
+    createdAt = createdAt,
+)

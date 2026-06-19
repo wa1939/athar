@@ -37,6 +37,22 @@ internal interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE status = 'CONFIRMED' AND date >= :since ORDER BY date DESC")
     fun observeConfirmedSince(since: LocalDate): Flow<List<TransactionEntity>>
 
+    @Query(
+        """
+        SELECT categoryId AS categoryId, COUNT(*) AS count
+        FROM transactions
+        WHERE status = 'CONFIRMED'
+          AND merchantNormalized = :merchantNormalized
+          AND categoryId IS NOT NULL
+          AND categoryId != ''
+          AND type != 'TRANSFER'
+          AND (sourceRefId IS NULL OR sourceRefId NOT LIKE 'reconcile-%')
+        GROUP BY categoryId
+        ORDER BY count DESC, categoryId ASC
+        """,
+    )
+    suspend fun confirmedCategoryCountsForMerchant(merchantNormalized: String): List<CategoryUsageCount>
+
     @Query("SELECT id FROM transactions LIMIT 1")
     suspend fun firstId(): String?
 
@@ -106,3 +122,8 @@ internal interface TransactionDao {
     )
     fun observeBalancesByAccount(): Flow<List<AccountBalanceRow>>
 }
+
+internal data class CategoryUsageCount(
+    val categoryId: String,
+    val count: Int,
+)
