@@ -22,6 +22,16 @@
     <string name="action_apply">Apply</string>
     <string name="action_done">Done</string>
 
+    <string name="bill_reminders_channel_name">Bill reminders</string>
+    <string name="bill_reminders_channel_description">Quiet reminders for upcoming recurring expenses.</string>
+    <string name="bill_reminder_title_upcoming">Bill in 2 days</string>
+    <string name="bill_reminder_title_due_today">Bill due today</string>
+    <string name="bill_reminder_title_missed">Bill waiting for review</string>
+    <string name="bill_reminder_body_upcoming" formatted="true">%1$s · %2$s in 2 days.</string>
+    <string name="bill_reminder_body_due_today" formatted="true">%1$s · %2$s today.</string>
+    <string name="bill_reminder_body_missed" formatted="true">%1$s · %2$s is still pending.</string>
+    <string name="bill_reminder_fallback_label">Bill</string>
+
     <string name="settings_language_title">Language · اللغة</string>
     <string name="settings_language_subtitle">Choose the app language. The screen reloads to apply the new language.</string>
     <string name="settings_language_system">Follow system</string>
@@ -41,7 +51,19 @@
     <string name="onboarding_sms_granted">Enabled — ready to read from your bank.</string>
     <string name="onboarding_sms_grant_button">Enable SMS reading</string>
     <string name="onboarding_sms_skip_note">You can enable this later from Settings — Athar works with manual entry too.</string>
+    <string name="onboarding_import_title">Import your old ledger</string>
+    <string name="onboarding_import_body">If you have a CSV from TMOAP or Excel, import it now so Athar starts with your history. You can skip this step.</string>
+    <string name="onboarding_import_card_title">Transaction file</string>
+    <string name="onboarding_import_card_body">Athar expects date, merchant, amount, category, type, and notes columns. Rows it cannot understand are skipped without stopping the import.</string>
+    <string name="onboarding_import_button">Import CSV</string>
+    <string name="onboarding_import_working">Importing</string>
+    <string name="onboarding_import_done_button">Imported</string>
+    <string name="onboarding_import_skip_note">You can import later from Settings.</string>
+    <string name="onboarding_import_working_detail">Stay here until the import finishes.</string>
+    <string name="onboarding_import_done">%1$d transactions added · %2$d rows skipped</string>
     <string name="onboarding_action_back">Back</string>
     <string name="onboarding_action_next">Next</string>
     <string name="onboarding_action_start">Get started</string>
+    <string name="onboarding_action_start_imported">Start with my data</string>
+    <string name="onboarding_action_importing">Importing</string>
 </resources>

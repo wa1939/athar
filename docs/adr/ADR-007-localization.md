@@ -49,7 +49,7 @@ Five-layer architecture, each layer addresses a concrete gap that surfaces if yo
 ### 5. ViewModel state types (no Context dependency)
 - Replaced `errorMessage: StateFlow<String?>` with `error: StateFlow<AccountError?>` where `AccountError` is a sealed enum (`SAVE_FAILED`, `UPDATE_FAILED`, `ARCHIVE_FAILED`, `DELETE_HAS_TRANSACTIONS`). The Composable does `when(error)` to resolve via `stringResource()`.
 - Collapsed `BackupStatus.Success(message)` / `Failure(reason)` into typed variants (`ExportSuccess`, `ImportSuccess`, `ExportFailure(detail?)`, `ImportFailure(detail?)`). Failure variants still carry the underlying exception message as an optional `detail` field so debugging information isn't lost.
-- For VM operations that write strings to disk (e.g. `RecurringRulesViewModel.acceptSuggestion`'s `notes` field), the signature now takes the resolved string as a parameter: `acceptSuggestion(suggestion, notes: String?)`. The Composable resolves `R.string.settings_recurring_auto_detected_notes` and passes it in. This keeps the VM pure while still letting the user's locale shape what gets persisted.
+- For VM operations that write strings to disk (e.g. `RecurringRulesViewModel.acceptSuggestion`'s `notes` field), the ViewModel takes the resolved string as a parameter. The Composable resolves `R.string.settings_recurring_auto_detected_notes` and passes it in. This keeps the VM pure while still letting the user's locale shape what gets persisted.
 
 ## Consequences
 

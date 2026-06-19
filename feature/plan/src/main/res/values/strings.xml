@@ -11,7 +11,9 @@
 
     <!-- Top-level tabs -->
     <string name="plan_tab_budget">الميزانية</string>
+    <string name="plan_tab_bills">الفواتير</string>
     <string name="plan_tab_wishlist">الرغبات</string>
+    <string name="plan_tab_goals">الأهداف</string>
     <string name="plan_tab_investments">الاستثمارات</string>
 
     <!-- Period selector -->
@@ -44,6 +46,28 @@
     <string name="plan_empty_text">لا تصنيفات بعد.</string>
     <string name="plan_empty_subtle">حدد الهدف الشهري لكل تصنيف. اضغط على البطاقة لتعديل.</string>
 
+    <!-- Bills -->
+    <string name="plan_bills_empty_text">لا فواتير مجدولة.</string>
+    <string name="plan_bills_empty_subtle">أضف قواعد متكررة من الإعدادات لرؤية القادم هنا.</string>
+    <string name="plan_bills_summary_title">المستحق الآن و٣٠ يومًا</string>
+    <string name="plan_bills_summary_subtitle" formatted="true">%1$d بنود حتى %2$s</string>
+    <string name="plan_bills_unknown_title">بند معلق</string>
+    <string name="plan_bills_pending_review">يحتاج مراجعة</string>
+    <string name="plan_bills_cadence_monthly">شهري</string>
+    <string name="plan_bills_cadence_weekly">أسبوعي</string>
+    <string name="plan_bills_cadence_yearly">سنوي</string>
+    <string name="plan_bills_overdue">متأخر</string>
+    <string name="plan_bills_today">اليوم</string>
+    <string name="plan_bills_in_days_short" formatted="true">%1$d ي</string>
+    <string name="plan_bills_reminders_title">تذكيرات الفواتير</string>
+    <string name="plan_bills_reminders_body">تنبيه هادئ قبل يومين، وفي يوم الاستحقاق، ومرة واحدة إذا بقيت فاتورة متكررة بانتظار المراجعة.</string>
+    <string name="plan_bills_reminders_on_title">تذكيرات الفواتير مفعّلة</string>
+    <string name="plan_bills_reminders_on_body">سيذكّرك أثر بالمصاريف المتكررة القادمة بدون أحكام على الصرف أو تنبيهات مزعجة.</string>
+    <string name="plan_bills_reminders_permission_title">التنبيهات تحتاج إذنًا</string>
+    <string name="plan_bills_reminders_permission_body">التذكيرات مفعّلة، لكن إذن إشعارات أندرويد غير مفعل. فعّله لاستقبال تذكيرات الفواتير.</string>
+    <string name="plan_bills_reminders_enable">تفعيل التذكيرات</string>
+    <string name="plan_bills_reminders_disable">إيقاف التذكيرات</string>
+
     <!-- Target editor sheet -->
     <string name="plan_target_editor_title_suffix"> · هدف شهري</string>
     <string name="plan_target_editor_amount_label">المبلغ المستهدف</string>
@@ -65,20 +89,54 @@
     <string name="plan_wishlist_capacity_title">السعة الشهرية للرغبات</string>
     <string name="plan_wishlist_capacity_subtitle">متوسط (الدخل − المصاريف) خلال آخر ٣ أشهر</string>
     <string name="plan_wishlist_add">إضافة رغبة</string>
+    <string name="plan_wishlist_summary_remaining">إجمالي المتبقي</string>
+    <string name="plan_wishlist_summary_ready_now">متاحة الآن</string>
+    <string name="plan_wishlist_summary_next_reachable">أقرب موعد</string>
+    <string name="plan_wishlist_summary_target_pressure">ضغط الأهداف شهريًا</string>
+    <string name="plan_wishlist_summary_infeasible">تحتاج سعة</string>
+    <string name="plan_wishlist_summary_none">لا يوجد</string>
+    <string name="plan_wishlist_summary_count" formatted="true">%1$d</string>
     <string name="plan_wishlist_empty_text">لا رغبات بعد.</string>
     <string name="plan_wishlist_empty_subtle">أضف ما تتمنى شراءه — سنخبرك متى يمكنك ذلك بدون أن تقع في الحفرة.</string>
     <string name="plan_wishlist_saved_label">وفّرت </string>
+    <string name="plan_wishlist_remaining_label">المتبقي </string>
+    <string name="plan_wishlist_required_monthly">المطلوب شهريًا </string>
+    <string name="plan_wishlist_target_month" formatted="true">الهدف · %1$s</string>
     <string name="plan_wishlist_status_now">متاحة الآن</string>
     <string name="plan_wishlist_status_wait_until" formatted="true">بعد %1$d أشهر · %2$s</string>
     <string name="plan_wishlist_status_infeasible">غير ممكنة حاليًا</string>
+    <string name="plan_wishlist_status_target_infeasible">تحتاج سعة أعلى للموعد</string>
     <string name="plan_wishlist_editor_title_new">رغبة جديدة</string>
     <string name="plan_wishlist_editor_title_edit">تعديل رغبة</string>
     <string name="plan_wishlist_label_name">الاسم</string>
     <string name="plan_wishlist_label_cost">السعر</string>
     <string name="plan_wishlist_label_saved">ما وفّرته حتى الآن</string>
+    <string name="plan_wishlist_label_start_month">بداية الخطة</string>
+    <string name="plan_wishlist_label_desired_months">أريدها خلال كم شهر؟ (اختياري)</string>
     <string name="plan_wishlist_label_notes">ملاحظات</string>
     <string name="plan_wishlist_action_delete">حذف</string>
     <string name="plan_wishlist_action_save">حفظ</string>
+
+    <!-- Goals -->
+    <string name="plan_goals_savings_title">معدل الادخار</string>
+    <string name="plan_goals_emergency_title">صندوق الطوارئ</string>
+    <string name="plan_goals_percent_value" formatted="true">%1$s%%</string>
+    <string name="plan_goals_months_value" formatted="true">%1$s شهر</string>
+    <string name="plan_goals_not_available">غير متاح</string>
+    <string name="plan_goals_no_monthly_burn">مكتمل</string>
+    <string name="plan_goals_savings_target" formatted="true">الهدف %1$d%%</string>
+    <string name="plan_goals_emergency_target" formatted="true">الهدف %1$d أشهر</string>
+    <string name="plan_goals_monthly_income">متوسط الدخل الشهري</string>
+    <string name="plan_goals_monthly_expense">متوسط المصروف الشهري</string>
+    <string name="plan_goals_monthly_savings">متوسط الادخار الشهري</string>
+    <string name="plan_goals_liquid_balance">الرصيد السائل</string>
+    <string name="plan_goals_emergency_target_amount">مبلغ الهدف</string>
+    <string name="plan_goals_edit_savings_title">تعديل هدف الادخار</string>
+    <string name="plan_goals_edit_savings_label">النسبة المستهدفة من 0 إلى 100</string>
+    <string name="plan_goals_edit_savings_error">اكتب رقمًا بين 0 و100</string>
+    <string name="plan_goals_edit_emergency_title">تعديل صندوق الطوارئ</string>
+    <string name="plan_goals_edit_emergency_label">عدد الأشهر المستهدفة</string>
+    <string name="plan_goals_edit_emergency_error">اكتب رقمًا بين 1 و120</string>
 
     <!-- Investments -->
     <string name="plan_investments_title">الاستثمارات</string>

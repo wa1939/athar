@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts.OpenDocument
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -51,6 +53,10 @@ fun OnboardingScreen(
     val smsLauncher = rememberLauncherForActivityResult(RequestMultiplePermissions()) { results ->
         smsGranted = results.values.all { it }
     }
+    val importLauncher = rememberLauncherForActivityResult(OpenDocument()) { uri ->
+        if (uri != null) viewModel.importCsv(context.contentResolver, uri)
+    }
+    val importWorking = state.importStatus is OnboardingImportStatus.Working
 
     Box(
         modifier = modifier
@@ -75,6 +81,10 @@ fun OnboardingScreen(
                         granted = smsGranted,
                         onGrant = { smsLauncher.launch(SMS_PERMISSIONS) },
                     )
+                    3 -> ImportPage(
+                        status = state.importStatus,
+                        onImport = { importLauncher.launch(CSV_MIME_TYPES) },
+                    )
                 }
             }
             Row(
@@ -91,11 +101,16 @@ fun OnboardingScreen(
                     )
                 }
                 SheetButton(
-                    text = if (state.pageIndex < state.totalPages - 1)
-                        stringResource(R.string.onboarding_action_next)
-                    else stringResource(R.string.onboarding_action_start),
+                    text = when {
+                        importWorking -> stringResource(R.string.onboarding_action_importing)
+                        state.pageIndex < state.totalPages - 1 -> stringResource(R.string.onboarding_action_next)
+                        state.importStatus is OnboardingImportStatus.Done ->
+                            stringResource(R.string.onboarding_action_start_imported)
+                        else -> stringResource(R.string.onboarding_action_start)
+                    },
                     background = theme.colors.ember,
                     textColor = theme.colors.parchment,
+                    enabled = !importWorking,
                     onClick = {
                         if (state.pageIndex < state.totalPages - 1) {
                             viewModel.next()
@@ -106,6 +121,86 @@ fun OnboardingScreen(
                     },
                     modifier = Modifier.weight(if (state.pageIndex == 0) 1f else 2f),
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ImportPage(
+    status: OnboardingImportStatus,
+    onImport: () -> Unit,
+) {
+    val theme = AtharTheme
+    Column(
+        verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        AtharText(text = stringResource(R.string.onboarding_import_title), style = theme.typography.title)
+        AtharText(
+            text = stringResource(R.string.onboarding_import_body),
+            style = theme.typography.body,
+            color = theme.colors.muted,
+        )
+        AtharCard {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(theme.spacing.s),
+            ) {
+                AtharText(
+                    text = stringResource(R.string.onboarding_import_card_title),
+                    style = theme.typography.headline,
+                )
+                AtharText(
+                    text = stringResource(R.string.onboarding_import_card_body),
+                    style = theme.typography.body,
+                    color = theme.colors.muted,
+                )
+                SheetButton(
+                    text = when (status) {
+                        OnboardingImportStatus.Working ->
+                            stringResource(R.string.onboarding_import_working)
+                        is OnboardingImportStatus.Done ->
+                            stringResource(R.string.onboarding_import_done_button)
+                        else -> stringResource(R.string.onboarding_import_button)
+                    },
+                    background = if (status is OnboardingImportStatus.Done) {
+                        theme.colors.olive
+                    } else {
+                        theme.colors.ember
+                    },
+                    textColor = theme.colors.parchment,
+                    enabled = status !is OnboardingImportStatus.Working &&
+                        status !is OnboardingImportStatus.Done,
+                    onClick = onImport,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                when (status) {
+                    OnboardingImportStatus.Idle -> AtharText(
+                        text = stringResource(R.string.onboarding_import_skip_note),
+                        style = theme.typography.caption,
+                        color = theme.colors.muted,
+                    )
+                    OnboardingImportStatus.Working -> AtharText(
+                        text = stringResource(R.string.onboarding_import_working_detail),
+                        style = theme.typography.caption,
+                        color = theme.colors.muted,
+                    )
+                    is OnboardingImportStatus.Done -> AtharText(
+                        text = stringResource(
+                            R.string.onboarding_import_done,
+                            status.imported,
+                            status.skipped,
+                        ),
+                        style = theme.typography.caption,
+                        color = theme.colors.olive,
+                    )
+                    is OnboardingImportStatus.Failed -> AtharText(
+                        text = status.reason,
+                        style = theme.typography.caption,
+                        color = theme.colors.crimson,
+                    )
+                }
             }
         }
     }
@@ -232,6 +327,7 @@ private fun SheetButton(
     textColor: androidx.compose.ui.graphics.Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     val theme = AtharTheme
     Box(
@@ -239,7 +335,8 @@ private fun SheetButton(
             .height(56.dp)
             .clip(RoundedCornerShape(theme.spacing.s))
             .background(background)
-            .clickable(onClick = onClick),
+            .alpha(if (enabled) 1f else 0.56f)
+            .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         AtharText(text = text, style = theme.typography.headline, color = textColor)
@@ -249,6 +346,14 @@ private fun SheetButton(
 private val SMS_PERMISSIONS = arrayOf(
     Manifest.permission.RECEIVE_SMS,
     Manifest.permission.READ_SMS,
+)
+
+private val CSV_MIME_TYPES = arrayOf(
+    "text/csv",
+    "text/comma-separated-values",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-excel",
+    "*/*",
 )
 
 private fun hasSmsPermissions(context: Context): Boolean = SMS_PERMISSIONS.all {

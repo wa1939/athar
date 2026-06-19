@@ -45,11 +45,14 @@ def main():
         if key in keep_keys:
             continue
         keep_keys.add(key)
-        cleaned_curated.append({
+        cleaned = {
             "pattern": r["pattern"].strip(),
             "categoryId": r["categoryId"],
             "priority": r.get("priority", 100),
-        })
+        }
+        if "patternType" in r:
+            cleaned["patternType"] = r["patternType"]
+        cleaned_curated.append(cleaned)
     print(f"curated rules (deduped): {len(cleaned_curated)}")
 
     ai_added: list[dict] = []

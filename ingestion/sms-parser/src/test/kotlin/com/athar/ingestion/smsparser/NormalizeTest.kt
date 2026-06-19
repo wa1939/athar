@@ -2,6 +2,7 @@ package com.athar.ingestion.smsparser
 
 import com.google.common.truth.Truth.assertThat
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
 
 class NormalizeTest {
 
@@ -18,5 +19,39 @@ class NormalizeTest {
     @Test
     fun `compresses whitespace`() {
         assertThat(Normalize.merchant("  STARBUCKS   1234  ")).isEqualTo("starbucks 1234")
+    }
+
+    @Test
+    fun `parses US grouped amount`() {
+        assertThat(Normalize.amount("1,234.56")).isEqualTo(BigDecimal("1234.56"))
+    }
+
+    @Test
+    fun `parses European grouped amount`() {
+        assertThat(Normalize.amount("1.234,56")).isEqualTo(BigDecimal("1234.56"))
+    }
+
+    @Test
+    fun `parses comma decimal amount`() {
+        assertThat(Normalize.amount("18,50")).isEqualTo(BigDecimal("18.50"))
+    }
+
+    @Test
+    fun `parses space grouped comma decimal amount`() {
+        assertThat(Normalize.amount("12 345,67")).isEqualTo(BigDecimal("12345.67"))
+    }
+
+    @Test
+    fun `maps regional currency symbols to ISO codes`() {
+        assertThat(Normalize.currencyCode("S$")).isEqualTo("SGD")
+        assertThat(Normalize.currencyCode("R$")).isEqualTo("BRL")
+        assertThat(Normalize.currencyCode("RM")).isEqualTo("MYR")
+        assertThat(Normalize.currencyCode("Rp")).isEqualTo("IDR")
+        assertThat(Normalize.currencyCode("₱")).isEqualTo("PHP")
+        assertThat(Normalize.currencyCode("₩")).isEqualTo("KRW")
+        assertThat(Normalize.currencyCode("฿")).isEqualTo("THB")
+        assertThat(Normalize.currencyCode("₫")).isEqualTo("VND")
+        assertThat(Normalize.currencyCode("HK$")).isEqualTo("HKD")
+        assertThat(Normalize.currencyCode("Mex$")).isEqualTo("MXN")
     }
 }

@@ -1,6 +1,7 @@
 package com.athar.di
 
 import com.athar.ingestion.notificationlistener.BankPackageFilter
+import com.athar.ingestion.notificationlistener.BankNotificationPackageMatcher
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -13,14 +14,10 @@ internal object StoreSafeIngestionModule {
 
     /**
      * Bank-package filter for the storeSafe flavor's NotificationListenerService.
-     * Default set covers Al Rajhi; user-configurable in Settings later.
+     * Default set covers Saudi banks/wallets and common global finance apps; user-configurable
+     * in Settings later.
      */
     @Provides
     @Singleton
-    fun provideBankPackageFilter(): BankPackageFilter = BankPackageFilter { pkg ->
-        pkg in setOf(
-            "com.alrajhibank.AlRajhiMobile",
-            "com.alrajhibank.alrajhimobile",
-        )
-    }
+    fun provideBankPackageFilter(): BankPackageFilter = BankNotificationPackageMatcher
 }

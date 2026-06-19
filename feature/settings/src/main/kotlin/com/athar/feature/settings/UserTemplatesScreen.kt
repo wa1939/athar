@@ -29,6 +29,7 @@ import com.athar.core.designsystem.component.AtharTextField
 import com.athar.core.designsystem.theme.AtharTheme
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.model.UserTemplate
+import com.athar.core.domain.model.UserTemplateAnchorMatch
 
 @Composable
 fun UserTemplatesScreen(
@@ -196,8 +197,85 @@ private fun TemplateFormCard(
                 onAfterChange = { onChange(form.copy(counterpartyAnchorAfter = it)) },
             )
 
+            TemplatePreview(match = form.preview)
             SaveButton(enabled = form.isValid, onClick = onSave)
         }
+    }
+}
+
+@Composable
+private fun TemplatePreview(match: UserTemplateAnchorMatch?) {
+    val theme = AtharTheme
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(theme.spacing.xs),
+    ) {
+        AtharText(
+            text = stringResource(R.string.settings_templates_preview_title),
+            style = theme.typography.headline,
+        )
+        if (match == null) {
+            AtharText(
+                text = stringResource(R.string.settings_templates_preview_waiting),
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+            return
+        }
+
+        if (match.canParseAmount) {
+            AtharText(
+                text = stringResource(
+                    R.string.settings_templates_preview_amount,
+                    match.amount?.toPlainString().orEmpty(),
+                ),
+                style = theme.typography.caption,
+                color = theme.colors.olive,
+            )
+            match.merchant?.let {
+                AtharText(
+                    text = stringResource(R.string.settings_templates_preview_merchant, it),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+            }
+            match.counterparty?.let {
+                AtharText(
+                    text = stringResource(R.string.settings_templates_preview_counterparty, it),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+            }
+            OptionalAnchorWarning(
+                anchorFound = match.merchantAnchorFound,
+                text = stringResource(R.string.settings_templates_preview_merchant_missing),
+            )
+            OptionalAnchorWarning(
+                anchorFound = match.counterpartyAnchorFound,
+                text = stringResource(R.string.settings_templates_preview_counterparty_missing),
+            )
+        } else {
+            AtharText(
+                text = if (match.amountAnchorFound) {
+                    stringResource(R.string.settings_templates_preview_amount_invalid)
+                } else {
+                    stringResource(R.string.settings_templates_preview_amount_missing)
+                },
+                style = theme.typography.caption,
+                color = theme.colors.crimson,
+            )
+        }
+    }
+}
+
+@Composable
+private fun OptionalAnchorWarning(anchorFound: Boolean?, text: String) {
+    if (anchorFound == false) {
+        AtharText(
+            text = text,
+            style = AtharTheme.typography.caption,
+            color = AtharTheme.colors.dust,
+        )
     }
 }
 

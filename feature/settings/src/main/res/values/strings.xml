@@ -28,7 +28,7 @@
 
     <!-- Backfill card -->
     <string name="settings_backfill_title">إعادة فحص الرسائل</string>
-    <string name="settings_backfill_body">اقرأ آخر ٩٠ يومًا من الرسائل في صندوق الوارد وأنشئ منها حركات معلّقة في انتظار التأكيد.</string>
+    <string name="settings_backfill_body">اقرأ صندوق الرسائل وأنشئ منه حركات معلّقة في انتظار التأكيد.</string>
     <string name="settings_backfill_running" formatted="true">جارٍ المسح… (%1$d رسالة)</string>
     <string name="settings_backfill_done" formatted="true">تم فحص %1$d رسالة، أُرسلت %2$d للمعالجة.</string>
     <string name="settings_backfill_failed" formatted="true">تعذّر الفحص: %1$s</string>
@@ -38,9 +38,14 @@
     <!-- Rescan & clean card -->
     <string name="settings_rescan_title">إعادة فحص الرسائل</string>
     <string name="settings_rescan_body">يحذف كل الحركات قيد التأكيد ويعيد قراءة سجل الرسائل بأحدث القوالب. حركاتك المؤكدة لن تتأثر. مفيد بعد التحديث لتنظيف الإعلانات والإشعارات التي دخلت بالخطأ.</string>
+    <string name="settings_rescan_pending_count" formatted="true">المعلّقة الآن: %1$d</string>
     <string name="settings_rescan_working">جاري إعادة الفحص…</string>
     <string name="settings_rescan_done" formatted="true">تم حذف %1$d عنصرًا من قائمة الانتظار، وأُعيد فحص السجل.</string>
     <string name="settings_rescan_action">إعادة فحص ومسح المُعلَّقات</string>
+    <string name="settings_rescan_confirm_title">إعادة فحص سجل الرسائل؟</string>
+    <string name="settings_rescan_confirm_body" formatted="true">سيحذف هذا الإجراء %1$d حركة معلّقة، ثم يقرأ سجل الرسائل من جديد بالقوالب الحالية. الحركات المؤكدة لا تتأثر. راجع النتيجة في «اليوم» أو سجل الحركات قبل الاعتماد على الإجماليات.</string>
+    <string name="settings_rescan_confirm_cancel">إبقاء البيانات الحالية</string>
+    <string name="settings_rescan_confirm_action">إعادة الفحص</string>
 
     <!-- Recover dismissed transactions card -->
     <string name="settings_recover_title">استرجاع الحركات المتجاهَلة</string>
@@ -66,13 +71,101 @@
     <string name="settings_backup_passphrase_import_confirm">استرجاع</string>
     <string name="settings_backup_passphrase_label">كلمة المرور</string>
 
-    <!-- CSV card -->
-    <string name="settings_csv_title">تبادل CSV</string>
-    <string name="settings_csv_body">استورد من جدول الاكسل القديم أو صدّر حركاتك بصيغة CSV (الأعمدة: date · vendor · amount · category · type · notes).</string>
+    <!-- Statement exchange card -->
+    <string name="settings_csv_title">تبادل الكشوف</string>
+    <string name="settings_csv_body">استورد من جدول الاكسل القديم أو كشف بنك بصيغة XLSX أو CSV/TSV أو OFX/QFX أو MT940. راجع الحقول المكتشفة قبل الاستيراد، وصدّر حركاتك كملف CSV للمحاسب.</string>
     <string name="settings_csv_done" formatted="true">تم استيراد %1$d حركة. (تم تخطّي %2$d صف.)</string>
     <string name="settings_csv_exported" formatted="true">تم تصدير %1$d حركة.</string>
-    <string name="settings_csv_action_import">استيراد</string>
+    <string name="settings_csv_action_import">استيراد كشف</string>
     <string name="settings_csv_action_export">تصدير</string>
+    <string name="settings_csv_account_label">استيراد إلى حساب</string>
+    <string name="settings_csv_preview_summary" formatted="true">جاهز لاستيراد %1$d صف. سيتم تخطي %2$d صف.</string>
+    <string name="settings_csv_preview_confirm">تأكيد الاستيراد</string>
+    <string name="settings_csv_preview_cancel">إلغاء</string>
+    <string name="settings_csv_preview_first_skip" formatted="true">أول صف متخطى: #%1$d · %2$s</string>
+    <string name="settings_csv_preview_row_included">سيتم استيراد هذا الصف</string>
+    <string name="settings_csv_preview_row_excluded">مستبعد من الاستيراد</string>
+    <string name="settings_csv_preview_row_edited">تم تعديل هذا الصف</string>
+    <string name="settings_csv_preview_row_account" formatted="true">الحساب: %1$s</string>
+    <string name="settings_csv_preview_row_edit">تعديل الصف</string>
+    <string name="settings_csv_preview_currency_title">ملخص العملات قبل الاستيراد</string>
+    <string name="settings_csv_preview_currency_rows">صف</string>
+    <string name="settings_csv_row_edit_title" formatted="true">تعديل الصف #%1$d</string>
+    <string name="settings_csv_row_edit_account">الحساب</string>
+    <string name="settings_csv_row_edit_date">التاريخ (YYYY-MM-DD)</string>
+    <string name="settings_csv_row_edit_merchant">التاجر أو الوصف</string>
+    <string name="settings_csv_row_edit_amount">المبلغ</string>
+    <string name="settings_csv_row_edit_currency">العملة</string>
+    <string name="settings_csv_row_edit_category">الفئة</string>
+    <string name="settings_csv_row_edit_notes">ملاحظات</string>
+    <string name="settings_csv_row_edit_save">حفظ التعديل</string>
+    <string name="settings_csv_preview_column_date">التاريخ</string>
+    <string name="settings_csv_preview_column_merchant">التاجر</string>
+    <string name="settings_csv_preview_column_money">المبلغ</string>
+    <string name="settings_csv_preview_column_currency">العملة</string>
+    <string name="settings_csv_preview_column_category">الفئة</string>
+    <string name="settings_csv_preview_type_expense">مصروف</string>
+    <string name="settings_csv_preview_type_income">دخل</string>
+    <string name="settings_csv_preview_type_transfer">تحويل</string>
+    <string name="settings_csv_mapping_body">اختر أعمدة الكشف ثم اعرض المعاينة مرة أخرى.</string>
+    <string name="settings_csv_mapping_preview">معاينة الأعمدة</string>
+    <string name="settings_csv_mapping_none">بدون</string>
+    <string name="settings_csv_mapping_blank_column">عمود بلا اسم</string>
+    <string name="settings_csv_mapping_date">تاريخ الحركة</string>
+    <string name="settings_csv_mapping_merchant">التاجر أو الوصف</string>
+    <string name="settings_csv_mapping_amount">مبلغ واحد</string>
+    <string name="settings_csv_mapping_debit">مدين / مصروف</string>
+    <string name="settings_csv_mapping_credit">دائن / دخل</string>
+    <string name="settings_csv_mapping_currency">العملة</string>
+    <string name="settings_csv_mapping_category">الفئة</string>
+    <string name="settings_csv_mapping_type">نوع الحركة</string>
+    <string name="settings_csv_mapping_notes">ملاحظات</string>
+
+    <!-- Budget target import card -->
+    <string name="settings_budget_targets_title">أهداف الميزانية</string>
+    <string name="settings_budget_targets_body">استورد أهداف الفئات الشهرية من ورقة Budget Targets في ملف TMOAP. يعرض أثر معاينة أولًا ثم يحدّث الفئات النشطة المطابقة فقط بعد التأكيد.</string>
+    <string name="settings_budget_targets_action_import">استيراد الأهداف</string>
+    <string name="settings_budget_targets_preview_summary" formatted="true">جاهز لتطبيق %1$d هدف. سيتغيّر %2$d هدف. سيتم تخطي %3$d صف.</string>
+    <string name="settings_budget_targets_preview_totals" formatted="true">المصروفات: %1$d أهداف · %2$s شهريًا. الدخل: %3$d أهداف · %4$s شهريًا.</string>
+    <string name="settings_budget_targets_preview_row" formatted="true">%1$s · %2$s · %3$s شهريًا</string>
+    <string name="settings_budget_targets_preview_first_skip" formatted="true">أول هدف متخطى: #%1$d · %2$s · %3$s</string>
+    <string name="settings_budget_targets_preview_confirm">تأكيد الأهداف</string>
+    <string name="settings_budget_targets_done" formatted="true">تم تطبيق %1$d هدف. تغيّر %2$d هدف. تم تخطي %3$d صف.</string>
+
+    <!-- Wishlist import card -->
+    <string name="settings_wishlist_import_title">استيراد قائمة الأمنيات</string>
+    <string name="settings_wishlist_import_body">استورد العناصر من ورقة Wishlist في ملف TMOAP. يعرض أثر العناصر الجديدة والعناصر المطابقة أولًا، ثم يحدّث مخطط الأمنيات بعد التأكيد فقط.</string>
+    <string name="settings_wishlist_import_action_import">استيراد الأمنيات</string>
+    <string name="settings_wishlist_import_preview_summary" formatted="true">جاهز لاستيراد %1$d عنصر: %2$d جديد، %3$d تحديث. سيتم تخطي %4$d صف.</string>
+    <string name="settings_wishlist_import_preview_totals" formatted="true">إجمالي التكلفة: %1$s · المدخر: %2$s</string>
+    <string name="settings_wishlist_import_preview_row" formatted="true">%1$s · التكلفة %2$s · المدخر %3$s · %4$s شهر · يبدأ %5$s · %6$s</string>
+    <string name="settings_wishlist_import_preview_first_skip" formatted="true">أول صف أمنيات متخطى: #%1$d · %2$s · %3$s</string>
+    <string name="settings_wishlist_import_preview_confirm">تأكيد الأمنيات</string>
+    <string name="settings_wishlist_import_preview_new">جديد</string>
+    <string name="settings_wishlist_import_preview_existing">تحديث</string>
+    <string name="settings_wishlist_import_preview_flexible_months">مرن</string>
+    <string name="settings_wishlist_import_done" formatted="true">تم استيراد %1$d عنصر أمنيات. %2$d جديد. %3$d محدّث. تم تخطي %4$d صف.</string>
+
+    <!-- Investment import card -->
+    <string name="settings_investment_import_title">استيراد استثمارات العائلة</string>
+    <string name="settings_investment_import_body">استورد ورقة استثمارات العائلة من ملف TMOAP إلى التخطيط. يعرض أثر الصندوق أولًا؛ وعند التأكيد يحدّث العائد ويستبدل مساهمي الصندوق المطابق حتى لا تتكرر الصفوف عند إعادة الاستيراد.</string>
+    <string name="settings_investment_import_action_import">استيراد الاستثمارات</string>
+    <string name="settings_investment_import_preview_summary" formatted="true">%1$s: جاهز لاستيراد %2$d مساهمة. سيتم تخطي %3$d صف.</string>
+    <string name="settings_investment_import_preview_totals" formatted="true">الفترة: %1$s · رأس المال: %2$s · العائد: %3$s</string>
+    <string name="settings_investment_import_preview_replace" formatted="true">هذا يطابق صندوقًا موجودًا. عند التأكيد سيتم استبدال %1$d صف مساهمين موجود.</string>
+    <string name="settings_investment_import_preview_row" formatted="true">%1$s · مساهمة %2$s</string>
+    <string name="settings_investment_import_preview_first_skip" formatted="true">أول صف استثمار متخطى: #%1$d · %2$s · %3$s</string>
+    <string name="settings_investment_import_preview_confirm">تأكيد الاستثمارات</string>
+    <string name="settings_investment_import_done_new" formatted="true">تم استيراد %1$d مساهمة استثمارية. تم تخطي %2$d صف.</string>
+    <string name="settings_investment_import_done_existing" formatted="true">تم استيراد %1$d مساهمة واستبدال %2$d صف قديم. تم تخطي %3$d صف.</string>
+
+    <!-- Tax export card -->
+    <string name="settings_tax_title">تصدير للمحاسب والضرائب</string>
+    <string name="settings_tax_body">أنشئ ملف PDF سنوي يحتوي ملخص الدخل والمصروفات، إجمالي كل فئة، وقائمة الحركات المؤكدة. تُستبعد تسويات الرصيد لأنها ليست دخلًا أو مصروفًا حقيقيًا.</string>
+    <string name="settings_tax_year_label">السنة</string>
+    <string name="settings_tax_exported" formatted="true">تم تصدير تقرير %1$d: %2$d حركة · %3$d إجمالي فئة.</string>
+    <string name="settings_tax_excluded_reconciliations" formatted="true">تم استبعاد %1$d تسوية رصيد.</string>
+    <string name="settings_tax_action_export">تصدير PDF</string>
 
     <!-- Updates via Obtainium (beta.22) -->
     <string name="settings_updates_title">تابع التحديثات</string>
@@ -84,19 +177,42 @@
 
     <!-- Community rules sharing (beta.20) -->
     <string name="settings_community_title">ساعد المجتمع · شارك القواعد</string>
-    <string name="settings_community_body">صدّر قواعد التصنيف الشخصية التي أنشأتها بنفسك (التاجر ← الفئة) كملف JSON واحد، ثم أرسلها كاقتراح على GitHub. تُراجَع وتُدمج في الإصدار القادم ليستفيد منها كل المستخدمين الجدد. لا تُرسَل أي حركة أو رصيد أو نص رسالة — فقط ما اخترته أنت بـ«اعتبره دائماً كذا».</string>
+    <string name="settings_community_body">صدّر قواعد التصنيف التي أنشأتها صراحة من «اعتبره دائماً كذا» كملف JSON واحد، ثم أرسلها كاقتراح على GitHub. القواعد المحلية الدقيقة الناتجة من التصنيف المجمّع تبقى على الجهاز. لا تُرسل الحركات أو نصوص الرسائل.</string>
     <string name="settings_community_exported" formatted="true">تم تصدير %1$d قاعدة. الخطوة التالية: افتح صفحة GitHub وأرفق الملف.</string>
     <string name="settings_community_empty">لا توجد قواعد شخصية لمشاركتها بعد. كل ما تختاره من «اعتبره دائماً X» سيظهر هنا.</string>
     <string name="settings_community_action_export">تصدير قواعدي</string>
     <string name="settings_community_action_open_issue">افتح صفحة GitHub</string>
 
+    <!-- Support diagnostics export -->
+    <string name="settings_support_diagnostics_title">تشخيص الدعم</string>
+    <string name="settings_support_diagnostics_body">صدّر تقرير JSON منقّحًا لمساعدة الدعم في تحسين قراءة الرسائل: أعداد الرسائل، بصمات مرسلين مجهولة، شكل نص الرسالة، مجموعات القوالب الفاشلة، وأخطاء منقّحة. لا يحتوي على نص الرسائل الخام أو الأرصدة أو أرقام البطاقات أو الحسابات.</string>
+    <string name="settings_support_diagnostics_exported" formatted="true">تم تصدير تشخيص %1$d رسالة (%2$d ناجحة · %3$d فاشلة · %4$d متجاهلة).</string>
+    <string name="settings_support_diagnostics_action_export">تصدير التشخيص</string>
+
     <!-- Bulk-categorize via AI (Issue #5a) -->
     <string name="settings_bulk_cat_title">تصنيف بالذكاء الاصطناعي · مجمّع</string>
-    <string name="settings_bulk_cat_body">صدّر كل الحركات غير المصنّفة كملف CSV، اعطه لـ ChatGPT/Claude مع موجّه التصنيف، ثم استورد الملف المعبّأ. كل تصنيف يُحدّث الحركة ويضيف قاعدة تربط التاجر بالفئة حتى تستفيد الحركات القادمة تلقائياً.</string>
+    <string name="settings_bulk_cat_body">انسخ موجّه التصنيف، وصدّر الحركات غير المصنّفة، ما عدا التحويلات، كملف CSV مرتّب حسب التجار المتكررين مع توضيح أثر كل مجموعة وخيارات الفئات الصالحة. أعطه لـ ChatGPT/Claude، ثم استورد الملف المعبّأ للمعاينة أولاً. استخدم التصدير الخاص لحذف نص الرسائل الخام. اختيار واضح واحد يمكن أن يحدّث الصفوف الفارغة لنفس التاجر ويضيف قاعدة محلية دقيقة للتصنيف القادم تلقائياً؛ ويعرض عدد التحديثات والقواعد والتخطّي وأثر الفئات قبل التطبيق.</string>
     <string name="settings_bulk_cat_exported" formatted="true">تم تصدير %1$d حركة غير مصنّفة.</string>
+    <string name="settings_bulk_cat_previewed" formatted="true">جاهز لتحديث %1$d حركة · إضافة %2$d قاعدة · تخطّي %3$d.</string>
+    <string name="settings_bulk_cat_impact" formatted="true">الأثر حسب الفئة: %1$s.</string>
+    <string name="settings_bulk_cat_impact_item" formatted="true">%1$s %2$d</string>
+    <string name="settings_bulk_cat_impact_more" formatted="true">+%1$d أخرى</string>
     <string name="settings_bulk_cat_imported" formatted="true">تم تحديث %1$d حركة · أُضيفت %2$d قاعدة · تم تخطّي %3$d.</string>
-    <string name="settings_bulk_cat_action_export">تصدير غير المصنّف</string>
+    <string name="settings_bulk_cat_skip_details" formatted="true">تفاصيل التخطّي: %1$s.</string>
+    <string name="settings_bulk_cat_skip_unknown" formatted="true">فئة غير معروفة %1$d</string>
+    <string name="settings_bulk_cat_skip_incompatible" formatted="true">نوع غير مطابق %1$d</string>
+    <string name="settings_bulk_cat_skip_missing" formatted="true">حركة غير موجودة %1$d</string>
+    <string name="settings_bulk_cat_skip_conflict" formatted="true">مجموعة متعارضة %1$d</string>
+    <string name="settings_bulk_cat_skip_blank" formatted="true">تُركت فارغة %1$d</string>
+    <string name="settings_bulk_cat_skip_malformed" formatted="true">صف غير صالح %1$d</string>
+    <string name="settings_bulk_cat_action_copy_prompt">نسخ موجّه التصنيف</string>
+    <string name="settings_bulk_cat_prompt_copied">تم نسخ الموجّه.</string>
+    <string name="settings_bulk_cat_prompt_clip_label">موجّه تصنيف أثر المجمّع</string>
+    <string name="settings_bulk_cat_action_export">تصدير مع نص الرسائل</string>
+    <string name="settings_bulk_cat_action_export_private">تصدير خاص CSV</string>
     <string name="settings_bulk_cat_action_import">استيراد المصنّف</string>
+    <string name="settings_bulk_cat_action_confirm_import">تطبيق الاستيراد</string>
+    <string name="settings_bulk_cat_action_cancel_import">إلغاء المعاينة</string>
 
     <!-- Display currency card -->
     <string name="settings_currency_title">العملة المعروضة</string>
@@ -167,6 +283,9 @@
     <string name="settings_accounts_field_name">اسم الحساب</string>
     <string name="settings_accounts_field_name_hint">اسم الحساب (مثلاً: الراجحي - جاري)</string>
     <string name="settings_accounts_field_opening" formatted="true">الرصيد الافتتاحي (%1$s)</string>
+    <string name="settings_accounts_field_sms_senders">معرّفات توجيه الرسائل</string>
+    <string name="settings_accounts_field_sms_senders_help">اكتب أسماء مرسلي الرسائل أو آخر أرقام البطاقة/الحساب مفصولة بفواصل، مثل: AlRajhiBank, 9803. تُستخدم محليًا فقط لربط الرسائل الجديدة بهذا الحساب.</string>
+    <string name="settings_accounts_sms_routes" formatted="true">توجيه رسائل البنك: %1$s</string>
     <string name="settings_accounts_field_notes">ملاحظات (اختياري)</string>
     <string name="settings_accounts_save_edits">حفظ التعديلات</string>
     <string name="settings_accounts_action_edit">تعديل</string>
@@ -224,6 +343,7 @@
     <string name="settings_recurring_field_name">الاسم (مثلاً: راتب)</string>
     <string name="settings_recurring_field_merchant">الجهة (مثلاً: شركة ، Netflix)</string>
     <string name="settings_recurring_field_amount" formatted="true">المبلغ (%1$s)</string>
+    <string name="settings_recurring_field_account">الحساب</string>
     <string name="settings_recurring_field_day_of_month">يوم الشهر (1-28)</string>
     <string name="settings_recurring_type_expense">مصروف</string>
     <string name="settings_recurring_type_income">دخل</string>
@@ -232,6 +352,14 @@
     <string name="settings_recurring_cadence_yearly">سنوي</string>
     <string name="settings_recurring_save">حفظ القاعدة</string>
     <string name="settings_recurring_create_rule">إنشاء قاعدة</string>
+    <string name="settings_recurring_route_title">مراجعة الحساب والتصنيف</string>
+    <string name="settings_recurring_route_save">حفظ التوجيه</string>
+    <string name="settings_recurring_route_uncategorized">بدون تصنيف</string>
+    <string name="settings_recurring_row_account_category" formatted="true">%1$s · %2$s</string>
+    <string name="settings_recurring_row_edit_routing">الحساب/التصنيف</string>
+    <string name="settings_recurring_row_manual_account">الحساب اليدوي</string>
+    <string name="settings_recurring_row_unknown_account" formatted="true">حساب غير معروف · %1$s</string>
+    <string name="settings_recurring_row_unknown_category" formatted="true">تصنيف غير معروف · %1$s</string>
     <string name="settings_recurring_row_next" formatted="true">التالي: %1$s</string>
     <string name="settings_recurring_row_active">مفعّل</string>
     <string name="settings_recurring_row_inactive">موقَف</string>
@@ -259,6 +387,10 @@
     <string name="settings_sms_audit_filter_parsed">ناجحة</string>
     <string name="settings_sms_audit_filter_failed">فاشلة</string>
     <string name="settings_sms_audit_filter_ignored">مُتجاهَلة</string>
+    <string name="settings_sms_audit_parse_rate" formatted="true">معدل التحليل الناجح · %1$d٪</string>
+    <string name="settings_sms_audit_sender_health_title">صحة المرسلين</string>
+    <string name="settings_sms_audit_sender_health_body">أكثر المرسلين احتياجًا للمراجعة. الفشل يعني أن القالب لا يفهم الرسالة؛ التجاهل يعني غالبًا إعلانًا أو رمز تحقق.</string>
+    <string name="settings_sms_audit_sender_health_counts" formatted="true">%1$d ناجحة · %2$d فاشلة · %3$d متجاهَلة</string>
     <string name="settings_sms_audit_empty">لا رسائل في هذا التصنيف بعد.</string>
     <string name="settings_sms_audit_empty_subtle">تظهر الرسائل هنا كلما وصلت أو فعّلت إعادة الفحص من الإعدادات.</string>
 
@@ -289,6 +421,15 @@
     <string name="settings_templates_anchor_merchant_hint">للمشتريات: الكلمة قبل اسم المتجر (مثلاً: At: أو لدى)</string>
     <string name="settings_templates_anchor_counterparty_label">المُحوَّل إليه (اختياري)</string>
     <string name="settings_templates_anchor_counterparty_hint">للتحويلات: الكلمة قبل اسم المستلم (مثلاً: To: أو إلى)</string>
+    <string name="settings_templates_preview_title">معاينة التحليل</string>
+    <string name="settings_templates_preview_waiting">الصق رسالة عيّنة واكتب إشارة المبلغ لرؤية النتيجة قبل الحفظ.</string>
+    <string name="settings_templates_preview_amount" formatted="true">المبلغ الذي سيُقرأ: %1$s</string>
+    <string name="settings_templates_preview_merchant" formatted="true">المتجر: %1$s</string>
+    <string name="settings_templates_preview_counterparty" formatted="true">الطرف الآخر: %1$s</string>
+    <string name="settings_templates_preview_amount_missing">لم نجد إشارة المبلغ في الرسالة. عدّل خانة \"قبل\".</string>
+    <string name="settings_templates_preview_amount_invalid">وجدنا إشارة المبلغ، لكن لم نجد رقمًا صالحًا بعدها. عدّل \"بعد\" أو الإشارة.</string>
+    <string name="settings_templates_preview_merchant_missing">إشارة المتجر موجودة في النموذج، لكنها لم تظهر في الرسالة.</string>
+    <string name="settings_templates_preview_counterparty_missing">إشارة الطرف الآخر موجودة في النموذج، لكنها لم تظهر في الرسالة.</string>
     <string name="settings_templates_save">حفظ القالب</string>
     <string name="settings_templates_row_sender" formatted="true">المرسل: %1$s · %2$s</string>
     <string name="settings_templates_row_anchor_before" formatted="true">قبل المبلغ: \"%1$s\"</string>

@@ -28,7 +28,7 @@
 
     <!-- Backfill card -->
     <string name="settings_backfill_title">Rescan SMS</string>
-    <string name="settings_backfill_body">Read the last 90 days of SMS in your inbox and create pending transactions awaiting confirmation.</string>
+    <string name="settings_backfill_body">Read your SMS inbox and create pending transactions awaiting confirmation.</string>
     <string name="settings_backfill_running" formatted="true">Scanning… (%1$d messages)</string>
     <string name="settings_backfill_done" formatted="true">Scanned %1$d messages, sent %2$d for processing.</string>
     <string name="settings_backfill_failed" formatted="true">Scan failed: %1$s</string>
@@ -38,9 +38,14 @@
     <!-- Rescan & clean card -->
     <string name="settings_rescan_title">Rescan SMS</string>
     <string name="settings_rescan_body">Removes all pending transactions and re-reads the SMS log with the latest templates. Your confirmed transactions are untouched. Useful after an update to clear ads and false positives.</string>
+    <string name="settings_rescan_pending_count" formatted="true">Pending now: %1$d</string>
     <string name="settings_rescan_working">Rescanning…</string>
     <string name="settings_rescan_done" formatted="true">Cleared %1$d pending items and rescanned the log.</string>
     <string name="settings_rescan_action">Rescan and clear pending</string>
+    <string name="settings_rescan_confirm_title">Rescan SMS log?</string>
+    <string name="settings_rescan_confirm_body" formatted="true">This will clear %1$d pending transaction(s), then read the SMS log again with the current templates. Confirmed transactions stay untouched. Review the result in Today or History before trusting the totals.</string>
+    <string name="settings_rescan_confirm_cancel">Keep current data</string>
+    <string name="settings_rescan_confirm_action">Rescan</string>
 
     <!-- Recover dismissed transactions card -->
     <string name="settings_recover_title">Recover dismissed transactions</string>
@@ -66,13 +71,101 @@
     <string name="settings_backup_passphrase_import_confirm">Restore</string>
     <string name="settings_backup_passphrase_label">Passphrase</string>
 
-    <!-- CSV card -->
-    <string name="settings_csv_title">CSV exchange</string>
-    <string name="settings_csv_body">Import from your old Excel sheet, or export transactions to CSV (columns: date · vendor · amount · category · type · notes).</string>
+    <!-- Statement exchange card -->
+    <string name="settings_csv_title">Statement exchange</string>
+    <string name="settings_csv_body">Import from an old Excel workbook, bank-statement XLSX, CSV/TSV, OFX, QFX, or MT940. Preview detected fields before import; export transactions as CSV for accounting.</string>
     <string name="settings_csv_done" formatted="true">Imported %1$d transactions. (Skipped %2$d rows.)</string>
     <string name="settings_csv_exported" formatted="true">Exported %1$d transactions.</string>
-    <string name="settings_csv_action_import">Import</string>
+    <string name="settings_csv_action_import">Import statement</string>
     <string name="settings_csv_action_export">Export</string>
+    <string name="settings_csv_account_label">Import into account</string>
+    <string name="settings_csv_preview_summary" formatted="true">Ready to import %1$d rows. %2$d rows will be skipped.</string>
+    <string name="settings_csv_preview_confirm">Confirm import</string>
+    <string name="settings_csv_preview_cancel">Cancel</string>
+    <string name="settings_csv_preview_first_skip" formatted="true">First skipped row: #%1$d · %2$s</string>
+    <string name="settings_csv_preview_row_included">This row will import</string>
+    <string name="settings_csv_preview_row_excluded">Excluded from import</string>
+    <string name="settings_csv_preview_row_edited">This row has edits</string>
+    <string name="settings_csv_preview_row_account" formatted="true">Account: %1$s</string>
+    <string name="settings_csv_preview_row_edit">Edit row</string>
+    <string name="settings_csv_preview_currency_title">Currency review before import</string>
+    <string name="settings_csv_preview_currency_rows">rows</string>
+    <string name="settings_csv_row_edit_title" formatted="true">Edit row #%1$d</string>
+    <string name="settings_csv_row_edit_account">Account</string>
+    <string name="settings_csv_row_edit_date">Date (YYYY-MM-DD)</string>
+    <string name="settings_csv_row_edit_merchant">Merchant or description</string>
+    <string name="settings_csv_row_edit_amount">Amount</string>
+    <string name="settings_csv_row_edit_currency">Currency</string>
+    <string name="settings_csv_row_edit_category">Category</string>
+    <string name="settings_csv_row_edit_notes">Notes</string>
+    <string name="settings_csv_row_edit_save">Save edit</string>
+    <string name="settings_csv_preview_column_date">date</string>
+    <string name="settings_csv_preview_column_merchant">merchant</string>
+    <string name="settings_csv_preview_column_money">money</string>
+    <string name="settings_csv_preview_column_currency">currency</string>
+    <string name="settings_csv_preview_column_category">category</string>
+    <string name="settings_csv_preview_type_expense">Expense</string>
+    <string name="settings_csv_preview_type_income">Income</string>
+    <string name="settings_csv_preview_type_transfer">Transfer</string>
+    <string name="settings_csv_mapping_body">Choose the statement columns, then preview again.</string>
+    <string name="settings_csv_mapping_preview">Preview columns</string>
+    <string name="settings_csv_mapping_none">None</string>
+    <string name="settings_csv_mapping_blank_column">Unnamed column</string>
+    <string name="settings_csv_mapping_date">Transaction date</string>
+    <string name="settings_csv_mapping_merchant">Merchant or description</string>
+    <string name="settings_csv_mapping_amount">Single amount</string>
+    <string name="settings_csv_mapping_debit">Debit / expense</string>
+    <string name="settings_csv_mapping_credit">Credit / income</string>
+    <string name="settings_csv_mapping_currency">Currency</string>
+    <string name="settings_csv_mapping_category">Category</string>
+    <string name="settings_csv_mapping_type">Transaction type</string>
+    <string name="settings_csv_mapping_notes">Notes</string>
+
+    <!-- Budget target import card -->
+    <string name="settings_budget_targets_title">Budget targets</string>
+    <string name="settings_budget_targets_body">Import monthly category targets from the TMOAP Budget Targets sheet. Athar previews the targets first and updates only matched active categories after confirmation.</string>
+    <string name="settings_budget_targets_action_import">Import targets</string>
+    <string name="settings_budget_targets_preview_summary" formatted="true">Ready to apply %1$d targets. %2$d will change. %3$d rows will be skipped.</string>
+    <string name="settings_budget_targets_preview_totals" formatted="true">Expenses: %1$d targets · %2$s monthly. Income: %3$d targets · %4$s monthly.</string>
+    <string name="settings_budget_targets_preview_row" formatted="true">%1$s · %2$s · %3$s monthly</string>
+    <string name="settings_budget_targets_preview_first_skip" formatted="true">First skipped target row: #%1$d · %2$s · %3$s</string>
+    <string name="settings_budget_targets_preview_confirm">Confirm targets</string>
+    <string name="settings_budget_targets_done" formatted="true">Applied %1$d targets. %2$d changed. %3$d rows skipped.</string>
+
+    <!-- Wishlist import card -->
+    <string name="settings_wishlist_import_title">Wishlist import</string>
+    <string name="settings_wishlist_import_body">Import items from the TMOAP Wishlist sheet. Athar previews new and matching existing items first, then updates the Wishlist planner only after confirmation.</string>
+    <string name="settings_wishlist_import_action_import">Import wishlist</string>
+    <string name="settings_wishlist_import_preview_summary" formatted="true">Ready to import %1$d items: %2$d new, %3$d updates. %4$d rows will be skipped.</string>
+    <string name="settings_wishlist_import_preview_totals" formatted="true">Total cost: %1$s · Saved: %2$s</string>
+    <string name="settings_wishlist_import_preview_row" formatted="true">%1$s · %2$s cost · %3$s saved · %4$s months · starts %5$s · %6$s</string>
+    <string name="settings_wishlist_import_preview_first_skip" formatted="true">First skipped wishlist row: #%1$d · %2$s · %3$s</string>
+    <string name="settings_wishlist_import_preview_confirm">Confirm wishlist</string>
+    <string name="settings_wishlist_import_preview_new">new</string>
+    <string name="settings_wishlist_import_preview_existing">update</string>
+    <string name="settings_wishlist_import_preview_flexible_months">flexible</string>
+    <string name="settings_wishlist_import_done" formatted="true">Imported %1$d wishlist items. %2$d new. %3$d updated. %4$d rows skipped.</string>
+
+    <!-- Investment import card -->
+    <string name="settings_investment_import_title">Family investments import</string>
+    <string name="settings_investment_import_body">Import the TMOAP Family Investments sheet into Plan. Athar previews the pool first; confirming updates the pool return and replaces the matched pool\'s contributor rows to avoid duplicate re-imports.</string>
+    <string name="settings_investment_import_action_import">Import investments</string>
+    <string name="settings_investment_import_preview_summary" formatted="true">%1$s: ready to import %2$d contributions. %3$d rows will be skipped.</string>
+    <string name="settings_investment_import_preview_totals" formatted="true">Period: %1$s · Corpus: %2$s · Return: %3$s</string>
+    <string name="settings_investment_import_preview_replace" formatted="true">This matches an existing pool. Confirming will replace %1$d existing contributor rows.</string>
+    <string name="settings_investment_import_preview_row" formatted="true">%1$s · %2$s contribution</string>
+    <string name="settings_investment_import_preview_first_skip" formatted="true">First skipped investment row: #%1$d · %2$s · %3$s</string>
+    <string name="settings_investment_import_preview_confirm">Confirm investments</string>
+    <string name="settings_investment_import_done_new" formatted="true">Imported %1$d investment contributions. %2$d rows skipped.</string>
+    <string name="settings_investment_import_done_existing" formatted="true">Imported %1$d investment contributions and replaced %2$d old rows. %3$d rows skipped.</string>
+
+    <!-- Tax export card -->
+    <string name="settings_tax_title">Export for taxes and accountant</string>
+    <string name="settings_tax_body">Create an annual PDF with income/expense summary, category totals, and the confirmed transaction list. Balance reconciliation adjustments are excluded because they are not real income or spending.</string>
+    <string name="settings_tax_year_label">Year</string>
+    <string name="settings_tax_exported" formatted="true">Exported %1$d report: %2$d transactions · %3$d category totals.</string>
+    <string name="settings_tax_excluded_reconciliations" formatted="true">Excluded %1$d balance reconciliation adjustments.</string>
+    <string name="settings_tax_action_export">Export PDF</string>
 
     <!-- Updates via Obtainium (beta.22) -->
     <string name="settings_updates_title">Stay up to date</string>
@@ -84,19 +177,42 @@
 
     <!-- Community rules sharing (beta.20) -->
     <string name="settings_community_title">Help others · share your rules</string>
-    <string name="settings_community_body">Export the personal categorization rules you created yourself (merchant → category) as a single JSON file, then submit it as a GitHub proposal. Reviewed and merged rules ship in the next release so every new user benefits. No transactions, balances, or SMS bodies leave your device — only the (merchant → category) tuples you tagged "Always categorize X".</string>
+    <string name="settings_community_body">Export the personal categorization rules you explicitly created with "Always categorize X" as a single JSON file, then submit it as a GitHub proposal. Exact local rules from bulk imports stay on device. No transactions or SMS bodies leave your device.</string>
     <string name="settings_community_exported" formatted="true">Exported %1$d rules. Next: open GitHub and attach the file.</string>
     <string name="settings_community_empty">No personal rules to share yet. Every "Always categorize X" pick lands here.</string>
     <string name="settings_community_action_export">Export my rules</string>
     <string name="settings_community_action_open_issue">Open GitHub issue</string>
 
+    <!-- Support diagnostics export -->
+    <string name="settings_support_diagnostics_title">Support diagnostics</string>
+    <string name="settings_support_diagnostics_body">Export a redacted JSON report for parser support: SMS counts, pseudonymous sender hashes, body-shape flags, failed-template groups, and redacted errors. It never includes raw SMS bodies, balances, card numbers, or account numbers.</string>
+    <string name="settings_support_diagnostics_exported" formatted="true">Exported diagnostics for %1$d SMS rows (%2$d parsed · %3$d failed · %4$d ignored).</string>
+    <string name="settings_support_diagnostics_action_export">Export diagnostics</string>
+
     <!-- Bulk-categorize via AI (Issue #5a) -->
     <string name="settings_bulk_cat_title">Bulk categorize with AI</string>
-    <string name="settings_bulk_cat_body">Export every uncategorized transaction to CSV, run it through ChatGPT/Claude with the triage prompt, then import the filled file. Each row updates the transaction AND records a merchant→category rule so future SMS auto-categorize.</string>
+    <string name="settings_bulk_cat_body">Copy the prompt, export non-transfer uncategorized transactions to CSV with repeated merchants grouped first, group impact shown, and valid category options included, run it through ChatGPT/Claude, then import the filled file for preview. Use the private export to omit raw SMS text. One clear category choice can update blank peers in the same merchant group and record an exact local rule for future SMS; Athar shows update, rule, skip, and category impact before applying.</string>
     <string name="settings_bulk_cat_exported" formatted="true">Exported %1$d uncategorized transactions.</string>
+    <string name="settings_bulk_cat_previewed" formatted="true">Ready to update %1$d · add %2$d rules · skip %3$d.</string>
+    <string name="settings_bulk_cat_impact" formatted="true">Category impact: %1$s.</string>
+    <string name="settings_bulk_cat_impact_item" formatted="true">%1$s %2$d</string>
+    <string name="settings_bulk_cat_impact_more" formatted="true">+%1$d more</string>
     <string name="settings_bulk_cat_imported" formatted="true">Updated %1$d · added %2$d rules · skipped %3$d.</string>
-    <string name="settings_bulk_cat_action_export">Export uncategorized</string>
+    <string name="settings_bulk_cat_skip_details" formatted="true">Skipped details: %1$s.</string>
+    <string name="settings_bulk_cat_skip_unknown" formatted="true">unknown category %1$d</string>
+    <string name="settings_bulk_cat_skip_incompatible" formatted="true">wrong type %1$d</string>
+    <string name="settings_bulk_cat_skip_missing" formatted="true">missing transaction %1$d</string>
+    <string name="settings_bulk_cat_skip_conflict" formatted="true">conflicting group %1$d</string>
+    <string name="settings_bulk_cat_skip_blank" formatted="true">left blank %1$d</string>
+    <string name="settings_bulk_cat_skip_malformed" formatted="true">bad row %1$d</string>
+    <string name="settings_bulk_cat_action_copy_prompt">Copy AI prompt</string>
+    <string name="settings_bulk_cat_prompt_copied">Prompt copied.</string>
+    <string name="settings_bulk_cat_prompt_clip_label">Athar bulk categorize prompt</string>
+    <string name="settings_bulk_cat_action_export">Export with SMS text</string>
+    <string name="settings_bulk_cat_action_export_private">Export private CSV</string>
     <string name="settings_bulk_cat_action_import">Import categorized</string>
+    <string name="settings_bulk_cat_action_confirm_import">Apply import</string>
+    <string name="settings_bulk_cat_action_cancel_import">Cancel preview</string>
 
     <!-- Display currency card -->
     <string name="settings_currency_title">Display currency</string>
@@ -167,6 +283,9 @@
     <string name="settings_accounts_field_name">Account name</string>
     <string name="settings_accounts_field_name_hint">Account name (e.g. Al Rajhi - Checking)</string>
     <string name="settings_accounts_field_opening" formatted="true">Opening balance (%1$s)</string>
+    <string name="settings_accounts_field_sms_senders">SMS routing aliases</string>
+    <string name="settings_accounts_field_sms_senders_help">Comma-separated sender names or card/account tails, e.g. AlRajhiBank, 9803. Used only on-device to route new bank messages to this account.</string>
+    <string name="settings_accounts_sms_routes" formatted="true">Routes bank messages: %1$s</string>
     <string name="settings_accounts_field_notes">Notes (optional)</string>
     <string name="settings_accounts_save_edits">Save changes</string>
     <string name="settings_accounts_action_edit">Edit</string>
@@ -224,6 +343,7 @@
     <string name="settings_recurring_field_name">Name (e.g. Salary)</string>
     <string name="settings_recurring_field_merchant">Source (e.g. Company, Netflix)</string>
     <string name="settings_recurring_field_amount" formatted="true">Amount (%1$s)</string>
+    <string name="settings_recurring_field_account">Account</string>
     <string name="settings_recurring_field_day_of_month">Day of month (1-28)</string>
     <string name="settings_recurring_type_expense">Expense</string>
     <string name="settings_recurring_type_income">Income</string>
@@ -232,6 +352,14 @@
     <string name="settings_recurring_cadence_yearly">Yearly</string>
     <string name="settings_recurring_save">Save rule</string>
     <string name="settings_recurring_create_rule">Create rule</string>
+    <string name="settings_recurring_route_title">Review account and category</string>
+    <string name="settings_recurring_route_save">Save routing</string>
+    <string name="settings_recurring_route_uncategorized">No category</string>
+    <string name="settings_recurring_row_account_category" formatted="true">%1$s · %2$s</string>
+    <string name="settings_recurring_row_edit_routing">Account/category</string>
+    <string name="settings_recurring_row_manual_account">Manual account</string>
+    <string name="settings_recurring_row_unknown_account" formatted="true">Unknown account · %1$s</string>
+    <string name="settings_recurring_row_unknown_category" formatted="true">Unknown category · %1$s</string>
     <string name="settings_recurring_row_next" formatted="true">Next: %1$s</string>
     <string name="settings_recurring_row_active">Active</string>
     <string name="settings_recurring_row_inactive">Paused</string>
@@ -259,6 +387,10 @@
     <string name="settings_sms_audit_filter_parsed">Parsed</string>
     <string name="settings_sms_audit_filter_failed">Failed</string>
     <string name="settings_sms_audit_filter_ignored">Ignored</string>
+    <string name="settings_sms_audit_parse_rate" formatted="true">Successful parse rate · %1$d%%</string>
+    <string name="settings_sms_audit_sender_health_title">Sender health</string>
+    <string name="settings_sms_audit_sender_health_body">Senders most in need of review. Failed means no template understood the message; ignored usually means promo or OTP noise.</string>
+    <string name="settings_sms_audit_sender_health_counts" formatted="true">%1$d parsed · %2$d failed · %3$d ignored</string>
     <string name="settings_sms_audit_empty">No messages in this filter yet.</string>
     <string name="settings_sms_audit_empty_subtle">Messages appear here as they arrive or when you rescan from Settings.</string>
 
@@ -289,6 +421,15 @@
     <string name="settings_templates_anchor_merchant_hint">For purchases: the word before the merchant name (e.g. At: or لدى)</string>
     <string name="settings_templates_anchor_counterparty_label">Recipient (optional)</string>
     <string name="settings_templates_anchor_counterparty_hint">For transfers: the word before the recipient name (e.g. To: or إلى)</string>
+    <string name="settings_templates_preview_title">Parse preview</string>
+    <string name="settings_templates_preview_waiting">Paste a sample message and amount anchor to preview the result before saving.</string>
+    <string name="settings_templates_preview_amount" formatted="true">Amount Athar will read: %1$s</string>
+    <string name="settings_templates_preview_merchant" formatted="true">Merchant: %1$s</string>
+    <string name="settings_templates_preview_counterparty" formatted="true">Counterparty: %1$s</string>
+    <string name="settings_templates_preview_amount_missing">The amount anchor was not found in the message. Adjust the Before field.</string>
+    <string name="settings_templates_preview_amount_invalid">The amount anchor was found, but no valid number followed it. Adjust After or the anchor.</string>
+    <string name="settings_templates_preview_merchant_missing">A merchant anchor is set, but it was not found in the sample message.</string>
+    <string name="settings_templates_preview_counterparty_missing">A counterparty anchor is set, but it was not found in the sample message.</string>
     <string name="settings_templates_save">Save template</string>
     <string name="settings_templates_row_sender" formatted="true">Sender: %1$s · %2$s</string>
     <string name="settings_templates_row_anchor_before" formatted="true">Before amount: \"%1$s\"</string>

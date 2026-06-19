@@ -18,6 +18,16 @@
     <string name="action_apply">تطبيق</string>
     <string name="action_done">تم</string>
 
+    <string name="bill_reminders_channel_name">تذكيرات الفواتير</string>
+    <string name="bill_reminders_channel_description">تنبيهات هادئة للمصاريف المتكررة القادمة.</string>
+    <string name="bill_reminder_title_upcoming">فاتورة بعد يومين</string>
+    <string name="bill_reminder_title_due_today">فاتورة مستحقة اليوم</string>
+    <string name="bill_reminder_title_missed">فاتورة بانتظار المراجعة</string>
+    <string name="bill_reminder_body_upcoming" formatted="true">%1$s · %2$s بعد يومين.</string>
+    <string name="bill_reminder_body_due_today" formatted="true">%1$s · %2$s اليوم.</string>
+    <string name="bill_reminder_body_missed" formatted="true">%1$s · %2$s لا تزال معلقة.</string>
+    <string name="bill_reminder_fallback_label">فاتورة</string>
+
     <string name="settings_language_title">اللغة · Language</string>
     <string name="settings_language_subtitle">اختر لغة عرض التطبيق. سيتم إعادة تحميل الشاشة لتطبيق اللغة الجديدة.</string>
     <string name="settings_language_system">نظام الجهاز</string>
@@ -37,7 +47,19 @@
     <string name="onboarding_sms_granted">تم التفعيل — جاهز للقراءة من البنك.</string>
     <string name="onboarding_sms_grant_button">تفعيل قراءة الرسائل</string>
     <string name="onboarding_sms_skip_note">لو فضّلت لاحقًا، يمكنك تفعيلها من الإعدادات في أي وقت — أثر يعمل بإدخال يدوي بدون قراءة الرسائل.</string>
+    <string name="onboarding_import_title">استيراد بياناتك السابقة</string>
+    <string name="onboarding_import_body">لو لديك ملف CSV من TMOAP أو Excel، استورده الآن لتبدأ بسجلّك القديم. يمكنك تجاوز هذه الخطوة.</string>
+    <string name="onboarding_import_card_title">ملف الحركات</string>
+    <string name="onboarding_import_card_body">يتوقع أثر أعمدة التاريخ، التاجر، المبلغ، التصنيف، النوع، والملاحظات. الصفوف غير المفهومة تُتجاوز ولا توقف الاستيراد.</string>
+    <string name="onboarding_import_button">استيراد CSV</string>
+    <string name="onboarding_import_working">جارٍ الاستيراد</string>
+    <string name="onboarding_import_done_button">تم الاستيراد</string>
+    <string name="onboarding_import_skip_note">يمكنك الاستيراد لاحقًا من الإعدادات.</string>
+    <string name="onboarding_import_working_detail">ابقَ هنا حتى ينتهي الاستيراد.</string>
+    <string name="onboarding_import_done">%1$d حركة أُضيفت · %2$d صف تم تجاوزه</string>
     <string name="onboarding_action_back">السابق</string>
     <string name="onboarding_action_next">التالي</string>
     <string name="onboarding_action_start">ابدأ</string>
+    <string name="onboarding_action_start_imported">ابدأ ببياناتي</string>
+    <string name="onboarding_action_importing">جارٍ الاستيراد</string>
 </resources>

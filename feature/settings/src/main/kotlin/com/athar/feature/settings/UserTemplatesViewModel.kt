@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.athar.core.domain.model.TxType
 import com.athar.core.domain.model.UserTemplate
+import com.athar.core.domain.model.UserTemplateAnchorMatch
+import com.athar.core.domain.model.UserTemplateAnchorMatcher
 import com.athar.core.domain.repo.UserTemplateRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -59,6 +61,25 @@ data class TemplateForm(
     val counterpartyAnchorAfter: String = "",
     val sampleBody: String = "",
 ) {
+    val preview: UserTemplateAnchorMatch?
+        get() = if (sampleBody.isBlank() || amountAnchorBefore.isBlank()) {
+            null
+        } else {
+            UserTemplateAnchorMatcher.match(
+                body = sampleBody,
+                amountAnchorBefore = amountAnchorBefore,
+                amountAnchorAfter = amountAnchorAfter.takeIf { it.isNotBlank() },
+                merchantAnchorBefore = merchantAnchorBefore.takeIf { it.isNotBlank() },
+                merchantAnchorAfter = merchantAnchorAfter.takeIf { it.isNotBlank() },
+                counterpartyAnchorBefore = counterpartyAnchorBefore.takeIf { it.isNotBlank() },
+                counterpartyAnchorAfter = counterpartyAnchorAfter.takeIf { it.isNotBlank() },
+            )
+        }
+
     val isValid: Boolean
-        get() = displayName.isNotBlank() && sender.isNotBlank() && amountAnchorBefore.isNotBlank()
+        get() = displayName.isNotBlank() &&
+            sender.isNotBlank() &&
+            sampleBody.isNotBlank() &&
+            amountAnchorBefore.isNotBlank() &&
+            preview?.canParseAmount == true
 }

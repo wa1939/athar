@@ -8,7 +8,6 @@ import com.athar.ingestion.smsparser.Normalize
 import com.athar.ingestion.smsparser.ParseResult
 import com.athar.ingestion.smsparser.SenderMatcher
 import kotlinx.datetime.Instant
-import java.math.BigDecimal
 
 /**
  * Currency-and-language-agnostic last-resort parser — restricted to KNOWN bank senders.
@@ -34,28 +33,31 @@ class UniversalAmountTemplate : BankTemplate {
 
     // (currency-symbol|ISO-code)?  amount  (ISO-code)?  — covers `$200`, `200 SAR`, `SAR 200`, `₹500`.
     private val amountWithCurrency = Regex(
-        """(?:(?<lead>[\$€£﷼₹¥₺د\.ك]|SAR|SR|AED|USD|EUR|GBP|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD)\s*)?(?<num>\d{1,3}(?:[ ,]\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)(?:\s*(?<trail>[\$€£﷼₹¥₺د\.ك]|SAR|SR|AED|USD|EUR|GBP|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|ر\.?\s*س|د\.?\s*إ))?""",
+        """(?:(?<lead>CA\$|C\$|AU\$|A\$|[\$€£﷼₹¥₺د\.ك]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|CNY|HKD|SGD|SEK|NOK|DKK|ZAR|BRL|MXN|THB|IDR|MYR|PHP|VND|KRW)\s*)?(?<num>${Normalize.LOCALIZED_AMOUNT_PATTERN})(?:\s*(?<trail>CA\$|C\$|AU\$|A\$|[\$€£﷼₹¥₺د\.ك]|SAR|SR|AED|USD|EUR|GBP|CAD|AUD|CHF|INR|PKR|TRY|EGP|KWD|QAR|BHD|OMR|JOD|JPY|CNY|HKD|SGD|SEK|NOK|DKK|ZAR|BRL|MXN|THB|IDR|MYR|PHP|VND|KRW|ر\.?\s*س|د\.?\s*إ))?""",
         RegexOption.IGNORE_CASE,
     )
 
-    private val incomeWords = Regex(
-        """\b(?:credit|deposit|received|incoming|refund|salary|payment\s+from|إيداع|ايداع|وارد|استلم|تم\s+استلام|recibido|reçu|gelir|گیا)\b""",
+    private val latinIncomeWords = Regex(
+        """\b(?:credit|deposit|received|incoming|refund|salary|payment\s+from|recibido|reçu|gelir|گیا)\b""",
         RegexOption.IGNORE_CASE,
     )
-    private val expenseWords = Regex(
-        """\b(?:purchase|paid|debit|withdrawal|spent|charge|pos|atm|شراء|سحب|خصم|دفع|cobrado|payé|harcanan|خرچ)\b""",
+    private val arabicIncomeWords = Regex("""(?:إيداع|ايداع|وارد|استلم|تم\s+استلام|راتب|استرداد\s+نقدي|كاسترداد\s+نقدي|تم\s+إضافة)""")
+    private val latinExpenseWords = Regex(
+        """\b(?:purchase|paid|debit|withdrawal|spent|charge|pos|atm|cobrado|payé|harcanan|خرچ)\b""",
         RegexOption.IGNORE_CASE,
     )
-    private val transferWords = Regex(
-        """\b(?:transfer|sent|outgoing|remit|تحويل|إرسال|envío|virement|havale|بھیج)\b""",
+    private val arabicExpenseWords = Regex("""(?:شراء|سحب|خصم|دفع)""")
+    private val latinTransferWords = Regex(
+        """\b(?:transfer|sent|outgoing|remit|envío|virement|havale|بھیج)\b""",
         RegexOption.IGNORE_CASE,
     )
+    private val arabicTransferWords = Regex("""(?:تحويل|حوالة|حوالتكم|حوالتك|الحوالة|إرسال)""")
     private val ignoreWords = Regex(
         """\b(?:otp|verification\s+code|رمز\s+التحقق|verify\s+code|do\s+not\s+share|promo|عرض\s+ترويجي)\b""",
         RegexOption.IGNORE_CASE,
     )
     private val merchantHint = Regex(
-        """(?:at|from|to|لدى|من|إلى|الى|de|à|en|chez)\s+([A-Za-z\u0600-\u06FF][^\n\r]{1,40})""",
+        """(?:(?:\bat\b|\bfrom\b|\bto\b|لدى|من|إلى|الى|الجهة|الخدمة|مكان\s+السحب|مفوتر|على|de|à|en|chez)\s*[:\s]\s*|لـ\s*[:\s]?)([A-Za-z\u0600-\u06FF][^\n\r]{1,40})""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
 
@@ -63,9 +65,9 @@ class UniversalAmountTemplate : BankTemplate {
         val normalized = Normalize.digits(body)
 
         if (ignoreWords.containsMatchIn(normalized) &&
-            !incomeWords.containsMatchIn(normalized) &&
-            !expenseWords.containsMatchIn(normalized) &&
-            !transferWords.containsMatchIn(normalized)
+            !hasIncomeAction(normalized) &&
+            !hasExpenseAction(normalized) &&
+            !hasTransferAction(normalized)
         ) {
             return ParseResult.Ignored
         }
@@ -74,40 +76,49 @@ class UniversalAmountTemplate : BankTemplate {
             ?: return ParseResult.Failed("no monetary value detected", listOf(id))
         val rawNum = match.groups["num"]?.value
             ?: return ParseResult.Failed("amount group missing", listOf(id))
-        val parsed = runCatching {
-            BigDecimal(rawNum.replace(" ", "").replace(",", ""))
-        }.getOrNull() ?: return ParseResult.Failed("amount unparseable: $rawNum", listOf(id))
+        val parsed = Normalize.amount(rawNum)
+            ?: return ParseResult.Failed("amount unparseable: $rawNum", listOf(id))
 
         val currency = (match.groups["lead"]?.value ?: match.groups["trail"]?.value)?.trim()
+        val currencyCode = Normalize.currencyCode(currency)
 
         // Heuristic: prefer the most specific verb. Income > Transfer > Expense (default).
         val type = when {
-            incomeWords.containsMatchIn(normalized) -> TxType.INCOME
-            transferWords.containsMatchIn(normalized) -> TxType.TRANSFER
+            hasIncomeAction(normalized) -> TxType.INCOME
+            hasTransferAction(normalized) -> TxType.TRANSFER
             else -> TxType.EXPENSE
         }
 
-        val merchant = merchantHint.find(normalized)?.groupValues?.get(1)?.trim()
+        val party = merchantHint.find(normalized)?.groupValues?.get(1)?.trim()
 
         // Confidence model: bare amount = very low, +currency = +0.15, +merchant = +0.10,
         // explicit action verb = +0.10. Caps at 0.55 so user always confirms.
         var confidence = 0.20f
         if (currency != null) confidence += 0.15f
-        if (merchant != null) confidence += 0.10f
-        if (incomeWords.containsMatchIn(normalized) ||
-            transferWords.containsMatchIn(normalized) ||
-            expenseWords.containsMatchIn(normalized)
+        if (party != null) confidence += 0.10f
+        if (hasIncomeAction(normalized) ||
+            hasTransferAction(normalized) ||
+            hasExpenseAction(normalized)
         ) confidence += 0.10f
 
         return ParseResult.Success(
             type = type,
-            amount = Money.of(parsed),
-            merchant = merchant,
-            counterparty = null,
+            amount = Money.of(parsed, currencyCode),
+            merchant = party.takeIf { type == TxType.EXPENSE },
+            counterparty = party.takeUnless { type == TxType.EXPENSE },
             balanceAfter = null,
             occurredAt = receivedAt,
             confidence = confidence.coerceAtMost(0.55f),
             templateId = id,
         )
     }
+
+    private fun hasIncomeAction(body: String): Boolean =
+        latinIncomeWords.containsMatchIn(body) || arabicIncomeWords.containsMatchIn(body)
+
+    private fun hasExpenseAction(body: String): Boolean =
+        latinExpenseWords.containsMatchIn(body) || arabicExpenseWords.containsMatchIn(body)
+
+    private fun hasTransferAction(body: String): Boolean =
+        latinTransferWords.containsMatchIn(body) || arabicTransferWords.containsMatchIn(body)
 }

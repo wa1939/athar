@@ -26,15 +26,13 @@ class BankNotificationListener : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         if (!bankPackageFilter.isBankPackage(sbn.packageName)) return
 
-        val title = sbn.notification.extras.getCharSequence("android.title")?.toString().orEmpty()
-        val text = sbn.notification.extras.getCharSequence("android.text")?.toString().orEmpty()
-        val body = if (title.isNotEmpty()) "$title\n$text" else text
+        val body = sbn.notificationText()
         if (body.isBlank()) return
 
         val event = RawIngestEvent(
             id = UUID.randomUUID().toString(),
             source = IngestSource.NOTIFICATION,
-            sender = sbn.packageName,
+            sender = "notification:${sbn.packageName}",
             body = body,
             receivedAt = Instant.fromEpochMilliseconds(sbn.postTime),
             rawId = sbn.key,
@@ -42,6 +40,23 @@ class BankNotificationListener : NotificationListenerService() {
         Timber.d("Notification from %s: %d chars", sbn.packageName, body.length)
         dispatcher.enqueue(event)
     }
+}
+
+private fun StatusBarNotification.notificationText(): String {
+    val extras = notification.extras
+    val parts = buildList {
+        add(extras.getCharSequence("android.title")?.toString())
+        add(extras.getCharSequence("android.text")?.toString())
+        add(extras.getCharSequence("android.bigText")?.toString())
+        add(extras.getCharSequence("android.subText")?.toString())
+        extras.getCharSequenceArray("android.textLines")
+            ?.map { it.toString() }
+            ?.forEach(::add)
+    }
+    return parts
+        .mapNotNull { it?.trim()?.takeIf(String::isNotBlank) }
+        .distinct()
+        .joinToString("\n")
 }
 
 /** Pluggable filter — defaults to a static set; could be user-configurable in Settings later. */

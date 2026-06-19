@@ -11,7 +11,9 @@
 
     <!-- Top-level tabs -->
     <string name="plan_tab_budget">Budget</string>
+    <string name="plan_tab_bills">Bills</string>
     <string name="plan_tab_wishlist">Wishlist</string>
+    <string name="plan_tab_goals">Goals</string>
     <string name="plan_tab_investments">Investments</string>
 
     <!-- Period selector -->
@@ -44,6 +46,28 @@
     <string name="plan_empty_text">No categories yet.</string>
     <string name="plan_empty_subtle">Set a monthly target per category. Tap any row to edit.</string>
 
+    <!-- Bills -->
+    <string name="plan_bills_empty_text">No bills scheduled.</string>
+    <string name="plan_bills_empty_subtle">Create recurring rules in Settings to see upcoming bills here.</string>
+    <string name="plan_bills_summary_title">Due now + next 30 days</string>
+    <string name="plan_bills_summary_subtitle" formatted="true">%1$d items through %2$s</string>
+    <string name="plan_bills_unknown_title">Pending item</string>
+    <string name="plan_bills_pending_review">Needs review</string>
+    <string name="plan_bills_cadence_monthly">Monthly</string>
+    <string name="plan_bills_cadence_weekly">Weekly</string>
+    <string name="plan_bills_cadence_yearly">Yearly</string>
+    <string name="plan_bills_overdue">Late</string>
+    <string name="plan_bills_today">Today</string>
+    <string name="plan_bills_in_days_short" formatted="true">%1$d d</string>
+    <string name="plan_bills_reminders_title">Bill reminders</string>
+    <string name="plan_bills_reminders_body">Quiet reminders 2 days before, on the due date, and once if a recurring bill is still waiting for review.</string>
+    <string name="plan_bills_reminders_on_title">Bill reminders on</string>
+    <string name="plan_bills_reminders_on_body">Athar will remind you about upcoming recurring expenses without sending spending judgment or streak alerts.</string>
+    <string name="plan_bills_reminders_permission_title">Notifications need permission</string>
+    <string name="plan_bills_reminders_permission_body">Reminders are enabled, but Android notification permission is off. Turn it on to receive bill reminders.</string>
+    <string name="plan_bills_reminders_enable">Enable reminders</string>
+    <string name="plan_bills_reminders_disable">Turn off reminders</string>
+
     <!-- Target editor sheet -->
     <string name="plan_target_editor_title_suffix"> · Monthly target</string>
     <string name="plan_target_editor_amount_label">Target amount</string>
@@ -65,20 +89,54 @@
     <string name="plan_wishlist_capacity_title">Monthly wishlist capacity</string>
     <string name="plan_wishlist_capacity_subtitle">Average (income − expenses) over the last 3 months</string>
     <string name="plan_wishlist_add">Add a wish</string>
+    <string name="plan_wishlist_summary_remaining">Remaining wishlist</string>
+    <string name="plan_wishlist_summary_ready_now">Ready now</string>
+    <string name="plan_wishlist_summary_next_reachable">Next reachable</string>
+    <string name="plan_wishlist_summary_target_pressure">Target pressure</string>
+    <string name="plan_wishlist_summary_infeasible">Needs more capacity</string>
+    <string name="plan_wishlist_summary_none">None</string>
+    <string name="plan_wishlist_summary_count" formatted="true">%1$d</string>
     <string name="plan_wishlist_empty_text">No wishes yet.</string>
     <string name="plan_wishlist_empty_subtle">Add what you want to buy. We will tell you when it fits without strain.</string>
     <string name="plan_wishlist_saved_label">saved </string>
+    <string name="plan_wishlist_remaining_label">left </string>
+    <string name="plan_wishlist_required_monthly">needed/mo </string>
+    <string name="plan_wishlist_target_month" formatted="true">target · %1$s</string>
     <string name="plan_wishlist_status_now">Available now</string>
     <string name="plan_wishlist_status_wait_until" formatted="true">In %1$d months · %2$s</string>
     <string name="plan_wishlist_status_infeasible">Not feasible yet</string>
+    <string name="plan_wishlist_status_target_infeasible">Needs more capacity for target</string>
     <string name="plan_wishlist_editor_title_new">New wish</string>
     <string name="plan_wishlist_editor_title_edit">Edit wish</string>
     <string name="plan_wishlist_label_name">Name</string>
     <string name="plan_wishlist_label_cost">Cost</string>
     <string name="plan_wishlist_label_saved">Saved so far</string>
+    <string name="plan_wishlist_label_start_month">Plan starts</string>
+    <string name="plan_wishlist_label_desired_months">Desired months (optional)</string>
     <string name="plan_wishlist_label_notes">Notes</string>
     <string name="plan_wishlist_action_delete">Delete</string>
     <string name="plan_wishlist_action_save">Save</string>
+
+    <!-- Goals -->
+    <string name="plan_goals_savings_title">Savings rate</string>
+    <string name="plan_goals_emergency_title">Emergency fund</string>
+    <string name="plan_goals_percent_value" formatted="true">%1$s%%</string>
+    <string name="plan_goals_months_value" formatted="true">%1$s months</string>
+    <string name="plan_goals_not_available">Not available</string>
+    <string name="plan_goals_no_monthly_burn">Complete</string>
+    <string name="plan_goals_savings_target" formatted="true">Target %1$d%%</string>
+    <string name="plan_goals_emergency_target" formatted="true">Target %1$d months</string>
+    <string name="plan_goals_monthly_income">Average monthly income</string>
+    <string name="plan_goals_monthly_expense">Average monthly expenses</string>
+    <string name="plan_goals_monthly_savings">Average monthly savings</string>
+    <string name="plan_goals_liquid_balance">Liquid balance</string>
+    <string name="plan_goals_emergency_target_amount">Target amount</string>
+    <string name="plan_goals_edit_savings_title">Edit savings goal</string>
+    <string name="plan_goals_edit_savings_label">Target percent from 0 to 100</string>
+    <string name="plan_goals_edit_savings_error">Enter a number from 0 to 100</string>
+    <string name="plan_goals_edit_emergency_title">Edit emergency fund</string>
+    <string name="plan_goals_edit_emergency_label">Target months</string>
+    <string name="plan_goals_edit_emergency_error">Enter a number from 1 to 120</string>
 
     <!-- Investments -->
     <string name="plan_investments_title">Investments</string>

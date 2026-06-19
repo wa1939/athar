@@ -8,7 +8,7 @@ This is exactly how the 507 AI-extracted rules that landed in beta.17 got there.
 
 ## The three-step loop
 
-1. **Tag a merchant** in Athar via "Always categorize X as Y" (the dialog that pops when you change a transaction's category). The rule lands in your local DB with `learnedFromUser=true, priority=200`. The new `applyCategoryToMatching` from beta.18 also backfills every existing dismissed/pending row for that merchant.
+1. **Tag a specific merchant** in Athar via "Always categorize X as Y" (the dialog that pops when you change a transaction's category). The rule lands in your local DB as a shareable substring rule with `learnedFromUser=true, priority=200`. The `applyCategoryToMatching` flow from beta.18 also backfills every existing dismissed/pending row for that merchant. Generic labels such as `payment`, `cash`, `bank`, `كاش`, and `دفع` are saved as one-row edits and are not shareable rules.
 2. **Export your learned rules** via *Settings → "Help others · share your rules" → Export my rules*. Athar writes a JSON file (default name `athar-shared-rules.json`) like:
    ```json
    {
@@ -20,7 +20,7 @@ This is exactly how the 507 AI-extracted rules that landed in beta.17 got there.
      ]
    }
    ```
-   **What's in the file:** pattern (lowercase merchant name), categoryId, confidence. **What's NOT:** transaction amounts, dates, raw SMS bodies, accountId references, your name, your phone number, anything that could de-anonymize you. The exporter is at `core/data/csv/CommunityRulesShareExporter.kt` — read it to verify.
+   **What's in the file:** explicit specific-merchant substring pattern (lowercase merchant name), categoryId, confidence. **What's NOT:** transaction amounts, dates, raw SMS bodies, accountId references, your name, your phone number, exact bulk-import rules, repeated-history local rules, generic parser labels, or anything that could de-anonymize you. The exporter is at `core/data/csv/CommunityRulesShareExporter.kt` — read it to verify.
 3. **Open the GitHub issue.** After export, tap *"Open GitHub issue"*. Athar launches the device browser to the public Athar repo with a pre-filled issue title and body. **Attach the JSON file** (GitHub doesn't accept attachments via URL params, so you'll do this as a comment after creating the issue).
 
 ## What happens next (maintainer side)
@@ -53,6 +53,8 @@ After a month or two of use, when you've tagged 20+ merchants. Submitting one or
 
 - If the rule is highly regional or specific to your household ("My Uncle's Restaurant" → cat-restaurant): keep it local. It won't hurt other users but adds noise to the seed.
 - If you're unsure about the category yourself. Better an UNKNOWN than a wrong-class default.
+- If the rule came from a bulk CSV import or repeated local history. Those exact rules are intentionally omitted from the export; tap "Always categorize X" only when you want a broader substring pattern to be reviewed for community seed use.
+- If the pattern is a generic parser label such as `payment`, `cash`, `bank`, `كاش`, or `دفع`. Newer builds will not create those shareable rules, and the exporter skips older legacy copies if they already exist locally.
 
 ## Verification
 

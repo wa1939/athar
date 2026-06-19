@@ -50,4 +50,32 @@ interface UserPreferencesRepository {
      */
     fun appLocale(): Flow<String>
     suspend fun setAppLocale(languageTag: String)
+
+    /**
+     * User's savings-rate target as a whole percent, e.g. 20 means save 20% of income.
+     * Defaults to 20%.
+     */
+    fun savingsRateTargetPercent(): Flow<Int>
+    suspend fun setSavingsRateTargetPercent(percent: Int)
+
+    /**
+     * User's emergency-fund target in months of average expenses. Defaults to 6 months.
+     */
+    fun emergencyFundTargetMonths(): Flow<Int>
+    suspend fun setEmergencyFundTargetMonths(months: Int)
+
+    /**
+     * Explicit opt-in for quiet bill reminders. Runtime notification permission alone is not
+     * treated as consent because Athar avoids unsolicited money notifications.
+     */
+    fun billRemindersEnabled(): Flow<Boolean>
+    suspend fun setBillRemindersEnabled(enabled: Boolean)
+
+    /**
+     * Reminder keys already sent for the currently relevant recurring bill windows. The worker
+     * prunes this set as windows pass so it prevents duplicate daily notifications without
+     * becoming an unbounded event log.
+     */
+    fun billReminderSentKeys(): Flow<Set<String>>
+    suspend fun setBillReminderSentKeys(keys: Set<String>)
 }

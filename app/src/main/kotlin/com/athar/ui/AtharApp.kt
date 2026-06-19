@@ -48,6 +48,7 @@ import com.athar.feature.settings.RecurringRulesScreen
 import com.athar.feature.settings.SettingsScreen
 import com.athar.feature.settings.SmsAuditScreen
 import com.athar.feature.settings.UserTemplatesScreen
+import com.athar.feature.today.HistoryCategoryFilter
 import com.athar.feature.today.HistoryScreen
 import com.athar.feature.today.TodayScreen
 import com.athar.feature.trends.TrendsScreen
@@ -76,7 +77,8 @@ fun AtharApp() {
         routeName.endsWith("UserTemplates") ||
         routeName.endsWith("RecurringRules") ||
         routeName.endsWith("Accounts") ||
-        routeName.endsWith("History")
+        routeName.endsWith("History") ||
+        routeName.endsWith("HistoryRepeatedBacklog")
     val theme = AtharTheme
 
     val layoutDirection = if (Locale.getDefault().language == "ar") LayoutDirection.Rtl else LayoutDirection.Ltr
@@ -139,7 +141,10 @@ fun AtharApp() {
                     )
                 }
                 composable<Routes.Today> {
-                    TodayScreen(onOpenHistory = { navController.navigate(Routes.History) })
+                    TodayScreen(
+                        onOpenHistory = { navController.navigate(Routes.History) },
+                        onOpenRepeatedBacklog = { navController.navigate(Routes.HistoryRepeatedBacklog) },
+                    )
                 }
                 composable<Routes.Trends> { TrendsScreen() }
                 composable<Routes.Plan> { PlanScreen() }
@@ -169,6 +174,13 @@ fun AtharApp() {
                 }
                 composable<Routes.History> {
                     HistoryScreen(onBack = { navController.popBackStack() })
+                }
+                composable<Routes.HistoryRepeatedBacklog> {
+                    HistoryScreen(
+                        onBack = { navController.popBackStack() },
+                        initialCategoryFilter = HistoryCategoryFilter.REPEATED_UNCATEGORIZED,
+                        initialSelectionMode = true,
+                    )
                 }
                 composable<Routes.Categories> {
                     CategoriesScreen(onBack = { navController.popBackStack() })

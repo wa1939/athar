@@ -11,14 +11,19 @@ import com.athar.core.data.db.dao.CategoryRuleDao
 import com.athar.core.data.db.dao.InvestmentDao
 import com.athar.core.data.db.dao.SmsMessageDao
 import com.athar.core.data.db.dao.TransactionDao
+import com.athar.core.data.db.dao.TransactionReceiptDao
 import com.athar.core.data.db.dao.UserTemplateDao
 import com.athar.core.data.db.dao.WishlistDao
 import com.athar.core.data.backup.BackupService
+import com.athar.core.data.csv.BudgetTargetImporter
 import com.athar.core.data.csv.CommunityRulesShareExporter
 import com.athar.core.data.csv.CsvExporter
 import com.athar.core.data.csv.CsvImporter
+import com.athar.core.data.csv.InvestmentImporter
 import com.athar.core.data.csv.MerchantBulkExporter
 import com.athar.core.data.csv.MerchantBulkImporter
+import com.athar.core.data.csv.WishlistImporter
+import com.athar.core.data.report.TaxPdfExporter
 import com.athar.core.data.repo.AccountRepositoryImpl
 import com.athar.core.data.repo.ActivityLogRepositoryImpl
 import com.athar.core.data.repo.CategoryRepositoryImpl
@@ -27,23 +32,31 @@ import com.athar.core.data.repo.InvestmentRepositoryImpl
 import com.athar.core.data.repo.SmsAuditRepositoryImpl
 import com.athar.core.data.prefs.UserPreferencesRepositoryImpl
 import com.athar.core.data.repo.TransactionRepositoryImpl
+import com.athar.core.data.repo.ReceiptAttachmentRepositoryImpl
 import com.athar.core.data.repo.UserTemplateRepositoryImpl
 import com.athar.core.data.repo.WishlistRepositoryImpl
+import com.athar.core.data.support.SupportDiagnosticsExporter
 import com.athar.core.domain.repo.AccountRepository
 import com.athar.core.domain.repo.ActivityLogRepository
 import com.athar.core.domain.repo.BackupRepository
 import com.athar.core.domain.repo.CategoryRepository
 import com.athar.core.domain.repo.CategoryRuleRepository
+import com.athar.core.domain.repo.BudgetTargetImportTrigger
 import com.athar.core.domain.repo.CommunityRulesShareTrigger
 import com.athar.core.domain.repo.CsvExportTrigger
 import com.athar.core.domain.repo.CsvImportTrigger
+import com.athar.core.domain.repo.InvestmentImportTrigger
 import com.athar.core.domain.repo.MerchantBulkExportTrigger
 import com.athar.core.domain.repo.MerchantBulkImportTrigger
 import com.athar.core.domain.repo.InvestmentRepository
 import com.athar.core.domain.repo.SmsAuditRepository
+import com.athar.core.domain.repo.SupportDiagnosticsExportTrigger
+import com.athar.core.domain.repo.TaxExportTrigger
 import com.athar.core.domain.repo.TransactionRepository
+import com.athar.core.domain.repo.ReceiptAttachmentRepository
 import com.athar.core.domain.repo.UserPreferencesRepository
 import com.athar.core.domain.repo.UserTemplateRepository
+import com.athar.core.domain.repo.WishlistImportTrigger
 import com.athar.core.domain.repo.WishlistRepository
 import dagger.Binds
 import dagger.Module
@@ -93,6 +106,8 @@ internal object DatabaseModule {
                     AtharDatabase.MIGRATION_2_3,
                     AtharDatabase.MIGRATION_3_4,
                     AtharDatabase.MIGRATION_4_5,
+                    AtharDatabase.MIGRATION_5_6,
+                    AtharDatabase.MIGRATION_6_7,
                 )
                 .fallbackToDestructiveMigrationOnDowngrade()
                 .build()
@@ -113,6 +128,7 @@ internal object DatabaseModule {
     @Provides fun provideAccountDao(db: AtharDatabase): AccountDao = db.accountDao()
     @Provides fun provideCategoryDao(db: AtharDatabase): CategoryDao = db.categoryDao()
     @Provides fun provideTransactionDao(db: AtharDatabase): TransactionDao = db.transactionDao()
+    @Provides fun provideTransactionReceiptDao(db: AtharDatabase): TransactionReceiptDao = db.transactionReceiptDao()
     @Provides fun provideCategoryRuleDao(db: AtharDatabase): CategoryRuleDao = db.categoryRuleDao()
     @Provides fun provideWishlistDao(db: AtharDatabase): WishlistDao = db.wishlistDao()
     @Provides fun provideInvestmentDao(db: AtharDatabase): InvestmentDao = db.investmentDao()
@@ -132,6 +148,9 @@ internal abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindTransactionRepository(impl: TransactionRepositoryImpl): TransactionRepository
+
+    @Binds @Singleton
+    abstract fun bindReceiptAttachmentRepository(impl: ReceiptAttachmentRepositoryImpl): ReceiptAttachmentRepository
 
     @Binds @Singleton
     abstract fun bindCategoryRepository(impl: CategoryRepositoryImpl): CategoryRepository
@@ -165,6 +184,15 @@ internal abstract class RepositoryModule {
     abstract fun bindCsvImportTrigger(impl: CsvImporter): CsvImportTrigger
 
     @Binds @Singleton
+    abstract fun bindBudgetTargetImportTrigger(impl: BudgetTargetImporter): BudgetTargetImportTrigger
+
+    @Binds @Singleton
+    abstract fun bindWishlistImportTrigger(impl: WishlistImporter): WishlistImportTrigger
+
+    @Binds @Singleton
+    abstract fun bindInvestmentImportTrigger(impl: InvestmentImporter): InvestmentImportTrigger
+
+    @Binds @Singleton
     abstract fun bindSmsAuditRepository(impl: SmsAuditRepositoryImpl): SmsAuditRepository
 
     @Binds @Singleton
@@ -178,6 +206,12 @@ internal abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindCommunityRulesShareTrigger(impl: CommunityRulesShareExporter): CommunityRulesShareTrigger
+
+    @Binds @Singleton
+    abstract fun bindTaxExportTrigger(impl: TaxPdfExporter): TaxExportTrigger
+
+    @Binds @Singleton
+    abstract fun bindSupportDiagnosticsExportTrigger(impl: SupportDiagnosticsExporter): SupportDiagnosticsExportTrigger
 
     @Binds @Singleton
     abstract fun bindActivityLogRepository(impl: ActivityLogRepositoryImpl): ActivityLogRepository

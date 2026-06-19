@@ -34,10 +34,15 @@ import com.athar.core.designsystem.component.AtharText
 import com.athar.core.designsystem.component.AtharTextField
 import com.athar.core.designsystem.display.LocalDisplayCurrency
 import com.athar.core.designsystem.theme.AtharTheme
+import com.athar.core.domain.model.Account
 import com.athar.core.domain.model.Cadence
+import com.athar.core.domain.model.Category
+import com.athar.core.domain.model.CategoryKind
+import com.athar.core.domain.model.MANUAL_ACCOUNT_ID
 import com.athar.core.domain.model.RecurringRule
 import com.athar.core.domain.model.RecurringSuggestion
 import com.athar.core.domain.model.TxType
+import java.util.Locale
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -54,6 +59,7 @@ fun RecurringRulesScreen(
     val materialized by viewModel.lastMaterializeCount.collectAsStateWithLifecycle()
     val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
     val categoriesAll by viewModel.categories.collectAsStateWithLifecycle()
+    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val lastAccepted by viewModel.lastAccepted.collectAsStateWithLifecycle()
     LaunchedEffect(lastAccepted) {
         if (lastAccepted != null) {
@@ -64,6 +70,7 @@ fun RecurringRulesScreen(
     val currency = LocalDisplayCurrency.current
     var showAdd by remember { mutableStateOf(false) }
     var confirming by remember { mutableStateOf<RecurringSuggestion?>(null) }
+    var editingRouting by remember { mutableStateOf<RecurringRule?>(null) }
 
     Box(
         modifier = modifier
@@ -166,13 +173,15 @@ fun RecurringRulesScreen(
             if (showAdd) {
                 AddRuleForm(
                     currency = currency,
-                    onSave = { displayName, merchant, amount, type, cadence, dayOfMonth, startDate ->
+                    accounts = accounts,
+                    onSave = { displayName, merchant, amount, type, accountId, cadence, dayOfMonth, startDate ->
                         viewModel.add(
                             displayName = displayName,
                             merchant = merchant,
                             amountText = amount,
                             currency = currency,
                             type = type,
+                            accountId = accountId,
                             categoryId = null,
                             cadence = cadence,
                             dayOfMonth = dayOfMonth,
@@ -209,6 +218,9 @@ fun RecurringRulesScreen(
                     active.forEach { rule ->
                         RuleRow(
                             rule = rule,
+                            accounts = accounts,
+                            categories = categoriesAll,
+                            onEditRouting = { editingRouting = rule },
                             onToggle = { viewModel.toggle(rule.id, !rule.isActive) },
                             onDelete = { viewModel.delete(rule.id) },
                         )
@@ -223,6 +235,9 @@ fun RecurringRulesScreen(
                     paused.forEach { rule ->
                         RuleRow(
                             rule = rule,
+                            accounts = accounts,
+                            categories = categoriesAll,
+                            onEditRouting = { editingRouting = rule },
                             onToggle = { viewModel.toggle(rule.id, !rule.isActive) },
                             onDelete = { viewModel.delete(rule.id) },
                         )
@@ -236,10 +251,31 @@ fun RecurringRulesScreen(
             ConfirmSuggestionSheet(
                 suggestion = suggestion,
                 categories = categoriesAll,
+                accounts = accounts,
                 onDismiss = { confirming = null },
-                onConfirm = { cadence, dayOfMonth, categoryId ->
-                    viewModel.acceptSuggestion(suggestion, notesText, cadence, dayOfMonth, categoryId)
+                onConfirm = { cadence, dayOfMonth, accountId, categoryId ->
+                    viewModel.acceptSuggestion(
+                        suggestion = suggestion,
+                        notes = notesText,
+                        cadence = cadence,
+                        dayOfMonth = dayOfMonth,
+                        accountId = accountId,
+                        categoryId = categoryId,
+                    )
                     confirming = null
+                },
+            )
+        }
+
+        editingRouting?.let { rule ->
+            EditRuleRoutingSheet(
+                rule = rule,
+                accounts = accounts,
+                categories = categoriesAll,
+                onDismiss = { editingRouting = null },
+                onSave = { accountId, categoryId ->
+                    viewModel.updateRouting(rule.id, accountId, categoryId)
+                    editingRouting = null
                 },
             )
         }
@@ -249,13 +285,16 @@ fun RecurringRulesScreen(
 @Composable
 private fun AddRuleForm(
     currency: String,
-    onSave: (displayName: String, merchant: String, amount: String, type: TxType, cadence: Cadence, dayOfMonth: Int?, startDate: kotlinx.datetime.LocalDate) -> Unit,
+    accounts: List<Account>,
+    onSave: (displayName: String, merchant: String, amount: String, type: TxType, accountId: String, cadence: Cadence, dayOfMonth: Int?, startDate: kotlinx.datetime.LocalDate) -> Unit,
 ) {
     val theme = AtharTheme
     var displayName by remember { mutableStateOf("") }
     var merchant by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var type by remember { mutableStateOf(TxType.EXPENSE) }
+    val defaultAccountId = remember(accounts) { defaultRecurringAccountId(accounts, MANUAL_ACCOUNT_ID) }
+    var selectedAccountId by remember(defaultAccountId) { mutableStateOf(defaultAccountId) }
     var cadence by remember { mutableStateOf(Cadence.MONTHLY) }
     var dayOfMonth by remember { mutableStateOf("") }
     val today = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date }
@@ -288,6 +327,11 @@ private fun AddRuleForm(
                 Chip(label = stringResource(R.string.settings_recurring_type_income), selected = type == TxType.INCOME, accent = theme.colors.olive,
                     onClick = { type = TxType.INCOME })
             }
+            RecurringAccountPicker(
+                accounts = accounts,
+                selectedAccountId = selectedAccountId,
+                onSelectAccount = { selectedAccountId = it },
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
                 Chip(label = stringResource(R.string.settings_recurring_cadence_monthly), selected = cadence == Cadence.MONTHLY, accent = theme.colors.ember,
                     onClick = { cadence = Cadence.MONTHLY })
@@ -319,7 +363,7 @@ private fun AddRuleForm(
                     } else {
                         today
                     }
-                    onSave(displayName, merchant, amount, type, cadence, dom, startDate)
+                    onSave(displayName, merchant, amount, type, selectedAccountId, cadence, dom, startDate)
                 },
             )
         }
@@ -347,10 +391,15 @@ private fun Chip(label: String, selected: Boolean, accent: androidx.compose.ui.g
 @Composable
 private fun RuleRow(
     rule: RecurringRule,
+    accounts: List<Account>,
+    categories: List<Category>,
+    onEditRouting: () -> Unit,
     onToggle: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val theme = AtharTheme
+    val accountLabel = accountDisplayName(rule.accountId, accounts)
+    val categoryLabel = recurringCategoryDisplayName(rule.categoryId, categories)
     AtharCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -358,6 +407,11 @@ private fun RuleRow(
                     AtharText(text = rule.displayName, style = theme.typography.headline)
                     AtharText(
                         text = "${cadenceLabel(rule.cadence)} · ${rule.merchant}",
+                        style = theme.typography.caption,
+                        color = theme.colors.muted,
+                    )
+                    AtharText(
+                        text = stringResource(R.string.settings_recurring_row_account_category, accountLabel, categoryLabel),
                         style = theme.typography.caption,
                         color = theme.colors.muted,
                     )
@@ -394,6 +448,19 @@ private fun RuleRow(
                     modifier = Modifier
                         .clip(RoundedCornerShape(theme.spacing.s))
                         .background(theme.colors.divider)
+                        .clickable(onClick = onEditRouting)
+                        .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
+                ) {
+                    AtharText(
+                        text = stringResource(R.string.settings_recurring_row_edit_routing),
+                        style = theme.typography.caption,
+                        color = theme.colors.ink,
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(theme.spacing.s))
+                        .background(theme.colors.divider)
                         .clickable(onClick = onDelete)
                         .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
                 ) {
@@ -401,6 +468,141 @@ private fun RuleRow(
                 }
             }
         }
+    }
+}
+
+@androidx.compose.material3.ExperimentalMaterial3Api
+@Composable
+private fun EditRuleRoutingSheet(
+    rule: RecurringRule,
+    accounts: List<Account>,
+    categories: List<Category>,
+    onDismiss: () -> Unit,
+    onSave: (String, String?) -> Unit,
+) {
+    val theme = AtharTheme
+    val sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val defaultAccountId = remember(rule, accounts) { defaultRecurringAccountId(accounts, rule.accountId) }
+    var selectedAccountId by remember(rule.id, defaultAccountId) { mutableStateOf(defaultAccountId) }
+    val expectedKind = if (rule.type == TxType.INCOME) {
+        CategoryKind.INCOME
+    } else {
+        CategoryKind.EXPENSE
+    }
+    val pickable = categories.filter { it.kind == expectedKind && !it.archived }
+    val defaultCategoryId = rule.categoryId
+        ?.takeIf { id -> pickable.any { it.id == id } }
+    var selectedCategoryId by remember(rule.id, defaultCategoryId) { mutableStateOf(defaultCategoryId) }
+    androidx.compose.material3.ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = theme.colors.parchment,
+        contentColor = theme.colors.ink,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(theme.spacing.m),
+            verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
+        ) {
+            AtharText(
+                text = stringResource(R.string.settings_recurring_route_title),
+                style = theme.typography.headline,
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+                AtharText(text = rule.displayName, style = theme.typography.title)
+                AtharText(
+                    text = "${cadenceLabel(rule.cadence)} · ${rule.merchant}",
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+                AtharNumber(
+                    money = rule.amount,
+                    color = if (rule.type == TxType.INCOME) theme.colors.olive else theme.colors.ember,
+                )
+            }
+
+            RecurringAccountPicker(
+                accounts = accounts,
+                selectedAccountId = selectedAccountId,
+                onSelectAccount = { selectedAccountId = it },
+            )
+
+            AtharText(
+                text = stringResource(R.string.settings_recurring_confirm_category),
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+            NoCategoryChoice(
+                selected = selectedCategoryId == null,
+                onClick = { selectedCategoryId = null },
+            )
+            com.athar.core.designsystem.component.AtharCategoryPicker(
+                items = pickable.map {
+                    com.athar.core.designsystem.component.AtharPickerItem(key = it.id, labelEn = it.name, labelAr = it.nameAr)
+                },
+                selectedKey = selectedCategoryId,
+                onSelect = { selectedCategoryId = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 160.dp, max = 240.dp),
+            )
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(theme.spacing.s))
+                        .background(theme.colors.divider)
+                        .clickable(onClick = onDismiss)
+                        .padding(theme.spacing.m),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    AtharText(
+                        text = stringResource(R.string.settings_action_cancel),
+                        style = theme.typography.headline,
+                        color = theme.colors.ink,
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(2f)
+                        .clip(RoundedCornerShape(theme.spacing.s))
+                        .background(theme.colors.ember)
+                        .clickable { onSave(selectedAccountId, selectedCategoryId) }
+                        .padding(theme.spacing.m),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    AtharText(
+                        text = stringResource(R.string.settings_recurring_route_save),
+                        style = theme.typography.headline,
+                        color = theme.colors.parchment,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NoCategoryChoice(
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val theme = AtharTheme
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(if (selected) theme.colors.olive else theme.colors.divider)
+            .clickable(onClick = onClick)
+            .padding(theme.spacing.s),
+    ) {
+        AtharText(
+            text = stringResource(R.string.settings_recurring_route_uncategorized),
+            style = theme.typography.body,
+            color = if (selected) theme.colors.parchment else theme.colors.ink,
+        )
     }
 }
 
@@ -493,20 +695,27 @@ private fun SubscriptionsHeader(activeCount: Int, monthlyTotal: Money) {
 private fun ConfirmSuggestionSheet(
     suggestion: RecurringSuggestion,
     categories: List<com.athar.core.domain.model.Category>,
+    accounts: List<Account>,
     onDismiss: () -> Unit,
-    onConfirm: (Cadence, Int?, String?) -> Unit,
+    onConfirm: (Cadence, Int?, String, String?) -> Unit,
 ) {
     val theme = AtharTheme
     val sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var cadence by remember { mutableStateOf(Cadence.MONTHLY) }
     var dayOfMonth by remember { mutableStateOf(suggestion.typicalDayOfMonth.toString()) }
-    var selectedCategoryId by remember { mutableStateOf<String?>(null) }
     val expectedKind = if (suggestion.type == TxType.INCOME) {
         com.athar.core.domain.model.CategoryKind.INCOME
     } else {
         com.athar.core.domain.model.CategoryKind.EXPENSE
     }
     val pickable = categories.filter { it.kind == expectedKind && !it.archived }
+    val defaultCategoryId = suggestion.suggestedCategoryId
+        ?.takeIf { id -> pickable.any { it.id == id } }
+    var selectedCategoryId by remember(suggestion, defaultCategoryId) { mutableStateOf(defaultCategoryId) }
+    val defaultAccountId = remember(suggestion, accounts) {
+        defaultRecurringAccountId(accounts, suggestion.suggestedAccountId)
+    }
+    var selectedAccountId by remember(defaultAccountId) { mutableStateOf(defaultAccountId) }
     androidx.compose.material3.ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
@@ -565,6 +774,12 @@ private fun ConfirmSuggestionSheet(
                 )
             }
 
+            RecurringAccountPicker(
+                accounts = accounts,
+                selectedAccountId = selectedAccountId,
+                onSelectAccount = { selectedAccountId = it },
+            )
+
             AtharText(
                 text = stringResource(R.string.settings_recurring_confirm_category),
                 style = theme.typography.caption,
@@ -604,7 +819,7 @@ private fun ConfirmSuggestionSheet(
                         .background(theme.colors.ember)
                         .clickable {
                             val dom = dayOfMonth.toIntOrNull()?.coerceIn(1, 31)
-                            onConfirm(cadence, dom, selectedCategoryId)
+                            onConfirm(cadence, dom, selectedAccountId, selectedCategoryId)
                         }
                         .padding(theme.spacing.m),
                     contentAlignment = Alignment.Center,
@@ -616,6 +831,91 @@ private fun ConfirmSuggestionSheet(
                     )
                 }
             }
+        }
+    }
+}
+
+private fun defaultRecurringAccountId(accounts: List<Account>, preferredAccountId: String?): String =
+    preferredAccountId
+        ?.takeIf { preferred -> accounts.any { it.id == preferred } }
+        ?: accounts.firstOrNull { it.id == MANUAL_ACCOUNT_ID }?.id
+        ?: accounts.firstOrNull()?.id
+        ?: MANUAL_ACCOUNT_ID
+
+@Composable
+private fun accountDisplayName(accountId: String, accounts: List<Account>): String =
+    accounts.firstOrNull { it.id == accountId }?.name
+        ?: if (accountId == MANUAL_ACCOUNT_ID) {
+            stringResource(R.string.settings_recurring_row_manual_account)
+        } else {
+            stringResource(R.string.settings_recurring_row_unknown_account, accountId)
+        }
+
+@Composable
+private fun recurringCategoryDisplayName(categoryId: String?, categories: List<Category>): String {
+    if (categoryId.isNullOrBlank()) {
+        return stringResource(R.string.settings_recurring_route_uncategorized)
+    }
+    val category = categories.firstOrNull { it.id == categoryId }
+        ?: return stringResource(R.string.settings_recurring_row_unknown_category, categoryId)
+    val isArabic = Locale.getDefault().language.equals("ar", ignoreCase = true)
+    return if (isArabic) {
+        category.nameAr.ifBlank { category.name }
+    } else {
+        category.name.ifBlank { category.nameAr }
+    }
+}
+
+@Composable
+private fun RecurringAccountPicker(
+    accounts: List<Account>,
+    selectedAccountId: String,
+    onSelectAccount: (String) -> Unit,
+) {
+    if (accounts.size <= 1) return
+    val theme = AtharTheme
+    Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+        AtharText(
+            text = stringResource(R.string.settings_recurring_field_account),
+            style = theme.typography.caption,
+            color = theme.colors.muted,
+        )
+        accounts.forEach { account ->
+            RecurringAccountChoice(
+                account = account,
+                selected = selectedAccountId == account.id,
+                onClick = { onSelectAccount(account.id) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecurringAccountChoice(
+    account: Account,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val theme = AtharTheme
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(if (selected) theme.colors.olive else theme.colors.divider)
+            .clickable(onClick = onClick)
+            .padding(theme.spacing.s),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+            AtharText(
+                text = account.name,
+                style = theme.typography.body,
+                color = if (selected) theme.colors.parchment else theme.colors.ink,
+            )
+            AtharText(
+                text = account.currency,
+                style = theme.typography.caption,
+                color = if (selected) theme.colors.parchment else theme.colors.muted,
+            )
         }
     }
 }

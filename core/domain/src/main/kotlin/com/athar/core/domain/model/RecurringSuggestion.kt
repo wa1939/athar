@@ -14,6 +14,10 @@ data class RecurringSuggestion(
     val merchantNormalized: String,
     val amount: Money,
     val type: TxType,
+    /** Account used by every detected occurrence, when history is unambiguous. */
+    val suggestedAccountId: String?,
+    /** Category used by every detected occurrence, when history is unambiguous. */
+    val suggestedCategoryId: String?,
     val occurrenceCount: Int,
     /** The day-of-month at which most occurrences happened (median-ish). */
     val typicalDayOfMonth: Int,

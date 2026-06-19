@@ -5,7 +5,7 @@ import com.athar.core.data.db.dao.TransactionDao
 import com.athar.core.data.db.entity.TransactionEntity
 import com.athar.core.data.mapper.toDomain
 import com.athar.core.data.mapper.toEntity
-import com.athar.core.domain.model.Cadence
+import com.athar.core.domain.calc.RecurringSchedule
 import com.athar.core.domain.model.IngestSource
 import com.athar.core.domain.model.RecurringRule
 import com.athar.core.domain.model.TxStatus
@@ -50,7 +50,7 @@ internal class RecurringRuleRepositoryImpl @Inject constructor(
         due.forEach { ruleEntity ->
             val rule = ruleEntity.toDomain()
             if (rule.lastRunDate == rule.nextRunDate) return@forEach
-            val nextRun = computeNextRun(rule.nextRunDate, rule.cadence, rule.dayOfMonth, rule.dayOfWeek)
+            val nextRun = RecurringSchedule.nextRunAfter(rule.nextRunDate, rule)
             val tx = TransactionEntity(
                 id = UUID.randomUUID().toString(),
                 accountId = rule.accountId,
@@ -86,28 +86,3 @@ internal class RecurringRuleRepositoryImpl @Inject constructor(
 
 private fun com.athar.core.common.money.Money.toMinor(): Long =
     amount.movePointRight(2).toLong()
-
-private fun computeNextRun(
-    fromDate: LocalDate,
-    cadence: Cadence,
-    dayOfMonth: Int?,
-    dayOfWeek: Int?,
-): LocalDate {
-    val java = java.time.LocalDate.of(fromDate.year, fromDate.monthNumber, fromDate.dayOfMonth)
-    val next: java.time.LocalDate = when (cadence) {
-        Cadence.MONTHLY -> {
-            val target = (dayOfMonth ?: java.dayOfMonth).coerceIn(1, 31)
-            val plusOne = java.plusMonths(1)
-            val maxDay = plusOne.lengthOfMonth()
-            plusOne.withDayOfMonth(target.coerceAtMost(maxDay))
-        }
-        Cadence.WEEKLY -> {
-            val targetDow = dayOfWeek ?: java.dayOfWeek.value
-            var d = java.plusDays(1)
-            while (d.dayOfWeek.value != targetDow) d = d.plusDays(1)
-            d
-        }
-        Cadence.YEARLY -> java.plusYears(1)
-    }
-    return LocalDate(next.year, next.monthValue, next.dayOfMonth)
-}

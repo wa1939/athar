@@ -45,12 +45,7 @@ fun SmsAuditScreen(
     val theme = AtharTheme
     var filter by remember { mutableStateOf<SmsParseStatus?>(null) }
 
-    val filtered = remember(state.entries, filter) {
-        when (filter) {
-            null -> state.entries
-            else -> state.entries.filter { it.status == filter }
-        }
-    }
+    val filtered = state.entriesFor(filter)
 
     Box(modifier = modifier
         .fillMaxSize()
@@ -76,6 +71,7 @@ fun SmsAuditScreen(
                 verticalArrangement = Arrangement.spacedBy(theme.spacing.s),
             ) {
                 StatsCard(state = state)
+                SenderHealthCard(state = state)
 
                 AtharSegmentedControl(
                     segments = listOf(
@@ -111,14 +107,84 @@ fun SmsAuditScreen(
 private fun StatsCard(state: SmsAuditState) {
     val theme = AtharTheme
     AtharCard {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Stat(label = stringResource(R.string.settings_sms_audit_filter_parsed), value = state.totalParsed, color = theme.colors.olive)
-            Stat(label = stringResource(R.string.settings_sms_audit_filter_failed), value = state.totalFailed, color = theme.colors.ember)
-            Stat(label = stringResource(R.string.settings_sms_audit_filter_ignored), value = state.totalIgnored, color = theme.colors.muted)
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Stat(label = stringResource(R.string.settings_sms_audit_filter_parsed), value = state.totalParsed, color = theme.colors.olive)
+                Stat(label = stringResource(R.string.settings_sms_audit_filter_failed), value = state.totalFailed, color = theme.colors.ember)
+                Stat(label = stringResource(R.string.settings_sms_audit_filter_ignored), value = state.totalIgnored, color = theme.colors.muted)
+            }
+            AtharText(
+                text = stringResource(R.string.settings_sms_audit_parse_rate, state.parseRatePercent),
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
         }
+    }
+}
+
+@Composable
+private fun SenderHealthCard(state: SmsAuditState) {
+    if (state.senderHealth.isEmpty()) return
+
+    val theme = AtharTheme
+    AtharCard {
+        Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
+            AtharText(
+                text = stringResource(R.string.settings_sms_audit_sender_health_title),
+                style = theme.typography.headline,
+            )
+            AtharText(
+                text = stringResource(R.string.settings_sms_audit_sender_health_body),
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+            state.senderHealth.forEach { sender ->
+                SenderHealthRow(sender = sender)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SenderHealthRow(sender: SmsSenderHealth) {
+    val theme = AtharTheme
+    val accent = when {
+        sender.failed > 0 -> theme.colors.ember
+        sender.ignored > 0 -> theme.colors.dust
+        else -> theme.colors.olive
+    }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .clip(RoundedCornerShape(3.dp))
+                .background(accent),
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            AtharText(text = sender.sender, style = theme.typography.body)
+            AtharText(
+                text = stringResource(
+                    R.string.settings_sms_audit_sender_health_counts,
+                    sender.parsed,
+                    sender.failed,
+                    sender.ignored,
+                ),
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+        }
+        AtharText(
+            text = sender.total.toString(),
+            style = theme.typography.headline,
+            color = accent,
+        )
     }
 }
 
@@ -177,4 +243,3 @@ private fun BackButton(onClick: () -> Unit) {
         AtharText(text = "‹", style = theme.typography.title, color = theme.colors.ink)
     }
 }
-

@@ -2,11 +2,12 @@
 
 Use this when you have dozens or hundreds of uncategorized transactions sitting in your pending/dismissed trays and you don't want to tap "Always categorize…" on each one.
 
-## The three-step loop
+## The four-step loop
 
-1. **Open Settings → "تصنيف بالذكاء الاصطناعي · مجمّع" / "Bulk categorize with AI"** → tap **Export uncategorized**. Athar writes a CSV of every transaction that is PENDING, DISMISSED, or CONFIRMED-without-category. Default filename: `athar-uncategorized.csv`. Save it somewhere you can reach from a desktop.
-2. **Open ChatGPT / Claude / Z.ai** in a fresh chat. Drop in the prompt below, attach (or paste) the CSV, and ask for the filled-in CSV back.
-3. **Back in Athar → same Settings card → Import categorized.** Pick the filled CSV. Each row updates its transaction (status → CONFIRMED, category set) **and** records a learned `CategoryRule` per unique `merchant → category` pair so future SMS from the same merchant auto-categorize.
+1. **Open Settings → "تصنيف بالذكاء الاصطناعي · مجمّع" / "Bulk categorize with AI"** → tap **Copy AI prompt**, then choose an export. **Export with SMS text** writes the highest-context CSV, including the linked ingestion-audit message body in `raw_body` when available and falling back to transaction notes for manual/imported rows. **Export private CSV** writes the same import-compatible columns but leaves `raw_body` blank. Both files include every non-transfer transaction that is PENDING, DISMISSED, or CONFIRMED-without-category, plus valid active category options for each row's type. Default filenames: `athar-uncategorized.csv` and `athar-uncategorized-private.csv`. Save the file somewhere you can reach from a desktop.
+2. **Open ChatGPT / Claude / Z.ai** in a fresh chat. Paste the copied prompt, attach (or paste) the CSV, and ask for the filled-in CSV back.
+3. **Back in Athar → same Settings card → Import categorized.** Pick the filled CSV. If you saved the full AI response with prose and a fenced `csv` block, Athar extracts the valid CSV block automatically and shows a preview: how many transactions would update, how many exact local rules would be added/replaced, and how many rows would skip.
+4. **Review the counts → Apply import.** The actual write happens only after this confirmation. Filled rows update their transactions (status → CONFIRMED, category set) only when the chosen category matches the row's expense/income type. If a repeated specific-merchant group has one unambiguous compatible filled category, blank peers in that imported CSV group inherit it. Generic labels such as `payment`, `purchase`, `cash`, `merchant`, `bank`, `كاش`, or `دفع` never drive inheritance or learned rules. Athar also upserts one exact learned `CategoryRule` per unambiguous type-compatible specific `merchant → category` pair so future SMS from the same normalized merchant auto-categorize without broad substring matching or duplicate exact rules.
 
 A typical 800-row export takes ChatGPT about 60–90 seconds; import takes a fraction of a second.
 
@@ -15,31 +16,37 @@ A typical 800-row export takes ChatGPT about 60–90 seconds; import takes a fra
 The export looks like:
 
 ```
-id,merchant,merchant_normalized,amount,currency,type,status,date,raw_body,category_id
-3f7a-…,Hemmah,hemmah,99.00,SAR,EXPENSE,DISMISSED,2026-04-22,...raw SMS body...,
+id,stable_key,source_ref_id,merchant,merchant_normalized,merchant_group_count,merchant_group_rank,merchant_group_share_permille,merchant_group_cumulative_share_permille,category_options,amount,currency,type,status,date,raw_body,category_id
+3f7a-…,8d9e-…,inbox-4242,Hemmah,hemmah,8,1,120,320,"cat-home-maintenance=Home maintenance / صيانة منزل | cat-other-expense=Other / متفرقات",99.00,SAR,EXPENSE,DISMISSED,2026-04-22,...raw SMS body...,
 ```
 
-- **`id`** — Athar's internal transaction id. Do not change. The importer matches rows on this.
+- **`id`** — Athar's internal transaction id. Do not change. The importer tries this first.
+- **`stable_key`** — a deterministic fingerprint Athar uses if the transaction id changed after a rescan/backfill. Do not change.
+- **`source_ref_id`** — the raw SMS/notification reference when available. Helps Athar rebuild the same stable key after a rescan. Do not change.
 - **`merchant`** / **`merchant_normalized`** — as parsed by the ingestion pipeline. Lower-case normalized version is what gets used for rule matching.
+- **`merchant_group_count`** — how many exported rows share the same normalized specific merchant. The export is sorted so repeated specific merchants appear first and together; assign one consistent category to the group unless the raw body proves otherwise. Generic labels such as `payment`, `purchase`, `cash`, `merchant`, `bank`, `كاش`, or `دفع` are treated as single-row groups even when repeated, because inheriting or learning from them would be too broad. For human review, filling one representative row is enough only when the blank rows in the same specific-merchant group should inherit the same category.
+- **`merchant_group_rank` / `merchant_group_share_permille` / `merchant_group_cumulative_share_permille`** — read-only impact hints. Start with the lowest rank and highest share groups first; they clean the most backlog rows per decision. Do not edit these columns.
+- **`category_options`** — read-only active category choices for this row's `type`, using the user's current category table. Do not edit. Pick one of these IDs for `category_id`; this keeps custom categories visible to ChatGPT/Claude without a separate lookup file, and the importer skips categories whose kind does not match the row type.
 - **`amount` · `currency` · `type` · `status` · `date`** — context for the AI to disambiguate similar merchants. Do not change.
-- **`raw_body`** — the original SMS body (when available). Often the strongest categorization signal.
-- **`category_id`** — *blank in the export.* The AI fills this. Use one of the valid IDs from `core/data/src/main/assets/seed_categories.json`:
-   - Expense: `cat-rent`, `cat-mortgage`, `cat-groceries`, `cat-restaurant`, `cat-coffee`, `cat-going-out`, `cat-entertainment`, `cat-travel`, `cat-gas`, `cat-public-transport`, `cat-car-maintenance`, `cat-car-payment`, `cat-utilities`, `cat-telecom`, `cat-subscriptions`, `cat-home-maintenance`, `cat-medical`, `cat-insurance`, `cat-education`, `cat-childcare`, `cat-clothing`, `cat-electronics`, `cat-gym`, `cat-gifts`, `cat-charity`, `cat-wife-allowance`, `cat-debt`, `cat-other-expense`
-   - Income: `cat-salary`, `cat-side-income`
+- **`raw_body`** — the original SMS/notification body from the local ingestion audit when available, or transaction notes for manual/imported rows, in the full-context export. Often the strongest categorization signal. The private export keeps this column but leaves it blank.
+- **`category_id`** — *blank in the export.* The AI fills this from the row's `category_options`. The chosen category must match the row's `type`. For older exports without `category_options`, use one of the bundled default IDs from `core/data/src/main/assets/seed_categories.json`:
+   - Expense: `cat-rent`, `cat-mortgage`, `cat-groceries`, `cat-restaurant`, `cat-coffee`, `cat-going-out`, `cat-entertainment`, `cat-travel`, `cat-gas`, `cat-public-transport`, `cat-car-maintenance`, `cat-car-payment`, `cat-utilities`, `cat-telecom`, `cat-subscriptions`, `cat-home-maintenance`, `cat-medical`, `cat-insurance`, `cat-education`, `cat-childcare`, `cat-clothing`, `cat-electronics`, `cat-gym`, `cat-gifts`, `cat-charity`, `cat-wife-allowance`, `cat-debt`, `cat-other-expense`, `cat-condo-fees`, `cat-work-expense`
+   - Income: `cat-salary`, `cat-side-income`, `cat-tax-refund`, `cat-reimbursements`, `cat-bonus`, `cat-other-income`
 
-  Arabic and English display names also work as a fallback (`مطاعم` or `Restaurant`), but the id is unambiguous and survives translation changes — prefer it.
+  Arabic and English display names also work as a fallback (`مطاعم` or `Restaurant`), but the id is unambiguous and survives translation changes — prefer the id shown in `category_options`.
 
 ## The AI prompt
 
-Paste this into ChatGPT/Claude/Z.ai, then attach (or paste) the CSV.
+Tap **Copy AI prompt** in Settings, or paste this into ChatGPT/Claude/Z.ai,
+then attach (or paste) the CSV.
 
 ```
 You are categorizing financial transactions for a Saudi Arabic-first budgeting app called Athar.
 
 Input: a CSV with these columns:
-  id, merchant, merchant_normalized, amount, currency, type, status, date, raw_body, category_id
+  id, stable_key, source_ref_id, merchant, merchant_normalized, merchant_group_count, merchant_group_rank, merchant_group_share_permille, merchant_group_cumulative_share_permille, category_options, amount, currency, type, status, date, raw_body, category_id
 
-Your job: fill in the `category_id` column for every row. Use ONLY these category ids:
+Your job: fill in the `category_id` column for every row you can classify confidently. Prefer one of the ids shown in that row's `category_options` column. For repeated rows with the same specific `merchant_normalized`, prioritize the lowest `merchant_group_rank` and highest `merchant_group_share_permille` groups first. You may fill only the first representative row when every blank peer should inherit the same category. Generic merchant labels such as payment, purchase, cash, merchant, bank, كاش, or دفع are exported as singletons and should be filled row-by-row only when clear. If a row in the same merchant group needs a different category, fill that row explicitly too; Athar will not train a learned rule for conflicting, generic, or incompatible-type groups. If `category_options` is missing or incomplete, use ONLY these category ids:
 
 EXPENSE:
   cat-rent · cat-mortgage · cat-groceries · cat-restaurant · cat-coffee · cat-going-out
@@ -47,17 +54,25 @@ EXPENSE:
   cat-car-payment · cat-utilities · cat-telecom · cat-subscriptions · cat-home-maintenance
   cat-medical · cat-insurance · cat-education · cat-childcare · cat-clothing · cat-electronics
   cat-gym · cat-gifts · cat-charity · cat-wife-allowance · cat-debt · cat-other-expense
+  cat-condo-fees · cat-work-expense
 
 INCOME:
-  cat-salary · cat-side-income
+  cat-salary · cat-side-income · cat-tax-refund · cat-reimbursements · cat-bonus
+  cat-other-income
 
 Rules:
-- If type=INCOME, pick cat-salary if the merchant looks like a known employer / "salary"
-  / "راتب", otherwise cat-side-income.
-- If type=TRANSFER, leave category_id blank (transfers don't have categories).
+- Pick only a category id that is compatible with the row's type. EXPENSE rows
+  must use expense category ids, and INCOME rows must use income category ids.
+- If type=INCOME, pick cat-salary for known employer salary/payroll deposits,
+  cat-tax-refund for tax refunds, cat-reimbursements for expense reimbursements,
+  cat-bonus for bonuses, cat-side-income for freelance/rental/dividend/interest
+  income, and cat-other-income only when no specific income category fits.
+- Transfers are normally not exported. If an older CSV contains type=TRANSFER, leave category_id blank.
 - If you cannot tell, leave category_id blank — do not guess. Better to skip than mis-categorize.
-- Use `raw_body` aggressively — Arabic SMS often spells the merchant differently than
-  the parsed `merchant` field. Look for keywords ("مطعم", "صيدلية", "محطة", "اتصالات").
+- Use `raw_body` aggressively when present — Arabic SMS often spells the merchant
+  differently than the parsed `merchant` field. Private exports may leave it
+  blank; then use merchant, amount, type, date, and category options, and leave
+  uncertain rows blank.
 - "Hemmah" / "هيمة" / "Maharah" / "مهارة" → cat-home-maintenance (domestic-worker apps).
 - "Yaqoot" / "ياقوت" → cat-utilities (water delivery subscription).
 - "SAUDI ELECTRIC" / "SEC" / "الكهرباء" → cat-utilities.
@@ -68,25 +83,38 @@ Rules:
 - "PANDA" / "OTHAIM" / "CARREFOUR" / "LULU" / "TAMIMI" → cat-groceries.
 
 Output: emit the CSV BACK with the same headers and rows in the same order, only `category_id`
-filled in. Do not add or remove rows. Do not change any other column. Use the same RFC-4180
+filled in. Do not add or remove rows. Do not change `category_options` or any other column. You may leave repeated-group peers blank when the first filled row should apply to the whole group. Use the same RFC-4180
 quoting as the input. Wrap your final output in a single ```csv code block.
 ```
 
+Athar can import either the raw CSV content or a saved AI response that contains
+one valid fenced `csv` block. The CSV block still needs the same headers and row
+order.
+
 ## After the import
 
+- Import first shows a preview. Until the user taps **Apply import**, transactions and learned rules are unchanged.
 - Every filled row's transaction is now CONFIRMED with a category — visible on Today's lists, in Trends, and counted in budget targets.
-- Every unique merchant in the filled rows became a `learnedFromUser = true` `CategoryRule` at priority 200. This means:
-  - Next time an SMS from that merchant arrives, the ingestion pipeline auto-categorizes it before it ever hits the pending tray.
+- Blank rows in the same imported repeated specific-merchant group inherit the category when the group has exactly one filled category and that category matches the blank row's type. If the CSV contains conflicting categories for one merchant, the repeated group mixes incompatible expense/income rows, or the merchant key is generic, only the compatible explicit rows update and the blank peers stay untouched.
+- Every unambiguous type-compatible specific merchant in the filled rows upserts an exact `learnedFromUser = true` `CategoryRule` at priority 200. Generic labels, mixed-type groups, and incompatible groups do not train a rule. This means:
+  - Next time an SMS from that exact normalized merchant arrives, the ingestion pipeline auto-categorizes it before it ever hits the pending tray.
   - The rule wins over Athar's curated seed rules (priority 100) and the 507 AI-seeded rules (priority 60–80), so the user's personal taste always overrides the defaults.
   - The rule is *never* overwritten by future seed-file updates (see `RuleSeed.kt`).
+  - Exact bulk-import rules stay local and are omitted from the community-rule export; public seed proposals still come from explicit "Always categorize X" substring rules.
+  - Re-importing the same decision does not create duplicate exact rules. Importing a corrected category replaces stale exact local rules for that merchant while leaving seed rules and explicit "Always categorize" substring rules intact.
 
 ## When the import skips a row
 
 The importer logs the row index and reason to logcat (`Timber.w`). Common skip reasons:
 
 - **`unknown category 'X'`** — the value in `category_id` didn't match a category id, English name, or Arabic name. Check spelling.
-- **`no transaction with id …`** — the row's `id` doesn't exist in the DB. Happens if the user ran `Rescan SMS` between export and import, which can re-create rows with new UUIDs. Re-export and try again.
-- Blank `id` or blank `category_id` — skipped silently. Use blanks to mean "AI couldn't tell".
+- **category is incompatible with transaction type** — the category exists, but its kind does not match the matched transaction's `type` (for example, `cat-salary` on an `EXPENSE` row). Use the id shown in that row's `category_options`.
+- **`no matching transaction for id/stable key`** — Athar could not find the row by id, stable key, source reference, or content fingerprint. This should be rare; it usually means the transaction was deleted or the AI changed matching columns other than `category_id`.
+- Blank `category_id` — skipped silently unless another row in the same imported repeated-merchant group has exactly one unambiguous category. Use blanks to mean "AI couldn't tell" or "inherit from the group's filled representative row."
+
+After import, the Settings card summarizes skipped rows by reason: unknown
+category, wrong type, missing transaction, conflicting group, left blank, or bad
+row. The aggregate summary contains counts only; row-level details stay in logcat.
 
 ## Why this design
 
@@ -95,6 +123,6 @@ Inline API-key options were considered (`Settings → "Paste your OpenAI key"` +
 1. **No surprise costs.** A 1,000-row OpenAI call at gpt-4o pricing is ~$0.10 — small but non-zero, and surprises break trust. The CSV path leverages what the user already pays for (their ChatGPT Plus / Claude Pro subscription).
 2. **No new attack surface.** API keys are sensitive credentials; storing them locally (even encrypted) is a meaningful audit hit. The CSV roundtrip keeps Athar zero-credential.
 3. **Higher quality.** Pasting into a chat window lets the user iterate — "you got Hemmah wrong, redo with cat-home-maintenance instead of cat-other-expense" — which is far harder to express in a single API call.
-4. **Same end state.** Both paths produce the same `learnedFromUser=true` rules and the same updated transactions. The user's permanent merchant library grows identically.
+4. **Same local end state.** Both paths update the same transactions and grow the user's permanent merchant library. Bulk import trains exact local rules; explicit "Always categorize X" remains the shareable substring-rule path.
 
 Issue #5b remains in the roadmap as an *opt-in* enhancement if a future user explicitly asks for it — but it is not a blocker.

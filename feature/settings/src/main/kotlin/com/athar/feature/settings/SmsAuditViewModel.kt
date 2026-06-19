@@ -19,21 +19,47 @@ import javax.inject.Inject
 @Immutable
 data class SmsAuditState(
     val entries: ImmutableList<SmsAuditEntry>,
+    val parsedEntries: ImmutableList<SmsAuditEntry>,
+    val failedEntries: ImmutableList<SmsAuditEntry>,
+    val ignoredEntries: ImmutableList<SmsAuditEntry>,
     val totalParsed: Int,
     val totalFailed: Int,
     val totalIgnored: Int,
+    val parseRatePercent: Int,
+    val senderHealth: ImmutableList<SmsSenderHealth>,
     val isLoading: Boolean,
 ) {
     companion object {
         fun initial(): SmsAuditState = SmsAuditState(
             entries = persistentListOf(),
+            parsedEntries = persistentListOf(),
+            failedEntries = persistentListOf(),
+            ignoredEntries = persistentListOf(),
             totalParsed = 0,
             totalFailed = 0,
             totalIgnored = 0,
+            parseRatePercent = 0,
+            senderHealth = persistentListOf(),
             isLoading = true,
         )
     }
+
+    fun entriesFor(filter: SmsParseStatus?): ImmutableList<SmsAuditEntry> = when (filter) {
+        null -> entries
+        SmsParseStatus.PARSED -> parsedEntries
+        SmsParseStatus.FAILED -> failedEntries
+        SmsParseStatus.IGNORED -> ignoredEntries
+    }
 }
+
+@Immutable
+data class SmsSenderHealth(
+    val sender: String,
+    val total: Int,
+    val parsed: Int,
+    val failed: Int,
+    val ignored: Int,
+)
 
 @HiltViewModel
 class SmsAuditViewModel @Inject constructor(
@@ -41,18 +67,46 @@ class SmsAuditViewModel @Inject constructor(
 ) : ViewModel() {
 
     val state: StateFlow<SmsAuditState> = repo.observeAll()
-        .map { all ->
-            SmsAuditState(
-                entries = all.take(MAX_VISIBLE).toImmutableList(),
-                totalParsed = all.count { it.status == SmsParseStatus.PARSED },
-                totalFailed = all.count { it.status == SmsParseStatus.FAILED },
-                totalIgnored = all.count { it.status == SmsParseStatus.IGNORED },
-                isLoading = false,
+        .map(::buildSmsAuditState)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SmsAuditState.initial())
+}
+
+internal fun buildSmsAuditState(all: List<SmsAuditEntry>): SmsAuditState {
+    val parsed = all.count { it.status == SmsParseStatus.PARSED }
+    val failed = all.count { it.status == SmsParseStatus.FAILED }
+    val ignored = all.count { it.status == SmsParseStatus.IGNORED }
+    val senderHealth = all.groupBy { it.sender.ifBlank { "—" } }
+        .map { (sender, rows) ->
+            SmsSenderHealth(
+                sender = sender,
+                total = rows.size,
+                parsed = rows.count { it.status == SmsParseStatus.PARSED },
+                failed = rows.count { it.status == SmsParseStatus.FAILED },
+                ignored = rows.count { it.status == SmsParseStatus.IGNORED },
             )
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SmsAuditState.initial())
+        .sortedWith(
+            compareByDescending<SmsSenderHealth> { it.failed }
+                .thenByDescending { it.ignored }
+                .thenByDescending { it.total }
+                .thenBy { it.sender.lowercase() },
+        )
+        .take(MAX_SENDER_HEALTH)
+        .toImmutableList()
 
-    private companion object {
-        const val MAX_VISIBLE = 200
-    }
+    return SmsAuditState(
+        entries = all.take(MAX_VISIBLE).toImmutableList(),
+        parsedEntries = all.filter { it.status == SmsParseStatus.PARSED }.take(MAX_VISIBLE).toImmutableList(),
+        failedEntries = all.filter { it.status == SmsParseStatus.FAILED }.take(MAX_VISIBLE).toImmutableList(),
+        ignoredEntries = all.filter { it.status == SmsParseStatus.IGNORED }.take(MAX_VISIBLE).toImmutableList(),
+        totalParsed = parsed,
+        totalFailed = failed,
+        totalIgnored = ignored,
+        parseRatePercent = if (all.isEmpty()) 0 else ((parsed * 100) / all.size),
+        senderHealth = senderHealth,
+        isLoading = false,
+    )
 }
+
+private const val MAX_VISIBLE = 200
+private const val MAX_SENDER_HEALTH = 5
