@@ -40,7 +40,7 @@ vico = "2.0.0-beta.2"
 
 # ML
 tflite = "2.16.1"
-mlkit-entity-extraction = "16.0.0-beta5"
+mlkit-entity-extraction = "16.0.0-beta6"
 mlkit-text-recognition = "16.0.1"
 
 # Logging
