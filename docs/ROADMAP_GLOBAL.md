@@ -8,9 +8,9 @@ Tier 1 — required to ship as a global app — is **complete**. Tiers 2–4 are
 
 > **For future AI / developers:** every shipped row below carries a *Why* and a *How* line so you can read this in 2 minutes and understand the entire design rationale without re-reading the diffs. When you ship something new, add `Why:` and `How:` to its row — the next person to touch this will thank you.
 
-## Recovery / integration status — 2026-06-13
+## Release integration status — 2026-06-20
 
-The recovered branch stack from PRs #11–#30 has been integrated locally on `dev/integration-recovered-stack`. See [`docs/RECOVERY_2026-06-13.md`](RECOVERY_2026-06-13.md) for the recovered goal, merge order, conflict resolutions, validation command, and runtime QA blocker.
+The recovered Codex product stack from PRs #11–#179 has been integrated on `release/codex-pr-stack-2026-06-20` for the beta.24 release. See [`docs/RECOVERY_2026-06-13.md`](RECOVERY_2026-06-13.md) for the original recovered goal and branch-by-branch audit trail.
 
 Validation is green for JVM tests, both debug APK builds, and both app lint variants:
 
@@ -19,6 +19,8 @@ Validation is green for JVM tests, both debug APK builds, and both app lint vari
 ```
 
 Device E2E and screenshot UI audit remain blocked on this PC because no Android device is attached and the local AVD cannot boot while firmware virtualization is disabled.
+
+Dependabot dependency PRs #6–#10 were reviewed separately and are not part of beta.24. The combined dependency branch fails before app compilation because Kotlin `2.3.21` requires a coordinated KSP/build-logic migration; those PRs should be handled in a dedicated dependency-update pass rather than mixed into the product release.
 
 Below is the prioritized gap list, in delivery order.
 

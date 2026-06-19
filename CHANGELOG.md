@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Nothing yet.
+
+## [0.1.0-beta.24] — 2026-06-20
+
+The recovered best-in-class application stack release: notification ingestion, TMOAP import depth, safer categorization, recurring/bills polish, support diagnostics, and manual-entry upgrades.
+
 - Store-safe notification parsing now normalizes at-symbol merchant hints such as `USD 8.50 @ Starbucks` and compact `Purchase @Starbucks USD 8.50`, while numeric-only `@ 123456789` values stay rejected.
 - Store-safe notification parsing now preserves legitimate merchant names that start with cleanup words such as `Card Factory` and `Via Roma Cafe`, while still stripping suffixes such as `with Apple Pay`, `via Apple Pay`, and `using card ending 1234`.
 - Store-safe notification parsing now preserves digit-starting income and transfer counterparties from peer-payment and structured notification hints such as `3M Payroll paid you`, `Sender: 3M Payroll`, and `Recipient: 401K Savings`, while numeric-only counterparty values stay rejected.
@@ -377,13 +383,16 @@ The first build that's actually usable as a daily driver. Built across 24 discip
 
 See [ADR-004](docs/adr/ADR-004-mvp-status.md). Notably:
 
-- XLSX direct import was deferred in beta.21; transaction-grid XLSX import is now supported in Unreleased.
+- XLSX direct import was deferred in beta.21; transaction-grid XLSX import is now supported in beta.24.
 - TFLite merchant classifier deferred (rule engine covers ~90% of cases).
 - Locale toggle deferred (Arabic-first per brief).
 - Paparazzi snapshot baselines need a first record run.
 - Macrobenchmarks need a real device.
 
-[Unreleased]: https://github.com/wa1939/athar/compare/v0.1.0-beta.21...HEAD
+[Unreleased]: https://github.com/wa1939/athar/compare/v0.1.0-beta.24...HEAD
+[0.1.0-beta.24]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.24
+[0.1.0-beta.23]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.23
+[0.1.0-beta.22]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.22
 [0.1.0-beta.21]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.21
 [0.1.0-beta.20]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.20
 [0.1.0-beta.19]: https://github.com/wa1939/athar/releases/tag/v0.1.0-beta.19
