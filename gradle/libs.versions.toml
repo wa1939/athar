@@ -1,7 +1,7 @@
 [versions]
 # Build tooling — check compatibility matrix: https://kotlinlang.org/docs/gradle-configure-project.html#apply-the-plugin
 agp = "8.7.3"
-kotlin = "2.1.0"
+kotlin = "2.4.0"
 ksp = "2.1.0-1.0.29"
 
 # Android
@@ -30,10 +30,10 @@ room = "2.6.1"
 sqlcipher = "4.6.1"
 
 # Kotlinx
-coroutines = "1.9.0"
-kotlinx-datetime = "0.6.1"
-kotlinx-serialization-json = "1.7.3"
-kotlinx-collections-immutable = "0.3.8"
+coroutines = "1.11.0"
+kotlinx-datetime = "0.8.0"
+kotlinx-serialization-json = "1.11.0"
+kotlinx-collections-immutable = "0.5.0"
 
 # Charts
 vico = "2.0.0-beta.2"
