@@ -10,9 +10,9 @@ targetSdk = "35"
 compileSdk = "35"
 
 # Jetpack / AndroidX
-core-ktx = "1.15.0"
+core-ktx = "1.19.0"
 lifecycle = "2.8.7"
-activity-compose = "1.9.3"
+activity-compose = "1.13.0"
 navigation-compose = "2.8.5"
 datastore = "1.1.1"
 work = "2.10.0"
@@ -23,10 +23,10 @@ compose-material3-adaptive = "1.0.0"
 
 # Hilt — 2.54+ required for Kotlin 2.1.0 metadata
 hilt = "2.54"
-hilt-navigation-compose = "1.2.0"
+hilt-navigation-compose = "1.4.0"
 
 # Room
-room = "2.6.1"
+room = "2.8.4"
 sqlcipher = "4.6.1"
 
 # Kotlinx
@@ -60,10 +60,10 @@ turbine = "1.2.0"
 mockk = "1.13.13"
 paparazzi = "1.3.5"
 robolectric = "4.14.1"
-androidx-test-core = "1.6.1"
-androidx-test-runner = "1.6.2"
-androidx-test-ext-junit = "1.2.1"
-espresso = "3.6.1"
+androidx-test-core = "1.7.0"
+androidx-test-runner = "1.7.0"
+androidx-test-ext-junit = "1.3.0"
+espresso = "3.7.0"
 
 [libraries]
 # Build / IDE
