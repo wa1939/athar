@@ -1,0 +1,12 @@
+Athar public merchant catalog
+Copyright 2026 The Athar Authors
+
+This distribution includes public merchant-mapping data from the Athar project
+(https://github.com/wa1939/athar), source commit
+65c4ad4bbfea8e4f470e018a0b754d372ad00e89.
+
+Modified distribution: selected public-business mappings and reviewed Arabic
+aliases, packaged as a separately signed/versioned public catalog. See README.
+
+This data-only distribution does not include application code, third-party
+libraries, typefaces, model assets or private financial/user records.
