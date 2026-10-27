@@ -1,7 +1,9 @@
 package com.athar.feature.today
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,8 +18,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,7 +42,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.athar.core.designsystem.component.AtharCategoryPicker
 import com.athar.core.designsystem.component.AtharCard
-import com.athar.core.designsystem.component.AtharListRow
+import com.athar.core.designsystem.component.AtharNumber
 import com.athar.core.designsystem.component.AtharPickerItem
 import com.athar.core.designsystem.component.AtharText
 import com.athar.core.designsystem.component.AtharTextField
@@ -67,8 +73,15 @@ fun HistoryScreen(
     val backfill by viewModel.lastBackfill.collectAsStateWithLifecycle()
     val bulkCategory by viewModel.bulkCategoryState.collectAsStateWithLifecycle()
     val bulkCategoryResult by viewModel.lastBulkCategory.collectAsStateWithLifecycle()
+    val lastDelete by viewModel.lastDelete.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<Transaction?>(null) }
     var choosingBulkCategory by remember { mutableStateOf(false) }
+    var showingAdvancedFilters by remember { mutableStateOf(false) }
+    var confirmingBulkDelete by remember { mutableStateOf(false) }
+    var deletingSingle by remember { mutableStateOf<Transaction?>(null) }
+    val advancedFilterActive = status != HistoryStatusFilter.ALL ||
+        type != HistoryTypeFilter.ALL ||
+        source != HistorySourceFilter.ALL
 
     LaunchedEffect(backfill) {
         if (backfill != null) {
@@ -80,6 +93,12 @@ fun HistoryScreen(
         if (bulkCategoryResult != null) {
             kotlinx.coroutines.delay(4_000)
             viewModel.clearBulkCategory()
+        }
+    }
+    LaunchedEffect(lastDelete) {
+        if (lastDelete != null) {
+            kotlinx.coroutines.delay(4_000)
+            viewModel.clearDelete()
         }
     }
     LaunchedEffect(initialCategoryFilter, initialSelectionMode) {
@@ -128,6 +147,9 @@ fun HistoryScreen(
                     onDismiss = viewModel::clearBulkCategory,
                 )
             }
+            lastDelete?.let {
+                DeleteToast(count = it.count, onDismiss = viewModel::clearDelete)
+            }
 
             AtharTextField(
                 value = query,
@@ -138,46 +160,14 @@ fun HistoryScreen(
                 keyboardType = KeyboardType.Text,
             )
 
-            FilterChipRow(
-                labels = listOf(
-                    HistoryStatusFilter.ALL to stringResource(R.string.history_filter_all),
-                    HistoryStatusFilter.CONFIRMED to stringResource(R.string.history_filter_confirmed),
-                    HistoryStatusFilter.PENDING to stringResource(R.string.history_filter_pending),
-                    HistoryStatusFilter.DISMISSED to stringResource(R.string.history_filter_dismissed),
-                ),
-                selected = status,
-                onSelect = viewModel::setStatus,
-            )
-
-            FilterChipRow(
-                labels = listOf(
-                    HistoryTypeFilter.ALL to stringResource(R.string.history_type_all),
-                    HistoryTypeFilter.EXPENSE to stringResource(R.string.history_type_expense),
-                    HistoryTypeFilter.INCOME to stringResource(R.string.history_type_income),
-                    HistoryTypeFilter.TRANSFER to stringResource(R.string.history_type_transfer),
-                ),
-                selected = type,
-                onSelect = viewModel::setType,
-            )
-
-            FilterChipRow(
-                labels = listOf(
-                    HistorySourceFilter.ALL to stringResource(R.string.history_source_all),
-                    HistorySourceFilter.SMS to stringResource(R.string.history_source_sms),
-                    HistorySourceFilter.NOTIFICATION to stringResource(R.string.history_source_notification),
-                    HistorySourceFilter.MANUAL to stringResource(R.string.history_source_manual),
-                    HistorySourceFilter.IMPORT to stringResource(R.string.history_source_import),
-                    HistorySourceFilter.RECURRING to stringResource(R.string.history_source_recurring),
-                    HistorySourceFilter.SHARE to stringResource(R.string.history_source_share),
-                ),
-                selected = source,
-                onSelect = viewModel::setSource,
-            )
-
+            // WM082: the classification axis leads; status/type/source moved behind
+            // «تصفية» so the primary triage path is one row, not four.
             FilterChipRow(
                 labels = listOf(
                     HistoryCategoryFilter.ALL to stringResource(R.string.history_category_all),
-                    HistoryCategoryFilter.UNCATEGORIZED to stringResource(R.string.history_category_uncategorized),
+                    HistoryCategoryFilter.UNCATEGORIZED to stringResource(
+                        R.string.history_category_uncategorized,
+                    ),
                     HistoryCategoryFilter.REPEATED_UNCATEGORIZED to stringResource(
                         R.string.history_category_repeated_uncategorized,
                     ),
@@ -197,6 +187,17 @@ fun HistoryScreen(
                     style = theme.typography.caption,
                     color = theme.colors.muted,
                     modifier = Modifier.weight(1f),
+                )
+                HistoryActionChip(
+                    text = stringResource(
+                        if (advancedFilterActive) {
+                            R.string.history_filter_advanced_active
+                        } else {
+                            R.string.history_filter_advanced
+                        },
+                    ),
+                    onClick = { showingAdvancedFilters = true },
+                    selected = advancedFilterActive,
                 )
                 HistoryActionChip(
                     text = stringResource(
@@ -221,6 +222,7 @@ fun HistoryScreen(
                     onApplySafeRepeatedSuggestions = viewModel::applySafeRepeatedBacklogSuggestedCategories,
                     onApplySuggestedCategory = viewModel::applyBulkCategory,
                     onApplyCategory = { choosingBulkCategory = true },
+                    onDeleteSelected = { confirmingBulkDelete = true },
                     onClear = viewModel::clearSelection,
                 )
             }
@@ -247,6 +249,11 @@ fun HistoryScreen(
                                     viewModel.toggleSelected(tx.id)
                                 } else {
                                     editing = tx
+                                }
+                            },
+                            onLongClick = {
+                                if (!bulkCategory.selectionMode) {
+                                    deletingSingle = tx
                                 }
                             },
                         )
@@ -283,8 +290,102 @@ fun HistoryScreen(
             },
         )
     }
+
+    if (showingAdvancedFilters) {
+        AdvancedFilterSheet(
+            status = status,
+            type = type,
+            source = source,
+            onSetStatus = viewModel::setStatus,
+            onSetType = viewModel::setType,
+            onSetSource = viewModel::setSource,
+            onReset = {
+                viewModel.setStatus(HistoryStatusFilter.ALL)
+                viewModel.setType(HistoryTypeFilter.ALL)
+                viewModel.setSource(HistorySourceFilter.ALL)
+            },
+            onDismiss = { showingAdvancedFilters = false },
+        )
+    }
+
+    if (confirmingBulkDelete && bulkCategory.selectedCount > 0) {
+        AlertDialog(
+            onDismissRequest = { confirmingBulkDelete = false },
+            containerColor = AtharTheme.colors.parchment,
+            title = {
+                Text(
+                    text = stringResource(R.string.history_delete_bulk_title, bulkCategory.selectedCount),
+                    color = AtharTheme.colors.ink,
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.history_delete_body),
+                    color = AtharTheme.colors.muted,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteSelected()
+                    confirmingBulkDelete = false
+                }) {
+                    Text(
+                        text = stringResource(R.string.history_delete_confirm),
+                        color = AtharTheme.colors.crimson,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmingBulkDelete = false }) {
+                    Text(
+                        text = stringResource(R.string.history_delete_cancel),
+                        color = AtharTheme.colors.ink,
+                    )
+                }
+            },
+        )
+    }
+
+    deletingSingle?.let { tx ->
+        AlertDialog(
+            onDismissRequest = { deletingSingle = null },
+            containerColor = AtharTheme.colors.parchment,
+            title = {
+                Text(
+                    text = stringResource(R.string.history_delete_single_title),
+                    color = AtharTheme.colors.ink,
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.history_delete_body),
+                    color = AtharTheme.colors.muted,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteTransaction(tx.id)
+                    deletingSingle = null
+                }) {
+                    Text(
+                        text = stringResource(R.string.history_delete_confirm),
+                        color = AtharTheme.colors.crimson,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deletingSingle = null }) {
+                    Text(
+                        text = stringResource(R.string.history_delete_cancel),
+                        color = AtharTheme.colors.ink,
+                    )
+                }
+            },
+        )
+    }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TxRow(
     tx: Transaction,
@@ -293,6 +394,7 @@ private fun TxRow(
     selected: Boolean,
     selectionMode: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
 ) {
     val theme = AtharTheme
     val typeLabel = when (tx.type) {
@@ -301,21 +403,35 @@ private fun TxRow(
         TxType.TRANSFER -> stringResource(R.string.history_row_type_transfer)
     }
     val title = tx.merchant.ifBlank { typeLabel }
-    AtharListRow(
-        title = if (selectionMode) {
-            "${if (selected) "✓" else "○"} $title"
-        } else {
-            title
-        },
-        subtitle = historyRowSubtitle(
-            tx = tx,
-            typeLabel = typeLabel,
-            categoryLabel = categoryLabel,
-            repeatedBacklogCount = repeatedBacklogCount,
-        ),
-        trailing = tx.amount,
-        onClick = onClick,
-    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = MinTouchTarget)
+            .clip(RoundedCornerShape(theme.spacing.s))
+            .background(theme.colors.surface)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .padding(horizontal = theme.spacing.m, vertical = theme.spacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+    ) {
+        if (selectionMode) {
+            Checkbox(checked = selected, onCheckedChange = { onClick() })
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            AtharText(text = title, style = theme.typography.headline)
+            AtharText(
+                text = historyRowSubtitle(
+                    tx = tx,
+                    typeLabel = typeLabel,
+                    categoryLabel = categoryLabel,
+                    repeatedBacklogCount = repeatedBacklogCount,
+                ),
+                style = theme.typography.caption,
+                color = theme.colors.muted,
+            )
+        }
+        AtharNumber(money = tx.amount)
+    }
 }
 
 @Composable
@@ -378,6 +494,7 @@ private fun BulkSelectionCard(
     onApplySafeRepeatedSuggestions: () -> Unit,
     onApplySuggestedCategory: (String) -> Unit,
     onApplyCategory: () -> Unit,
+    onDeleteSelected: () -> Unit,
     onClear: () -> Unit,
 ) {
     val theme = AtharTheme
@@ -487,10 +604,6 @@ private fun BulkSelectionCard(
                     onClick = onSelectMatchingMerchant,
                     enabled = state.matchingMerchantCount > state.selectedCount,
                 )
-                HistoryActionChip(
-                    text = stringResource(R.string.history_bulk_clear),
-                    onClick = onClear,
-                )
                 if (state.canApplySuggestedCategory && suggestedCategory != null) {
                     HistoryActionChip(
                         text = stringResource(
@@ -501,11 +614,30 @@ private fun BulkSelectionCard(
                         selected = true,
                     )
                 }
+            }
+            // WM082: primary actions as buttons — classify, delete, cancel.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+            ) {
                 HistoryActionChip(
                     text = stringResource(R.string.history_bulk_category),
                     onClick = onApplyCategory,
-                    selected = !state.canApplySuggestedCategory,
+                    selected = true,
                     enabled = state.canApply,
+                    modifier = Modifier.weight(1f),
+                )
+                HistoryActionChip(
+                    text = stringResource(R.string.history_delete_selected, state.selectedCount),
+                    onClick = onDeleteSelected,
+                    enabled = state.selectedCount > 0,
+                    destructive = true,
+                    modifier = Modifier.weight(1f),
+                )
+                HistoryActionChip(
+                    text = stringResource(R.string.history_bulk_clear),
+                    onClick = onClear,
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -597,6 +729,101 @@ private fun BulkCategorySheet(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AdvancedFilterSheet(
+    status: HistoryStatusFilter,
+    type: HistoryTypeFilter,
+    source: HistorySourceFilter,
+    onSetStatus: (HistoryStatusFilter) -> Unit,
+    onSetType: (HistoryTypeFilter) -> Unit,
+    onSetSource: (HistorySourceFilter) -> Unit,
+    onReset: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val theme = AtharTheme
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = theme.colors.parchment,
+        contentColor = theme.colors.ink,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(theme.spacing.m),
+            verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
+        ) {
+            AtharText(
+                text = stringResource(R.string.history_filter_advanced_title),
+                style = theme.typography.headline,
+                color = theme.colors.ink,
+            )
+            FilterChipRow(
+                labels = listOf(
+                    HistoryStatusFilter.ALL to stringResource(R.string.history_filter_all),
+                    HistoryStatusFilter.CONFIRMED to stringResource(R.string.history_filter_confirmed),
+                    HistoryStatusFilter.PENDING to stringResource(R.string.history_filter_pending),
+                    HistoryStatusFilter.DISMISSED to stringResource(R.string.history_filter_dismissed),
+                ),
+                selected = status,
+                onSelect = onSetStatus,
+            )
+            FilterChipRow(
+                labels = listOf(
+                    HistoryTypeFilter.ALL to stringResource(R.string.history_type_all),
+                    HistoryTypeFilter.EXPENSE to stringResource(R.string.history_type_expense),
+                    HistoryTypeFilter.INCOME to stringResource(R.string.history_type_income),
+                    HistoryTypeFilter.TRANSFER to stringResource(R.string.history_type_transfer),
+                ),
+                selected = type,
+                onSelect = onSetType,
+            )
+            FilterChipRow(
+                labels = listOf(
+                    HistorySourceFilter.ALL to stringResource(R.string.history_source_all),
+                    HistorySourceFilter.SMS to stringResource(R.string.history_source_sms),
+                    HistorySourceFilter.NOTIFICATION to stringResource(R.string.history_source_notification),
+                    HistorySourceFilter.MANUAL to stringResource(R.string.history_source_manual),
+                    HistorySourceFilter.IMPORT to stringResource(R.string.history_source_import),
+                    HistorySourceFilter.RECURRING to stringResource(R.string.history_source_recurring),
+                    HistorySourceFilter.SHARE to stringResource(R.string.history_source_share),
+                ),
+                selected = source,
+                onSelect = onSetSource,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
+            ) {
+                HistoryActionChip(
+                    text = stringResource(R.string.history_filter_advanced_reset),
+                    onClick = onReset,
+                    modifier = Modifier.weight(1f),
+                )
+                HistoryActionChip(
+                    text = stringResource(R.string.history_filter_advanced_done),
+                    onClick = onDismiss,
+                    selected = true,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DeleteToast(count: Int, onDismiss: () -> Unit) {
+    AtharCard(modifier = Modifier.clickable(onClick = onDismiss)) {
+        AtharText(
+            text = stringResource(R.string.history_deleted, count),
+            style = AtharTheme.typography.body,
+            color = AtharTheme.colors.ink,
+        )
+    }
+}
+
 @Composable
 private fun <T> FilterChipRow(
     labels: List<Pair<T, String>>,
@@ -638,6 +865,7 @@ private fun HistoryActionChip(
     modifier: Modifier = Modifier,
     selected: Boolean = false,
     enabled: Boolean = true,
+    destructive: Boolean = false,
 ) {
     val theme = AtharTheme
     val background = when {
@@ -648,6 +876,7 @@ private fun HistoryActionChip(
     val textColor = when {
         !enabled -> theme.colors.muted
         selected -> theme.colors.parchment
+        destructive -> theme.colors.crimson
         else -> theme.colors.ink
     }
     Box(

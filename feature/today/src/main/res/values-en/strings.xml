@@ -85,6 +85,18 @@
     <string name="history_bulk_select_visible">Select shown</string>
     <string name="history_bulk_select_same_merchant">Same merchant</string>
     <string name="history_bulk_clear">Clear</string>
+    <string name="history_filter_advanced">Filter</string>
+    <string name="history_filter_advanced_active">Filter · on</string>
+    <string name="history_filter_advanced_title">Advanced filters</string>
+    <string name="history_filter_advanced_reset">Reset</string>
+    <string name="history_filter_advanced_done">Done</string>
+    <string name="history_delete_selected" formatted="true">Delete (%1$d)</string>
+    <string name="history_delete_bulk_title" formatted="true">Delete %1$d transactions?</string>
+    <string name="history_delete_single_title">Delete this transaction?</string>
+    <string name="history_delete_body">Deletion cannot be undone.</string>
+    <string name="history_delete_confirm">Delete</string>
+    <string name="history_delete_cancel">Cancel</string>
+    <string name="history_deleted" formatted="true">Deleted %1$d transactions.</string>
     <string name="history_bulk_apply_suggestion" formatted="true">Apply %1$s</string>
     <string name="history_bulk_category">Category</string>
     <string name="history_bulk_category_title">Choose category</string>

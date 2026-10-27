@@ -42,6 +42,17 @@ class AtharApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        // WM083: warm the encrypted database on a dedicated thread started first in
+        // onCreate. Constructing AppDataInitializer transitively runs provideDatabase —
+        // System.loadLibrary("sqlcipher") + Keystore key retrieval + Room build.
+        // Without this the first ViewModel construction on the MAIN thread wins
+        // Dagger's singleton race and executes that work itself (5-10s main-thread
+        // block at cold start — ANR traces 2026-10-27, "failed to complete startup").
+        // A raw thread starts immediately; construction only, no seeding here.
+        Thread {
+            runCatching { dataInitializer.get() }
+                .onFailure { Timber.e(it, "DB prewarm failed") }
+        }.start()
         // Plant logging in all builds. Logcat is the canonical surface (`adb logcat | grep athar`).
         // Beta + production builds also persist uncaught exceptions to `files/crash.log` so the
         // user can share it without a connected dev machine.
