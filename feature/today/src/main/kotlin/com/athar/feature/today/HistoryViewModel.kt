@@ -258,6 +258,25 @@ class HistoryViewModel @Inject constructor(
         viewModelScope.launch { transactions.delete(id) }
     }
 
+    private val _lastDelete = MutableStateFlow<DeleteEvent?>(null)
+
+    /** Emits the count of rows removed by the last bulk delete. */
+    val lastDelete: StateFlow<DeleteEvent?> = _lastDelete.asStateFlow()
+
+    fun clearDelete() {
+        _lastDelete.value = null
+    }
+
+    fun deleteSelected() {
+        val ids = _selectedIds.value
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            ids.forEach { id -> transactions.delete(id) }
+            _lastDelete.value = DeleteEvent(count = ids.size)
+            clearSelection()
+        }
+    }
+
     fun applyBulkCategory(categoryId: String) {
         viewModelScope.launch {
             applyBulkCategoryToIds(ids = _selectedIds.value, categoryId = categoryId)
@@ -392,6 +411,7 @@ class HistoryViewModel @Inject constructor(
     }
 
     data class BackfillEvent(val pattern: String, val count: Int)
+    data class DeleteEvent(val count: Int)
     data class BulkCategoryEvent(
         val applied: Int,
         val skipped: Int,

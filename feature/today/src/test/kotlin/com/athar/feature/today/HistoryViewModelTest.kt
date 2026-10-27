@@ -155,6 +155,42 @@ class HistoryViewModelTest {
     }
 
     @Test
+    fun `delete selected removes every selected row emits count and clears selection`() = runTest(mainDispatcher) {
+        val repo = HistoryFakeTransactionRepository(
+            listOf(
+                tx(id = "del-a", type = TxType.EXPENSE, status = TxStatus.PENDING),
+                tx(id = "keep", type = TxType.EXPENSE, status = TxStatus.CONFIRMED),
+                tx(id = "del-b", type = TxType.EXPENSE, status = TxStatus.PENDING),
+            ),
+        )
+        val viewModel = HistoryViewModel(
+            transactions = repo,
+            rules = HistoryFakeRuleRepository(),
+            categories = HistoryFakeCategoryRepository(emptyList()),
+            clock = FixedHistoryClock,
+        )
+        val collection = launch { viewModel.items.collect {} }
+        val deletes = mutableListOf<Int?>()
+        val deleteJob = launch { viewModel.lastDelete.collect { deletes += it?.count } }
+
+        viewModel.toggleSelectionMode()
+        viewModel.toggleSelected("del-a")
+        viewModel.toggleSelected("del-b")
+        advanceUntilIdle()
+        viewModel.deleteSelected()
+        advanceUntilIdle()
+
+        assertThat(repo.deletes).containsExactly("del-a", "del-b")
+        assertThat(deletes.filterNotNull()).containsExactly(2)
+        assertThat(viewModel.selectedIds.value).isEmpty()
+        assertThat(viewModel.selectionMode.value).isFalse()
+        assertThat(viewModel.items.value.map { it.id }).containsExactly("keep")
+
+        deleteJob.cancel()
+        collection.cancel()
+    }
+
+    @Test
     fun `select matching selected merchants selects visible rows sharing normalized merchant`() = runTest(mainDispatcher) {
         val viewModel = HistoryViewModel(
             transactions = HistoryFakeTransactionRepository(
@@ -703,7 +739,12 @@ private class HistoryFakeTransactionRepository(rows: List<Transaction>) : Transa
         upserts += transaction
     }
 
-    override suspend fun delete(id: String) = Unit
+    val deletes = mutableListOf<String>()
+    override suspend fun delete(id: String) {
+        rowsById.remove(id)
+        rowsFlow.value = rowsById.values.toList()
+        deletes += id
+    }
     override suspend fun setStatus(id: String, status: TxStatus) = Unit
     override suspend fun clearPending(): Int = 0
     override suspend fun confirmAllConfident(minConfidence: Float): Int = 0

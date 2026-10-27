@@ -27,7 +27,7 @@ android {
 
     defaultConfig {
         applicationId = "com.athar"
-        versionCode = 10
+        versionCode = 13
         versionName = providers.gradleProperty("athar.version").orNull ?: "0.1.0"
         buildConfigField("boolean", "SEED_ON_FIRST_LAUNCH", atharSeed.toString())
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -46,7 +46,22 @@ android {
 
     buildTypes {
         debug {
-            isMinifyEnabled = false
+            // WM083: optional R8 for the user-facing debug-update channel.
+            // The debug variant on the user's phone (in-place update path) is a
+            // 107MB unminified APK whose cold start blocks main in ART class
+            // loading (trace 2026-10-27: ClassLinker::DefineClass storm, 5-25s).
+            // `-PminifyDebugUpdate=true` produces the same package + debug cert,
+            // minified like release, for the shipped update APK only. Default
+            // stays false so day-to-day QA builds remain fast to iterate.
+            isMinifyEnabled = providers.gradleProperty("minifyDebugUpdate")
+                .map(String::toBoolean).getOrElse(false)
+            isShrinkResources = isMinifyEnabled
+            if (isMinifyEnabled) {
+                proguardFiles(
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro",
+                )
+            }
             applicationIdSuffix = ".debug"
         }
         release {
