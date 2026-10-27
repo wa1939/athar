@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Nothing yet.
 
+## [0.1.0-beta.28] — 2026-10-27
+
+Triage and speed release (WM082/WM083). History is rebuilt around one question — "what needs me?" — with a single classification chip row leading (status/type/source moved behind a «تصفية» sheet), long-press to delete a transaction straight from the list, real checkboxes for multi-select, a bulk «حذف (N)» action, and one-tap classification of every matching merchant at once — all behind confirm dialogs. Startup is faster and the observed ANR class is fixed: the encrypted database now warms on a background thread instead of the UI thread, and the update channel ships an R8-minified build (code size roughly a third of previous debug updates, eliminating the class-loading jank storm; zero skipped frames at tablet geometry where 200+ were observed before).
+
 ## [0.1.0-beta.27] — 2026-10-27
 
 Full page-per-page UX audit pass (WM081): Arabic-Indic numerals everywhere in Bills (calendar strip, due badges, horizon date, "next 30 days" label), Arabic percent symbol ٪ in Goals, the Plan comparison toggle is now properly labeled for screen readers with a 48dp touch row, the period segmented control and Settings language rows meet the 48dp touch-target floor, and several copy refinements (voice input label, active-voice language note, hamza fix).

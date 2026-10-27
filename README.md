@@ -49,6 +49,11 @@ Other tools force a trade-off:
 
 ## Features
 
+### beta.28 update
+
+- History triage rebuilt: one classification chip row leads (advanced filters behind «تصفية»), long-press deletes straight from the list, checkboxes + bulk «حذف (N)», and one-tap classify-all-matching-merchants.
+- Faster, calmer startup: encrypted DB warms on a background thread; the update channel is R8-minified (code ~⅓ the size of previous debug updates, jank storm eliminated).
+
 ### beta.27 update
 
 - Page-per-page UX audit fixes: Arabic-Indic numerals across Bills (calendar, due dates, horizon), Arabic ٪ in Goals, screen-reader-labeled comparison toggle, 48dp touch targets on the period control and language rows, and copy polish.
