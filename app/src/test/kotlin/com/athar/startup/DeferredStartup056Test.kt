@@ -67,9 +67,12 @@ class DeferredStartup056Test {
             val initializer = mockk<AppDataInitializer> {
                 coEvery { initialize(any()) } answers { events += "initialize:${firstArg<Boolean>()}" }
             }
+            val recat = mockk<com.athar.ingestion.StoredTransactionRecategorizer> {
+                coEvery { recategorizeIfRulesChanged() } returns com.athar.ingestion.StoredTransactionRecategorizer.RecategorizeResult(0, 0)
+            }
             val lazy = dagger.Lazy<AppDataInitializer> { events += "construct"; initializer }
 
-            runDeferredStartupJobs(lazy, seedTmoap = true) { events += "schedule" }
+            runDeferredStartupJobs(lazy, dagger.Lazy { recat }, seedTmoap = true) { events += "schedule" }
 
             assertThat(events).containsExactly("construct", "initialize:true", "schedule").inOrder()
         }
@@ -81,7 +84,11 @@ class DeferredStartup056Test {
         val initializer = mockk<AppDataInitializer> {
             coEvery { initialize(any()) } answers { threads += Thread.currentThread() }
         }
-        runDeferredStartupJobs(dagger.Lazy { threads += Thread.currentThread(); initializer }, false) {}
+        runDeferredStartupJobs(
+            dagger.Lazy { threads += Thread.currentThread(); initializer },
+            dagger.Lazy { mockk<com.athar.ingestion.StoredTransactionRecategorizer> { coEvery { recategorizeIfRulesChanged() } returns com.athar.ingestion.StoredTransactionRecategorizer.RecategorizeResult(0, 0) } },
+            false,
+        ) {}
         assertThat(threads).hasSize(2)
         assertThat(threads.all { it !== caller }).isTrue()
     }
@@ -132,7 +139,11 @@ class DeferredStartup056Test {
             var scheduled = false
             var thrown: Throwable? = null
             try {
-                runDeferredStartupJobs(dagger.Lazy { initializer }, seedTmoap = false) { scheduled = true }
+                runDeferredStartupJobs(
+                    dagger.Lazy { initializer },
+                    dagger.Lazy { mockk<com.athar.ingestion.StoredTransactionRecategorizer> { coEvery { recategorizeIfRulesChanged() } returns com.athar.ingestion.StoredTransactionRecategorizer.RecategorizeResult(0, 0) } },
+                    seedTmoap = false,
+                ) { scheduled = true }
             } catch (t: Throwable) {
                 thrown = t
             }
@@ -149,7 +160,11 @@ class DeferredStartup056Test {
             var scheduled = false
             var thrown: Throwable? = null
             try {
-                runDeferredStartupJobs(dagger.Lazy { initializer }, seedTmoap = false) { scheduled = true }
+                runDeferredStartupJobs(
+                    dagger.Lazy { initializer },
+                    dagger.Lazy { mockk<com.athar.ingestion.StoredTransactionRecategorizer> { coEvery { recategorizeIfRulesChanged() } returns com.athar.ingestion.StoredTransactionRecategorizer.RecategorizeResult(0, 0) } },
+                    seedTmoap = false,
+                ) { scheduled = true }
             } catch (t: Throwable) {
                 thrown = t
             }

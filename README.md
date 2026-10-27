@@ -49,6 +49,12 @@ Other tools force a trade-off:
 
 ## Features
 
+### beta.29 update
+
+- Categorized history on update: installing an update now re-applies merchant rules to every stored transaction that had no category — nothing you classified yourself is touched.
+- 58 new merchant rules (fuel, transit, airlines, restaurants, groceries, telecom, utilities, subscriptions, SDB loan payments…) — expense coverage on the real 5,458-message corpus: 42.9% → 70.5%, with 0 parse failures.
+- Bank notices (maintenance windows, PIN changes, declined pre-auths, account admin) no longer appear as fake transactions.
+
 ### beta.28 update
 
 - History triage rebuilt: one classification chip row leads (advanced filters behind «تصفية»), long-press deletes straight from the list, checkboxes + bulk «حذف (N)», and one-tap classify-all-matching-merchants.

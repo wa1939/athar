@@ -73,11 +73,34 @@ class GlobalBankIgnoreTemplate : BankTemplate {
         Regex("""\bscheduled\s+(?:update|maintenance)\b""", RegexOption.IGNORE_CASE),
         Regex("""\bbanking\s+services\s+will\s+be\s+temporarily\s+unavailable""", RegexOption.IGNORE_CASE),
         Regex("""\bsystem\s+maintenance\b""", RegexOption.IGNORE_CASE),
+        Regex("""\bunder\s+maintenance\b""", RegexOption.IGNORE_CASE),
         Regex("""يرجى\s+العلم\s+بأنه\s+سيتم"""),
         Regex("""تحديث\s+الأنظمة|تحديث\s+انظمتنا|تحديثات?\s+على\s+انظمتنا"""),
+        // WM084 private-corpus shapes: scheduled-update notices that leaked as
+        // amount-bearing "transactions" (BankAlbilad / SNB maintenance windows).
+        Regex("""تحديثات\s+مجدولة"""),
+        Regex("""ستتأثر\s+(?:الخدمة|خدماتنا)\s+البنكية"""),
+        Regex("""تحت\s+التطوير"""),
+        Regex("""تطوير\s+خدماتنا\s+البنكية"""),
+        Regex("""ستكون\s+(?:غير\s+متاحة|خارج\s+الخدمة)\s+مؤقتا"""),
         Regex("""(?:الخدمات|القنوات)\s+الرقمية[^\n\r]{0,80}خارج\s+الخدمة"""),
         Regex("""خارج\s+الخدمة\s+مؤقت"""),
         Regex("""خدمات\s+بطاقة\s+مدى[^\n\r]{0,80}خارج\s+الخدمة"""),
+        // WM084: PIN-change confirmations (no money moved).
+        Regex("""\bPIN\b[^\n\r]{0,120}(?:successfully\s+changed|تم\s+تغيير)""", RegexOption.IGNORE_CASE),
+        Regex("""\bPIN\s+for\s+card\b""", RegexOption.IGNORE_CASE),
+        Regex("""تم\s+تغيير\s+رمز\s+البنك"""),
+        // WM084: barq rejected/outstanding-balance notices (declined — no money moved).
+        // Narrow on purpose: bare "insufficient balance" prose also appears in
+        // declined attempts with separately debited fees, which must stay parseable
+        // (SingleDeclinedNotice053 / DeclinedAttemptNotice055).
+        Regex("""Rejected\s+transaction:\s*Insufficient\s+balance""", RegexOption.IGNORE_CASE),
+        Regex("""outstanding\s+balance[^\n\r]{0,140}(?:View\s+it\s+in\s+the\s+app|from\s+a\s+debited\s+transaction)""", RegexOption.IGNORE_CASE),
+        // WM084 round 2: account-administration notices (no money moved).
+        Regex("""ربط\s+حساب\s+رقم"""),
+        Regex("""تحديث\s+بياناتكم\s+المالية"""),
+        Regex("""has\s+been\s+opened\s+at\b""", RegexOption.IGNORE_CASE),
+        Regex("""continue\s+enjoying\s+our\s+services""", RegexOption.IGNORE_CASE),
 
         // Marketing / promotional offers — derived from real Saudi banking promo corpus
         // (see docs/all-senders-analysis.md). The shape is always "Earn X / Win Y /

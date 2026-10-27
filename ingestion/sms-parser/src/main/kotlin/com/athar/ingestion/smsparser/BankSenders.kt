@@ -20,15 +20,15 @@ object KnownBankSenders {
     /** Saudi banks and wallets we ship native templates for. Sender strings exactly as they arrive. */
     val builtIn: Set<String> = setOf(
         // Al Rajhi
-        "AlRajhiBank", "AlRajhi Bank", "AlRajhi", "ALRAJHIBANK", "Al Rajhi Bank",
+        "AlRajhiBank", "AlRajhi Bank", "AlRajhi", "ALRAJHIBANK", "Al Rajhi Bank", "alrajhibank",
         // STC Bank / STC Pay
-        "STC Bank", "STCBank", "STCPay", "STC Pay", "STCpay", "STC-Pay",
+        "STC Bank", "STCBank", "STCPay", "STC Pay", "STCpay", "STC-Pay", "stcpay",
         // D360 (Riyad-affiliated digital bank)
         "D360 Bank", "D360", "D360Bank",
         // Barq
         "barq app", "Barq", "BarqApp", "BARQ",
         // Other major SA banks
-        "Alinma", "AlinmaBank", "Alinma Bank", "ALINMA",
+        "Alinma", "AlinmaBank", "Alinma Bank", "ALINMA", "alinma", "alinmabank",
         "Riyad Bank", "RiyadBank", "RIYADBANK",
         "SNB", "SNB Bank", "SNB-AlAhli", "NCB", "ALAHLI", "AlAhli", "AlAhliBank", "AlahliBank",
         "ANB", "ANBBank", "AlArabi",
@@ -36,7 +36,9 @@ object KnownBankSenders {
         "Albilad", "BankAlbilad", "ALBILAD",
         "BSF", "Banque Saudi Fransi", "BSFBank",
         "GIB", "Saudi Investment Bank", "SAIB",
-        "AlJazira", "AlJaziraSMS", "Jazira Bank", "JaziraBank", "BankAlJazira", "Bank AlJazira", "BAJ",
+        "AlJazira", "AlJaziraSMS", "Jazira Bank", "JaziraBank", "BankAlJazira", "Bank Al Jazira", "BAJ",
+        // Social Development Bank (loan payment receipts)
+        "SDB", "SDB Bank",
         // Wallets
         "urpay", "Urpay",
         "Mobily Pay", "MobilyPay",

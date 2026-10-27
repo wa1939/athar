@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Nothing yet.
 
+## [0.1.0-beta.29] — 2026-10-27
+
+### Categorization on update (WM084)
+- New `StoredTransactionRecategorizer`: after an app update, transactions already stored
+  without a category are re-categorized automatically once new rules or a new merchant
+  catalog arrive. Never overwrites a user-chosen category, never touches transfers, never
+  changes confirmation status — it only fills in missing categories.
+- 58 new merchant→category seed rules (729 → 787): fuel (Chevron), transit (Uber, MTA, MBTA,
+  Lyft, bike-share, Chengdu Metro), airlines (Qatar Air, Riyadh Air, JetBlue, American,
+  flynas), car rental/parking (Hertz, SpotHero), restaurants/coffee (Toast POS, Zettle,
+  SumUp, We Asian, Harar), groceries (Target, Westside, Circle K), telecom (US Mobile,
+  AT&T, STC biller 001), utilities (Saudi Electric biller 002), subscriptions (Google,
+  Meta, TorBox), entertainment (Vox, Universal), medical, gym, education, SDB loan
+  payments (biller 058 + receipt notices), and AlKholood home.
+- Private-corpus audit (5,458 real messages replayed through the shipping parser):
+  0 parse failures; expense categorization coverage 42.9% → 70.5%; remaining uncategorized
+  merchants are genuinely ambiguous (left for one-tap bulk classify, which also teaches
+  exact rules for the future).
+- Parser notice guards: 40+ bank maintenance / PIN-change / declined-preauth /
+  account-administration messages that previously leaked in as fake transactions are now
+  ignored (BankAlbilad, SNB, alinma, STCPAY, barq shapes). Sender registry extended with
+  lowercase variants (alinma, alinmabank, alrajhibank, stcpay, SDB).
+- Declined-notice semantics preserved: bare "insufficient balance" prose with separately
+  debited fees stays parseable (SingleDeclinedNotice053 / DeclinedAttemptNotice055).
+
+### Performance
+- Verified on beta.29 (minified debug, vc14): tablet geometry renders content in ~14s
+  with 1 janky frame (was a 60s ANR before beta.28's fixes); no skipped-frame storms.
+
 ## [0.1.0-beta.28] — 2026-10-27
 
 Triage and speed release (WM082/WM083). History is rebuilt around one question — "what needs me?" — with a single classification chip row leading (status/type/source moved behind a «تصفية» sheet), long-press to delete a transaction straight from the list, real checkboxes for multi-select, a bulk «حذف (N)» action, and one-tap classification of every matching merchant at once — all behind confirm dialogs. Startup is faster and the observed ANR class is fixed: the encrypted database now warms on a background thread instead of the UI thread, and the update channel ships an R8-minified build (code size roughly a third of previous debug updates, eliminating the class-loading jank storm; zero skipped frames at tablet geometry where 200+ were observed before).

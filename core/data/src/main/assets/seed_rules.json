@@ -3647,6 +3647,354 @@
       "pattern": "game purchase",
       "categoryId": "cat-entertainment",
       "priority": 90
+    },
+    {
+      "pattern": "CHEVRON",
+      "categoryId": "cat-gas",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "MTA*NYCT",
+      "categoryId": "cat-public-transport",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "MBTA-",
+      "categoryId": "cat-public-transport",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "LYFT *",
+      "categoryId": "cat-public-transport",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "DECO BIKE",
+      "categoryId": "cat-public-transport",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "ALP*Chengdu Metro",
+      "categoryId": "cat-public-transport",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "TAP TRANS",
+      "categoryId": "cat-public-transport",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "SumUp  *Taxi",
+      "categoryId": "cat-public-transport",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "QATAR AIR",
+      "categoryId": "cat-travel",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "JETBLUE",
+      "categoryId": "cat-travel",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "AIRDEAL",
+      "categoryId": "cat-travel",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "AMERICAN A",
+      "categoryId": "cat-travel",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "طيران ناس",
+      "categoryId": "cat-travel",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "HERTZ CAR",
+      "categoryId": "cat-travel",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "EASIRENT",
+      "categoryId": "cat-travel",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "SPOTHERO",
+      "categoryId": "cat-car-maintenance",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "VEND PARK",
+      "categoryId": "cat-car-maintenance",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "HARAR CAF",
+      "categoryId": "cat-coffee",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "WE ASIAN",
+      "categoryId": "cat-restaurant",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "SHRIMP SH",
+      "categoryId": "cat-restaurant",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "THE CHEFZ",
+      "categoryId": "cat-restaurant",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "MATAM SHO",
+      "categoryId": "cat-restaurant",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "TST*",
+      "categoryId": "cat-restaurant",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "Zettle_*",
+      "categoryId": "cat-restaurant",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "SumUp  *ExCel",
+      "categoryId": "cat-restaurant",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "أفضل الطهاة",
+      "categoryId": "cat-restaurant",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "TARGET T-",
+      "categoryId": "cat-groceries",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "WESTSIDE M",
+      "categoryId": "cat-groceries",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "Circlek",
+      "categoryId": "cat-groceries",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "WeMart",
+      "categoryId": "cat-groceries",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "NINJA RET",
+      "categoryId": "cat-other-expense",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "OtherRetail",
+      "categoryId": "cat-other-expense",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "ALP*xianmeiyitianbian",
+      "categoryId": "cat-other-expense",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "US MOBILE",
+      "categoryId": "cat-telecom",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "AT&T",
+      "categoryId": "cat-telecom",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "GOOGLE*GO",
+      "categoryId": "cat-subscriptions",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "FACEBK",
+      "categoryId": "cat-subscriptions",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "TORBOX",
+      "categoryId": "cat-subscriptions",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "VOX CINEM",
+      "categoryId": "cat-entertainment",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "UNIVERSAL",
+      "categoryId": "cat-entertainment",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "ALCATRAZ",
+      "categoryId": "cat-entertainment",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "Top Medic",
+      "categoryId": "cat-medical",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "HEALTH HO",
+      "categoryId": "cat-medical",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "Fit4less",
+      "categoryId": "cat-gym",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "fitforles",
+      "categoryId": "cat-gym",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "U OF I",
+      "categoryId": "cat-education",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "CAMPUS CE",
+      "categoryId": "cat-education",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "alkholood",
+      "categoryId": "cat-home-maintenance",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "حساب رقم: ***3279",
+      "categoryId": "cat-debt",
+      "priority": 150,
+      "patternType": "EXACT"
+    },
+    {
+      "pattern": "Elm Compa",
+      "categoryId": "cat-other-expense",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "WASH LAUN",
+      "categoryId": "cat-home-maintenance",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "UBR*",
+      "categoryId": "cat-public-transport",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "Riyadh Air",
+      "categoryId": "cat-travel",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "VDARA",
+      "categoryId": "cat-travel",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "TST (",
+      "categoryId": "cat-restaurant",
+      "priority": 150,
+      "patternType": "SUBSTRING"
+    },
+    {
+      "pattern": "002",
+      "categoryId": "cat-utilities",
+      "priority": 150,
+      "patternType": "EXACT"
+    },
+    {
+      "pattern": "058",
+      "categoryId": "cat-debt",
+      "priority": 150,
+      "patternType": "EXACT"
+    },
+    {
+      "pattern": "001",
+      "categoryId": "cat-telecom",
+      "priority": 150,
+      "patternType": "EXACT"
     }
   ]
 }

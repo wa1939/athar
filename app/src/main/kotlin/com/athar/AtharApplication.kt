@@ -27,6 +27,7 @@ class AtharApplication : Application(), Configuration.Provider {
 
     // Do not construct the seed -> DAO -> encrypted-database graph at field injection.
     @Inject lateinit var dataInitializer: Lazy<AppDataInitializer>
+    @Inject lateinit var recategorizer: Lazy<com.athar.ingestion.StoredTransactionRecategorizer>
     @Inject lateinit var workerFactory: HiltWorkerFactory
 
     override val workManagerConfiguration: Configuration
@@ -61,7 +62,7 @@ class AtharApplication : Application(), Configuration.Provider {
         Timber.i("Athar starting · versionName=%s", BuildConfig.VERSION_NAME)
 
         scope.launch {
-            runDeferredStartupJobs(dataInitializer, BuildConfig.SEED_ON_FIRST_LAUNCH) {
+            runDeferredStartupJobs(dataInitializer, recategorizer, BuildConfig.SEED_ON_FIRST_LAUNCH) {
                 RecurringWorkScheduler.schedule(this@AtharApplication)
             }
         }
@@ -95,9 +96,15 @@ class AtharApplication : Application(), Configuration.Provider {
 /** Defer this dependency request and initialization to IO; preserve failure/cancellation. */
 internal suspend fun runDeferredStartupJobs(
     dataInitializer: Lazy<AppDataInitializer>,
+    recategorizer: Lazy<com.athar.ingestion.StoredTransactionRecategorizer>,
     seedTmoap: Boolean,
     scheduleRecurringWork: () -> Unit,
 ) = withContext(Dispatchers.IO) {
     dataInitializer.get().initialize(seedTmoap = seedTmoap)
+    // WM084: after rules are (re)seeded, backfill categories for stored
+    // uncategorized transactions — runs only when the rule bundle or catalog
+    // changed, so an update that ships new rules classifies existing history.
+    runCatching { recategorizer.get().recategorizeIfRulesChanged() }
+        .onFailure { Timber.e(it, "Stored rule recategorization failed") }
     scheduleRecurringWork()
 }
