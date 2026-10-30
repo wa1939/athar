@@ -253,7 +253,7 @@ private fun BudgetContent(
             TextButton(onClick = { showAllCategories = !showAllCategories }, modifier = Modifier.heightIn(min = MinTouchTarget)) {
                 AtharText(stringResource(if (showAllCategories) R.string.plan_budget_hide_other_categories
                     else R.string.plan_budget_show_other_categories, state.rows.size - activeRows.size),
-                    style = theme.typography.caption, color = theme.colors.ember)
+                    style = theme.typography.caption, color = theme.colors.crimson)
             }
         }
     }
@@ -358,7 +358,7 @@ private fun CustomRangePickerSheet(
                     CustomRangeError.INVALID -> stringResource(R.string.plan_custom_range_error_invalid)
                     CustomRangeError.ORDER -> stringResource(R.string.plan_custom_range_error_order)
                 }
-                AtharText(text = message, style = theme.typography.caption, color = theme.colors.ember)
+                AtharText(text = message, style = theme.typography.caption, color = theme.colors.crimson)
             }
             Box(
                 modifier = Modifier
@@ -552,7 +552,7 @@ private fun TargetEditor(
             if (saveStatus == TargetSaveStatus.FAILED || saveStatus == TargetSaveStatus.UNSUPPORTED_PRECISION) {
                 AtharText(stringResource(if (saveStatus == TargetSaveStatus.UNSUPPORTED_PRECISION)
                     R.string.plan_budget_target_save_precision else R.string.plan_budget_target_save_error),
-                    style = theme.typography.caption, color = theme.colors.ember)
+                    style = theme.typography.caption, color = theme.colors.crimson)
             }
             if (busy) AtharText(stringResource(R.string.plan_budget_saving), style = theme.typography.caption)
             error?.let { reason ->
@@ -563,7 +563,7 @@ private fun TargetEditor(
                         else -> stringResource(R.string.plan_target_error_invalid)
                     },
                     style = theme.typography.caption,
-                    color = theme.colors.ember,
+                    color = theme.colors.crimson,
                 )
             }
             Row(

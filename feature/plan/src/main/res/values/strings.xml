@@ -34,8 +34,8 @@
 
     <!-- Limit states -->
     <string name="plan_limit_over">تجاوز</string>
-    <string name="plan_limit_tight">اقتربت من الحد</string>
-    <string name="plan_limit_watch">تحت الحد</string>
+    <string name="plan_limit_tight">اقتراب من الحد</string>
+    <string name="plan_limit_watch">قريب من الحد</string>
     <string name="plan_limit_healthy">تحت الحد</string>
 
     <!-- Limit warning strip suffixes (separated · already included) -->
@@ -49,7 +49,7 @@
     <!-- Bills -->
     <string name="plan_bills_empty_text">لا فواتير مجدولة.</string>
     <string name="plan_bills_empty_subtle">أضف قواعد متكررة من الإعدادات لرؤية القادم هنا.</string>
-    <string name="plan_bills_summary_title" formatted="true">المستحق الآن وحتى %1$s</string>
+    <string name="plan_bills_summary_title" formatted="true">المستحق من اليوم حتى %1$s</string>
     <string name="plan_bills_summary_subtitle" formatted="true">المعروض في القائمة: %1$d، حتى %2$s</string>
     <string name="plan_bills_unknown_title">بند معلق</string>
     <string name="plan_bills_cadence_monthly">شهري</string>
@@ -61,7 +61,7 @@
     <string name="plan_bills_reminders_body">تنبيه هادئ قبل يومين، وفي يوم الاستحقاق، ومرة واحدة إذا بقيت فاتورة متكررة بانتظار المراجعة.</string>
     <string name="plan_bills_reminders_on_title">تذكيرات الفواتير مفعّلة</string>
     <string name="plan_bills_reminders_on_body">سيذكّرك أثر بالمصاريف المتكررة القادمة بدون أحكام على الصرف أو تنبيهات مزعجة.</string>
-    <string name="plan_bills_reminders_permission_title">التنبيهات تحتاج إذنًا</string>
+    <string name="plan_bills_reminders_permission_title">التذكيرات تحتاج إذن الإشعارات</string>
     <string name="plan_bills_reminders_permission_body">التذكيرات مفعّلة، لكن إذن إشعارات أندرويد غير مفعل. فعّله لاستقبال تذكيرات الفواتير.</string>
     <string name="plan_bills_reminders_enable">تفعيل التذكيرات</string>
     <string name="plan_bills_reminders_disable">إيقاف التذكيرات</string>
@@ -79,7 +79,7 @@
     <string name="plan_custom_range_to">إلى</string>
     <string name="plan_custom_range_apply">تطبيق</string>
     <string name="plan_custom_range_error_invalid">تاريخ غير صالح</string>
-    <string name="plan_custom_range_error_order">تاريخ البداية يجب ألا يتجاوز النهاية</string>
+    <string name="plan_custom_range_error_order">يجب ألا يتجاوز تاريخ البداية النهاية</string>
     <string name="plan_custom_range_banner" formatted="true">النطاق المخصص: %1$s → %2$s</string>
     <string name="plan_custom_range_banner_edit">تعديل</string>
 
@@ -91,7 +91,7 @@
     <string name="plan_wishlist_summary_ready_now">متاحة الآن</string>
     <string name="plan_wishlist_summary_next_reachable">أقرب موعد</string>
     <string name="plan_wishlist_summary_target_pressure">ضغط الأهداف شهريًا</string>
-    <string name="plan_wishlist_summary_infeasible">تحتاج سعة</string>
+    <string name="plan_wishlist_summary_infeasible">تحتاج سعة أكبر</string>
     <string name="plan_wishlist_summary_none">لا يوجد</string>
     <string name="plan_wishlist_summary_count" formatted="true">%1$d</string>
     <string name="plan_wishlist_empty_text">لا رغبات بعد.</string>
@@ -116,7 +116,7 @@
     <string name="plan_wishlist_action_save">حفظ</string>
 
     <!-- Goals -->
-    <string name="plan_goals_savings_title">معدل الادخار</string>
+    <string name="plan_goals_savings_title">نسبة الادخار</string>
     <string name="plan_goals_emergency_title">صندوق الطوارئ</string>
     <string name="plan_goals_percent_value" formatted="true">%1$s٪</string>
     <string name="plan_goals_months_value" formatted="true">%1$s شهر</string>
@@ -132,15 +132,15 @@
     <string name="plan_goals_emergency_covered_withheld">التغطية غير محسوبة دون رصيد موثق بتاريخ.</string>
     <string name="plan_goals_emergency_target_amount">مبلغ الهدف</string>
     <string name="plan_goals_edit_savings_title">تعديل هدف الادخار</string>
-    <string name="plan_goals_edit_savings_label">النسبة المستهدفة من 0 إلى 100</string>
-    <string name="plan_goals_edit_savings_error">اكتب رقمًا بين 0 و100</string>
+    <string name="plan_goals_edit_savings_label">النسبة المستهدفة من ٠ إلى ١٠٠</string>
+    <string name="plan_goals_edit_savings_error">اكتب رقمًا بين ٠ و١٠٠</string>
     <string name="plan_goals_edit_emergency_title">تعديل صندوق الطوارئ</string>
     <string name="plan_goals_edit_emergency_label">عدد الأشهر المستهدفة</string>
-    <string name="plan_goals_edit_emergency_error">اكتب رقمًا بين 1 و120</string>
+    <string name="plan_goals_edit_emergency_error">اكتب رقمًا بين ١ و١٢٠</string>
 
     <!-- Investments -->
     <string name="plan_investments_title">الاستثمارات</string>
-    <string name="plan_investments_subtitle">مجموعة المساهمين، نسبة كل واحد، وعائده النسبي.</string>
+    <string name="plan_investments_subtitle">مجموعات المساهمين، ونسبة كل مساهم وعائده.</string>
     <string name="plan_investments_add_pool">إضافة مجموعة</string>
     <string name="plan_investments_empty">أضف مجموعة استثمارية لرؤية النِّسَب والعوائد.</string>
     <string name="plan_investments_pool_delete">حذف المجموعة</string>
@@ -155,7 +155,7 @@
     <string name="plan_investments_return_editor_label">النسبة المئوية</string>
     <string name="plan_investments_return_editor_save">حفظ</string>
     <string name="plan_investments_delete_pool_title" formatted="true">حذف %1$s؟</string>
-    <string name="plan_investments_delete_pool_body">كل المساهمات والعوائد المرتبطة بهذه المجموعة ستحذف. لا يمكن التراجع.</string>
+    <string name="plan_investments_delete_pool_body">ستُحذف كل مساهمة وعائد مرتبط بهذه المجموعة، ولا يمكن التراجع.</string>
     <string name="plan_investments_delete_confirm">حذف</string>
     <string name="plan_investments_delete_cancel">إلغاء</string>
     <string name="plan_investments_pool_editor_title">مجموعة استثمارية جديدة</string>

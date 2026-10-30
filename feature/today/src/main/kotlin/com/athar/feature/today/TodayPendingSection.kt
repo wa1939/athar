@@ -13,6 +13,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -200,6 +204,46 @@ private fun SuggestionButton(onClick: () -> Unit) {
 @Composable
 internal fun BulkActionsBar(onEvent: (TodayEvent) -> Unit) {
     val theme = AtharTheme
+    // WM085: bulk dismiss discards every pending row at once — confirm first.
+    var confirmDismissAll by remember { mutableStateOf(false) }
+    if (confirmDismissAll) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { confirmDismissAll = false },
+            title = {
+                AtharText(
+                    text = stringResource(R.string.today_bulk_dismiss_all_confirm_title),
+                    style = theme.typography.headline,
+                )
+            },
+            text = {
+                AtharText(
+                    text = stringResource(R.string.today_bulk_dismiss_all_confirm_body),
+                    style = theme.typography.body,
+                    color = theme.colors.muted,
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    confirmDismissAll = false
+                    onEvent(TodayEvent.BulkDismissAll)
+                }) {
+                    AtharText(
+                        text = stringResource(R.string.today_bulk_dismiss_all),
+                        color = theme.colors.crimson,
+                    )
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { confirmDismissAll = false }) {
+                    AtharText(
+                        text = stringResource(R.string.today_bulk_dismiss_cancel),
+                        color = theme.colors.muted,
+                    )
+                }
+            },
+            containerColor = theme.colors.parchment,
+        )
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -221,7 +265,7 @@ internal fun BulkActionsBar(onEvent: (TodayEvent) -> Unit) {
         BulkButton(
             text = stringResource(R.string.today_bulk_dismiss_all),
             background = theme.colors.crimson,
-            onClick = { onEvent(TodayEvent.BulkDismissAll) },
+            onClick = { confirmDismissAll = true },
             modifier = Modifier.weight(1f),
         )
     }

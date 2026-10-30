@@ -25,4 +25,7 @@ class AppPrefsViewModel @Inject constructor(
 
     val displayCurrency: StateFlow<String?> = prefs.displayCurrency()
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    val appLocale: StateFlow<String?> = prefs.appLocale()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 }

@@ -881,7 +881,7 @@ private fun CustomRangePickerSheet(
             AtharTextField(value = endText, onValueChange = { endText = it; error = null },
                 label = stringResource(R.string.trends_custom_range_to), modifier = Modifier.fillMaxWidth())
             error?.let {
-                AtharText(text = it, style = theme.typography.caption, color = theme.colors.ember)
+                AtharText(text = it, style = theme.typography.caption, color = theme.colors.crimson)
             }
             SheetActionButton(
                 label = stringResource(R.string.trends_action_apply),
@@ -1466,7 +1466,7 @@ private fun FiltersSheet(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 priorError?.let {
-                    AtharText(text = it, style = theme.typography.caption, color = theme.colors.ember)
+                    AtharText(text = it, style = theme.typography.caption, color = theme.colors.crimson)
                 }
                 SheetActionButton(
                     label = stringResource(R.string.trends_comparison_apply),

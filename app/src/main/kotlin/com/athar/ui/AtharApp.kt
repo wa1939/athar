@@ -2,6 +2,10 @@ package com.athar.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -37,6 +41,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.athar.R
 import com.athar.core.designsystem.component.AtharBottomBar
 import com.athar.core.designsystem.component.AtharBottomBarItem
 import com.athar.core.designsystem.component.AtharText
@@ -67,12 +72,14 @@ fun AtharApp() {
     val appPrefs: AppPrefsViewModel = hiltViewModel()
     val hijriEnabled by appPrefs.hijriEnabled.collectAsStateWithLifecycle()
     val displayCurrency by appPrefs.displayCurrency.collectAsStateWithLifecycle()
+    val appLocaleTag by appPrefs.appLocale.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = context.findActivity()
     val onboardingSnapshot = onboarded
     val hijriSnapshot = hijriEnabled
     val currencySnapshot = displayCurrency
-    if (onboardingSnapshot == null || hijriSnapshot == null || currencySnapshot == null) {
+    val localeSnapshot = appLocaleTag
+    if (onboardingSnapshot == null || hijriSnapshot == null || currencySnapshot == null || localeSnapshot == null) {
         StartupLoading()
         return
     }
@@ -95,11 +102,9 @@ fun AtharApp() {
         routeName.endsWith("HistoryRepeatedBacklog")
     val theme = AtharTheme
 
-    val layoutDirection = if (LocalConfiguration.current.layoutDirection == android.view.View.LAYOUT_DIRECTION_RTL) {
-        LayoutDirection.Rtl
-    } else {
-        LayoutDirection.Ltr
-    }
+    // WM085: direction follows the APP language, not the device locale —
+    // Arabic-first: RTL unless the user explicitly chose English UI.
+    val layoutDirection = if (localeSnapshot == "en") LayoutDirection.Ltr else LayoutDirection.Rtl
     CompositionLocalProvider(
         LocalHijriEnabled provides hijriSnapshot,
         LocalDisplayCurrency provides currencySnapshot,
@@ -151,6 +156,40 @@ fun AtharApp() {
             NavHost(
                 navController = navController,
                 startDestination = startDestination,
+                // WM085: ≤200ms ease-out per the motion lock — the library
+                // default is a 700ms fade, which made tab switches feel slow.
+                enterTransition = {
+                    fadeIn(
+                        animationSpec = tween(
+                            durationMillis = 180,
+                            easing = CubicBezierEasing(0f, 0f, 0.2f, 1f),
+                        ),
+                    )
+                },
+                exitTransition = {
+                    fadeOut(
+                        animationSpec = tween(
+                            durationMillis = 150,
+                            easing = CubicBezierEasing(0f, 0f, 0.2f, 1f),
+                        ),
+                    )
+                },
+                popEnterTransition = {
+                    fadeIn(
+                        animationSpec = tween(
+                            durationMillis = 180,
+                            easing = CubicBezierEasing(0f, 0f, 0.2f, 1f),
+                        ),
+                    )
+                },
+                popExitTransition = {
+                    fadeOut(
+                        animationSpec = tween(
+                            durationMillis = 150,
+                            easing = CubicBezierEasing(0f, 0f, 0.2f, 1f),
+                        ),
+                    )
+                },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
@@ -244,7 +283,10 @@ private fun SettingsGear(onClick: () -> Unit) {
             .size(MinTouchTarget)
             .clip(RoundedCornerShape(theme.spacing.s))
             .background(theme.colors.parchment)
-            .clickable(onClick = onClick),
+            .clickable(
+                onClickLabel = stringResource(R.string.tab_settings),
+                onClick = onClick,
+            ),
         contentAlignment = Alignment.Center,
     ) {
         AtharText(text = "⋯", style = theme.typography.title, color = theme.colors.muted)

@@ -49,6 +49,12 @@ Other tools force a trade-off:
 
 ## Features
 
+### beta.30 update
+
+- Fixed the vanishing save button in the edit sheet: fields now scroll, and حفظ/حذف stay pinned above the keyboard on any phone.
+- Settings reorganized into six clear sections; destructive actions (clear pending, reset catalog, dismiss all) now ask first.
+- UI direction follows the app language (Arabic-first RTL), faster screen transitions, and 41 Arabic copy refinements (صافي الثروة، نسبة الادخار…).
+
 ### beta.29 update
 
 - Categorized history on update: installing an update now re-applies merchant rules to every stored transaction that had no category — nothing you classified yourself is touched.

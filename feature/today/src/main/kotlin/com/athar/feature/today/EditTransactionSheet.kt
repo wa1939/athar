@@ -14,8 +14,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -327,12 +332,27 @@ fun EditTransactionSheet(
         containerColor = theme.colors.parchment,
         contentColor = theme.colors.ink,
     ) {
+        // WM085: the form scrolls, the actions stay pinned above it (and above
+        // the keyboard) so «حفظ» can never fall below the fold on any screen.
+        // heightIn bounds the column so weight() is honored — without a bound,
+        // the sheet hands us (near-)unbounded height, weight is ignored, and
+        // the footer renders below the screen.
+        val sheetMaxHeight = LocalConfiguration.current.screenHeightDp.dp * 0.92f
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(theme.spacing.m),
-            verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
+                .heightIn(max = sheetMaxHeight)
+                .imePadding()
+                .navigationBarsPadding(),
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+                    .padding(theme.spacing.m),
+                verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
+            ) {
             AtharText(text = stringResource(R.string.edit_tx_title), style = theme.typography.headline)
 
             AtharSegmentedControl(
@@ -399,9 +419,13 @@ fun EditTransactionSheet(
                 onDelete = viewModel::deleteReceipt,
                 onClearStatus = viewModel::clearReceiptStatus,
             )
+            }
 
+            // WM085: pinned action footer — outside the scroll, always visible.
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
                 horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
             ) {
                 SheetButton(

@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -236,7 +240,13 @@ fun HistoryScreen(
                     )
                 }
             } else {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(theme.spacing.xs)) {
+                // WM085: weight(1f) so the list bounds end at the nav bar —
+                // without it the LazyColumn extends past the screen and the
+                // tail rows can never scroll into view.
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(theme.spacing.xs),
+                ) {
                     items(items, key = { it.id }) { tx ->
                         TxRow(
                             tx = tx,
@@ -665,12 +675,25 @@ private fun BulkCategorySheet(
         containerColor = theme.colors.parchment,
         contentColor = theme.colors.ink,
     ) {
+        // WM085: same pattern as EditTransactionSheet — scrollable body,
+        // actions pinned (and above the keyboard) so Apply is always visible.
+        // heightIn bounds the column so weight() is honored by the sheet.
+        val sheetMaxHeight = LocalConfiguration.current.screenHeightDp.dp * 0.92f
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(theme.spacing.m),
-            verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
+                .heightIn(max = sheetMaxHeight)
+                .imePadding()
+                .navigationBarsPadding(),
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+                    .padding(theme.spacing.m),
+                verticalArrangement = Arrangement.spacedBy(theme.spacing.m),
+            ) {
             AtharText(
                 text = stringResource(R.string.history_bulk_category_title),
                 style = theme.typography.headline,
@@ -708,8 +731,11 @@ private fun BulkCategorySheet(
                     .fillMaxWidth()
                     .heightIn(min = 220.dp, max = 360.dp),
             )
+            }
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = theme.spacing.m, vertical = theme.spacing.s),
                 horizontalArrangement = Arrangement.spacedBy(theme.spacing.s),
             ) {
                 HistoryActionChip(

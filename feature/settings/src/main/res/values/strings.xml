@@ -8,6 +8,12 @@
 
     <!-- Screen header / common actions -->
     <string name="settings_screen_overline">الإعدادات</string>
+    <string name="settings_section_basics">الأساسيات</string>
+    <string name="settings_section_messages">الرسائل</string>
+    <string name="settings_section_backup">النسخ والاستيراد</string>
+    <string name="settings_section_categorization">التصنيف الذكي</string>
+    <string name="settings_section_data">بياناتك وقواعدك</string>
+    <string name="settings_section_support">الدعم</string>
     <string name="settings_action_back">رجوع</string>
     <string name="settings_action_close">إغلاق</string>
     <string name="settings_action_save">حفظ</string>
@@ -27,7 +33,7 @@
     <string name="settings_sms_card_grant_action">تفعيل قراءة الرسائل</string>
 
     <!-- Backfill card -->
-    <string name="settings_backfill_title">إعادة فحص الرسائل</string>
+    <string name="settings_backfill_title">فحص الرسائل الجديدة</string>
     <string name="settings_backfill_body">اقرأ صندوق الرسائل وأنشئ منه حركات معلّقة في انتظار التأكيد.</string>
     <string name="settings_backfill_running" formatted="true">جارٍ المسح… (%1$d رسالة)</string>
     <string name="settings_backfill_done" formatted="true">تم فحص %1$d رسالة، أُرسلت %2$d للمعالجة.</string>
@@ -233,13 +239,13 @@
     <string name="settings_hijri_body_on">يظهر بجانب التاريخ الميلادي في الشاشة الرئيسية.</string>
     <string name="settings_hijri_body_off">افتراضيًا، الميلادي فقط.</string>
     <string name="settings_hijri_pill_on">مفعّل</string>
-    <string name="settings_hijri_pill_off">معطّل</string>
+    <string name="settings_hijri_pill_off">موقوف</string>
 
     <string name="settings_recording_title">التسجيل التلقائي للمشتريات</string>
     <string name="settings_recording_body_on">للمشتريات الواضحة الجديدة فقط، دون تغيير السجل السابق.</string>
     <string name="settings_recording_body_off">متوقف للرسائل الجديدة. لا يغيّر السجل السابق.</string>
     <string name="settings_recording_pill_on">مفعّل</string>
-    <string name="settings_recording_pill_off">معطّل</string>
+    <string name="settings_recording_pill_off">موقوف</string>
 
     <!-- Own accounts card -->
     <string name="settings_own_accounts_title">حساباتك الخاصة</string>
@@ -451,6 +457,9 @@
     <string name="settings_merchant_catalog_body_on">يُنزَّل ملف عام واحد فقط للتحقق من التحديثات؛ يرى المضيف عنوان IP ووقت الطلب فقط. لا تُرفع بيانات مالية أو استعلامات عن التجار. يساعد الكتالوج في اقتراح الفئات ولا يغيّر قواعد تسجيل العمليات.</string>
     <string name="settings_merchant_catalog_toggle_on">مفعّل</string>
     <string name="settings_merchant_catalog_toggle_off">موقوف</string>
+    <string name="settings_merchant_catalog_reset_confirm_title">إعادة ضبط الكتالوج؟</string>
+    <string name="settings_merchant_catalog_reset_confirm_body">سنعود إلى التصنيفات المدمجة فقط، وسيُحذف الكتالوج المنزّل. لا تتأثر حركاتك ولا تصنيفاتك المؤكدة.</string>
+    <string name="settings_merchant_catalog_reset_confirm_action">إعادة الضبط</string>
     <string name="settings_merchant_catalog_updates_label">تحديث الكتالوج تلقائيًا في المقدمة</string>
     <string name="settings_merchant_catalog_version" formatted="true">الإصدار %1$d · %2$d تاجر</string>
     <string name="settings_merchant_catalog_checked" formatted="true">آخر تحقق: %1$s</string>

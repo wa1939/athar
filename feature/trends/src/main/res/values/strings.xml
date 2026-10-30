@@ -18,7 +18,7 @@
 
     <!-- Headline numbers card -->
     <string name="trends_label_expense">المصاريف</string>
-    <string name="trends_no_comparison">لا مقارنة (لا توجد بيانات سابقة)</string>
+    <string name="trends_no_comparison">لا بيانات سابقة للمقارنة</string>
     <string name="trends_vs_previous_period">مقارنة بالفترة السابقة</string>
     <string name="trends_expense_percent_of_income">تشكّل المصاريف %1$s٪ من الدخل</string>
 
@@ -47,18 +47,18 @@
 
     <!-- Category comparison table -->
     <string name="trends_category_comparison">مقارنة شهرية · بالتصنيف</string>
-    <string name="trends_category_comparison_legend">هذا الشهر مقابل الشهر السابق. الزيادة بالأحمر، الانخفاض بالزيتي.</string>
+    <string name="trends_category_comparison_legend">هذا الشهر مقابل الشهر السابق. الزيادة بالأحمر، والانخفاض بالزيتي.</string>
 
     <!-- Category split section -->
     <string name="trends_section_category_split">توزيع المصاريف على التصنيفات</string>
 
     <!-- Empty state -->
-    <string name="trends_empty_text">أضف بعض الحركات لرؤية النمط.</string>
+    <string name="trends_empty_text">أضف حركات لرؤية النمط.</string>
     <string name="trends_empty_subtle">كل حركة مؤكدة تُضاف إلى الرسم البياني.</string>
 
     <!-- Top categories section -->
     <string name="trends_section_top_categories">أعلى التصنيفات</string>
-    <string name="trends_top_categories_hint">اضغط على أي تصنيف لعرض الحركات التي تكوّنه.</string>
+    <string name="trends_top_categories_hint">اختر تصنيفًا لعرض الحركات التي تكوّنه.</string>
 
     <!-- Custom range banner -->
     <string name="trends_custom_range_label">النطاق المخصص: %1$s → %2$s</string>
@@ -70,7 +70,7 @@
     <string name="trends_custom_range_from">من</string>
     <string name="trends_custom_range_to">إلى</string>
     <string name="trends_error_invalid_date">تاريخ غير صالح</string>
-    <string name="trends_error_start_before_end">تاريخ البداية يجب أن يكون قبل النهاية</string>
+    <string name="trends_error_start_before_end">يجب أن يكون تاريخ البداية قبل النهاية</string>
     <string name="trends_action_apply">تطبيق</string>
 
     <!-- Drilldown sheet -->
@@ -100,7 +100,7 @@
     <string name="trends_open_evidence">عرض الحركات</string>
     <string name="trends_open_details">عرض التفاصيل</string>
     <string name="trends_zero_baseline">الفترة السابقة صفر أو سالبة، فالفرق معروض كقيمة مطلقة دون نسبة.</string>
-    <string name="trends_mixed_currency_note">تُحسب هذه النتائج بالعملة المحددة فقط؛ العملات الأخرى مستبعدة، دون تحويل الأسعار.</string>
+    <string name="trends_mixed_currency_note">تُحسب هذه النتائج بالعملة المحددة فقط، وتُستبعد العملات الأخرى دون تحويل عملات.</string>
     <string name="trends_currency_line">عملة العرض: %1$s</string>
     <string name="trends_month_year">%1$s %2$d</string>
     <string name="trends_period_range">من %1$s إلى %2$s</string>
@@ -115,8 +115,8 @@
     <string name="trends_evidence_context_comparison">المقارنة: %1$s</string>
     <string name="trends_evidence_count">عدد الحركات: %1$d</string>
     <string name="trends_evidence_row_meta">%1$s · %2$s · %3$s</string>
-    <string name="trends_empty_evidence">لا توجد حركات ضمن هذه الفلاتر.</string>
-    <string name="trends_empty_evidence_subtle">عدّل الفلاتر أو امسحها لعرض النتائج.</string>
+    <string name="trends_empty_evidence">لا حركات تطابق عوامل التصفية.</string>
+    <string name="trends_empty_evidence_subtle">عدّل عوامل التصفية أو امسحها لعرض النتائج.</string>
     <string name="trends_detail_title">تفاصيل الحركة</string>
     <string name="trends_detail_merchant">التاجر</string>
     <string name="trends_detail_date">التاريخ</string>
@@ -137,7 +137,7 @@
     <!-- F1B: equal-population comparison + range validation -->
     <string name="trends_error_future_start">تاريخ البداية في المستقبل. اختر نطاقًا بدأ فعلًا.</string>
     <string name="trends_comparison_tail_excluded">الفرق يقارن حتى %1$s، وما بعده من الفترة الحالية مستبعد من المقارنة.</string>
-    <string name="trends_future_range_note">هذا النطاق لم يبدأ بعد، فلا توجد أرقام لعرضه.</string>
+    <string name="trends_future_range_note">هذا النطاق لم يبدأ بعد، فلا أرقام لعرضها.</string>
     <string name="trends_evidence_comparison_current">النافذة المطابقة (الحالية): %1$s</string>
     <string name="trends_evidence_comparison_prior">نافذة المقارنة (السابقة): %1$s</string>
 </resources>

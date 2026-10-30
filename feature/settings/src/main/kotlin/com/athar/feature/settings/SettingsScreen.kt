@@ -200,6 +200,9 @@ fun SettingsScreen(
         ) {
             AtharText(text = stringResource(R.string.settings_screen_overline), style = theme.typography.overline, color = theme.colors.muted)
 
+            // WM085: grouped sections — scanable, not a 29-card wall.
+            SettingsSectionHeader(text = stringResource(R.string.settings_section_basics))
+
             LanguageCard(
                 currentTag = appLocale,
                 onSelect = { tag ->
@@ -207,6 +210,18 @@ fun SettingsScreen(
                     onApplyLocale(tag)
                 },
             )
+
+            DisplayCurrencyCard(
+                currentCode = displayCurrency,
+                onSelect = viewModel::setDisplayCurrency,
+            )
+
+            HijriToggleCard(
+                enabled = hijriEnabled,
+                onToggle = viewModel::setHijriEnabled,
+            )
+
+            SettingsSectionHeader(text = stringResource(R.string.settings_section_messages))
 
             SmsPermissionCard(
                 granted = smsGranted,
@@ -238,6 +253,8 @@ fun SettingsScreen(
                 failed = recordingWriteFailed,
                 onToggle = viewModel::setRecordingEnabled,
             )
+
+            SettingsSectionHeader(text = stringResource(R.string.settings_section_backup))
 
             BackupCard(
                 status = status,
@@ -337,6 +354,8 @@ fun SettingsScreen(
                 onClear = viewModel::clearTaxExportStatus,
             )
 
+            SettingsSectionHeader(text = stringResource(R.string.settings_section_categorization))
+
             BulkCategorizeCard(
                 status = bulkStatus,
                 promptCopied = bulkPromptCopied,
@@ -395,22 +414,12 @@ fun SettingsScreen(
                 onClear = viewModel::clearSupportDiagnosticsStatus,
             )
 
-            DisplayCurrencyCard(
-                currentCode = displayCurrency,
-                onSelect = viewModel::setDisplayCurrency,
-            )
-
-            HijriToggleCard(
-                enabled = hijriEnabled,
-                onToggle = viewModel::setHijriEnabled,
-            )
+            SettingsSectionHeader(text = stringResource(R.string.settings_section_data))
 
             OwnAccountsCard(
                 accounts = ownAccounts,
                 onSave = viewModel::setOwnAccountNumbers,
             )
-
-            UpdatesCard()
 
             HistoryEntryCard(onOpen = onOpenHistory)
 
@@ -425,6 +434,10 @@ fun SettingsScreen(
             ActivityLogEntryCard(onOpen = onOpenActivityLog)
 
             CategoriesEntryCard(onOpen = onOpenCategories)
+
+            SettingsSectionHeader(text = stringResource(R.string.settings_section_support))
+
+            UpdatesCard()
 
             AboutCard()
         }
@@ -469,6 +482,16 @@ fun SettingsScreen(
 }
 
 @Composable
+private fun SettingsSectionHeader(text: String) {
+    AtharText(
+        text = text,
+        style = AtharTheme.typography.overline,
+        color = AtharTheme.colors.muted,
+        modifier = Modifier.padding(top = AtharTheme.spacing.s, bottom = AtharTheme.spacing.xs),
+    )
+}
+
+@Composable
 private fun SmsPermissionCard(
     granted: Boolean,
     onGrant: () -> Unit,
@@ -510,7 +533,11 @@ private fun HijriToggleCard(
     val theme = AtharTheme
     AtharCard(modifier = Modifier
         .fillMaxWidth()
-        .clickable { onToggle(!enabled) }
+        .toggleable(
+            value = enabled,
+            role = androidx.compose.ui.semantics.Role.Switch,
+            onValueChange = onToggle,
+        )
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -2483,11 +2510,13 @@ private fun RescanAndCleanCard(
                 style = theme.typography.body,
                 color = theme.colors.muted,
             )
-            AtharText(
-                text = stringResource(R.string.settings_rescan_pending_count, pendingCount),
-                style = theme.typography.caption,
-                color = theme.colors.muted,
-            )
+            if (pendingCount > 0) {
+                AtharText(
+                    text = stringResource(R.string.settings_rescan_pending_count, pendingCount),
+                    style = theme.typography.caption,
+                    color = theme.colors.muted,
+                )
+            }
             val statusText = when (status) {
                 RescanStatus.Idle -> null
                 RescanStatus.Working -> stringResource(R.string.settings_rescan_working)
@@ -2543,7 +2572,7 @@ private fun RescanConfirmDialog(
             TextButton(onClick = onConfirm) {
                 AtharText(
                     text = stringResource(R.string.settings_rescan_confirm_action),
-                    color = theme.colors.ember,
+                    color = theme.colors.crimson,
                 )
             }
         },

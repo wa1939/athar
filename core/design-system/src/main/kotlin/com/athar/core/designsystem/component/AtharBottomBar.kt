@@ -46,20 +46,29 @@ fun AtharBottomBar(
         modifier = modifier.fillMaxWidth(),
         color = theme.colors.parchment,
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(72.dp)
-                .padding(horizontal = theme.spacing.m),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
+        Column {
+            // WM085: hairline separation from scrolling content.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(0.5.dp)
+                    .background(theme.colors.divider),
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(72.dp)
+                    .padding(horizontal = theme.spacing.m),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
             items.forEach { item ->
                 BottomBarLabel(
                     item = item,
                     selected = item.key == selectedKey,
                     onClick = { onSelect(item.key) },
                 )
+            }
             }
         }
     }

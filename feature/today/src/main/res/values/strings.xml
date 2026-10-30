@@ -18,14 +18,14 @@
     <!-- Summary pills -->
     <string name="today_pill_income">الدخل</string>
     <string name="today_pill_expense">المصاريف</string>
-    <string name="today_pill_net_worth">الرصيد المسجّل</string>
+    <string name="today_pill_net_worth">صافي الثروة</string>
 
     <!-- Captions -->
-    <string name="today_caption_savings_rate" formatted="true">معدّل الادخار · %1$s٪</string>
+    <string name="today_caption_savings_rate" formatted="true">نسبة الادخار · %1$s٪</string>
     <string name="today_caption_net_worth_mixed">أرصدة بعملات مختلفة، دون إجمالي موحّد.</string>
     <string name="today_goals_nudge_title">فحص الأهداف</string>
-    <string name="today_goals_savings_on_track" formatted="true">هدف الادخار مكتمل · %1$s٪ / %2$d٪</string>
-    <string name="today_goals_savings_below" formatted="true">هدف الادخار · %1$s٪ / %2$d٪</string>
+    <string name="today_goals_savings_on_track" formatted="true">هدف الادخار مكتمل · %1$s٪ من %2$d٪</string>
+    <string name="today_goals_savings_below" formatted="true">هدف الادخار · %1$s٪ من %2$d٪</string>
     <string name="today_goals_savings_waiting">هدف الادخار · أضف دخلاً لقياسه</string>
     <string name="today_goals_emergency_on_track" formatted="true">صندوق الطوارئ مكتمل · %1$s / %2$d شهر</string>
     <string name="today_goals_emergency_below" formatted="true">صندوق الطوارئ · %1$s / %2$d شهر</string>
@@ -38,7 +38,7 @@
 
     <!-- Empty state -->
     <string name="today_empty_text">لا حركات هذا الشهر.</string>
-    <string name="today_empty_subtle">أضف حركة بالـ + أو فعّل قراءة الرسائل من الإعدادات.</string>
+    <string name="today_empty_subtle">أضف حركة من زر + أو فعّل قراءة الرسائل من الإعدادات.</string>
     <string name="today_no_today_transactions">لا حركات اليوم بعد.</string>
 
     <!-- History (all transactions) screen -->
@@ -97,7 +97,7 @@
     <string name="history_delete_body">لا يمكن التراجع عن الحذف.</string>
     <string name="history_delete_confirm">حذف</string>
     <string name="history_delete_cancel">إلغاء</string>
-    <string name="history_deleted" formatted="true">تم حذف %1$d حركة.</string>
+    <string name="history_deleted" formatted="true">حُذفت %1$d حركة.</string>
     <string name="history_bulk_apply_suggestion" formatted="true">تطبيق %1$s</string>
     <string name="history_bulk_category">التصنيف</string>
     <string name="history_bulk_category_title">اختر التصنيف</string>
@@ -131,16 +131,19 @@
     <string name="today_pending_safe_suggestions_summary" formatted="true">الأثر الآمن: %1$s</string>
     <string name="today_pending_safe_suggestion_summary_item" formatted="true">%1$s (%2$d)</string>
     <string name="today_pending_safe_suggestion_summary_more" formatted="true">+%1$d أخرى</string>
-    <string name="today_pending_suggestions_applied" formatted="true">تم تطبيق %1$d اقتراح آمن.</string>
+    <string name="today_pending_suggestions_applied" formatted="true">طبّقنا %1$d اقتراحًا آمنًا.</string>
     <string name="today_pending_more" formatted="true">+%1$d حركة أخرى. استخدم الإجراءات الجماعية لمعالجتها دفعة واحدة.</string>
 
     <!-- Bulk actions -->
-    <string name="today_bulk_confirm_confident">تأكيد المؤكدة</string>
-    <string name="today_bulk_dismiss_low">تجاهل المشكوك فيه</string>
+    <string name="today_bulk_confirm_confident">تأكيد الأكثر ثقة</string>
+    <string name="today_bulk_dismiss_low">تجاهل الأقل ثقة</string>
     <string name="today_bulk_dismiss_all">تجاهل الكل</string>
+    <string name="today_bulk_dismiss_all_confirm_title">تجاهل كل المعلّقة؟</string>
+    <string name="today_bulk_dismiss_all_confirm_body">ستُزال كل الحركات المعلّقة من المراجعة، ويمكن استرجاعها لاحقًا من الإعدادات.</string>
+    <string name="today_bulk_dismiss_cancel">إلغاء</string>
 
     <!-- Misc list -->
-    <string name="today_uncategorized">غير مصنف</string>
+    <string name="today_uncategorized">غير مصنّفة</string>
 
     <!-- Add transaction sheet -->
     <string name="add_tx_title">إضافة حركة</string>
@@ -165,16 +168,16 @@
     <string name="add_tx_receipt_empty">لا يوجد إيصال</string>
     <string name="add_tx_receipt_loading">جارٍ الاستيراد…</string>
     <string name="add_tx_receipt_ocr_loading">جارٍ قراءة الإيصال…</string>
-    <string name="add_tx_receipt_ocr_filled">تمت تعبئة المبلغ والتاجر من الإيصال</string>
-    <string name="add_tx_receipt_ocr_no_text">تم إرفاق الإيصال؛ لم نجد المبلغ والتاجر</string>
-    <string name="add_tx_receipt_ocr_failed">تم إرفاق الإيصال؛ تعذرت قراءة النص</string>
+    <string name="add_tx_receipt_ocr_filled">عبّأنا المبلغ والتاجر من الإيصال</string>
+    <string name="add_tx_receipt_ocr_no_text">أُرفق الإيصال، ولم نجد المبلغ والتاجر</string>
+    <string name="add_tx_receipt_ocr_failed">أُرفق الإيصال، وتعذّرت قراءة النص</string>
     <string name="add_tx_receipt_attached" formatted="true">%1$s · %2$s</string>
     <string name="add_tx_receipt_count" formatted="true">%1$d إيصالات مرفقة</string>
     <string name="add_tx_receipt_attach">إرفاق</string>
     <string name="add_tx_receipt_change">تغيير</string>
     <string name="add_tx_receipt_remove">إزالة</string>
     <string name="add_tx_receipt_error_read">تعذرت قراءة هذا الإيصال</string>
-    <string name="add_tx_receipt_error_too_large">يجب ألا يتجاوز الإيصال 5 م.ب</string>
+    <string name="add_tx_receipt_error_too_large">الحد الأقصى لحجم الإيصال ٥ ميغابايت</string>
     <string name="add_tx_receipt_error_unsupported">اختر صورة إيصال</string>
     <string name="add_tx_receipt_error_save">فشل حفظ الحركة أثناء إرفاق الإيصال</string>
     <string name="add_tx_save">حفظ</string>
@@ -183,21 +186,21 @@
     <!-- Edit transaction sheet -->
     <string name="edit_tx_title">تعديل حركة</string>
     <string name="edit_tx_segment_transfer">ادخار · تحويل</string>
-    <string name="edit_tx_transfer_hint">هذه ليست مصروفًا — مجرد تحويل بين حساباتك أو ادخار. لن تُحتسب في إجمالي المصاريف أو الدخل.</string>
+    <string name="edit_tx_transfer_hint">هذا تحويل بين حساباتك أو ادخار، وليس مصروفًا. لا يُحتسب في إجمالي المصاريف أو الدخل.</string>
     <string name="edit_tx_delete">حذف</string>
     <string name="edit_tx_save">حفظ</string>
-    <string name="edit_tx_learn_title">تعلّم من التصنيف؟</string>
-    <string name="edit_tx_learn_message" formatted="true">هل تريد أن يصنّف أثر دائمًا «%1$s» كـ«%2$s»؟</string>
-    <string name="edit_tx_learn_always">دائمًا</string>
-    <string name="edit_tx_learn_once">هذه المرة فقط</string>
+    <string name="edit_tx_learn_title">نطاق التصنيف؟</string>
+    <string name="edit_tx_learn_message" formatted="true">غيّرت تصنيف هذه الحركة إلى «%2$s». هل نصنّف حركات «%1$s» القادمة بالتصنيف نفسه؟</string>
+    <string name="edit_tx_learn_always">كل الحركات القادمة</string>
+    <string name="edit_tx_learn_once">هذه الحركة فقط</string>
     <string name="edit_tx_receipt_missing">لا يوجد إيصال محفوظ لهذه الحركة</string>
     <string name="edit_tx_receipt_view">عرض</string>
     <string name="edit_tx_receipt_export">تصدير</string>
-    <string name="edit_tx_receipt_exported">تم حفظ نسخة من الإيصال</string>
-    <string name="edit_tx_receipt_deleted">تمت إزالة الإيصال</string>
-    <string name="edit_tx_receipt_export_failed">تعذر تصدير الإيصال</string>
-    <string name="edit_tx_receipt_delete_failed">تعذرت إزالة الإيصال</string>
-    <string name="edit_tx_receipt_view_failed">تعذر فتح الإيصال</string>
+    <string name="edit_tx_receipt_exported">حُفظت نسخة من الإيصال</string>
+    <string name="edit_tx_receipt_deleted">أُزيل الإيصال</string>
+    <string name="edit_tx_receipt_export_failed">تعذّر تصدير الإيصال</string>
+    <string name="edit_tx_receipt_delete_failed">تعذّرت إزالة الإيصال</string>
+    <string name="edit_tx_receipt_view_failed">تعذّر فتح الإيصال</string>
     <string name="edit_tx_receipt_preview_title">معاينة الإيصال</string>
     <string name="edit_tx_receipt_preview_error">تعذرت معاينة الصورة، ويمكنك تصديرها كملف.</string>
     <string name="edit_tx_receipt_close">إغلاق</string>

@@ -8,6 +8,12 @@
 
     <!-- Screen header / common actions -->
     <string name="settings_screen_overline">Settings</string>
+    <string name="settings_section_basics">Basics</string>
+    <string name="settings_section_messages">Messages</string>
+    <string name="settings_section_backup">Backup and import</string>
+    <string name="settings_section_categorization">Smart categorization</string>
+    <string name="settings_section_data">Your data and rules</string>
+    <string name="settings_section_support">Support</string>
     <string name="settings_action_back">Back</string>
     <string name="settings_action_close">Close</string>
     <string name="settings_action_save">Save</string>
@@ -451,6 +457,9 @@
     <string name="settings_merchant_catalog_body_on">One public file is downloaded to check for updates; the host sees only your IP address and request timing. No financial data or merchant queries are uploaded. The catalog helps suggest categories; it does not change transaction-recording rules.</string>
     <string name="settings_merchant_catalog_toggle_on">On</string>
     <string name="settings_merchant_catalog_toggle_off">Off</string>
+    <string name="settings_merchant_catalog_reset_confirm_title">Reset the catalog?</string>
+    <string name="settings_merchant_catalog_reset_confirm_body">You will go back to the built-in categories only and the downloaded catalog will be removed. Your transactions and confirmed categories are not affected.</string>
+    <string name="settings_merchant_catalog_reset_confirm_action">Reset</string>
     <string name="settings_merchant_catalog_updates_label">Update the catalog in the foreground</string>
     <string name="settings_merchant_catalog_version" formatted="true">Version %1$d · %2$d merchants</string>
     <string name="settings_merchant_catalog_checked" formatted="true">Last checked: %1$s</string>

@@ -185,10 +185,10 @@
     <string name="edit_tx_transfer_hint">This isn\'t spending — it\'s a transfer between your accounts or money set aside. It won\'t count in expense or income totals.</string>
     <string name="edit_tx_delete">Delete</string>
     <string name="edit_tx_save">Save</string>
-    <string name="edit_tx_learn_title">Learn this category?</string>
-    <string name="edit_tx_learn_message" formatted="true">Always categorize "%1$s" as "%2$s"?</string>
-    <string name="edit_tx_learn_always">Always</string>
-    <string name="edit_tx_learn_once">Just this once</string>
+    <string name="edit_tx_learn_title">Apply to future?</string>
+    <string name="edit_tx_learn_message" formatted="true">You changed this transaction to “%2$s”. Categorize future “%1$s” transactions the same way?</string>
+    <string name="edit_tx_learn_always">All future ones</string>
+    <string name="edit_tx_learn_once">Just this one</string>
     <string name="edit_tx_receipt_missing">No saved receipt for this transaction</string>
     <string name="edit_tx_receipt_view">View</string>
     <string name="edit_tx_receipt_export">Export</string>

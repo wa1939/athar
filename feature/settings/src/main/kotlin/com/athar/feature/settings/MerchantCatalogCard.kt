@@ -15,6 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,6 +46,45 @@ internal fun MerchantCatalogCard(
     onReset: () -> Unit,
 ) {
     val theme = AtharTheme
+    var showResetConfirm by remember { mutableStateOf(false) }
+    if (showResetConfirm) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showResetConfirm = false },
+            title = {
+                AtharText(
+                    text = stringResource(R.string.settings_merchant_catalog_reset_confirm_title),
+                    style = theme.typography.headline,
+                )
+            },
+            text = {
+                AtharText(
+                    text = stringResource(R.string.settings_merchant_catalog_reset_confirm_body),
+                    style = theme.typography.body,
+                    color = theme.colors.muted,
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    showResetConfirm = false
+                    onReset()
+                }) {
+                    AtharText(
+                        text = stringResource(R.string.settings_merchant_catalog_reset_confirm_action),
+                        color = theme.colors.crimson,
+                    )
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showResetConfirm = false }) {
+                    AtharText(
+                        text = stringResource(R.string.settings_action_cancel),
+                        color = theme.colors.muted,
+                    )
+                }
+            },
+            containerColor = theme.colors.parchment,
+        )
+    }
     AtharCard {
         Column(verticalArrangement = Arrangement.spacedBy(theme.spacing.s)) {
             AtharText(
@@ -200,7 +243,7 @@ internal fun MerchantCatalogCard(
                     Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                         MerchantCatalogButton(
                             text = stringResource(R.string.settings_merchant_catalog_action_reset),
-                            onClick = onReset,
+                            onClick = { showResetConfirm = true },
                             enabled = true,
                             modifier = Modifier.fillMaxHeight(),
                         )
